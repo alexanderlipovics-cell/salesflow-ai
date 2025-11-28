@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="salesflow-api-base" content="" />
     <title>Sales Flow AI · Lead Chat</title>
     <style>
       :root {
@@ -235,12 +236,89 @@
         margin-top: 0.5rem;
       }
 
+      .muted {
+        color: var(--muted);
+      }
+
       .chip {
         padding: 0.4rem 0.75rem;
         border-radius: 999px;
         border: 1px solid rgba(255, 255, 255, 0.11);
         font-size: 0.85rem;
         background: rgba(255, 255, 255, 0.04);
+      }
+
+      .import-panel {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .import-panel h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .import-panel textarea {
+        min-height: 90px;
+      }
+
+      .import-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .import-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .link-button {
+        background: none;
+        color: var(--accent);
+        padding: 0;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .link-button:hover {
+        text-decoration: underline;
+      }
+
+      .needs-action-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .needs-action-list li {
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .needs-action-list strong {
+        display: block;
+        font-size: 0.95rem;
+      }
+
+      .needs-action-meta {
+        color: var(--muted);
+        font-size: 0.8rem;
       }
 
       @media (max-width: 980px) {
@@ -339,6 +417,35 @@
         </div>
 
         <div class="lead-meta" id="leadMeta"></div>
+
+        <div class="import-panel">
+          <h3>Bestandskunden importieren</h3>
+          <p class="muted">
+            Lade eine CSV-Datei hoch oder füge die Inhalte unten ein. Die AI erkennt Status,
+            letzten Kontakt und schlägt direkt die nächste Aktion vor.
+          </p>
+          <form id="importForm" class="import-form">
+            <label>
+              <span>Datei (CSV)</span>
+              <input id="importFile" type="file" accept=".csv,text/csv" />
+            </label>
+            <textarea
+              id="importTextarea"
+              placeholder="Oder füge hier CSV-Daten ein (name,email,status,notes …)"
+            ></textarea>
+            <div class="import-actions">
+              <button type="submit" class="primary" id="importSubmit">Import starten</button>
+              <button type="button" class="secondary" id="importClear">Felder leeren</button>
+            </div>
+          </form>
+          <div class="status" id="importSummary" data-type="idle">
+            Noch kein Import durchgeführt.
+          </div>
+          <button type="button" class="link-button" id="filterNeedsAction">
+            Kontakte ohne Status anzeigen
+          </button>
+          <ul class="needs-action-list" id="needsActionList"></ul>
+        </div>
       </section>
     </main>
 
@@ -353,10 +460,26 @@
       const leadMeta = document.getElementById("leadMeta");
       const analyzeButton = document.getElementById("analyzeButton");
       const sendButton = document.getElementById("sendButton");
+      const importForm = document.getElementById("importForm");
+      const importFileInput = document.getElementById("importFile");
+      const importTextarea = document.getElementById("importTextarea");
+      const importSummary = document.getElementById("importSummary");
+      const importSubmit = document.getElementById("importSubmit");
+      const importClearButton = document.getElementById("importClear");
+      const needsActionButton = document.getElementById("filterNeedsAction");
+      const needsActionList = document.getElementById("needsActionList");
+
+      const apiBaseMeta = document.querySelector('meta[name="salesflow-api-base"]');
+      const API_BASE_URL = apiBaseMeta?.content?.trim().replace(/\/$/, "") || "";
+      const IMPORT_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/import/leads` : "/import/leads";
+      const NEEDS_ACTION_ENDPOINT = API_BASE_URL
+        ? `${API_BASE_URL}/leads/needs-action`
+        : "/leads/needs-action";
       const quickModeButtons = document.querySelectorAll("[data-module]");
 
       const conversation = [];
       let isSending = false;
+      let isImporting = false;
 
       chatForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -374,6 +497,9 @@
         }
       });
 
+      importForm?.addEventListener("submit", handleImportSubmit);
+      importClearButton?.addEventListener("click", resetImportForm);
+      needsActionButton?.addEventListener("click", fetchNeedsActionLeads);
       quickModeButtons.forEach((button) => {
         button.addEventListener("click", () => {
           const mode = button.dataset.module;
@@ -561,6 +687,153 @@
         }
       }
 
+      async function handleImportSubmit(event) {
+        event.preventDefault();
+        if (isImporting) return;
+
+        const filePayload = await readCsvFromFile();
+        const textareaPayload = (importTextarea?.value || "").trim();
+        const csvPayload = filePayload || textareaPayload;
+
+        if (!csvPayload) {
+          setImportStatus("Bitte wähle eine CSV-Datei oder füge Daten ein.", "error");
+          return;
+        }
+
+        try {
+          isImporting = true;
+          setImportLoading(true);
+          setImportStatus("Import läuft …", "success");
+          const response = await fetch(IMPORT_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/csv",
+            },
+            body: csvPayload,
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(errorBody || "Import fehlgeschlagen.");
+          }
+
+          const data = await response.json();
+          const total = data.total ?? 0;
+          const withStatus = data.with_ai_status ?? 0;
+          const withoutStatus = data.without_status ?? 0;
+          setImportStatus(
+            `Import abgeschlossen: ${total} Kontakte (${withStatus} erkannt, ${withoutStatus} offen).`,
+            "success"
+          );
+          fetchNeedsActionLeads();
+        } catch (error) {
+          console.error(error);
+          setImportStatus(error.message || "Import fehlgeschlagen.", "error");
+        } finally {
+          isImporting = false;
+          setImportLoading(false);
+        }
+      }
+
+      async function readCsvFromFile() {
+        if (!importFileInput || !importFileInput.files?.length) {
+          return "";
+        }
+        try {
+          return await importFileInput.files[0].text();
+        } catch (error) {
+          console.error(error);
+          return "";
+        }
+      }
+
+      function setImportStatus(message, type = "idle") {
+        if (!importSummary) return;
+        importSummary.textContent = message;
+        importSummary.dataset.type = type;
+      }
+
+      function setImportLoading(state) {
+        if (importSubmit) {
+          importSubmit.disabled = state;
+        }
+      }
+
+      function resetImportForm() {
+        if (importFileInput) {
+          importFileInput.value = "";
+        }
+        if (importTextarea) {
+          importTextarea.value = "";
+        }
+        setImportStatus("Formular zurückgesetzt. Optional neue CSV wählen.", "idle");
+      }
+
+      async function fetchNeedsActionLeads() {
+        if (!needsActionList) {
+          return;
+        }
+        needsActionList.innerHTML =
+          '<li class="needs-action-meta">Lade Kontakte ohne Status …</li>';
+        try {
+          const response = await fetch(NEEDS_ACTION_ENDPOINT);
+          if (!response.ok) {
+            throw new Error("Leads konnten nicht geladen werden.");
+          }
+          const payload = await response.json();
+          renderNeedsActionList(payload.leads || []);
+        } catch (error) {
+          console.error(error);
+          const li = document.createElement("li");
+          li.className = "needs-action-meta";
+          li.textContent = error.message || "Leads konnten nicht geladen werden.";
+          needsActionList.innerHTML = "";
+          needsActionList.appendChild(li);
+        }
+      }
+
+      function renderNeedsActionList(leads) {
+        if (!needsActionList) return;
+        needsActionList.innerHTML = "";
+
+        if (!Array.isArray(leads) || leads.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "needs-action-meta";
+          empty.textContent = "Alle importierten Kontakte besitzen bereits einen Status.";
+          needsActionList.appendChild(empty);
+          return;
+        }
+
+        leads.slice(0, 8).forEach((lead) => {
+          const item = document.createElement("li");
+          const title = document.createElement("strong");
+          title.textContent = lead.name || lead.email || "Unbenannter Kontakt";
+          item.appendChild(title);
+
+          const meta = document.createElement("div");
+          meta.className = "needs-action-meta";
+          meta.textContent = buildNeedsActionMeta(lead);
+          item.appendChild(meta);
+
+          needsActionList.appendChild(item);
+        });
+      }
+
+      function buildNeedsActionMeta(lead) {
+        const chunks = [];
+        if (lead.company) {
+          chunks.push(lead.company);
+        }
+        if (lead.email) {
+          chunks.push(lead.email);
+        }
+        if (lead.last_contact) {
+          chunks.push(`Zuletzt: ${lead.last_contact}`);
+        }
+        return chunks.join(" · ") || "Keine weiteren Infos";
+      }
+
+      fetchNeedsActionLeads();
       messageInput.focus();
     </script>
   </body>

@@ -63,6 +63,30 @@ class ActionResponse(BaseModel):
     reply: str
 
 
+class ImportSummary(BaseModel):
+    """Antwortformat für den Lead-Import."""
+
+    total: int
+    with_ai_status: int
+    without_status: int
+
+
+class LeadListItem(BaseModel):
+    """Leichtgewichtiger Lead-Eintrag für Übersichten."""
+
+    id: Optional[str | int] = None
+    name: Optional[str] = None
+    email: Optional[str] = None
+    company: Optional[str] = None
+    last_contact: Optional[str] = None
+
+
+class NeedsActionResponse(BaseModel):
+    """Antwortformat für Leads mit needs_action = true."""
+
+    leads: List[LeadListItem] = Field(default_factory=list)
+
+
 __all__ = [
     "ActionType",
     "ChatRole",
@@ -71,4 +95,7 @@ __all__ = [
     "ActionData",
     "ActionRequest",
     "ActionResponse",
+    "ImportSummary",
+    "LeadListItem",
+    "NeedsActionResponse",
 ]
