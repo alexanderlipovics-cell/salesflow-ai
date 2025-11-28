@@ -1,4 +1,6 @@
-const { createClient } = require("@supabase/supabase-js");
+const { getSupabase } = require("./supabaseClient");
+
+// KI-Cloud-Bridge: enriches every AI response with Supabase lead context.
 
 /**
  * SALES FLOW AI bridge overview:
@@ -16,12 +18,32 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const JSON_HEADERS = {
+  ...CORS_HEADERS,
+  "Content-Type": "application/json",
+};
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL =
   process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
+
+const BASE_PROMPT = [
+  "Du bist Sales Flow AI, ein Revenue-Coach.",
+  "Antworte strukturiert, fokussiert auf nächste Schritte, Taktiken und klare Handlungsempfehlungen.",
+  "Nutze vorhandenen Lead-Kontext, um Follow-ups zu personalisieren und konkrete Empfehlungen abzuleiten.",
+  "Falls kein Kontext vorliegt, erkläre knapp welche Infos fehlen.",
+].join("\n");
+
+const LEAD_COLUMNS = [
+  "id",
+  "name",
+  "status",
+  "branche",
+  "disg_type",
+  "deal_value",
+  "last_contact_at",
+  "tags",
+];
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
@@ -181,6 +203,20 @@ const getFetch = (() => {
   };
 })();
 
+function createLeadLoadError(message, statusCode = 502) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function baseLeadQuery(client, userId) {
+  let query = client
+    .from("leads")
+    .select(LEAD_COLUMNS.join(","), { head: false })
+    .limit(1);
+
+  if (userId) {
+    query = query.eq("user_id", userId);
 const isPlainObject = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -278,9 +314,98 @@ const fetchLeadByLooseReference = async (reference) => {
     query = query.ilike("name", `%${reference.name}%`);
   }
 
+  return query;
+}
+
+async function executeLeadQuery(query) {
   const { data, error } = await query.maybeSingle();
 
   if (error) {
+    console.error("Supabase error:", error);
+    throw createLeadLoadError("Konnte Lead-Daten nicht abrufen.");
+  }
+
+  return data;
+}
+
+/**
+ * KI-Cloud-Bridge helper: loads the relevant lead from Supabase once per request.
+ */
+async function loadLeadContext(userId, leadIdOrName) {
+  if (!leadIdOrName) return null;
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw createLeadLoadError(
+      "Supabase ist nicht konfiguriert. Bitte SUPABASE_URL und Key setzen."
+    );
+  }
+
+  const lookupValue = String(leadIdOrName).trim();
+  const scopedUserId = userId ? String(userId).trim() : null;
+
+  if (!lookupValue) return null;
+
+  const byIdQuery = baseLeadQuery(supabase, scopedUserId).eq(
+    "id",
+    lookupValue
+  );
+
+  let data = await executeLeadQuery(byIdQuery);
+
+  if (!data) {
+    const nameSearch = lookupValue.includes("%")
+      ? lookupValue
+      : `%${lookupValue}%`;
+    const byNameQuery = baseLeadQuery(supabase, scopedUserId).ilike(
+      "name",
+      nameSearch
+    );
+    data = await executeLeadQuery(byNameQuery);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    status: data.status || null,
+    branche: data.branche || null,
+    disg_type: data.disg_type || null,
+    deal_value: data.deal_value || null,
+    last_contact_at: data.last_contact_at || null,
+    tags: Array.isArray(data.tags)
+      ? data.tags.filter(Boolean)
+      : data.tags
+      ? [data.tags]
+      : [],
+  };
+}
+
+function buildLeadSnippet(leadContext) {
+  if (!leadContext) {
+    return "\nAKTUELLER LEAD: unbekannt (kein Kontext gefunden)\n";
+  }
+
+  const tagList = leadContext.tags?.length
+    ? leadContext.tags.join(", ")
+    : "-";
+
+  return `\nAKTUELLER LEAD:\nName: ${leadContext.name || "-"}\nStatus: ${
+    leadContext.status || "-"
+  }\nBranche: ${leadContext.branche || "-"}\nDISG: ${
+    leadContext.disg_type || "-"
+  }\nDeal-Wert: ${leadContext.deal_value || "-"}\nLetzter Kontakt: ${
+    leadContext.last_contact_at || "-"
+  }\nTags: ${tagList}\n`;
+}
+
+function buildSystemPrompt(leadContext) {
+  const leadSnippet = buildLeadSnippet(leadContext);
+  return `${BASE_PROMPT}${leadSnippet}`;
+}
     console.error("Supabase error (fallback reference):", error);
     throw new Error("Konnte Lead-Daten nicht abrufen (Referenz).");
   }
@@ -575,12 +700,16 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: CORS_HEADERS,
+      headers: JSON_HEADERS,
       body: JSON.stringify({ error: "Nur POST wird unterstützt." }),
     };
   }
 
   try {
+    let body;
+    try {
+      body = JSON.parse(event.body || "{}");
+    } catch (parseErr) {
     const body = JSON.parse(event.body || "{}");
     const action = typeof body.action === "string" ? body.action.trim() : "chat";
     const message = typeof body.message === "string" ? body.message.trim() : "";
@@ -611,11 +740,34 @@ exports.handler = async (event) => {
     if (!message && action !== "analyze_lead_context") {
       return {
         statusCode: 400,
-        headers: CORS_HEADERS,
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ error: "Ungültiger JSON-Body." }),
+      };
+    }
+
+    const message = typeof body.message === "string" ? body.message.trim() : "";
+    const history = Array.isArray(body.history) ? body.history : [];
+    const leadId = typeof body.leadId === "string" ? body.leadId.trim() : "";
+    const leadName =
+      typeof body.leadName === "string" ? body.leadName.trim() : "";
+    const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+
+    if (!message) {
+      return {
+        statusCode: 400,
+        headers: JSON_HEADERS,
         body: JSON.stringify({ error: "Die Nachricht darf nicht leer sein." }),
       };
     }
 
+    const leadLookup = leadId || leadName;
+    let leadContext = null;
+
+    if (leadLookup) {
+      leadContext = await loadLeadContext(userId, leadLookup);
+    }
+
+    const systemPrompt = buildSystemPrompt(leadContext);
     if (action === "analyze_lead_context" && !leadIds.size && !legacyLeadReference) {
       return {
         statusCode: 400,
@@ -665,7 +817,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: CORS_HEADERS,
+      headers: JSON_HEADERS,
       body: JSON.stringify({
         reply,
         module,
@@ -675,10 +827,14 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error("AI function error:", error);
+    const statusCode = error.statusCode || 500;
     return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: error.message || "Interner Serverfehler." }),
+      statusCode,
+      headers: JSON_HEADERS,
+      body: JSON.stringify({
+        error: "AI bridge error",
+        details: error.message || "Interner Serverfehler.",
+      }),
     };
   }
 };
