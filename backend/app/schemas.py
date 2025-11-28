@@ -69,6 +69,9 @@ class ImportSummary(BaseModel):
     total: int
     with_ai_status: int
     without_status: int
+    auto_scheduled_count: int = 0
+    needs_manual_action_count: int = 0
+    without_last_contact_count: int = 0
 
 
 class LeadListItem(BaseModel):
