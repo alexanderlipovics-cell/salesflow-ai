@@ -7,12 +7,14 @@
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #0d1117;
-        --panel: #161b22;
+        --bg: #020611;
+        --panel: #111827;
+        --panel-glass: rgba(13, 17, 23, 0.9);
         --accent: #00d8a4;
         --accent-dark: #00a97c;
         --text: #f0f6fc;
         --muted: #8b949e;
+        --border: rgba(255, 255, 255, 0.08);
         --danger: #ff6575;
         font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       }
@@ -32,34 +34,217 @@
         padding: 2rem;
       }
 
-      main {
+      .app-shell {
+        width: min(1400px, 100%);
         display: grid;
-        grid-template-columns: 3fr 1.15fr;
+        grid-template-columns: 280px 1fr;
         gap: 1.5rem;
-        width: min(1200px, 100%);
       }
 
-      section {
+      .sidebar {
         background: rgba(13, 17, 23, 0.85);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .logo-area {
+        display: flex;
+        gap: 0.85rem;
+        align-items: center;
+      }
+
+      .logo-dot {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #3b82f6, #a855f7);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+      }
+
+      .logo-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .logo-subtitle {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .nav-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+      }
+
+      .nav-label {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .nav-link {
+        appearance: none;
+        border: 1px solid transparent;
+        background: transparent;
+        color: inherit;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        text-align: left;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.2s ease, border 0.2s ease;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      .nav-link[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .badge-pro {
+        background: rgba(168, 85, 247, 0.15);
+        border-color: rgba(168, 85, 247, 0.4);
+        color: #d8b4fe;
+      }
+
+      .badge-popular {
+        background: rgba(37, 99, 235, 0.15);
+        border-color: rgba(59, 130, 246, 0.6);
+        color: #bfdbfe;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .user-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .user-name {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .user-role {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .plan-chip {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        text-transform: uppercase;
+      }
+
+      .upgrade-btn {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+      }
+
+      .main {
+        background: var(--panel-glass);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 25px 65px rgba(0, 0, 0, 0.45);
+      }
+
+      .view {
+        display: none;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .view.active {
+        display: flex;
+      }
+
+      .panel-grid {
+        display: grid;
+        grid-template-columns: 1.75fr 1fr;
+        gap: 1.25rem;
+      }
+
+      .panel {
+        background: rgba(17, 24, 39, 0.85);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 18px;
         padding: 1.5rem;
-        backdrop-filter: blur(8px);
         box-shadow: 0 15px 45px rgba(0, 0, 0, 0.35);
       }
 
       h1 {
         margin: 0;
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         font-weight: 600;
-        letter-spacing: 0.01em;
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin: 0 0 0.35rem;
+      }
+
+      .muted {
+        color: var(--muted);
+        margin: 0.25rem 0 0;
       }
 
       .chat-feed {
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        height: 520px;
+        height: 420px;
         overflow-y: auto;
         margin: 1.25rem 0;
         padding-right: 0.5rem;
@@ -78,10 +263,6 @@
         background: rgba(0, 216, 164, 0.08);
         border-color: rgba(0, 216, 164, 0.4);
         align-self: flex-end;
-      }
-
-      .bubble.assistant {
-        align-self: flex-start;
       }
 
       form {
@@ -126,7 +307,7 @@
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       }
 
       button.primary {
@@ -150,16 +331,6 @@
       button:not(:disabled):hover {
         transform: translateY(-1px);
         box-shadow: 0 12px 25px rgba(0, 216, 164, 0.4);
-      }
-
-      .sidebar h2 {
-        margin-top: 0;
-        font-size: 1.15rem;
-      }
-
-      .sidebar p {
-        color: var(--muted);
-        line-height: 1.4;
       }
 
       .status {
@@ -199,12 +370,145 @@
         background: rgba(255, 255, 255, 0.04);
       }
 
-      @media (max-width: 980px) {
-        body {
-          padding: 1rem;
-        }
+      .info-panel p {
+        line-height: 1.5;
+      }
 
-        main {
+      .view-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .success-pill {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 216, 164, 0.35);
+        background: rgba(0, 216, 164, 0.12);
+        font-size: 0.9rem;
+        color: var(--accent);
+      }
+
+      .billing-toggle {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.25rem;
+        background: rgba(17, 24, 39, 0.7);
+        width: fit-content;
+      }
+
+      .toggle-option {
+        border-radius: 999px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        padding: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+        box-shadow: none;
+      }
+
+      .toggle-option.active {
+        background: rgba(0, 216, 164, 0.15);
+        color: var(--text);
+      }
+
+      .save-pill {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(34, 197, 94, 0.18);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        color: #bbf7d0;
+      }
+
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .pricing-card {
+        background: rgba(15, 23, 42, 0.75);
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transition: transform 0.25s ease, border 0.25s ease, box-shadow 0.25s ease;
+      }
+
+      .pricing-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(0, 216, 164, 0.5);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+      }
+
+      .pricing-card.featured {
+        border: 1px solid transparent;
+        background: linear-gradient(
+            135deg,
+            rgba(168, 85, 247, 0.2),
+            rgba(59, 130, 246, 0.2)
+          ) padding-box,
+          linear-gradient(135deg, rgba(168, 85, 247, 0.6), rgba(59, 130, 246, 0.6)) border-box;
+        box-shadow: 0 25px 55px rgba(59, 130, 246, 0.35);
+      }
+
+      .card-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .plan-name {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .plan-price {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+
+      .plan-caption {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .feature-list li {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        font-size: 0.95rem;
+      }
+
+      .feature-list .check {
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .pricing-card button {
+        width: 100%;
+      }
+
+      @media (max-width: 1200px) {
+        .panel-grid {
           grid-template-columns: 1fr;
         }
 
@@ -212,58 +516,220 @@
           height: 360px;
         }
       }
+
+      @media (max-width: 980px) {
+        body {
+          padding: 1rem;
+        }
+
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
-    <main>
-      <section>
-        <header>
-          <h1>Sales Flow AI · Chat</h1>
-          <p class="muted">Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.</p>
-        </header>
-
-        <div id="chatFeed" class="chat-feed"></div>
-
-        <form id="chatForm">
-          <label>
-            <textarea
-              id="messageInput"
-              placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?“"
-            ></textarea>
-          </label>
-
-          <label>
-            <input
-              id="leadInput"
-              type="text"
-              placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)"
-            />
-          </label>
-
-          <div class="actions">
-            <button type="submit" class="primary" id="sendButton">Senden</button>
-            <button type="button" class="secondary" id="analyzeButton">
-              Lead analysieren
-            </button>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="logo-area">
+          <div class="logo-dot"></div>
+          <div>
+            <p class="logo-title">Sales Flow AI</p>
+            <p class="logo-subtitle">Deal Operating System</p>
           </div>
-        </form>
-      </section>
-
-      <section class="sidebar">
-        <h2>Lead-Kontext</h2>
-        <p>
-          Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld
-          ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in
-          den Claude-Prompt.
-        </p>
-
-        <div class="status" id="statusBanner" data-type="idle">
-          Bereit für deine Fragen.
         </div>
 
-        <div class="lead-meta" id="leadMeta"></div>
-      </section>
-    </main>
+        <nav>
+          <div class="nav-group">
+            <p class="nav-label">App</p>
+            <button
+              type="button"
+              class="nav-link active"
+              data-view="chat"
+              onclick="showView('chat')"
+            >
+              💬 AI Chat
+            </button>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-label">Wissen</p>
+            <button type="button" class="nav-link" disabled>
+              📚 Playbooks
+            </button>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-label">Einstellungen</p>
+            <button
+              type="button"
+              class="nav-link"
+              data-view="pricing"
+              id="upgradeNavButton"
+              onclick="showView('pricing')"
+            >
+              <span>💳 Upgrade</span>
+              <span class="badge badge-pro" id="upgradeNavBadge">PRO</span>
+            </button>
+            <button type="button" class="nav-link" disabled>
+              ⚙️ Settings
+            </button>
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-card">
+            <div>
+              <p class="user-name" id="sidebarUserName">Sven Bauer</p>
+              <p class="user-role">Revenue Lead</p>
+            </div>
+            <span class="plan-chip" id="planBadge">FREE</span>
+          </div>
+          <button
+            class="primary upgrade-btn"
+            id="sidebarUpgradeButton"
+            type="button"
+            onclick="showView('pricing')"
+          >
+            Upgrade
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="view active" id="chat-view" data-view-id="chat">
+          <header class="view-header">
+            <div>
+              <p class="eyebrow">Lead Genius</p>
+              <h1>Sales Flow AI · Chat</h1>
+              <p class="muted">
+                Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.
+              </p>
+            </div>
+            <div class="success-pill" id="successPill" hidden>Upgrade erfolgreich ✨</div>
+          </header>
+
+          <div class="panel-grid">
+            <section class="panel">
+              <form id="chatForm">
+                <label>
+                  <textarea
+                    id="messageInput"
+                    placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?“"
+                  ></textarea>
+                </label>
+
+                <label>
+                  <input
+                    id="leadInput"
+                    type="text"
+                    placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)"
+                  />
+                </label>
+
+                <div class="actions">
+                  <button type="submit" class="primary" id="sendButton">Senden</button>
+                  <button type="button" class="secondary" id="analyzeButton">Lead analysieren</button>
+                </div>
+              </form>
+
+              <div id="chatFeed" class="chat-feed"></div>
+            </section>
+
+            <section class="panel info-panel">
+              <h2>Lead-Kontext</h2>
+              <p>
+                Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld
+                ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in
+                den Claude-Prompt.
+              </p>
+
+              <div class="status" id="statusBanner" data-type="idle">Bereit für deine Fragen.</div>
+
+              <div class="lead-meta" id="leadMeta"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="view" id="pricing-view" data-view-id="pricing">
+          <header class="view-header">
+            <div>
+              <p class="eyebrow">Upgrade</p>
+              <h1>Wähle deinen Plan</h1>
+              <p class="muted">Upgrade jederzeit, kündige jederzeit</p>
+            </div>
+          </header>
+
+          <div class="billing-toggle" role="group" aria-label="Abrechnungszeitraum">
+            <button
+              type="button"
+              class="toggle-option active"
+              data-billing-interval="month"
+            >
+              Monatlich
+            </button>
+            <button type="button" class="toggle-option" data-billing-interval="year">
+              Jährlich <span class="save-pill">20% sparen</span>
+            </button>
+          </div>
+
+          <div class="pricing-grid">
+            <article class="pricing-card" data-plan="starter">
+              <div class="card-heading">
+                <p class="plan-name">Starter</p>
+                <p class="plan-price" data-plan-price="starter">€79 / Monat</p>
+              </div>
+              <p class="plan-caption">Für Teams mit ersten Playbooks und kleinen Zielgruppen.</p>
+              <ul class="feature-list">
+                <li><span class="check">&#10003;</span>500 Leads</li>
+                <li><span class="check">&#10003;</span>500 KI-Anfragen/Monat</li>
+                <li><span class="check">&#10003;</span>1 Team-Mitglied</li>
+                <li><span class="check">&#10003;</span>Email Templates</li>
+                <li><span class="check">&#10003;</span>Lead Scanner</li>
+              </ul>
+              <button type="button" class="primary" data-plan-cta="starter">Jetzt starten</button>
+            </article>
+
+            <article class="pricing-card featured" data-plan="pro">
+              <div class="card-heading">
+                <div>
+                  <p class="plan-name">Professional</p>
+                  <span class="badge badge-popular">BELIEBT</span>
+                </div>
+                <p class="plan-price" data-plan-price="pro">€149 / Monat</p>
+              </div>
+              <p class="plan-caption">Skaliere Outbound und nutze Integrationen & Automatisierung.</p>
+              <ul class="feature-list">
+                <li><span class="check">&#10003;</span>Unlimited Leads</li>
+                <li><span class="check">&#10003;</span>2.000 KI-Anfragen/Monat</li>
+                <li><span class="check">&#10003;</span>5 Team-Mitglieder</li>
+                <li><span class="check">&#10003;</span>Email & WhatsApp Integration</li>
+                <li><span class="check">&#10003;</span>Automatische Sequences</li>
+                <li><span class="check">&#10003;</span>RapidAPI Lead Finder</li>
+              </ul>
+              <button type="button" class="primary" data-plan-cta="pro">Jetzt starten</button>
+            </article>
+
+            <article class="pricing-card" data-plan="enterprise">
+              <div class="card-heading">
+                <p class="plan-name">Enterprise</p>
+                <p class="plan-price" data-plan-price="enterprise">€279 / Monat</p>
+              </div>
+              <p class="plan-caption">Für Enablement-Teams, die SalesOps durchautomatisieren.</p>
+              <ul class="feature-list">
+                <li><span class="check">&#10003;</span>Unlimited Everything</li>
+                <li><span class="check">&#10003;</span>Unlimited KI-Anfragen</li>
+                <li><span class="check">&#10003;</span>20 Team-Mitglieder</li>
+                <li><span class="check">&#10003;</span>Webhooks & API Access</li>
+                <li><span class="check">&#10003;</span>White-Label Option</li>
+                <li><span class="check">&#10003;</span>Priority Support</li>
+              </ul>
+              <button type="button" class="primary" data-plan-cta="enterprise">Jetzt starten</button>
+            </article>
+          </div>
+        </div>
+      </main>
+    </div>
 
     <script>
       const chatFeed = document.getElementById("chatFeed");
@@ -275,6 +741,27 @@
       const analyzeButton = document.getElementById("analyzeButton");
       const sendButton = document.getElementById("sendButton");
 
+      const successPill = document.getElementById("successPill");
+      const planBadge = document.getElementById("planBadge");
+      const upgradeNavBadge = document.getElementById("upgradeNavBadge");
+      const sidebarUpgradeButton = document.getElementById("sidebarUpgradeButton");
+      const navButtons = document.querySelectorAll("[data-view]");
+      const views = document.querySelectorAll("[data-view-id]");
+      const billingButtons = document.querySelectorAll("[data-billing-interval]");
+      const planCTAButtons = document.querySelectorAll("[data-plan-cta]");
+
+      const planPrices = {
+        starter: 79,
+        pro: 149,
+        enterprise: 279,
+      };
+
+      const currentUser = {
+        id: "user_9321",
+        plan: "FREE",
+      };
+
+      let currentBillingInterval = "month";
       const conversation = [];
       let isSending = false;
 
@@ -292,6 +779,29 @@
           event.preventDefault();
           sendChat();
         }
+      });
+
+      navButtons.forEach((button) => {
+        const targetView = button.dataset.view;
+        if (!targetView) return;
+        button.addEventListener("click", () => showView(targetView));
+      });
+
+      billingButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const interval = button.dataset.billingInterval;
+          if (interval === currentBillingInterval) return;
+          currentBillingInterval = interval;
+          updateBillingToggle();
+          updatePricingPrices();
+        });
+      });
+
+      planCTAButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const plan = button.dataset.planCta;
+          startCheckout(plan, currentBillingInterval);
+        });
       });
 
       function appendBubble(role, text) {
@@ -434,6 +944,98 @@
         }
       }
 
+      function updatePlanUI() {
+        planBadge.textContent = currentUser.plan;
+        planBadge.dataset.plan = currentUser.plan.toLowerCase();
+        const isFree = currentUser.plan === "FREE";
+        upgradeNavBadge.hidden = !isFree;
+        sidebarUpgradeButton.hidden = !isFree;
+      }
+
+      function updateBillingToggle() {
+        billingButtons.forEach((button) => {
+          const isActive = button.dataset.billingInterval === currentBillingInterval;
+          button.classList.toggle("active", isActive);
+          button.setAttribute("aria-pressed", String(isActive));
+        });
+      }
+
+      function formatPrice(value) {
+        return new Intl.NumberFormat("de-DE").format(value);
+      }
+
+      function updatePricingPrices() {
+        const multiplier = currentBillingInterval === "month" ? 1 : 12 * 0.8;
+        const suffix = currentBillingInterval === "month" ? "/ Monat" : "/ Jahr";
+        document.querySelectorAll("[data-plan-price]").forEach((node) => {
+          const plan = node.dataset.planPrice;
+          const base = planPrices[plan];
+          const price = currentBillingInterval === "month"
+            ? base
+            : Math.round(base * multiplier);
+          node.textContent = `€${formatPrice(price)} ${suffix}`;
+        });
+      }
+
+      function handleCheckoutSuccessFlag() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("success") === "true") {
+          setStatus("Upgrade erfolgreich abgeschlossen.", "success");
+          successPill.hidden = false;
+          setTimeout(() => {
+            successPill.hidden = true;
+          }, 5000);
+          showView("chat");
+          params.delete("success");
+          const remaining = params.toString();
+          const newUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}`;
+          window.history.replaceState({}, "", newUrl);
+        }
+      }
+
+      function showView(view) {
+        views.forEach((panel) => {
+          const isMatch = panel.dataset.viewId === view;
+          panel.classList.toggle("active", isMatch);
+        });
+        navButtons.forEach((button) => {
+          const matches = button.dataset.view === view;
+          button.classList.toggle("active", matches);
+          button.setAttribute("aria-current", matches ? "page" : "false");
+        });
+      }
+
+      window.showView = showView;
+
+      async function startCheckout(plan, interval = "month") {
+        try {
+          const response = await fetch("/.netlify/functions/stripe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "create-checkout",
+              plan,
+              interval,
+              userId: currentUser.id,
+            }),
+          });
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            setStatus("Checkout konnte nicht gestartet werden.", "error");
+          }
+        } catch (error) {
+          console.error(error);
+          setStatus("Checkout ist aktuell nicht erreichbar.", "error");
+        }
+      }
+
+      updatePlanUI();
+      updateBillingToggle();
+      updatePricingPrices();
+      showView("chat");
+      handleCheckoutSuccessFlag();
       messageInput.focus();
     </script>
   </body>
