@@ -258,7 +258,7 @@ const dispatchToEngine = async ({ engine, systemPrompt, history, userPrompt }) =
   return { reply: await callClaude({ systemPrompt, history, userPrompt }), engineUsed: "claude" };
 };
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
   }
