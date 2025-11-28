@@ -4,6 +4,7 @@ Pydantic-Schemas für das Sales Flow AI Backend.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -81,6 +82,25 @@ class LeadListItem(BaseModel):
     last_contact: Optional[str] = None
 
 
+class DailyCommandItem(BaseModel):
+    """Lead-Eintrag für das Daily Sales Command."""
+
+    id: str | int
+    name: Optional[str] = None
+    company: Optional[str] = None
+    status: Optional[str] = None
+    next_action: Optional[str] = None
+    next_action_at: Optional[datetime] = None
+    deal_value: Optional[float] = None
+    needs_action: bool = False
+
+
+class DailyCommandResponse(BaseModel):
+    """Antwortformat für das Daily Sales Command."""
+
+    items: List[DailyCommandItem] = Field(default_factory=list)
+
+
 class NeedsActionResponse(BaseModel):
     """Antwortformat für Leads mit needs_action = true."""
 
@@ -97,5 +117,7 @@ __all__ = [
     "ActionResponse",
     "ImportSummary",
     "LeadListItem",
+    "DailyCommandItem",
+    "DailyCommandResponse",
     "NeedsActionResponse",
 ]
