@@ -1,4 +1,6 @@
-const { createClient } = require("@supabase/supabase-js");
+const { getSupabase } = require("./supabaseClient");
+
+// KI-Cloud-Bridge: enriches every AI response with Supabase lead context.
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -6,16 +8,32 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const JSON_HEADERS = {
+  ...CORS_HEADERS,
+  "Content-Type": "application/json",
+};
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL =
   process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
-const supabase =
-  SUPABASE_URL && SUPABASE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_KEY)
-    : null;
+
+const BASE_PROMPT = [
+  "Du bist Sales Flow AI, ein Revenue-Coach.",
+  "Antworte strukturiert, fokussiert auf nächste Schritte, Taktiken und klare Handlungsempfehlungen.",
+  "Nutze vorhandenen Lead-Kontext, um Follow-ups zu personalisieren und konkrete Empfehlungen abzuleiten.",
+  "Falls kein Kontext vorliegt, erkläre knapp welche Infos fehlen.",
+].join("\n");
+
+const LEAD_COLUMNS = [
+  "id",
+  "name",
+  "status",
+  "branche",
+  "disg_type",
+  "deal_value",
+  "last_contact_at",
+  "tags",
+];
 
 const getFetch = (() => {
   let cached = null;
@@ -31,81 +49,114 @@ const getFetch = (() => {
   };
 })();
 
-const sanitizeLeadReference = (lead) => {
-  if (!lead || typeof lead !== "object") return null;
-  const reference = {};
+function createLeadLoadError(message, statusCode = 502) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
 
-  if (lead.id && String(lead.id).trim()) {
-    reference.id = String(lead.id).trim();
-  }
-  if (lead.name && String(lead.name).trim()) {
-    reference.name = String(lead.name).trim();
-  }
-
-  if (!reference.id && !reference.name) {
-    return null;
-  }
-  return reference;
-};
-
-const fetchLeadContext = async (leadReference) => {
-  if (!supabase || !leadReference) return null;
-
-  let query = supabase
+function baseLeadQuery(client, userId) {
+  let query = client
     .from("leads")
-    .select("id,name,status,disg,notes,last_contact", { head: false })
+    .select(LEAD_COLUMNS.join(","), { head: false })
     .limit(1);
 
-  if (leadReference.id) {
-    query = query.eq("id", leadReference.id);
-  } else if (leadReference.name) {
-    query = query.ilike("name", `%${leadReference.name}%`);
+  if (userId) {
+    query = query.eq("user_id", userId);
   }
 
+  return query;
+}
+
+async function executeLeadQuery(query) {
   const { data, error } = await query.maybeSingle();
 
   if (error) {
     console.error("Supabase error:", error);
-    throw new Error("Konnte Lead-Daten nicht abrufen.");
+    throw createLeadLoadError("Konnte Lead-Daten nicht abrufen.");
   }
 
-  if (!data) return null;
+  return data;
+}
+
+/**
+ * KI-Cloud-Bridge helper: loads the relevant lead from Supabase once per request.
+ */
+async function loadLeadContext(userId, leadIdOrName) {
+  if (!leadIdOrName) return null;
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw createLeadLoadError(
+      "Supabase ist nicht konfiguriert. Bitte SUPABASE_URL und Key setzen."
+    );
+  }
+
+  const lookupValue = String(leadIdOrName).trim();
+  const scopedUserId = userId ? String(userId).trim() : null;
+
+  if (!lookupValue) return null;
+
+  const byIdQuery = baseLeadQuery(supabase, scopedUserId).eq(
+    "id",
+    lookupValue
+  );
+
+  let data = await executeLeadQuery(byIdQuery);
+
+  if (!data) {
+    const nameSearch = lookupValue.includes("%")
+      ? lookupValue
+      : `%${lookupValue}%`;
+    const byNameQuery = baseLeadQuery(supabase, scopedUserId).ilike(
+      "name",
+      nameSearch
+    );
+    data = await executeLeadQuery(byNameQuery);
+  }
+
+  if (!data) {
+    return null;
+  }
 
   return {
     id: data.id,
     name: data.name,
-    status: data.status || "unbekannt",
-    disg: data.disg || null,
-    notes: data.notes || "",
-    last_contact: data.last_contact || null,
+    status: data.status || null,
+    branche: data.branche || null,
+    disg_type: data.disg_type || null,
+    deal_value: data.deal_value || null,
+    last_contact_at: data.last_contact_at || null,
+    tags: Array.isArray(data.tags)
+      ? data.tags.filter(Boolean)
+      : data.tags
+      ? [data.tags]
+      : [],
   };
-};
+}
 
-const buildSystemPrompt = (leadContext, missingLead) => {
-  const sections = [
-    "Du bist Sales Flow AI, ein Revenue-Coach. Antworte strukturiert, fokussiert auf nächste Schritte, knappe Taktiken und klare Handlungsempfehlungen.",
-  ];
-
-  if (leadContext) {
-    sections.push(
-      [
-        "Du hast die Lead-Datenbank abgerufen. Erstelle eine Strategie für diesen Lead basierend auf seinen Daten.",
-        "Lead-Kontext (JSON):",
-        JSON.stringify(leadContext, null, 2),
-      ].join("\n")
-    );
-  } else if (missingLead) {
-    sections.push(
-      "Du konntest keinen passenden Lead im CRM finden. Bitte den User konkret nach Name oder ID und erkläre, welche Formate unterstützt werden (z. B. @Name oder #lead:123)."
-    );
-  } else {
-    sections.push(
-      "Es wurde kein Lead-Kontext angefordert. Antworte allgemein, doch erinnere den User daran, dass er mit @Name oder #lead:ID gezielt Leads analysieren kann."
-    );
+function buildLeadSnippet(leadContext) {
+  if (!leadContext) {
+    return "\nAKTUELLER LEAD: unbekannt (kein Kontext gefunden)\n";
   }
 
-  return sections.join("\n\n");
-};
+  const tagList = leadContext.tags?.length
+    ? leadContext.tags.join(", ")
+    : "-";
+
+  return `\nAKTUELLER LEAD:\nName: ${leadContext.name || "-"}\nStatus: ${
+    leadContext.status || "-"
+  }\nBranche: ${leadContext.branche || "-"}\nDISG: ${
+    leadContext.disg_type || "-"
+  }\nDeal-Wert: ${leadContext.deal_value || "-"}\nLetzter Kontakt: ${
+    leadContext.last_contact_at || "-"
+  }\nTags: ${tagList}\n`;
+}
+
+function buildSystemPrompt(leadContext) {
+  const leadSnippet = buildLeadSnippet(leadContext);
+  return `${BASE_PROMPT}${leadSnippet}`;
+}
 
 const buildClaudeMessages = (history = [], currentMessage = "") => {
   const safeHistory = Array.isArray(history) ? history : [];
@@ -177,53 +228,46 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: CORS_HEADERS,
+      headers: JSON_HEADERS,
       body: JSON.stringify({ error: "Nur POST wird unterstützt." }),
     };
   }
 
   try {
-    const body = JSON.parse(event.body || "{}");
-    const action = body.action || "chat";
-    const message = (body.message || "").trim();
-    const history = body.history || [];
-    const leadReference = sanitizeLeadReference(body.lead);
+    let body;
+    try {
+      body = JSON.parse(event.body || "{}");
+    } catch (parseErr) {
+      return {
+        statusCode: 400,
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ error: "Ungültiger JSON-Body." }),
+      };
+    }
+
+    const message = typeof body.message === "string" ? body.message.trim() : "";
+    const history = Array.isArray(body.history) ? body.history : [];
+    const leadId = typeof body.leadId === "string" ? body.leadId.trim() : "";
+    const leadName =
+      typeof body.leadName === "string" ? body.leadName.trim() : "";
+    const userId = typeof body.userId === "string" ? body.userId.trim() : "";
 
     if (!message) {
       return {
         statusCode: 400,
-        headers: CORS_HEADERS,
+        headers: JSON_HEADERS,
         body: JSON.stringify({ error: "Die Nachricht darf nicht leer sein." }),
       };
     }
 
-    if (action === "analyze_lead_context" && !leadReference) {
-      return {
-        statusCode: 400,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({
-          error: "Für analyze_lead_context benötigst du eine Lead-ID oder einen Namen.",
-        }),
-      };
-    }
-
+    const leadLookup = leadId || leadName;
     let leadContext = null;
-    const shouldLoadLead = Boolean(leadReference);
 
-    if (shouldLoadLead && !supabase) {
-      throw new Error(
-        "Supabase ist nicht konfiguriert. Bitte SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY setzen."
-      );
+    if (leadLookup) {
+      leadContext = await loadLeadContext(userId, leadLookup);
     }
 
-    if (shouldLoadLead) {
-      leadContext = await fetchLeadContext(leadReference);
-    }
-
-    const systemPrompt = buildSystemPrompt(
-      leadContext,
-      action === "analyze_lead_context" && !leadContext
-    );
+    const systemPrompt = buildSystemPrompt(leadContext);
 
     const reply = await callClaude({
       systemPrompt,
@@ -233,7 +277,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: CORS_HEADERS,
+      headers: JSON_HEADERS,
       body: JSON.stringify({
         reply,
         leadContext,
@@ -241,10 +285,14 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error("AI function error:", error);
+    const statusCode = error.statusCode || 500;
     return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: error.message || "Interner Serverfehler." }),
+      statusCode,
+      headers: JSON_HEADERS,
+      body: JSON.stringify({
+        error: "AI bridge error",
+        details: error.message || "Interner Serverfehler.",
+      }),
     };
   }
 };
