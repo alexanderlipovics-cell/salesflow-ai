@@ -4,10 +4,9 @@ OpenAI Client Wrapper für das Sales Flow AI Backend.
 
 from __future__ import annotations
 
-from typing import List
+from typing import Any, List
 
 from openai import OpenAI
-from openai.types import Response
 
 from .schemas import ChatMessage
 
@@ -58,7 +57,7 @@ class AIClient:
         return payload
 
     @staticmethod
-    def _extract_text(response: Response) -> str:
+    def _extract_text(response: Any) -> str:
         chunks: List[str] = []
         for item in getattr(response, "output", []):
             for content in getattr(item, "content", []):
