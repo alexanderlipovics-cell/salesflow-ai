@@ -3,27 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SalesFlow AI · Abos & Checkout</title>
-    <meta
-      name="description"
-      content="SalesFlow AI Pricing, Checkout und Subscription Management."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body class="bg-gray-950 text-gray-100">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
     <meta name="salesflow-api-base" content="" />
     <title>Sales Flow AI · Lead Chat</title>
+    <meta name="description" content="SalesFlow AI Pricing, Checkout und Subscription Management." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
       :root {
         color-scheme: light dark;
@@ -353,7 +338,6 @@
         font-weight: 600;
       }
 
-
       button {
         border: none;
         border-radius: 12px;
@@ -426,10 +410,6 @@
         margin-top: 0.5rem;
       }
 
-      .muted {
-        color: var(--muted);
-      }
-
       .chip {
         padding: 0.4rem 0.75rem;
         border-radius: 999px;
@@ -441,6 +421,7 @@
       .info-panel p {
         line-height: 1.5;
       }
+
       .import-panel {
         margin-top: 1.5rem;
         padding: 1rem;
@@ -513,11 +494,6 @@
         color: var(--muted);
         font-size: 0.8rem;
       }
-
-      @media (max-width: 980px) {
-        body {
-          padding: 1rem;
-        }
 
       .view-header {
         display: flex;
@@ -594,11 +570,7 @@
 
       .pricing-card.featured {
         border: 1px solid transparent;
-        background: linear-gradient(
-            135deg,
-            rgba(168, 85, 247, 0.2),
-            rgba(59, 130, 246, 0.2)
-          ) padding-box,
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(59, 130, 246, 0.2)) padding-box,
           linear-gradient(135deg, rgba(168, 85, 247, 0.6), rgba(59, 130, 246, 0.6)) border-box;
         box-shadow: 0 25px 55px rgba(59, 130, 246, 0.35);
       }
@@ -687,100 +659,23 @@
         <nav>
           <div class="nav-group">
             <p class="nav-label">App</p>
-            <button
-              type="button"
-              class="nav-link active"
-              data-view="chat"
-              onclick="showView('chat')"
-            >
-              💬 AI Chat
-    <main>
-      <section>
-        <header>
-          <h1>Sales Flow AI · Chat</h1>
-          <p class="muted">Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.</p>
-        </header>
-
-        <div id="chatFeed" class="chat-feed"></div>
-
-        <form id="chatForm">
-          <label>
-            <textarea
-              id="messageInput"
-              placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?“"
-            ></textarea>
-          </label>
-
-          <label>
-            <input
-              id="leadInput"
-              type="text"
-              placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)"
-            />
-          </label>
-
-          <div class="form-row">
-            <label class="stacked">
-              <span>Modus / Intent</span>
-              <select id="moduleSelect">
-                <option value="general_sales">Sales Flow · Auto</option>
-                <option value="einwand_killer">Einwand-Killer</option>
-                <option value="speed_hunter_loop">Follow-Up Engine</option>
-                <option value="deal_medic">Deal-Medic Analyse</option>
-                <option value="screenshot_reactivator">Screenshot-Scanner</option>
-                <option value="opportunity_radar">Opportunity Radar</option>
-                <option value="portfolio_scanner">Portfolio Scanner</option>
-                <option value="client_intake_generator">Client Intake Generator</option>
-                <option value="nexus_multi_ki">Nexus Multi-KI</option>
-              </select>
-            </label>
-
-            <label class="stacked">
-              <span>Engine</span>
-              <select id="engineSelect">
-                <option value="claude">Claude (Strategisch)</option>
-                <option value="gpt">GPT (Kreativ)</option>
-                <option value="gemini">Gemini (Analytisch)</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="quick-modes">
-            <span>Shortcuts:</span>
-            <button type="button" data-module="einwand_killer">Einwand-Killer</button>
-            <button type="button" data-module="speed_hunter_loop">Follow-Up Engine</button>
-            <button type="button" data-module="screenshot_reactivator">Screenshot-Scanner</button>
-          </div>
-
-          <div class="actions">
-            <button type="submit" class="primary" id="sendButton">Senden</button>
-            <button type="button" class="secondary" id="analyzeButton">
-              Lead analysieren
+            <button type="button" class="nav-link active" data-view="chat">
+              Sales Flow AI · Chat
             </button>
           </div>
 
           <div class="nav-group">
             <p class="nav-label">Wissen</p>
-            <button type="button" class="nav-link" disabled>
-              📚 Playbooks
-            </button>
+            <button type="button" class="nav-link" disabled>📚 Playbooks</button>
           </div>
 
           <div class="nav-group">
             <p class="nav-label">Einstellungen</p>
-            <button
-              type="button"
-              class="nav-link"
-              data-view="pricing"
-              id="upgradeNavButton"
-              onclick="showView('pricing')"
-            >
+            <button type="button" class="nav-link" data-view="pricing" id="upgradeNavButton">
               <span>💳 Upgrade</span>
               <span class="badge badge-pro" id="upgradeNavBadge">PRO</span>
             </button>
-            <button type="button" class="nav-link" disabled>
-              ⚙️ Settings
-            </button>
+            <button type="button" class="nav-link" disabled>⚙️ Settings</button>
           </div>
         </nav>
 
@@ -792,14 +687,7 @@
             </div>
             <span class="plan-chip" id="planBadge">FREE</span>
           </div>
-          <button
-            class="primary upgrade-btn"
-            id="sidebarUpgradeButton"
-            type="button"
-            onclick="showView('pricing')"
-          >
-            Upgrade
-          </button>
+          <button class="primary upgrade-btn" id="sidebarUpgradeButton" type="button">Upgrade</button>
         </div>
       </aside>
 
@@ -809,9 +697,7 @@
             <div>
               <p class="eyebrow">Lead Genius</p>
               <h1>Sales Flow AI · Chat</h1>
-              <p class="muted">
-                Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.
-              </p>
+              <p class="muted">Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.</p>
             </div>
             <div class="success-pill" id="successPill" hidden>Upgrade erfolgreich ✨</div>
           </header>
@@ -820,19 +706,41 @@
             <section class="panel">
               <form id="chatForm">
                 <label>
-                  <textarea
-                    id="messageInput"
-                    placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?“"
-                  ></textarea>
+                  <textarea id="messageInput" placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?""></textarea>
                 </label>
 
                 <label>
-                  <input
-                    id="leadInput"
-                    type="text"
-                    placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)"
-                  />
+                  <input id="leadInput" type="text" placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)" />
                 </label>
+
+                <div class="form-row">
+                  <label class="stacked">
+                    <span>Modus / Intent</span>
+                    <select id="moduleSelect">
+                      <option value="general_sales">Sales Flow · Auto</option>
+                      <option value="einwand_killer">Einwand-Killer</option>
+                      <option value="speed_hunter_loop">Follow-Up Engine</option>
+                      <option value="deal_medic">Deal-Medic Analyse</option>
+                      <option value="screenshot_reactivator">Screenshot-Scanner</option>
+                    </select>
+                  </label>
+
+                  <label class="stacked">
+                    <span>Engine</span>
+                    <select id="engineSelect">
+                      <option value="claude">Claude (Strategisch)</option>
+                      <option value="gpt">GPT (Kreativ)</option>
+                      <option value="gemini">Gemini (Analytisch)</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="quick-modes">
+                  <span>Shortcuts:</span>
+                  <button type="button" data-module="einwand_killer">Einwand-Killer</button>
+                  <button type="button" data-module="speed_hunter_loop">Follow-Up Engine</button>
+                  <button type="button" data-module="screenshot_reactivator">Screenshot-Scanner</button>
+                </div>
 
                 <div class="actions">
                   <button type="submit" class="primary" id="sendButton">Senden</button>
@@ -845,15 +753,30 @@
 
             <section class="panel info-panel">
               <h2>Lead-Kontext</h2>
-              <p>
-                Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld
-                ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in
-                den Claude-Prompt.
-              </p>
+              <p>Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in den Claude-Prompt.</p>
 
               <div class="status" id="statusBanner" data-type="idle">Bereit für deine Fragen.</div>
 
               <div class="lead-meta" id="leadMeta"></div>
+
+              <div class="import-panel">
+                <h3>Bestandskunden importieren</h3>
+                <p class="muted">Lade eine CSV-Datei hoch oder füge die Inhalte unten ein. Die AI erkennt Status, letzten Kontakt und schlägt direkt die nächste Aktion vor.</p>
+                <form id="importForm" class="import-form">
+                  <label>
+                    <span>Datei (CSV)</span>
+                    <input id="importFile" type="file" accept=".csv,text/csv" />
+                  </label>
+                  <textarea id="importTextarea" placeholder="Oder füge hier CSV-Daten ein (name,email,status,notes …)"></textarea>
+                  <div class="import-actions">
+                    <button type="submit" class="primary" id="importSubmit">Import starten</button>
+                    <button type="button" class="secondary" id="importClear">Felder leeren</button>
+                  </div>
+                </form>
+                <div class="status" id="importSummary" data-type="idle">Noch kein Import durchgeführt.</div>
+                <button type="button" class="link-button" id="filterNeedsAction">Kontakte ohne Status anzeigen</button>
+                <ul class="needs-action-list" id="needsActionList"></ul>
+              </div>
             </section>
           </div>
         </div>
@@ -868,16 +791,8 @@
           </header>
 
           <div class="billing-toggle" role="group" aria-label="Abrechnungszeitraum">
-            <button
-              type="button"
-              class="toggle-option active"
-              data-billing-interval="month"
-            >
-              Monatlich
-            </button>
-            <button type="button" class="toggle-option" data-billing-interval="year">
-              Jährlich <span class="save-pill">20% sparen</span>
-            </button>
+            <button type="button" class="toggle-option active" data-billing-interval="month">Monatlich</button>
+            <button type="button" class="toggle-option" data-billing-interval="year">Jährlich <span class="save-pill">20% sparen</span></button>
           </div>
 
           <div class="pricing-grid">
@@ -937,38 +852,6 @@
         </div>
       </main>
     </div>
-        <div class="lead-meta" id="leadMeta"></div>
-
-        <div class="import-panel">
-          <h3>Bestandskunden importieren</h3>
-          <p class="muted">
-            Lade eine CSV-Datei hoch oder füge die Inhalte unten ein. Die AI erkennt Status,
-            letzten Kontakt und schlägt direkt die nächste Aktion vor.
-          </p>
-          <form id="importForm" class="import-form">
-            <label>
-              <span>Datei (CSV)</span>
-              <input id="importFile" type="file" accept=".csv,text/csv" />
-            </label>
-            <textarea
-              id="importTextarea"
-              placeholder="Oder füge hier CSV-Daten ein (name,email,status,notes …)"
-            ></textarea>
-            <div class="import-actions">
-              <button type="submit" class="primary" id="importSubmit">Import starten</button>
-              <button type="button" class="secondary" id="importClear">Felder leeren</button>
-            </div>
-          </form>
-          <div class="status" id="importSummary" data-type="idle">
-            Noch kein Import durchgeführt.
-          </div>
-          <button type="button" class="link-button" id="filterNeedsAction">
-            Kontakte ohne Status anzeigen
-          </button>
-          <ul class="needs-action-list" id="needsActionList"></ul>
-        </div>
-      </section>
-    </main>
 
     <script>
       const chatFeed = document.getElementById("chatFeed");
@@ -989,13 +872,6 @@
       const importClearButton = document.getElementById("importClear");
       const needsActionButton = document.getElementById("filterNeedsAction");
       const needsActionList = document.getElementById("needsActionList");
-
-      const apiBaseMeta = document.querySelector('meta[name="salesflow-api-base"]');
-      const API_BASE_URL = apiBaseMeta?.content?.trim().replace(/\/$/, "") || "";
-      const IMPORT_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/import/leads` : "/import/leads";
-      const NEEDS_ACTION_ENDPOINT = API_BASE_URL
-        ? `${API_BASE_URL}/leads/needs-action`
-        : "/leads/needs-action";
       const quickModeButtons = document.querySelectorAll("[data-module]");
 
       const successPill = document.getElementById("successPill");
@@ -1007,68 +883,29 @@
       const billingButtons = document.querySelectorAll("[data-billing-interval]");
       const planCTAButtons = document.querySelectorAll("[data-plan-cta]");
 
-      const planPrices = {
-        starter: 79,
-        pro: 149,
-        enterprise: 279,
-      };
+      const apiBaseMeta = document.querySelector('meta[name="salesflow-api-base"]');
+      const API_BASE_URL = apiBaseMeta?.content?.trim().replace(/\/$/, "") || "";
+      const IMPORT_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/import/leads` : "/import/leads";
+      const NEEDS_ACTION_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/leads/needs-action` : "/leads/needs-action";
 
-      const currentUser = {
-        id: "user_9321",
-        plan: "FREE",
-      };
+      const planPrices = { starter: 79, pro: 149, enterprise: 279 };
+      const currentUser = { id: "user_9321", plan: "FREE" };
 
       let currentBillingInterval = "month";
       const conversation = [];
       let isSending = false;
       let isImporting = false;
 
-      chatForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        sendChat();
-      });
-
-      analyzeButton.addEventListener("click", () => {
-        sendChat({ action: "analyze_lead_context", module: "deal_medic" });
-      });
-
-      messageInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-          event.preventDefault();
-          sendChat();
-        }
-      });
-
-      navButtons.forEach((button) => {
-        const targetView = button.dataset.view;
-        if (!targetView) return;
-        button.addEventListener("click", () => showView(targetView));
-      });
-
-      billingButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const interval = button.dataset.billingInterval;
-          if (interval === currentBillingInterval) return;
-          currentBillingInterval = interval;
-          updateBillingToggle();
-          updatePricingPrices();
+      function showView(view) {
+        views.forEach((panel) => {
+          panel.classList.toggle("active", panel.dataset.viewId === view);
         });
-      });
-
-      planCTAButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const plan = button.dataset.planCta;
-          startCheckout(plan, currentBillingInterval);
-      importForm?.addEventListener("submit", handleImportSubmit);
-      importClearButton?.addEventListener("click", resetImportForm);
-      needsActionButton?.addEventListener("click", fetchNeedsActionLeads);
-      quickModeButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const mode = button.dataset.module;
-          moduleSelect.value = mode;
-          setStatus(`Modus gesetzt: ${button.textContent}`, "success");
+        navButtons.forEach((button) => {
+          const matches = button.dataset.view === view;
+          button.classList.toggle("active", matches);
+          button.setAttribute("aria-current", matches ? "page" : "false");
         });
-      });
+      }
 
       function appendBubble(role, text) {
         const bubble = document.createElement("div");
@@ -1076,20 +913,6 @@
         bubble.textContent = text.trim();
         chatFeed.appendChild(bubble);
         chatFeed.scrollTop = chatFeed.scrollHeight;
-      }
-
-      function updateLeadMeta(reference) {
-        leadMeta.innerHTML = "";
-        if (!reference) {
-          return;
-        }
-
-        const label = document.createElement("div");
-        label.className = "chip";
-        label.textContent = reference.id
-          ? `Lead-ID · ${reference.id}`
-          : `Lead · ${reference.name}`;
-        leadMeta.appendChild(label);
       }
 
       function setStatus(message, type = "idle") {
@@ -1103,52 +926,45 @@
         analyzeButton.disabled = state;
       }
 
+      function updateLeadMeta(reference) {
+        leadMeta.innerHTML = "";
+        if (!reference) return;
+        const label = document.createElement("div");
+        label.className = "chip";
+        label.textContent = reference.id ? `Lead-ID · ${reference.id}` : `Lead · ${reference.name}`;
+        leadMeta.appendChild(label);
+      }
+
       function normalizeLeadValue(value) {
         if (!value) return null;
         const trimmed = value.trim();
         if (!trimmed) return null;
-        if (/^\d+$/.test(trimmed)) {
-          return { id: trimmed };
-        }
+        if (/^\d+$/.test(trimmed)) return { id: trimmed };
         return { name: trimmed };
       }
 
       function parseLeadIds(value) {
         if (!value) return [];
-        return value
-          .split(/[,;\n]+/)
-          .map((token) => token.trim())
-          .filter((token) => token && /^[a-zA-Z0-9_-]+$/.test(token));
+        return value.split(/[,;\n]+/).map((t) => t.trim()).filter((t) => t && /^[a-zA-Z0-9_-]+$/.test(t));
       }
 
       function detectLeadReference(message, manualValue) {
         const manual = normalizeLeadValue(manualValue);
         if (manual) return manual;
-
         if (!message) return null;
         const bracketMatch = message.match(/\[lead:(.+?)\]/i);
-        if (bracketMatch) {
-          return normalizeLeadValue(bracketMatch[1]);
-        }
-
+        if (bracketMatch) return normalizeLeadValue(bracketMatch[1]);
         const hashMatch = message.match(/#lead[:\s-]*([a-z0-9 _-]{2,50})/i);
-        if (hashMatch) {
-          return normalizeLeadValue(hashMatch[1]);
-        }
-
+        if (hashMatch) return normalizeLeadValue(hashMatch[1]);
         const mentionMatch = message.match(/@([a-z][\w\s'-]{1,50})/i);
-        if (mentionMatch) {
-          return normalizeLeadValue(mentionMatch[1]);
-        }
+        if (mentionMatch) return normalizeLeadValue(mentionMatch[1]);
         return null;
       }
 
       async function sendChat(options = {}) {
         if (isSending) return;
-
         const action = options.action || "chat";
         const moduleOverride = options.module;
-        const engineOverride = options.engine;
         const rawMessage = messageInput.value.trim();
         let message = rawMessage;
 
@@ -1156,16 +972,13 @@
           setStatus("Bitte gib zuerst eine Nachricht ein.", "error");
           return;
         }
-
         if (!message && action === "analyze_lead_context") {
           message = "Bitte analysiere diesen Lead für mich.";
         }
 
         const leadReference = detectLeadReference(rawMessage, leadInput.value);
         const leadIdsSet = new Set(parseLeadIds(leadInput.value));
-        if (leadReference?.id) {
-          leadIdsSet.add(leadReference.id);
-        }
+        if (leadReference?.id) leadIdsSet.add(leadReference.id);
         const leadIdsArray = Array.from(leadIdsSet);
 
         if (action === "analyze_lead_context" && !leadReference && !leadIdsArray.length) {
@@ -1173,25 +986,20 @@
           return;
         }
 
-        if (moduleOverride && moduleSelect) {
-          moduleSelect.value = moduleOverride;
-        }
+        if (moduleOverride && moduleSelect) moduleSelect.value = moduleOverride;
 
         const historyForApi = conversation.map((entry) => ({ ...entry }));
         conversation.push({ role: "user", content: message });
         appendBubble("user", message);
-        const metaReference =
-          leadReference || (leadIdsArray[0] ? { id: leadIdsArray[0] } : null);
+        const metaReference = leadReference || (leadIdsArray[0] ? { id: leadIdsArray[0] } : null);
         updateLeadMeta(metaReference);
         messageInput.value = "";
 
         try {
           setLoading(true);
           setStatus("Cloud-Bridge aktiviert …", "success");
-          const effectiveModule =
-            moduleOverride || moduleSelect.value || "general_sales";
-          const effectiveEngine =
-            engineOverride || engineSelect.value || "claude";
+          const effectiveModule = moduleOverride || moduleSelect.value || "general_sales";
+          const effectiveEngine = engineSelect.value || "claude";
 
           const payload = {
             action,
@@ -1212,9 +1020,7 @@
 
           const response = await fetch("/.netlify/functions/ai", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
 
@@ -1236,15 +1042,11 @@
         } catch (error) {
           console.error(error);
           setStatus(error.message || "Die AI-Bridge ist gerade nicht erreichbar.", "error");
-          if (conversation.at(-1)?.role === "user") {
-            conversation.pop();
-          }
+          if (conversation.at(-1)?.role === "user") conversation.pop();
           messageInput.value = rawMessage;
         } finally {
           setLoading(false);
-          if (!isSending && statusBanner.dataset.type === "idle") {
-            setStatus("Bereit für deine Fragen.");
-          }
+          if (!isSending && statusBanner.dataset.type === "idle") setStatus("Bereit für deine Fragen.");
           messageInput.focus();
         }
       }
@@ -1275,9 +1077,7 @@
         document.querySelectorAll("[data-plan-price]").forEach((node) => {
           const plan = node.dataset.planPrice;
           const base = planPrices[plan];
-          const price = currentBillingInterval === "month"
-            ? base
-            : Math.round(base * multiplier);
+          const price = currentBillingInterval === "month" ? base : Math.round(base * multiplier);
           node.textContent = `€${formatPrice(price)} ${suffix}`;
         });
       }
@@ -1287,9 +1087,7 @@
         if (params.get("success") === "true") {
           setStatus("Upgrade erfolgreich abgeschlossen.", "success");
           successPill.hidden = false;
-          setTimeout(() => {
-            successPill.hidden = true;
-          }, 5000);
+          setTimeout(() => { successPill.hidden = true; }, 5000);
           showView("chat");
           params.delete("success");
           const remaining = params.toString();
@@ -1298,31 +1096,12 @@
         }
       }
 
-      function showView(view) {
-        views.forEach((panel) => {
-          const isMatch = panel.dataset.viewId === view;
-          panel.classList.toggle("active", isMatch);
-        });
-        navButtons.forEach((button) => {
-          const matches = button.dataset.view === view;
-          button.classList.toggle("active", matches);
-          button.setAttribute("aria-current", matches ? "page" : "false");
-        });
-      }
-
-      window.showView = showView;
-
       async function startCheckout(plan, interval = "month") {
         try {
           const response = await fetch("/.netlify/functions/stripe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "create-checkout",
-              plan,
-              interval,
-              userId: currentUser.id,
-            }),
+            body: JSON.stringify({ action: "create-checkout", plan, interval, userId: currentUser.id }),
           });
           const data = await response.json();
           if (data.url) {
@@ -1336,15 +1115,9 @@
         }
       }
 
-      updatePlanUI();
-      updateBillingToggle();
-      updatePricingPrices();
-      showView("chat");
-      handleCheckoutSuccessFlag();
       async function handleImportSubmit(event) {
         event.preventDefault();
         if (isImporting) return;
-
         const filePayload = await readCsvFromFile();
         const textareaPayload = (importTextarea?.value || "").trim();
         const csvPayload = filePayload || textareaPayload;
@@ -1360,9 +1133,7 @@
           setImportStatus("Import läuft …", "success");
           const response = await fetch(IMPORT_ENDPOINT, {
             method: "POST",
-            headers: {
-              "Content-Type": "text/csv",
-            },
+            headers: { "Content-Type": "text/csv" },
             body: csvPayload,
           });
 
@@ -1375,10 +1146,7 @@
           const total = data.total ?? 0;
           const withStatus = data.with_ai_status ?? 0;
           const withoutStatus = data.without_status ?? 0;
-          setImportStatus(
-            `Import abgeschlossen: ${total} Kontakte (${withStatus} erkannt, ${withoutStatus} offen).`,
-            "success"
-          );
+          setImportStatus(`Import abgeschlossen: ${total} Kontakte (${withStatus} erkannt, ${withoutStatus} offen).`, "success");
           fetchNeedsActionLeads();
         } catch (error) {
           console.error(error);
@@ -1390,9 +1158,7 @@
       }
 
       async function readCsvFromFile() {
-        if (!importFileInput || !importFileInput.files?.length) {
-          return "";
-        }
+        if (!importFileInput || !importFileInput.files?.length) return "";
         try {
           return await importFileInput.files[0].text();
         } catch (error) {
@@ -1408,32 +1174,21 @@
       }
 
       function setImportLoading(state) {
-        if (importSubmit) {
-          importSubmit.disabled = state;
-        }
+        if (importSubmit) importSubmit.disabled = state;
       }
 
       function resetImportForm() {
-        if (importFileInput) {
-          importFileInput.value = "";
-        }
-        if (importTextarea) {
-          importTextarea.value = "";
-        }
+        if (importFileInput) importFileInput.value = "";
+        if (importTextarea) importTextarea.value = "";
         setImportStatus("Formular zurückgesetzt. Optional neue CSV wählen.", "idle");
       }
 
       async function fetchNeedsActionLeads() {
-        if (!needsActionList) {
-          return;
-        }
-        needsActionList.innerHTML =
-          '<li class="needs-action-meta">Lade Kontakte ohne Status …</li>';
+        if (!needsActionList) return;
+        needsActionList.innerHTML = '<li class="needs-action-meta">Lade Kontakte ohne Status …</li>';
         try {
           const response = await fetch(NEEDS_ACTION_ENDPOINT);
-          if (!response.ok) {
-            throw new Error("Leads konnten nicht geladen werden.");
-          }
+          if (!response.ok) throw new Error("Leads konnten nicht geladen werden.");
           const payload = await response.json();
           renderNeedsActionList(payload.leads || []);
         } catch (error) {
@@ -1449,7 +1204,6 @@
       function renderNeedsActionList(leads) {
         if (!needsActionList) return;
         needsActionList.innerHTML = "";
-
         if (!Array.isArray(leads) || leads.length === 0) {
           const empty = document.createElement("li");
           empty.className = "needs-action-meta";
@@ -1457,36 +1211,74 @@
           needsActionList.appendChild(empty);
           return;
         }
-
         leads.slice(0, 8).forEach((lead) => {
           const item = document.createElement("li");
           const title = document.createElement("strong");
           title.textContent = lead.name || lead.email || "Unbenannter Kontakt";
           item.appendChild(title);
-
           const meta = document.createElement("div");
           meta.className = "needs-action-meta";
           meta.textContent = buildNeedsActionMeta(lead);
           item.appendChild(meta);
-
           needsActionList.appendChild(item);
         });
       }
 
       function buildNeedsActionMeta(lead) {
         const chunks = [];
-        if (lead.company) {
-          chunks.push(lead.company);
-        }
-        if (lead.email) {
-          chunks.push(lead.email);
-        }
-        if (lead.last_contact) {
-          chunks.push(`Zuletzt: ${lead.last_contact}`);
-        }
+        if (lead.company) chunks.push(lead.company);
+        if (lead.email) chunks.push(lead.email);
+        if (lead.last_contact) chunks.push(`Zuletzt: ${lead.last_contact}`);
         return chunks.join(" · ") || "Keine weiteren Infos";
       }
 
+      // Event Listeners
+      chatForm.addEventListener("submit", (event) => { event.preventDefault(); sendChat(); });
+      analyzeButton.addEventListener("click", () => { sendChat({ action: "analyze_lead_context", module: "deal_medic" }); });
+      messageInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendChat(); }
+      });
+
+      navButtons.forEach((button) => {
+        button.addEventListener("click", () => showView(button.dataset.view));
+      });
+
+      billingButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const interval = button.dataset.billingInterval;
+          if (interval === currentBillingInterval) return;
+          currentBillingInterval = interval;
+          updateBillingToggle();
+          updatePricingPrices();
+        });
+      });
+
+      planCTAButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          startCheckout(button.dataset.planCta, currentBillingInterval);
+        });
+      });
+
+      sidebarUpgradeButton.addEventListener("click", () => showView("pricing"));
+
+      importForm?.addEventListener("submit", handleImportSubmit);
+      importClearButton?.addEventListener("click", resetImportForm);
+      needsActionButton?.addEventListener("click", fetchNeedsActionLeads);
+
+      quickModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const mode = button.dataset.module;
+          moduleSelect.value = mode;
+          setStatus(`Modus gesetzt: ${button.textContent}`, "success");
+        });
+      });
+
+      // Init
+      updatePlanUI();
+      updateBillingToggle();
+      updatePricingPrices();
+      showView("chat");
+      handleCheckoutSuccessFlag();
       fetchNeedsActionLeads();
       messageInput.focus();
     </script>
