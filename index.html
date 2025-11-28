@@ -92,7 +92,8 @@
       }
 
       textarea,
-      input {
+      input,
+      select {
         width: 100%;
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -108,7 +109,8 @@
       }
 
       textarea:focus,
-      input:focus {
+      input:focus,
+      select:focus {
         outline: none;
         border-color: var(--accent);
         box-shadow: 0 0 0 2px rgba(0, 216, 164, 0.35);
@@ -119,6 +121,38 @@
         gap: 0.75rem;
         flex-wrap: wrap;
       }
+
+      label span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+
+      label.stacked {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .quick-modes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .quick-modes span {
+        font-weight: 600;
+      }
+
 
       button {
         border: none;
@@ -145,6 +179,16 @@
         opacity: 0.55;
         cursor: not-allowed;
         transform: none;
+        box-shadow: none;
+      }
+
+      .quick-modes button {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+        color: inherit;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
         box-shadow: none;
       }
 
@@ -318,6 +362,39 @@
             />
           </label>
 
+          <div class="form-row">
+            <label class="stacked">
+              <span>Modus / Intent</span>
+              <select id="moduleSelect">
+                <option value="general_sales">Sales Flow · Auto</option>
+                <option value="einwand_killer">Einwand-Killer</option>
+                <option value="speed_hunter_loop">Follow-Up Engine</option>
+                <option value="deal_medic">Deal-Medic Analyse</option>
+                <option value="screenshot_reactivator">Screenshot-Scanner</option>
+                <option value="opportunity_radar">Opportunity Radar</option>
+                <option value="portfolio_scanner">Portfolio Scanner</option>
+                <option value="client_intake_generator">Client Intake Generator</option>
+                <option value="nexus_multi_ki">Nexus Multi-KI</option>
+              </select>
+            </label>
+
+            <label class="stacked">
+              <span>Engine</span>
+              <select id="engineSelect">
+                <option value="claude">Claude (Strategisch)</option>
+                <option value="gpt">GPT (Kreativ)</option>
+                <option value="gemini">Gemini (Analytisch)</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="quick-modes">
+            <span>Shortcuts:</span>
+            <button type="button" data-module="einwand_killer">Einwand-Killer</button>
+            <button type="button" data-module="speed_hunter_loop">Follow-Up Engine</button>
+            <button type="button" data-module="screenshot_reactivator">Screenshot-Scanner</button>
+          </div>
+
           <div class="actions">
             <button type="submit" class="primary" id="sendButton">Senden</button>
             <button type="button" class="secondary" id="analyzeButton">
@@ -377,6 +454,8 @@
       const chatForm = document.getElementById("chatForm");
       const messageInput = document.getElementById("messageInput");
       const leadInput = document.getElementById("leadInput");
+      const moduleSelect = document.getElementById("moduleSelect");
+      const engineSelect = document.getElementById("engineSelect");
       const statusBanner = document.getElementById("statusBanner");
       const leadMeta = document.getElementById("leadMeta");
       const analyzeButton = document.getElementById("analyzeButton");
@@ -396,6 +475,7 @@
       const NEEDS_ACTION_ENDPOINT = API_BASE_URL
         ? `${API_BASE_URL}/leads/needs-action`
         : "/leads/needs-action";
+      const quickModeButtons = document.querySelectorAll("[data-module]");
 
       const conversation = [];
       let isSending = false;
@@ -407,7 +487,7 @@
       });
 
       analyzeButton.addEventListener("click", () => {
-        sendChat({ action: "analyze_lead_context" });
+        sendChat({ action: "analyze_lead_context", module: "deal_medic" });
       });
 
       messageInput.addEventListener("keydown", (event) => {
@@ -420,6 +500,13 @@
       importForm?.addEventListener("submit", handleImportSubmit);
       importClearButton?.addEventListener("click", resetImportForm);
       needsActionButton?.addEventListener("click", fetchNeedsActionLeads);
+      quickModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const mode = button.dataset.module;
+          moduleSelect.value = mode;
+          setStatus(`Modus gesetzt: ${button.textContent}`, "success");
+        });
+      });
 
       function appendBubble(role, text) {
         const bubble = document.createElement("div");
@@ -464,6 +551,14 @@
         return { name: trimmed };
       }
 
+      function parseLeadIds(value) {
+        if (!value) return [];
+        return value
+          .split(/[,;\n]+/)
+          .map((token) => token.trim())
+          .filter((token) => token && /^[a-zA-Z0-9_-]+$/.test(token));
+      }
+
       function detectLeadReference(message, manualValue) {
         const manual = normalizeLeadValue(manualValue);
         if (manual) return manual;
@@ -490,6 +585,8 @@
         if (isSending) return;
 
         const action = options.action || "chat";
+        const moduleOverride = options.module;
+        const engineOverride = options.engine;
         const rawMessage = messageInput.value.trim();
         let message = rawMessage;
 
@@ -503,31 +600,60 @@
         }
 
         const leadReference = detectLeadReference(rawMessage, leadInput.value);
-        if (action === "analyze_lead_context" && !leadReference) {
+        const leadIdsSet = new Set(parseLeadIds(leadInput.value));
+        if (leadReference?.id) {
+          leadIdsSet.add(leadReference.id);
+        }
+        const leadIdsArray = Array.from(leadIdsSet);
+
+        if (action === "analyze_lead_context" && !leadReference && !leadIdsArray.length) {
           setStatus("Für eine Analyse benötige ich den Lead-Namen oder die ID.", "error");
           return;
+        }
+
+        if (moduleOverride && moduleSelect) {
+          moduleSelect.value = moduleOverride;
         }
 
         const historyForApi = conversation.map((entry) => ({ ...entry }));
         conversation.push({ role: "user", content: message });
         appendBubble("user", message);
-        updateLeadMeta(leadReference);
+        const metaReference =
+          leadReference || (leadIdsArray[0] ? { id: leadIdsArray[0] } : null);
+        updateLeadMeta(metaReference);
         messageInput.value = "";
 
         try {
           setLoading(true);
           setStatus("Cloud-Bridge aktiviert …", "success");
+          const effectiveModule =
+            moduleOverride || moduleSelect.value || "general_sales";
+          const effectiveEngine =
+            engineOverride || engineSelect.value || "claude";
+
+          const payload = {
+            action,
+            message,
+            history: historyForApi,
+            lead: leadReference,
+            module: effectiveModule,
+            engine: effectiveEngine,
+            extra: options.extra || {},
+          };
+
+          if (leadIdsArray.length) {
+            payload.leadIds = leadIdsArray;
+            payload.leadId = leadIdsArray[0];
+          } else if (leadReference?.id) {
+            payload.leadId = leadReference.id;
+          }
+
           const response = await fetch("/.netlify/functions/ai", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              action,
-              message,
-              history: historyForApi,
-              lead: leadReference,
-            }),
+            body: JSON.stringify(payload),
           });
 
           if (!response.ok) {
