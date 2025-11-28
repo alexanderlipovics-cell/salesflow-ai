@@ -19,6 +19,8 @@ Optional kannst du eine `.env` im Backend-Verzeichnis ablegen; Variablen werden 
 | --- | --- | --- |
 | `OPENAI_API_KEY` | ✅ | API-Key für OpenAI Responses API |
 | `OPENAI_MODEL` | ➖ | Optional, Default `gpt-4o-mini` |
+| `SUPABASE_URL` | ✅ | Supabase Project URL (https://xyz.supabase.co) |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service-Role-Key für Inserts |
 
 ## Server starten
 
@@ -27,6 +29,30 @@ uvicorn app.main:app --reload --port 8001
 ```
 
 Der Health-Check liegt unter `GET /health`.
+
+## Bestandskunden-Import
+
+Endpoint: `POST /import/leads`
+
+- Content-Type `text/csv`: CSV direkt im Body (siehe `sample_data/import_example.csv`)
+- Content-Type `application/json`: Entweder `{ "csv": "..." }` oder ein Array von Objekten
+- Antwort: `{"total": 12, "with_ai_status": 9, "without_status": 3}`
+
+Die Daten werden in die Tabelle `leads` geschrieben. Falls vorhanden, analysiert die KI jedes Lead über `AIClient.generate` und setzt `status`, `next_action`, `last_contact` sowie die Flags `needs_action` und `import_batch_id`.
+
+### Leads ohne Status anzeigen
+
+- Endpoint: `GET /leads/needs-action?limit=8`
+- Antwort: `{"leads": [{"name": "...", "email": "..."}]}`
+- Verwendet von der Sidebar im Frontend, um Kontakte ohne Status/AI-Analyse hervorzuheben.
+
+### Beispiel-Request (CSV)
+
+```bash
+curl -X POST http://localhost:8001/import/leads \
+  -H "Content-Type: text/csv" \
+  --data-binary @sample_data/import_example.csv
+```
 
 ## Beispiel-Request
 

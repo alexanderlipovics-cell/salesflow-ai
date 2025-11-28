@@ -3,16 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="salesflow-api-base" content="" />
     <title>Sales Flow AI · Lead Chat</title>
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #0d1117;
-        --panel: #161b22;
+        --bg: #020611;
+        --panel: #111827;
+        --panel-glass: rgba(13, 17, 23, 0.9);
         --accent: #00d8a4;
         --accent-dark: #00a97c;
         --text: #f0f6fc;
         --muted: #8b949e;
+        --border: rgba(255, 255, 255, 0.08);
         --danger: #ff6575;
         font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       }
@@ -32,34 +35,217 @@
         padding: 2rem;
       }
 
-      main {
+      .app-shell {
+        width: min(1400px, 100%);
         display: grid;
-        grid-template-columns: 3fr 1.15fr;
+        grid-template-columns: 280px 1fr;
         gap: 1.5rem;
-        width: min(1200px, 100%);
       }
 
-      section {
+      .sidebar {
         background: rgba(13, 17, 23, 0.85);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .logo-area {
+        display: flex;
+        gap: 0.85rem;
+        align-items: center;
+      }
+
+      .logo-dot {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #3b82f6, #a855f7);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+      }
+
+      .logo-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .logo-subtitle {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .nav-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+      }
+
+      .nav-label {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .nav-link {
+        appearance: none;
+        border: 1px solid transparent;
+        background: transparent;
+        color: inherit;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        text-align: left;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.2s ease, border 0.2s ease;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      .nav-link[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .badge-pro {
+        background: rgba(168, 85, 247, 0.15);
+        border-color: rgba(168, 85, 247, 0.4);
+        color: #d8b4fe;
+      }
+
+      .badge-popular {
+        background: rgba(37, 99, 235, 0.15);
+        border-color: rgba(59, 130, 246, 0.6);
+        color: #bfdbfe;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .user-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .user-name {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .user-role {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .plan-chip {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        text-transform: uppercase;
+      }
+
+      .upgrade-btn {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+      }
+
+      .main {
+        background: var(--panel-glass);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 25px 65px rgba(0, 0, 0, 0.45);
+      }
+
+      .view {
+        display: none;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .view.active {
+        display: flex;
+      }
+
+      .panel-grid {
+        display: grid;
+        grid-template-columns: 1.75fr 1fr;
+        gap: 1.25rem;
+      }
+
+      .panel {
+        background: rgba(17, 24, 39, 0.85);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 18px;
         padding: 1.5rem;
-        backdrop-filter: blur(8px);
         box-shadow: 0 15px 45px rgba(0, 0, 0, 0.35);
       }
 
       h1 {
         margin: 0;
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         font-weight: 600;
-        letter-spacing: 0.01em;
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin: 0 0 0.35rem;
+      }
+
+      .muted {
+        color: var(--muted);
+        margin: 0.25rem 0 0;
       }
 
       .chat-feed {
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        height: 520px;
+        height: 420px;
         overflow-y: auto;
         margin: 1.25rem 0;
         padding-right: 0.5rem;
@@ -80,10 +266,6 @@
         align-self: flex-end;
       }
 
-      .bubble.assistant {
-        align-self: flex-start;
-      }
-
       form {
         display: flex;
         flex-direction: column;
@@ -91,7 +273,8 @@
       }
 
       textarea,
-      input {
+      input,
+      select {
         width: 100%;
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -107,7 +290,8 @@
       }
 
       textarea:focus,
-      input:focus {
+      input:focus,
+      select:focus {
         outline: none;
         border-color: var(--accent);
         box-shadow: 0 0 0 2px rgba(0, 216, 164, 0.35);
@@ -119,6 +303,38 @@
         flex-wrap: wrap;
       }
 
+      label span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+
+      label.stacked {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .quick-modes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .quick-modes span {
+        font-weight: 600;
+      }
+
+
       button {
         border: none;
         border-radius: 12px;
@@ -126,7 +342,7 @@
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       }
 
       button.primary {
@@ -147,19 +363,19 @@
         box-shadow: none;
       }
 
+      .quick-modes button {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+        color: inherit;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        box-shadow: none;
+      }
+
       button:not(:disabled):hover {
         transform: translateY(-1px);
         box-shadow: 0 12px 25px rgba(0, 216, 164, 0.4);
-      }
-
-      .sidebar h2 {
-        margin-top: 0;
-        font-size: 1.15rem;
-      }
-
-      .sidebar p {
-        color: var(--muted);
-        line-height: 1.4;
       }
 
       .status {
@@ -191,6 +407,10 @@
         margin-top: 0.5rem;
       }
 
+      .muted {
+        color: var(--muted);
+      }
+
       .chip {
         padding: 0.4rem 0.75rem;
         border-radius: 999px;
@@ -199,12 +419,222 @@
         background: rgba(255, 255, 255, 0.04);
       }
 
+      .info-panel p {
+        line-height: 1.5;
+      }
+      .import-panel {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .import-panel h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .import-panel textarea {
+        min-height: 90px;
+      }
+
+      .import-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .import-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .link-button {
+        background: none;
+        color: var(--accent);
+        padding: 0;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .link-button:hover {
+        text-decoration: underline;
+      }
+
+      .needs-action-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .needs-action-list li {
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .needs-action-list strong {
+        display: block;
+        font-size: 0.95rem;
+      }
+
+      .needs-action-meta {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
       @media (max-width: 980px) {
         body {
           padding: 1rem;
         }
 
-        main {
+      .view-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .success-pill {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 216, 164, 0.35);
+        background: rgba(0, 216, 164, 0.12);
+        font-size: 0.9rem;
+        color: var(--accent);
+      }
+
+      .billing-toggle {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.25rem;
+        background: rgba(17, 24, 39, 0.7);
+        width: fit-content;
+      }
+
+      .toggle-option {
+        border-radius: 999px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        padding: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+        box-shadow: none;
+      }
+
+      .toggle-option.active {
+        background: rgba(0, 216, 164, 0.15);
+        color: var(--text);
+      }
+
+      .save-pill {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(34, 197, 94, 0.18);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        color: #bbf7d0;
+      }
+
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .pricing-card {
+        background: rgba(15, 23, 42, 0.75);
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transition: transform 0.25s ease, border 0.25s ease, box-shadow 0.25s ease;
+      }
+
+      .pricing-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(0, 216, 164, 0.5);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+      }
+
+      .pricing-card.featured {
+        border: 1px solid transparent;
+        background: linear-gradient(
+            135deg,
+            rgba(168, 85, 247, 0.2),
+            rgba(59, 130, 246, 0.2)
+          ) padding-box,
+          linear-gradient(135deg, rgba(168, 85, 247, 0.6), rgba(59, 130, 246, 0.6)) border-box;
+        box-shadow: 0 25px 55px rgba(59, 130, 246, 0.35);
+      }
+
+      .card-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .plan-name {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .plan-price {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+
+      .plan-caption {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .feature-list li {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        font-size: 0.95rem;
+      }
+
+      .feature-list .check {
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .pricing-card button {
+        width: 100%;
+      }
+
+      @media (max-width: 1200px) {
+        .panel-grid {
           grid-template-columns: 1fr;
         }
 
@@ -212,9 +642,39 @@
           height: 360px;
         }
       }
+
+      @media (max-width: 980px) {
+        body {
+          padding: 1rem;
+        }
+
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="logo-area">
+          <div class="logo-dot"></div>
+          <div>
+            <p class="logo-title">Sales Flow AI</p>
+            <p class="logo-subtitle">Deal Operating System</p>
+          </div>
+        </div>
+
+        <nav>
+          <div class="nav-group">
+            <p class="nav-label">App</p>
+            <button
+              type="button"
+              class="nav-link active"
+              data-view="chat"
+              onclick="showView('chat')"
+            >
+              💬 AI Chat
     <main>
       <section>
         <header>
@@ -240,28 +700,254 @@
             />
           </label>
 
+          <div class="form-row">
+            <label class="stacked">
+              <span>Modus / Intent</span>
+              <select id="moduleSelect">
+                <option value="general_sales">Sales Flow · Auto</option>
+                <option value="einwand_killer">Einwand-Killer</option>
+                <option value="speed_hunter_loop">Follow-Up Engine</option>
+                <option value="deal_medic">Deal-Medic Analyse</option>
+                <option value="screenshot_reactivator">Screenshot-Scanner</option>
+                <option value="opportunity_radar">Opportunity Radar</option>
+                <option value="portfolio_scanner">Portfolio Scanner</option>
+                <option value="client_intake_generator">Client Intake Generator</option>
+                <option value="nexus_multi_ki">Nexus Multi-KI</option>
+              </select>
+            </label>
+
+            <label class="stacked">
+              <span>Engine</span>
+              <select id="engineSelect">
+                <option value="claude">Claude (Strategisch)</option>
+                <option value="gpt">GPT (Kreativ)</option>
+                <option value="gemini">Gemini (Analytisch)</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="quick-modes">
+            <span>Shortcuts:</span>
+            <button type="button" data-module="einwand_killer">Einwand-Killer</button>
+            <button type="button" data-module="speed_hunter_loop">Follow-Up Engine</button>
+            <button type="button" data-module="screenshot_reactivator">Screenshot-Scanner</button>
+          </div>
+
           <div class="actions">
             <button type="submit" class="primary" id="sendButton">Senden</button>
             <button type="button" class="secondary" id="analyzeButton">
               Lead analysieren
             </button>
           </div>
-        </form>
-      </section>
 
-      <section class="sidebar">
-        <h2>Lead-Kontext</h2>
-        <p>
-          Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld
-          ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in
-          den Claude-Prompt.
-        </p>
+          <div class="nav-group">
+            <p class="nav-label">Wissen</p>
+            <button type="button" class="nav-link" disabled>
+              📚 Playbooks
+            </button>
+          </div>
 
-        <div class="status" id="statusBanner" data-type="idle">
-          Bereit für deine Fragen.
+          <div class="nav-group">
+            <p class="nav-label">Einstellungen</p>
+            <button
+              type="button"
+              class="nav-link"
+              data-view="pricing"
+              id="upgradeNavButton"
+              onclick="showView('pricing')"
+            >
+              <span>💳 Upgrade</span>
+              <span class="badge badge-pro" id="upgradeNavBadge">PRO</span>
+            </button>
+            <button type="button" class="nav-link" disabled>
+              ⚙️ Settings
+            </button>
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-card">
+            <div>
+              <p class="user-name" id="sidebarUserName">Sven Bauer</p>
+              <p class="user-role">Revenue Lead</p>
+            </div>
+            <span class="plan-chip" id="planBadge">FREE</span>
+          </div>
+          <button
+            class="primary upgrade-btn"
+            id="sidebarUpgradeButton"
+            type="button"
+            onclick="showView('pricing')"
+          >
+            Upgrade
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="view active" id="chat-view" data-view-id="chat">
+          <header class="view-header">
+            <div>
+              <p class="eyebrow">Lead Genius</p>
+              <h1>Sales Flow AI · Chat</h1>
+              <p class="muted">
+                Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.
+              </p>
+            </div>
+            <div class="success-pill" id="successPill" hidden>Upgrade erfolgreich ✨</div>
+          </header>
+
+          <div class="panel-grid">
+            <section class="panel">
+              <form id="chatForm">
+                <label>
+                  <textarea
+                    id="messageInput"
+                    placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?“"
+                  ></textarea>
+                </label>
+
+                <label>
+                  <input
+                    id="leadInput"
+                    type="text"
+                    placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)"
+                  />
+                </label>
+
+                <div class="actions">
+                  <button type="submit" class="primary" id="sendButton">Senden</button>
+                  <button type="button" class="secondary" id="analyzeButton">Lead analysieren</button>
+                </div>
+              </form>
+
+              <div id="chatFeed" class="chat-feed"></div>
+            </section>
+
+            <section class="panel info-panel">
+              <h2>Lead-Kontext</h2>
+              <p>
+                Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld
+                ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in
+                den Claude-Prompt.
+              </p>
+
+              <div class="status" id="statusBanner" data-type="idle">Bereit für deine Fragen.</div>
+
+              <div class="lead-meta" id="leadMeta"></div>
+            </section>
+          </div>
         </div>
 
+        <div class="view" id="pricing-view" data-view-id="pricing">
+          <header class="view-header">
+            <div>
+              <p class="eyebrow">Upgrade</p>
+              <h1>Wähle deinen Plan</h1>
+              <p class="muted">Upgrade jederzeit, kündige jederzeit</p>
+            </div>
+          </header>
+
+          <div class="billing-toggle" role="group" aria-label="Abrechnungszeitraum">
+            <button
+              type="button"
+              class="toggle-option active"
+              data-billing-interval="month"
+            >
+              Monatlich
+            </button>
+            <button type="button" class="toggle-option" data-billing-interval="year">
+              Jährlich <span class="save-pill">20% sparen</span>
+            </button>
+          </div>
+
+          <div class="pricing-grid">
+            <article class="pricing-card" data-plan="starter">
+              <div class="card-heading">
+                <p class="plan-name">Starter</p>
+                <p class="plan-price" data-plan-price="starter">€79 / Monat</p>
+              </div>
+              <p class="plan-caption">Für Teams mit ersten Playbooks und kleinen Zielgruppen.</p>
+              <ul class="feature-list">
+                <li><span class="check">&#10003;</span>500 Leads</li>
+                <li><span class="check">&#10003;</span>500 KI-Anfragen/Monat</li>
+                <li><span class="check">&#10003;</span>1 Team-Mitglied</li>
+                <li><span class="check">&#10003;</span>Email Templates</li>
+                <li><span class="check">&#10003;</span>Lead Scanner</li>
+              </ul>
+              <button type="button" class="primary" data-plan-cta="starter">Jetzt starten</button>
+            </article>
+
+            <article class="pricing-card featured" data-plan="pro">
+              <div class="card-heading">
+                <div>
+                  <p class="plan-name">Professional</p>
+                  <span class="badge badge-popular">BELIEBT</span>
+                </div>
+                <p class="plan-price" data-plan-price="pro">€149 / Monat</p>
+              </div>
+              <p class="plan-caption">Skaliere Outbound und nutze Integrationen & Automatisierung.</p>
+              <ul class="feature-list">
+                <li><span class="check">&#10003;</span>Unlimited Leads</li>
+                <li><span class="check">&#10003;</span>2.000 KI-Anfragen/Monat</li>
+                <li><span class="check">&#10003;</span>5 Team-Mitglieder</li>
+                <li><span class="check">&#10003;</span>Email & WhatsApp Integration</li>
+                <li><span class="check">&#10003;</span>Automatische Sequences</li>
+                <li><span class="check">&#10003;</span>RapidAPI Lead Finder</li>
+              </ul>
+              <button type="button" class="primary" data-plan-cta="pro">Jetzt starten</button>
+            </article>
+
+            <article class="pricing-card" data-plan="enterprise">
+              <div class="card-heading">
+                <p class="plan-name">Enterprise</p>
+                <p class="plan-price" data-plan-price="enterprise">€279 / Monat</p>
+              </div>
+              <p class="plan-caption">Für Enablement-Teams, die SalesOps durchautomatisieren.</p>
+              <ul class="feature-list">
+                <li><span class="check">&#10003;</span>Unlimited Everything</li>
+                <li><span class="check">&#10003;</span>Unlimited KI-Anfragen</li>
+                <li><span class="check">&#10003;</span>20 Team-Mitglieder</li>
+                <li><span class="check">&#10003;</span>Webhooks & API Access</li>
+                <li><span class="check">&#10003;</span>White-Label Option</li>
+                <li><span class="check">&#10003;</span>Priority Support</li>
+              </ul>
+              <button type="button" class="primary" data-plan-cta="enterprise">Jetzt starten</button>
+            </article>
+          </div>
+        </div>
+      </main>
+    </div>
         <div class="lead-meta" id="leadMeta"></div>
+
+        <div class="import-panel">
+          <h3>Bestandskunden importieren</h3>
+          <p class="muted">
+            Lade eine CSV-Datei hoch oder füge die Inhalte unten ein. Die AI erkennt Status,
+            letzten Kontakt und schlägt direkt die nächste Aktion vor.
+          </p>
+          <form id="importForm" class="import-form">
+            <label>
+              <span>Datei (CSV)</span>
+              <input id="importFile" type="file" accept=".csv,text/csv" />
+            </label>
+            <textarea
+              id="importTextarea"
+              placeholder="Oder füge hier CSV-Daten ein (name,email,status,notes …)"
+            ></textarea>
+            <div class="import-actions">
+              <button type="submit" class="primary" id="importSubmit">Import starten</button>
+              <button type="button" class="secondary" id="importClear">Felder leeren</button>
+            </div>
+          </form>
+          <div class="status" id="importSummary" data-type="idle">
+            Noch kein Import durchgeführt.
+          </div>
+          <button type="button" class="link-button" id="filterNeedsAction">
+            Kontakte ohne Status anzeigen
+          </button>
+          <ul class="needs-action-list" id="needsActionList"></ul>
+        </div>
       </section>
     </main>
 
@@ -270,13 +956,53 @@
       const chatForm = document.getElementById("chatForm");
       const messageInput = document.getElementById("messageInput");
       const leadInput = document.getElementById("leadInput");
+      const moduleSelect = document.getElementById("moduleSelect");
+      const engineSelect = document.getElementById("engineSelect");
       const statusBanner = document.getElementById("statusBanner");
       const leadMeta = document.getElementById("leadMeta");
       const analyzeButton = document.getElementById("analyzeButton");
       const sendButton = document.getElementById("sendButton");
+      const importForm = document.getElementById("importForm");
+      const importFileInput = document.getElementById("importFile");
+      const importTextarea = document.getElementById("importTextarea");
+      const importSummary = document.getElementById("importSummary");
+      const importSubmit = document.getElementById("importSubmit");
+      const importClearButton = document.getElementById("importClear");
+      const needsActionButton = document.getElementById("filterNeedsAction");
+      const needsActionList = document.getElementById("needsActionList");
 
+      const apiBaseMeta = document.querySelector('meta[name="salesflow-api-base"]');
+      const API_BASE_URL = apiBaseMeta?.content?.trim().replace(/\/$/, "") || "";
+      const IMPORT_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/import/leads` : "/import/leads";
+      const NEEDS_ACTION_ENDPOINT = API_BASE_URL
+        ? `${API_BASE_URL}/leads/needs-action`
+        : "/leads/needs-action";
+      const quickModeButtons = document.querySelectorAll("[data-module]");
+
+      const successPill = document.getElementById("successPill");
+      const planBadge = document.getElementById("planBadge");
+      const upgradeNavBadge = document.getElementById("upgradeNavBadge");
+      const sidebarUpgradeButton = document.getElementById("sidebarUpgradeButton");
+      const navButtons = document.querySelectorAll("[data-view]");
+      const views = document.querySelectorAll("[data-view-id]");
+      const billingButtons = document.querySelectorAll("[data-billing-interval]");
+      const planCTAButtons = document.querySelectorAll("[data-plan-cta]");
+
+      const planPrices = {
+        starter: 79,
+        pro: 149,
+        enterprise: 279,
+      };
+
+      const currentUser = {
+        id: "user_9321",
+        plan: "FREE",
+      };
+
+      let currentBillingInterval = "month";
       const conversation = [];
       let isSending = false;
+      let isImporting = false;
 
       chatForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -284,7 +1010,7 @@
       });
 
       analyzeButton.addEventListener("click", () => {
-        sendChat({ action: "analyze_lead_context" });
+        sendChat({ action: "analyze_lead_context", module: "deal_medic" });
       });
 
       messageInput.addEventListener("keydown", (event) => {
@@ -292,6 +1018,37 @@
           event.preventDefault();
           sendChat();
         }
+      });
+
+      navButtons.forEach((button) => {
+        const targetView = button.dataset.view;
+        if (!targetView) return;
+        button.addEventListener("click", () => showView(targetView));
+      });
+
+      billingButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const interval = button.dataset.billingInterval;
+          if (interval === currentBillingInterval) return;
+          currentBillingInterval = interval;
+          updateBillingToggle();
+          updatePricingPrices();
+        });
+      });
+
+      planCTAButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const plan = button.dataset.planCta;
+          startCheckout(plan, currentBillingInterval);
+      importForm?.addEventListener("submit", handleImportSubmit);
+      importClearButton?.addEventListener("click", resetImportForm);
+      needsActionButton?.addEventListener("click", fetchNeedsActionLeads);
+      quickModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const mode = button.dataset.module;
+          moduleSelect.value = mode;
+          setStatus(`Modus gesetzt: ${button.textContent}`, "success");
+        });
       });
 
       function appendBubble(role, text) {
@@ -337,6 +1094,14 @@
         return { name: trimmed };
       }
 
+      function parseLeadIds(value) {
+        if (!value) return [];
+        return value
+          .split(/[,;\n]+/)
+          .map((token) => token.trim())
+          .filter((token) => token && /^[a-zA-Z0-9_-]+$/.test(token));
+      }
+
       function detectLeadReference(message, manualValue) {
         const manual = normalizeLeadValue(manualValue);
         if (manual) return manual;
@@ -363,6 +1128,8 @@
         if (isSending) return;
 
         const action = options.action || "chat";
+        const moduleOverride = options.module;
+        const engineOverride = options.engine;
         const rawMessage = messageInput.value.trim();
         let message = rawMessage;
 
@@ -376,31 +1143,60 @@
         }
 
         const leadReference = detectLeadReference(rawMessage, leadInput.value);
-        if (action === "analyze_lead_context" && !leadReference) {
+        const leadIdsSet = new Set(parseLeadIds(leadInput.value));
+        if (leadReference?.id) {
+          leadIdsSet.add(leadReference.id);
+        }
+        const leadIdsArray = Array.from(leadIdsSet);
+
+        if (action === "analyze_lead_context" && !leadReference && !leadIdsArray.length) {
           setStatus("Für eine Analyse benötige ich den Lead-Namen oder die ID.", "error");
           return;
+        }
+
+        if (moduleOverride && moduleSelect) {
+          moduleSelect.value = moduleOverride;
         }
 
         const historyForApi = conversation.map((entry) => ({ ...entry }));
         conversation.push({ role: "user", content: message });
         appendBubble("user", message);
-        updateLeadMeta(leadReference);
+        const metaReference =
+          leadReference || (leadIdsArray[0] ? { id: leadIdsArray[0] } : null);
+        updateLeadMeta(metaReference);
         messageInput.value = "";
 
         try {
           setLoading(true);
           setStatus("Cloud-Bridge aktiviert …", "success");
+          const effectiveModule =
+            moduleOverride || moduleSelect.value || "general_sales";
+          const effectiveEngine =
+            engineOverride || engineSelect.value || "claude";
+
+          const payload = {
+            action,
+            message,
+            history: historyForApi,
+            lead: leadReference,
+            module: effectiveModule,
+            engine: effectiveEngine,
+            extra: options.extra || {},
+          };
+
+          if (leadIdsArray.length) {
+            payload.leadIds = leadIdsArray;
+            payload.leadId = leadIdsArray[0];
+          } else if (leadReference?.id) {
+            payload.leadId = leadReference.id;
+          }
+
           const response = await fetch("/.netlify/functions/ai", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              action,
-              message,
-              history: historyForApi,
-              lead: leadReference,
-            }),
+            body: JSON.stringify(payload),
           });
 
           if (!response.ok) {
@@ -434,6 +1230,245 @@
         }
       }
 
+      function updatePlanUI() {
+        planBadge.textContent = currentUser.plan;
+        planBadge.dataset.plan = currentUser.plan.toLowerCase();
+        const isFree = currentUser.plan === "FREE";
+        upgradeNavBadge.hidden = !isFree;
+        sidebarUpgradeButton.hidden = !isFree;
+      }
+
+      function updateBillingToggle() {
+        billingButtons.forEach((button) => {
+          const isActive = button.dataset.billingInterval === currentBillingInterval;
+          button.classList.toggle("active", isActive);
+          button.setAttribute("aria-pressed", String(isActive));
+        });
+      }
+
+      function formatPrice(value) {
+        return new Intl.NumberFormat("de-DE").format(value);
+      }
+
+      function updatePricingPrices() {
+        const multiplier = currentBillingInterval === "month" ? 1 : 12 * 0.8;
+        const suffix = currentBillingInterval === "month" ? "/ Monat" : "/ Jahr";
+        document.querySelectorAll("[data-plan-price]").forEach((node) => {
+          const plan = node.dataset.planPrice;
+          const base = planPrices[plan];
+          const price = currentBillingInterval === "month"
+            ? base
+            : Math.round(base * multiplier);
+          node.textContent = `€${formatPrice(price)} ${suffix}`;
+        });
+      }
+
+      function handleCheckoutSuccessFlag() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("success") === "true") {
+          setStatus("Upgrade erfolgreich abgeschlossen.", "success");
+          successPill.hidden = false;
+          setTimeout(() => {
+            successPill.hidden = true;
+          }, 5000);
+          showView("chat");
+          params.delete("success");
+          const remaining = params.toString();
+          const newUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}`;
+          window.history.replaceState({}, "", newUrl);
+        }
+      }
+
+      function showView(view) {
+        views.forEach((panel) => {
+          const isMatch = panel.dataset.viewId === view;
+          panel.classList.toggle("active", isMatch);
+        });
+        navButtons.forEach((button) => {
+          const matches = button.dataset.view === view;
+          button.classList.toggle("active", matches);
+          button.setAttribute("aria-current", matches ? "page" : "false");
+        });
+      }
+
+      window.showView = showView;
+
+      async function startCheckout(plan, interval = "month") {
+        try {
+          const response = await fetch("/.netlify/functions/stripe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "create-checkout",
+              plan,
+              interval,
+              userId: currentUser.id,
+            }),
+          });
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            setStatus("Checkout konnte nicht gestartet werden.", "error");
+          }
+        } catch (error) {
+          console.error(error);
+          setStatus("Checkout ist aktuell nicht erreichbar.", "error");
+        }
+      }
+
+      updatePlanUI();
+      updateBillingToggle();
+      updatePricingPrices();
+      showView("chat");
+      handleCheckoutSuccessFlag();
+      async function handleImportSubmit(event) {
+        event.preventDefault();
+        if (isImporting) return;
+
+        const filePayload = await readCsvFromFile();
+        const textareaPayload = (importTextarea?.value || "").trim();
+        const csvPayload = filePayload || textareaPayload;
+
+        if (!csvPayload) {
+          setImportStatus("Bitte wähle eine CSV-Datei oder füge Daten ein.", "error");
+          return;
+        }
+
+        try {
+          isImporting = true;
+          setImportLoading(true);
+          setImportStatus("Import läuft …", "success");
+          const response = await fetch(IMPORT_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/csv",
+            },
+            body: csvPayload,
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(errorBody || "Import fehlgeschlagen.");
+          }
+
+          const data = await response.json();
+          const total = data.total ?? 0;
+          const withStatus = data.with_ai_status ?? 0;
+          const withoutStatus = data.without_status ?? 0;
+          setImportStatus(
+            `Import abgeschlossen: ${total} Kontakte (${withStatus} erkannt, ${withoutStatus} offen).`,
+            "success"
+          );
+          fetchNeedsActionLeads();
+        } catch (error) {
+          console.error(error);
+          setImportStatus(error.message || "Import fehlgeschlagen.", "error");
+        } finally {
+          isImporting = false;
+          setImportLoading(false);
+        }
+      }
+
+      async function readCsvFromFile() {
+        if (!importFileInput || !importFileInput.files?.length) {
+          return "";
+        }
+        try {
+          return await importFileInput.files[0].text();
+        } catch (error) {
+          console.error(error);
+          return "";
+        }
+      }
+
+      function setImportStatus(message, type = "idle") {
+        if (!importSummary) return;
+        importSummary.textContent = message;
+        importSummary.dataset.type = type;
+      }
+
+      function setImportLoading(state) {
+        if (importSubmit) {
+          importSubmit.disabled = state;
+        }
+      }
+
+      function resetImportForm() {
+        if (importFileInput) {
+          importFileInput.value = "";
+        }
+        if (importTextarea) {
+          importTextarea.value = "";
+        }
+        setImportStatus("Formular zurückgesetzt. Optional neue CSV wählen.", "idle");
+      }
+
+      async function fetchNeedsActionLeads() {
+        if (!needsActionList) {
+          return;
+        }
+        needsActionList.innerHTML =
+          '<li class="needs-action-meta">Lade Kontakte ohne Status …</li>';
+        try {
+          const response = await fetch(NEEDS_ACTION_ENDPOINT);
+          if (!response.ok) {
+            throw new Error("Leads konnten nicht geladen werden.");
+          }
+          const payload = await response.json();
+          renderNeedsActionList(payload.leads || []);
+        } catch (error) {
+          console.error(error);
+          const li = document.createElement("li");
+          li.className = "needs-action-meta";
+          li.textContent = error.message || "Leads konnten nicht geladen werden.";
+          needsActionList.innerHTML = "";
+          needsActionList.appendChild(li);
+        }
+      }
+
+      function renderNeedsActionList(leads) {
+        if (!needsActionList) return;
+        needsActionList.innerHTML = "";
+
+        if (!Array.isArray(leads) || leads.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "needs-action-meta";
+          empty.textContent = "Alle importierten Kontakte besitzen bereits einen Status.";
+          needsActionList.appendChild(empty);
+          return;
+        }
+
+        leads.slice(0, 8).forEach((lead) => {
+          const item = document.createElement("li");
+          const title = document.createElement("strong");
+          title.textContent = lead.name || lead.email || "Unbenannter Kontakt";
+          item.appendChild(title);
+
+          const meta = document.createElement("div");
+          meta.className = "needs-action-meta";
+          meta.textContent = buildNeedsActionMeta(lead);
+          item.appendChild(meta);
+
+          needsActionList.appendChild(item);
+        });
+      }
+
+      function buildNeedsActionMeta(lead) {
+        const chunks = [];
+        if (lead.company) {
+          chunks.push(lead.company);
+        }
+        if (lead.email) {
+          chunks.push(lead.email);
+        }
+        if (lead.last_contact) {
+          chunks.push(`Zuletzt: ${lead.last_contact}`);
+        }
+        return chunks.join(" · ") || "Keine weiteren Infos";
+      }
+
+      fetchNeedsActionLeads();
       messageInput.focus();
     </script>
   </body>
