@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "^2.86.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.452.0",
     "node-fetch": "^3.3.2",
@@ -27,26 +27,3 @@
     "vite": "^5.2.0"
   }
 }
-  "name": "workspace",
-  "version": "1.0.0",
-  "description": "KI-gestütztes Vertriebs-CRM",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/alexanderlipovics-cell/salesflow-ai.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/alexanderlipovics-cell/salesflow-ai/issues"
-  },
-  "homepage": "https://github.com/alexanderlipovics-cell/salesflow-ai#readme",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.86.0"
-  }
-}
-
