@@ -1,0 +1,638 @@
+"""
+Helper und Service-Layer für den Bestandskunden-Import.
+"""
+
+from __future__ import annotations
+
+import csv
+import io
+import json
+import logging
+import re
+import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Dict, List, Mapping, Optional, Sequence
+
+from supabase import Client
+
+from .ai_client import AIClient
+from .schemas import ChatMessage, ImportSummary
+
+logger = logging.getLogger(__name__)
+
+SUPPORTED_STATUSES = {
+    "neu",
+    "interessiert",
+    "angebot",
+    "kunde",
+    "abgelehnt",
+    "funkstille",
+}
+
+SUPPORTED_NEXT_ACTIONS = {"FOLLOW_UP", "CHECK_IN", "VALUE", "REFERRAL"}
+
+DEFAULT_NEXT_ACTION_BY_STATUS = {
+    "neu": "CHECK_IN",
+    "interessiert": "FOLLOW_UP",
+    "angebot": "FOLLOW_UP",
+    "kunde": "VALUE",
+    "abgelehnt": "CHECK_IN",
+    "funkstille": "FOLLOW_UP",
+}
+
+CSV_DELIMITERS = ",;|\t"
+
+HEADER_ALIASES: Dict[str, set[str]] = {
+    "name": {
+        "name",
+        "fullname",
+        "full name",
+        "kontakt",
+        "kontaktname",
+        "person",
+        "kunde",
+    },
+    "__first_name": {"first_name", "firstname", "vorname"},
+    "__last_name": {"last_name", "lastname", "nachname", "surname"},
+    "email": {"email", "e-mail", "mail"},
+    "phone": {"phone", "telefon", "tel", "mobile", "mobil"},
+    "company": {"company", "firma", "unternehmen", "organization", "org"},
+    "last_status": {
+        "last_status",
+        "status",
+        "deal_status",
+        "phase",
+        "pipeline_stage",
+        "letzter status",
+    },
+    "notes": {"notes", "note", "notizen", "kommentar", "comments", "memo"},
+    "last_contact": {
+        "last_contact",
+        "last_contact_at",
+        "last_contacted",
+        "letzter kontakt",
+        "zuletzt kontaktiert",
+        "last_touch",
+    },
+    "deal_value": {"deal_value", "value", "deal", "betrag", "umsatz", "amount"},
+    "tags": {"tags", "labels", "gruppen", "label"},
+}
+
+
+class LeadImportError(ValueError):
+    """Fehler, der ausgelöst wird, wenn das Importformat ungültig ist."""
+
+
+@dataclass
+class NormalizedLead:
+    """Normiertes Lead-Objekt nach Parsing der CSV/JSON-Daten."""
+
+    row_number: int
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    company: Optional[str] = None
+    notes: Optional[str] = None
+    last_status: Optional[str] = None
+    last_contact_text: Optional[str] = None
+    deal_value: Optional[float] = None
+    tags: List[str] = field(default_factory=list)
+
+    def has_context(self) -> bool:
+        """True, wenn Infos für eine AI-Analyse vorhanden sind."""
+
+        return bool(
+            (self.notes and self.notes.strip())
+            or (self.last_status and self.last_status.strip())
+        )
+
+
+@dataclass
+class LeadAnalysis:
+    """Ergebnis der AI-Analyse eines Leads."""
+
+    status: str
+    next_action: Optional[str] = None
+    last_contact_at: Optional[str] = None
+
+
+@dataclass
+class ImportStats:
+    """Hilfsobjekt zum Sammeln der Importstatistik."""
+
+    total: int = 0
+    with_ai_status: int = 0
+    without_status: int = 0
+
+
+def parse_import_payload(payload: Any) -> List[NormalizedLead]:
+    """
+    Normalisiert beliebige Payloads (CSV-Text, JSON-Objekt oder Array).
+    """
+
+    if payload is None:
+        raise LeadImportError("Der Request-Body ist leer.")
+
+    if isinstance(payload, (bytes, bytearray)):
+        payload = payload.decode("utf-8", errors="ignore")
+
+    if isinstance(payload, str):
+        stripped = payload.strip()
+        if not stripped:
+            raise LeadImportError("Die CSV darf nicht leer sein.")
+        # Wenn valid JSON, erneut parsen
+        if stripped.startswith("{") or stripped.startswith("["):
+            try:
+                data = json.loads(stripped)
+                return parse_import_payload(data)
+            except json.JSONDecodeError:
+                pass
+        return parse_csv_contacts(stripped)
+
+    if isinstance(payload, Mapping):
+        csv_text = (
+            payload.get("csv_text")
+            or payload.get("csv")
+            or payload.get("text")
+            or payload.get("raw")
+        )
+        if csv_text:
+            return parse_import_payload(str(csv_text))
+        leads = payload.get("leads") or payload.get("data") or payload.get("contacts")
+        if leads:
+            return parse_structured_leads(leads)
+        raise LeadImportError(
+            "Ungültiges JSON. Erwartet wird entweder das Feld 'csv' oder 'leads'."
+        )
+
+    if isinstance(payload, Sequence):
+        return parse_structured_leads(payload)
+
+    raise LeadImportError("Das Importformat wird nicht unterstützt.")
+
+
+def parse_structured_leads(records: Sequence[Any]) -> List[NormalizedLead]:
+    """Parst bereits strukturierte JSON-Objekte."""
+
+    if not records:
+        raise LeadImportError("Die Liste der Kontakte ist leer.")
+
+    normalized: List[NormalizedLead] = []
+    for idx, record in enumerate(records, start=1):
+        if not isinstance(record, Mapping):
+            logger.warning("Kontakt %s wird übersprungen (kein Objekt).", idx)
+            continue
+        parsed = normalize_record(record, idx)
+        if parsed:
+            normalized.append(parsed)
+
+    if not normalized:
+        raise LeadImportError("Keiner der Kontakte enthält ausreichend Daten.")
+    return normalized
+
+
+def parse_csv_contacts(csv_text: str) -> List[NormalizedLead]:
+    """Parst CSV-Text tolerant gegenüber Trennzeichen und Groß-/Kleinschreibung."""
+
+    if not csv_text.strip():
+        raise LeadImportError("Die CSV darf nicht leer sein.")
+
+    try:
+        dialect = csv.Sniffer().sniff(csv_text[:1024], delimiters=CSV_DELIMITERS)
+    except csv.Error:
+        dialect = csv.excel
+
+    csv_buffer = io.StringIO(csv_text)
+    reader = csv.DictReader(csv_buffer, dialect=dialect)
+    if not reader.fieldnames:
+        raise LeadImportError("Die CSV enthält keine Header.")
+
+    normalized: List[NormalizedLead] = []
+    for idx, row in enumerate(reader, start=2):  # +2 wegen Headerzeile
+        parsed = normalize_record(row, idx)
+        if parsed:
+            normalized.append(parsed)
+
+    if not normalized:
+        raise LeadImportError("Keine gültigen Kontakte in der CSV gefunden.")
+
+    return normalized
+
+
+def normalize_record(record: Mapping[str, Any], row_number: int) -> Optional[NormalizedLead]:
+    """Mappt beliebige Felder eines Datensatzes in unser Standardformat."""
+
+    canonical: Dict[str, Optional[str]] = {
+        "name": None,
+        "email": None,
+        "phone": None,
+        "company": None,
+        "notes": None,
+        "last_status": None,
+        "last_contact": None,
+        "deal_value": None,
+        "tags": None,
+        "__first_name": None,
+        "__last_name": None,
+    }
+
+    for key, value in record.items():
+        if value is None:
+            continue
+        normalized_value = str(value).strip()
+        if not normalized_value:
+            continue
+        lookup_key = resolve_header(key)
+        if not lookup_key:
+            continue
+        if lookup_key == "tags":
+            canonical["tags"] = normalized_value
+        else:
+            canonical[lookup_key] = normalized_value
+
+    name = canonical.get("name")
+    first = canonical.get("__first_name")
+    last = canonical.get("__last_name")
+    if not name:
+        combined = " ".join(part for part in [first, last] if part).strip()
+        name = combined or None
+
+    if not any([name, canonical.get("email"), canonical.get("phone")]):
+        logger.warning("Kontakt in Zeile %s enthält weder Name noch Email/Telefon.", row_number)
+        return None
+
+    tags = split_tags(canonical.get("tags"))
+    deal_value = parse_deal_value(canonical.get("deal_value"))
+
+    return NormalizedLead(
+        row_number=row_number,
+        name=name,
+        email=canonical.get("email"),
+        phone=canonical.get("phone"),
+        company=canonical.get("company"),
+        notes=canonical.get("notes"),
+        last_status=canonical.get("last_status"),
+        last_contact_text=canonical.get("last_contact"),
+        deal_value=deal_value,
+        tags=tags,
+    )
+
+
+def resolve_header(raw_key: str) -> Optional[str]:
+    """Findet den kanonischen Header für ein beliebiges Feld."""
+
+    normalized = raw_key.strip().lower()
+    for canonical, variants in HEADER_ALIASES.items():
+        if normalized in variants:
+            return canonical
+    return normalized if normalized in {"name", "email", "phone", "company"} else None
+
+
+def split_tags(raw: Optional[str]) -> List[str]:
+    """Zerlegt Tag-Felder in eine Liste."""
+
+    if not raw:
+        return []
+    tags = re.split(r"[;,|]", raw)
+    cleaned = sorted({tag.strip() for tag in tags if tag.strip()})
+    return cleaned
+
+
+def parse_deal_value(raw: Optional[str]) -> Optional[float]:
+    """Parst numerische Werte (z. B. 12.500 €)."""
+
+    if not raw:
+        return None
+    cleaned = raw.replace("€", "").replace("EUR", "").replace("eur", "")
+    cleaned = cleaned.replace(" ", "")
+    cleaned = cleaned.replace(".", "").replace(",", ".")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def coerce_date(value: Optional[str]) -> Optional[str]:
+    """Versucht, ein Datum in ISO-Format zu bringen."""
+
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+
+    try:
+        dt = datetime.fromisoformat(text)
+        return dt.date().isoformat()
+    except ValueError:
+        pass
+
+    date_formats = [
+        "%d.%m.%Y",
+        "%d.%m.%y",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%d/%m/%Y",
+        "%m/%d/%Y",
+        "%d-%m-%Y",
+    ]
+    for fmt in date_formats:
+        try:
+            parsed = datetime.strptime(text, fmt)
+            return parsed.date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def guess_status_from_text(*candidates: Optional[str]) -> Optional[str]:
+    """Heuristik, um Status anhand Freitext zu erraten."""
+
+    lookup = {
+        "interessiert": [
+            "warm",
+            "hot",
+            "interessiert",
+            "läuft",
+            "in kontakt",
+            "positive",
+        ],
+        "angebot": [
+            "angebot",
+            "proposal",
+            "quote",
+            "angebot verschickt",
+            "evaluation",
+            "verhandlung",
+        ],
+        "kunde": ["kunde", "customer", "won", "bestandskunde", "closed won"],
+        "abgelehnt": ["abgelehnt", "lost", "kein interesse", "cancelled", "rejected"],
+        "funkstille": ["funkstille", "ghost", "keine antwort", "wartet", "no response"],
+    }
+
+    fragments = [
+        (c or "").strip().lower()
+        for c in candidates
+        if (c or "").strip()
+    ]
+    joined = " ".join(fragments).strip()
+    if not joined:
+        return None
+
+    for status, keywords in lookup.items():
+        if any(keyword in joined for keyword in keywords):
+            return status
+    if "neu" in joined or "new" in joined:
+        return "neu"
+    return None
+
+
+def normalize_status(value: Optional[str]) -> Optional[str]:
+    """Reduziert beliebige Status-Texte auf die Standardliste."""
+
+    if not value:
+        return None
+    text = value.strip().lower()
+    if text in SUPPORTED_STATUSES:
+        return text
+    mapping = {
+        "hot": "interessiert",
+        "warm": "interessiert",
+        "angebot erstellt": "angebot",
+        "angebot geschickt": "angebot",
+        "won": "kunde",
+        "closed won": "kunde",
+        "lost": "abgelehnt",
+        "stalled": "funkstille",
+    }
+    return mapping.get(text)
+
+
+def normalize_next_action(value: Optional[str]) -> Optional[str]:
+    """Bringt Next-Actions in das gewünschte Format."""
+
+    if not value:
+        return None
+    text = value.strip().upper().replace("-", "_")
+    if text in SUPPORTED_NEXT_ACTIONS:
+        return text
+    mapping = {
+        "FOLLOWUP": "FOLLOW_UP",
+        "CHECKIN": "CHECK_IN",
+        "VALUE_DROP": "VALUE",
+        "REFERRAL_REQUEST": "REFERRAL",
+    }
+    return mapping.get(text)
+
+
+def build_notes(lead: NormalizedLead) -> Optional[str]:
+    """Kombiniert Freitext, Tags und den importierten Status."""
+
+    lines: List[str] = []
+    if lead.notes:
+        lines.append(lead.notes.strip())
+    if lead.tags:
+        lines.append(f"Tags: {', '.join(lead.tags)}")
+    if lead.last_status:
+        lines.append(f"Import-Status (roh): {lead.last_status.strip()}")
+    joined = "\n".join(line for line in lines if line).strip()
+    return joined or None
+
+
+def analyze_imported_lead(
+    lead: NormalizedLead,
+    ai_client: Optional[AIClient],
+) -> Optional[LeadAnalysis]:
+    """
+    Ruft optional die KI auf, um Status + nächste Aktion zu bestimmen.
+    """
+
+    fallback_status = normalize_status(
+        guess_status_from_text(lead.last_status, lead.notes)
+    )
+    fallback_date = coerce_date(lead.last_contact_text)
+
+    if not lead.has_context():
+        if fallback_status:
+            return LeadAnalysis(
+                status=fallback_status,
+                next_action=DEFAULT_NEXT_ACTION_BY_STATUS.get(fallback_status),
+                last_contact_at=fallback_date,
+            )
+        return None
+
+    if not ai_client:
+        if fallback_status:
+            return LeadAnalysis(
+                status=fallback_status,
+                next_action=DEFAULT_NEXT_ACTION_BY_STATUS.get(fallback_status),
+                last_contact_at=fallback_date,
+            )
+        return None
+
+    system_prompt = (
+        "Du bist Sales Flow AI. Analysiere Sales-Kontakte und gib ausschließlich JSON "
+        "im Format {\"status\":\"...\",\"next_action\":\"...\",\"last_contact_at\":\"YYYY-MM-DD\"} zurück. "
+        "Erlaubte Status: neu, interessiert, angebot, kunde, abgelehnt, funkstille. "
+        "Erlaubte next_action: FOLLOW_UP, CHECK_IN, VALUE, REFERRAL. "
+        "Wenn unklar, setze status auf 'neu' und next_action auf 'CHECK_IN'."
+    )
+    payload = {
+        "name": lead.name,
+        "notes": lead.notes,
+        "last_status": lead.last_status,
+        "last_contact": lead.last_contact_text,
+    }
+
+    try:
+        reply = ai_client.generate(
+            system_prompt,
+            [ChatMessage(role="user", content=json.dumps(payload, ensure_ascii=False))],
+        )
+    except Exception:
+        logger.exception("AI-Analyse für Lead %s fehlgeschlagen.", lead.name)
+        reply = ""
+
+    parsed = extract_analysis_payload(reply)
+    if not parsed and fallback_status:
+        return LeadAnalysis(
+            status=fallback_status,
+            next_action=DEFAULT_NEXT_ACTION_BY_STATUS.get(fallback_status),
+            last_contact_at=fallback_date,
+        )
+
+    status = normalize_status(parsed.get("status") if parsed else None) or fallback_status
+    if not status:
+        return None
+
+    next_action = normalize_next_action(parsed.get("next_action")) if parsed else None
+    if not next_action:
+        next_action = DEFAULT_NEXT_ACTION_BY_STATUS.get(status)
+
+    last_contact = parsed.get("last_contact_at") if parsed else None
+    normalized_date = coerce_date(last_contact) or fallback_date
+
+    return LeadAnalysis(
+        status=status,
+        next_action=next_action,
+        last_contact_at=normalized_date,
+    )
+
+
+def extract_analysis_payload(reply: str) -> Optional[Dict[str, Any]]:
+    """Extrahiert JSON aus beliebigen KI-Antworten."""
+
+    if not reply:
+        return None
+
+    stripped = reply.strip().strip("`")
+    try:
+        data = json.loads(stripped)
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"\{.*\}", reply, flags=re.DOTALL)
+    if not match:
+        return None
+    try:
+        data = json.loads(match.group(0))
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        return None
+    return None
+
+
+class LeadImportService:
+    """Kapselt den kompletten Import inkl. Supabase-Insert."""
+
+    def __init__(self, supabase: Client, ai_client: Optional[AIClient] = None) -> None:
+        self._supabase = supabase
+        self._ai_client = ai_client
+
+    def run(self, contacts: Sequence[NormalizedLead]) -> ImportSummary:
+        if not contacts:
+            raise LeadImportError("Es wurden keine Kontakte übergeben.")
+
+        stats = ImportStats(total=0, with_ai_status=0, without_status=0)
+        batch_id = str(uuid.uuid4())
+        prepared_rows: List[Dict[str, Any]] = []
+
+        for lead in contacts:
+            stats.total += 1
+            analysis = analyze_imported_lead(lead, self._ai_client)
+            status, next_action, needs_action = self._resolve_status(lead, analysis)
+
+            notes = build_notes(lead)
+            last_contact = analysis.last_contact_at if analysis else coerce_date(lead.last_contact_text)
+
+            row = {
+                "name": lead.name,
+                "email": lead.email,
+                "phone": lead.phone,
+                "company": lead.company,
+                "notes": notes,
+                "status": status,
+                "next_action": next_action,
+                "last_contact": last_contact,
+                "deal_value": lead.deal_value,
+                "needs_action": needs_action,
+                "import_batch_id": batch_id,
+                "source": "import",
+            }
+
+            prepared_rows.append({k: v for k, v in row.items() if v is not None})
+
+            if needs_action:
+                stats.without_status += 1
+            else:
+                stats.with_ai_status += 1
+
+        self._insert_rows(prepared_rows)
+        return ImportSummary(
+            total=stats.total,
+            with_ai_status=stats.with_ai_status,
+            without_status=stats.without_status,
+        )
+
+    def _resolve_status(
+        self,
+        lead: NormalizedLead,
+        analysis: Optional[LeadAnalysis],
+    ) -> tuple[str, Optional[str], bool]:
+        """Ermittelt finalen Status, nächste Aktion & needs_action."""
+
+        if analysis:
+            status = analysis.status
+            next_action = analysis.next_action or DEFAULT_NEXT_ACTION_BY_STATUS.get(status)
+        else:
+            status = "neu"
+            next_action = DEFAULT_NEXT_ACTION_BY_STATUS.get(status)
+
+        needs_action = (analysis is None) or (status == "neu")
+        return status, next_action, needs_action
+
+    def _insert_rows(self, rows: Sequence[Dict[str, Any]]) -> None:
+        """Schreibt die Daten in Supabase in Batches."""
+
+        if not rows:
+            return
+
+        batch_size = 50
+        for start in range(0, len(rows), batch_size):
+            chunk = rows[start : start + batch_size]
+            response = self._supabase.table("leads").insert(chunk).execute()
+            error = getattr(response, "error", None)
+            if error:
+                raise RuntimeError(f"Supabase-Insert fehlgeschlagen: {error}")
+
+
+__all__ = [
+    "LeadImportService",
+    "LeadImportError",
+    "parse_import_payload",
+    "NormalizedLead",
+]

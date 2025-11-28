@@ -17,6 +17,10 @@ class Settings(BaseModel):
     project_name: str = Field(default="Sales Flow AI Backend")
     openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
+    supabase_url: Optional[str] = Field(default=None, alias="SUPABASE_URL")
+    supabase_service_role_key: Optional[str] = Field(
+        default=None, alias="SUPABASE_SERVICE_ROLE_KEY"
+    )
 
     model_config = {
         "populate_by_name": True,
