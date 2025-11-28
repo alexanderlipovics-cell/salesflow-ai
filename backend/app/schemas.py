@@ -66,9 +66,12 @@ class ActionResponse(BaseModel):
 class ImportSummary(BaseModel):
     """Antwortformat für den Lead-Import."""
 
-    total: int
-    with_ai_status: int
-    without_status: int
+    total_rows: int
+    imported_count: int
+    updated_count: int
+    needs_action_count: int
+    without_last_contact_count: int
+    errors: Optional[List[str]] = None
 
 
 class LeadListItem(BaseModel):

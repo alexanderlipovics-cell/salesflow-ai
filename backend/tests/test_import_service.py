@@ -43,7 +43,7 @@ Anna Schmidt;anna@example.com;20.11.2024;Hot Lead;Will sich im Herbst melden
     assert lead.name == "Anna Schmidt"
     assert lead.email == "anna@example.com"
     assert lead.last_contact_text == "20.11.2024"
-    assert lead.last_status == "Hot Lead"
+    assert lead.status == "Hot Lead"
 
 
 def test_parse_import_payload_accepts_json_list():
@@ -63,7 +63,7 @@ def test_import_service_creates_stats_and_rows():
             row_number=1,
             name="Warm Lead",
             email="warm@example.com",
-            last_status="Hot Lead",
+            status="Hot Lead",
             notes="Wir hatten im Mai gesprochen.",
         ),
         NormalizedLead(
@@ -76,7 +76,10 @@ def test_import_service_creates_stats_and_rows():
     service = LeadImportService(supabase=dummy, ai_client=None)
     summary = service.run(leads)
 
-    assert summary.total == 2
-    assert summary.with_ai_status == 1
-    assert summary.without_status == 1
+    assert summary.total_rows == 2
+    assert summary.imported_count == 2
+    assert summary.updated_count == 0
+    assert summary.needs_action_count == 2
+    assert summary.without_last_contact_count == 2
+    assert summary.errors in (None, [])
     assert len(dummy.rows) == 2

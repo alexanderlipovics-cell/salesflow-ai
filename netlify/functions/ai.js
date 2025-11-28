@@ -1,4 +1,12 @@
-// KI-Cloud-Bridge: enriches every AI response with Supabase lead context.
+/**
+ * Sales Flow AI – Netlify Bridge
+ * ----------------------------------
+ * - Führt Chat-Anfragen an Claude/OpenAI/Gemini aus
+ * - Bietet strukturierte Actions (Lead-Listen, Follow-ups) mit Supabase-Zugriff
+ * - Liefert bei Bedarf Debug-Informationen über ausgeführte Queries
+ */
+
+const { getSupabase } = require("./supabaseClient");
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +25,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-pro-latest";
+const SUPABASE_TABLE = "leads";
 
 const SALESFLOW_SYSTEM_PROMPT = `
 Du bist SALES FLOW AI, ein spezialisierter Vertriebs-Assistent.
@@ -258,6 +267,272 @@ const dispatchToEngine = async ({ engine, systemPrompt, history, userPrompt }) =
   return { reply: await callClaude({ systemPrompt, history, userPrompt }), engineUsed: "claude" };
 };
 
+const clampNumber = (value, min, max, fallback) => {
+  const number = Number.isFinite(value) ? value : Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(Math.max(number, min), max);
+};
+
+const getCurrentWeekRange = () => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setUTCHours(0, 0, 0, 0);
+  const day = start.getUTCDay() || 7; // Montag = 1, Sonntag = 7
+  start.setUTCDate(start.getUTCDate() - (day - 1));
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 7);
+  return { start, end };
+};
+
+const ensureSupabaseClient = () => {
+  const client = getSupabase();
+  if (!client) {
+    const error = new Error("Supabase ist nicht konfiguriert.");
+    error.statusCode = 500;
+    throw error;
+  }
+  return client;
+};
+
+const handleSupabaseError = (error, label = "Supabase-Query") => {
+  console.error(`${label} failed:`, error);
+  const err = new Error(`${label} fehlgeschlagen.`);
+  err.statusCode = 502;
+  throw err;
+};
+
+const SELECT_LEAD_FIELDS =
+  "id,name,email,company,status,last_contact,next_action_at,next_action_description,needs_action,notes";
+
+const loadLeadsForContext = async ({ leadIds = [], logDebug }) => {
+  if (!Array.isArray(leadIds) || !leadIds.length) return [];
+  const supabase = getSupabase();
+  if (!supabase) {
+    logDebug("load_leads_for_context", { skipped: "supabase_missing" });
+    return [];
+  }
+  const ids = leadIds.slice(0, 5);
+  const { data, error } = await supabase
+    .from(SUPABASE_TABLE)
+    .select("id,name,status,company,deal_value")
+    .in("id", ids);
+  if (error) {
+    logDebug("load_leads_for_context_error", { message: error.message });
+    return [];
+  }
+  const mapped = (data || []).map((lead) => ({
+    id: lead.id,
+    name: lead.name,
+    status: lead.status,
+    company: lead.company,
+    value: lead.deal_value,
+  }));
+  logDebug("load_leads_for_context", { ids, count: mapped.length });
+  return mapped;
+};
+
+const findLeadByIdentifier = async ({ supabase, leadId, leadName, logDebug }) => {
+  if (!leadId && !leadName) {
+    const err = new Error("Bitte lead_id oder lead_name angeben.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (leadId) {
+    const { data, error } = await supabase
+      .from(SUPABASE_TABLE)
+      .select(SELECT_LEAD_FIELDS)
+      .eq("id", leadId)
+      .maybeSingle();
+    if (error) handleSupabaseError(error, "Lead-Suche per ID");
+    if (!data) {
+      const err = new Error("Kein Lead mit dieser ID gefunden.");
+      err.statusCode = 404;
+      throw err;
+    }
+    logDebug("find_lead_by_id", { leadId });
+    return data;
+  }
+
+  const sanitizedName = leadName.trim();
+  const baseQuery = () =>
+    supabase
+      .from(SUPABASE_TABLE)
+      .select(SELECT_LEAD_FIELDS)
+      .limit(1);
+
+  let response = await baseQuery().ilike("name", sanitizedName);
+  if (response.error) handleSupabaseError(response.error, "Lead-Suche per Name");
+
+  if (!response.data?.length) {
+    response = await baseQuery()
+      .ilike("name", `%${sanitizedName}%`)
+      .order("next_action_at", { ascending: true, nullsFirst: true });
+    if (response.error) handleSupabaseError(response.error, "Lead-Suche per Name (Fallback)");
+  }
+
+  const lead = response.data?.[0];
+  if (!lead) {
+    const err = new Error("Kein Lead mit diesem Namen gefunden.");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  logDebug("find_lead_by_name", { query: sanitizedName, leadId: lead.id });
+  return lead;
+};
+
+const FOLLOWUP_SYSTEM_PROMPT = `
+Du bist Sales Flow AI. Schreibe kurze, direkte Follow-up-Nachrichten auf Deutsch.
+- Ton: locker, wertschätzend, klarer Call-to-Action.
+- Nutze Status, letzte Aktivität und Notizen.
+- Eine Nachricht mit 2–4 Sätzen, keine Floskeln wie "Ich hoffe es geht dir gut".
+Gib nur den Nachrichtentext zurück.
+`.trim();
+
+const ACTION_DEFINITIONS = {
+  list_hot_leads_this_week: {
+    name: "Hot-Leads dieser Woche",
+    description: "Listet alle Leads mit Status hot, deren Follow-up in die aktuelle Woche fällt.",
+    expectedInput: "Optional: limit (max 50)",
+    execute: async ({ supabase, input = {}, logDebug }) => {
+      const limit = clampNumber(Number(input.limit), 1, 50, 25);
+      const { start, end } = getCurrentWeekRange();
+      const { data, error } = await supabase
+        .from(SUPABASE_TABLE)
+        .select("id,name,company,status,next_action_at,next_action_description,last_contact")
+        .in("status", ["hot", "HOT"])
+        .gte("next_action_at", start.toISOString())
+        .lte("next_action_at", end.toISOString())
+        .order("next_action_at", { ascending: true })
+        .limit(limit);
+      if (error) handleSupabaseError(error, "Hot-Leads-Query");
+      logDebug("list_hot_leads_this_week", {
+        limit,
+        range: { start: start.toISOString(), end: end.toISOString() },
+        count: data?.length || 0,
+      });
+      return {
+        leads: data || [],
+        window: { start: start.toISOString(), end: end.toISOString() },
+      };
+    },
+  },
+  list_needs_action_leads: {
+    name: "Needs-Action-Leads",
+    description: "Zeigt Leads ohne aktuellen Kontakt oder überfällige Follow-ups.",
+    expectedInput: "Optional: limit (max 100)",
+    execute: async ({ supabase, input = {}, logDebug }) => {
+      const limit = clampNumber(Number(input.limit), 1, 100, 50);
+      const { data, error } = await supabase
+        .from(SUPABASE_TABLE)
+        .select("id,name,email,company,status,last_contact,next_action_at,next_action_description")
+        .eq("needs_action", true)
+        .order("next_action_at", { ascending: true, nullsFirst: true })
+        .limit(limit);
+      if (error) handleSupabaseError(error, "Needs-Action-Query");
+      logDebug("list_needs_action_leads", { limit, count: data?.length || 0 });
+      return { leads: data || [] };
+    },
+  },
+  generate_followup_for_lead: {
+    name: "Follow-up erstellen",
+    description: "Schreibt eine Follow-up-Nachricht für einen spezifischen Lead.",
+    expectedInput: "{ lead_id?: string, lead_name?: string }",
+    execute: async ({ supabase, input = {}, engine, logDebug }) => {
+      const leadId = input.lead_id || input.leadId;
+      const leadName = input.lead_name || input.leadName;
+      const lead = await findLeadByIdentifier({ supabase, leadId, leadName, logDebug });
+
+      const contextParts = [
+        `Lead: ${lead.name || "Unbekannt"}`,
+        lead.company ? `Unternehmen: ${lead.company}` : null,
+        lead.status ? `Status: ${lead.status}` : null,
+        lead.last_contact ? `Letzter Kontakt: ${lead.last_contact}` : null,
+        lead.next_action_description ? `Nächste Aktion: ${lead.next_action_description}` : null,
+        lead.notes ? `Notizen: ${String(lead.notes).slice(0, 400)}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const userPrompt = `${contextParts}\n\nAufgabe: Schreibe eine Follow-up-Nachricht mit direktem Vorschlag für den nächsten Schritt.`;
+
+      const { reply, engineUsed } = await dispatchToEngine({
+        engine,
+        systemPrompt: FOLLOWUP_SYSTEM_PROMPT,
+        history: [],
+        userPrompt,
+      });
+
+      logDebug("generate_followup_for_lead", { leadId: lead.id, engineUsed });
+
+      return {
+        lead: {
+          id: lead.id,
+          name: lead.name,
+          company: lead.company,
+          status: lead.status,
+          last_contact: lead.last_contact,
+          next_action_at: lead.next_action_at,
+          needs_action: lead.needs_action,
+        },
+        followup_text: reply,
+        reasoning: `Generiert basierend auf Status ${lead.status || "unbekannt"}.`,
+        engine: engineUsed,
+      };
+    },
+  },
+};
+
+const parseJsonActionCommand = (text) => {
+  if (!text || typeof text !== "string") return null;
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
+  try {
+    const payload = JSON.parse(trimmed);
+    if (payload && typeof payload.action === "string") {
+      return { name: payload.action, data: payload.data || payload.payload || {} };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const sanitizeName = (value = "") => value.replace(/[.,;!?]+$/, "").trim();
+
+const detectActionFromMessage = (text) => {
+  if (!text || typeof text !== "string") return null;
+  const jsonAction = parseJsonActionCommand(text);
+  if (jsonAction) return jsonAction;
+
+  const lower = text.toLowerCase();
+  if (lower.includes("hot") && lower.includes("lead") && (lower.includes("woche") || lower.includes("week"))) {
+    return { name: "list_hot_leads_this_week", data: {} };
+  }
+  if (
+    lower.includes("needs action") ||
+    lower.includes("brauchen eine aktion") ||
+    lower.includes("ohne kontakt") ||
+    (lower.includes("überfällig") && lower.includes("lead"))
+  ) {
+    return { name: "list_needs_action_leads", data: {} };
+  }
+
+  const followMatch =
+    text.match(/follow[-\s]?up\s*(?:an|für)?\s+([A-ZÄÖÜ][\wÄÖÜäöüß]+(?:\s+[A-ZÄÖÜ][\wÄÖÜäöüß]+)?)/i) ||
+    text.match(/schreib(?:e)?\s+(?:ein\s+)?follow[-\s]?up\s+an\s+([A-ZÄÖÜ][^\d,]+)/i);
+  if (followMatch) {
+    return {
+      name: "generate_followup_for_lead",
+      data: { lead_name: sanitizeName(followMatch[1]) },
+    };
+  }
+
+  return null;
+};
+
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
@@ -273,15 +548,52 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    
-    const action = typeof body.action === "string" ? body.action.trim() : "chat";
+    const queryDebug = event.queryStringParameters?.debug === "true";
+    const debugEnabled = queryDebug || Boolean(body.debug);
+    const debugLog = [];
+    const logDebug = (label, details = {}) => {
+      if (!debugEnabled) return;
+      debugLog.push({
+        label,
+        details,
+        timestamp: new Date().toISOString(),
+      });
+    };
+
+    const rawAction = typeof body.action === "string" ? body.action.trim() : "";
     const message = typeof body.message === "string" ? body.message.trim() : "";
     const history = Array.isArray(body.history) ? body.history : [];
     const requestedModule = typeof body.module === "string" ? body.module.trim().toLowerCase() : "";
     const engine = typeof body.engine === "string" ? body.engine.trim().toLowerCase() : "claude";
     const extra = isPlainObject(body.extra) ? body.extra : {};
+    const actionData = isPlainObject(body.data)
+      ? body.data
+      : isPlainObject(body.payload)
+      ? body.payload
+      : {};
 
-    if (!message && action !== "analyze_lead_context") {
+    const explicitAction =
+      rawAction && ACTION_DEFINITIONS[rawAction]
+        ? { name: rawAction, data: actionData }
+        : null;
+    if (explicitAction) {
+      logDebug("action_from_body", { action: explicitAction.name });
+    }
+
+    let detectedAction = null;
+    if (!explicitAction) {
+      detectedAction = detectActionFromMessage(message);
+      if (detectedAction && !ACTION_DEFINITIONS[detectedAction.name]) {
+        detectedAction = null;
+      }
+      if (detectedAction) {
+        logDebug("action_detected", { action: detectedAction.name });
+      }
+    }
+
+    const selectedAction = explicitAction || detectedAction;
+
+    if (!message && !selectedAction) {
       return {
         statusCode: 400,
         headers: JSON_HEADERS,
@@ -289,10 +601,45 @@ exports.handler = async (event) => {
       };
     }
 
-    const module = (requestedModule && MODULE_INSTRUCTIONS[requestedModule] ? requestedModule : null) ||
-      ACTION_MODULE_MAP[action] || "general_sales";
+    if (selectedAction) {
+      const definition = ACTION_DEFINITIONS[selectedAction.name];
+      const supabase = ensureSupabaseClient();
+      const result = await definition.execute({
+        supabase,
+        input: selectedAction.data || {},
+        engine,
+        logDebug,
+      });
+      const responseBody = {
+        type: "action_result",
+        action: selectedAction.name,
+        name: definition.name,
+        description: definition.description,
+        expectedInput: definition.expectedInput,
+        result,
+      };
+      if (debugEnabled) responseBody.debug = debugLog;
+      return {
+        statusCode: 200,
+        headers: JSON_HEADERS,
+        body: JSON.stringify(responseBody),
+      };
+    }
 
-    const leads = []; // Supabase lead loading can be added later
+    const actionForModule = rawAction || "chat";
+    const module =
+      (requestedModule && MODULE_INSTRUCTIONS[requestedModule] ? requestedModule : null) ||
+      ACTION_MODULE_MAP[actionForModule] ||
+      "general_sales";
+
+    const leadIds = Array.isArray(body.leadIds)
+      ? body.leadIds
+      : Array.isArray(body.contextLeadIds)
+      ? body.contextLeadIds
+      : [];
+    const normalizedLeadIds = leadIds.filter(Boolean).map((id) => String(id));
+    const leads = await loadLeadsForContext({ leadIds: normalizedLeadIds, logDebug });
+
     const systemPrompt = buildSystemPrompt(leads);
     const userPrompt = buildUserPrompt({ module, message: message || "Analysiere diesen Lead.", leads, extra });
 
@@ -303,15 +650,18 @@ exports.handler = async (event) => {
       userPrompt,
     });
 
+    const responseBody = {
+      reply,
+      module,
+      engine: engineUsed,
+      leadContext: leads,
+    };
+    if (debugEnabled) responseBody.debug = debugLog;
+
     return {
       statusCode: 200,
       headers: JSON_HEADERS,
-      body: JSON.stringify({
-        reply,
-        module,
-        engine: engineUsed,
-        leadContext: leads,
-      }),
+      body: JSON.stringify(responseBody),
     };
   } catch (error) {
     console.error("AI function error:", error);
