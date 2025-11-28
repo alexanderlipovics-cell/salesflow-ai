@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sales Flow AI · Lead Chat</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0d1117;
+        --panel: #161b22;
+        --accent: #00d8a4;
+        --accent-dark: #00a97c;
+        --text: #f0f6fc;
+        --muted: #8b949e;
+        --danger: #ff6575;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #020611, #111b2d 65%, #080c18);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: 3fr 1.15fr;
+        gap: 1.5rem;
+        width: min(1200px, 100%);
+      }
+
+      section {
+        background: rgba(13, 17, 23, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 18px;
+        padding: 1.5rem;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .chat-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        height: 520px;
+        overflow-y: auto;
+        margin: 1.25rem 0;
+        padding-right: 0.5rem;
+      }
+
+      .bubble {
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        line-height: 1.45;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        white-space: pre-wrap;
+      }
+
+      .bubble.user {
+        background: rgba(0, 216, 164, 0.08);
+        border-color: rgba(0, 216, 164, 0.4);
+        align-self: flex-end;
+      }
+
+      .bubble.assistant {
+        align-self: flex-start;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      textarea,
+      input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(15, 20, 30, 0.8);
+        color: inherit;
+        padding: 0.9rem 1rem;
+        resize: none;
+        font-size: 1rem;
+      }
+
+      textarea {
+        min-height: 110px;
+      }
+
+      textarea:focus,
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(0, 216, 164, 0.35);
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 0.9rem 1.4rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #03150e;
+        box-shadow: 0 10px 25px rgba(0, 216, 164, 0.35);
+      }
+
+      button.secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      button:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 25px rgba(0, 216, 164, 0.4);
+      }
+
+      .sidebar h2 {
+        margin-top: 0;
+        font-size: 1.15rem;
+      }
+
+      .sidebar p {
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .status {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 0.9rem;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+      }
+
+      .status[data-type="error"] {
+        border-color: rgba(255, 101, 117, 0.35);
+        color: var(--danger);
+      }
+
+      .status[data-type="success"] {
+        border-color: rgba(0, 216, 164, 0.35);
+        color: var(--accent);
+      }
+
+      .lead-meta {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+      }
+
+      .chip {
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      @media (max-width: 980px) {
+        body {
+          padding: 1rem;
+        }
+
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .chat-feed {
+          height: 360px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <header>
+          <h1>Sales Flow AI · Chat</h1>
+          <p class="muted">Frag nach Taktiken, erwähne Leads via @Name oder #lead:123.</p>
+        </header>
+
+        <div id="chatFeed" class="chat-feed"></div>
+
+        <form id="chatForm">
+          <label>
+            <textarea
+              id="messageInput"
+              placeholder="Schreibe deine Frage … z. B. „@Sven – was ist der nächste Schritt?“"
+            ></textarea>
+          </label>
+
+          <label>
+            <input
+              id="leadInput"
+              type="text"
+              placeholder="Optional: Lead-Namen oder ID hier einfügen (z. B. 874 oder Marie Cron)"
+            />
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="primary" id="sendButton">Senden</button>
+            <button type="button" class="secondary" id="analyzeButton">
+              Lead analysieren
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="sidebar">
+        <h2>Lead-Kontext</h2>
+        <p>
+          Nutze <code>@Lead</code> oder <code>#lead:ID</code> im Chat oder gib den Namen/ID im Feld
+          ein. Der Analyze-Button ruft automatisch die Datenbank auf und injiziert den Kontext in
+          den Claude-Prompt.
+        </p>
+
+        <div class="status" id="statusBanner" data-type="idle">
+          Bereit für deine Fragen.
+        </div>
+
+        <div class="lead-meta" id="leadMeta"></div>
+      </section>
+    </main>
+
+    <script>
+      const chatFeed = document.getElementById("chatFeed");
+      const chatForm = document.getElementById("chatForm");
+      const messageInput = document.getElementById("messageInput");
+      const leadInput = document.getElementById("leadInput");
+      const statusBanner = document.getElementById("statusBanner");
+      const leadMeta = document.getElementById("leadMeta");
+      const analyzeButton = document.getElementById("analyzeButton");
+      const sendButton = document.getElementById("sendButton");
+
+      const conversation = [];
+      let isSending = false;
+
+      chatForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        sendChat();
+      });
+
+      analyzeButton.addEventListener("click", () => {
+        sendChat({ action: "analyze_lead_context" });
+      });
+
+      messageInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendChat();
+        }
+      });
+
+      function appendBubble(role, text) {
+        const bubble = document.createElement("div");
+        bubble.className = `bubble ${role}`;
+        bubble.textContent = text.trim();
+        chatFeed.appendChild(bubble);
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+      }
+
+      function updateLeadMeta(reference) {
+        leadMeta.innerHTML = "";
+        if (!reference) {
+          return;
+        }
+
+        const label = document.createElement("div");
+        label.className = "chip";
+        label.textContent = reference.id
+          ? `Lead-ID · ${reference.id}`
+          : `Lead · ${reference.name}`;
+        leadMeta.appendChild(label);
+      }
+
+      function setStatus(message, type = "idle") {
+        statusBanner.textContent = message;
+        statusBanner.dataset.type = type;
+      }
+
+      function setLoading(state) {
+        isSending = state;
+        sendButton.disabled = state;
+        analyzeButton.disabled = state;
+      }
+
+      function normalizeLeadValue(value) {
+        if (!value) return null;
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        if (/^\d+$/.test(trimmed)) {
+          return { id: trimmed };
+        }
+        return { name: trimmed };
+      }
+
+      function detectLeadReference(message, manualValue) {
+        const manual = normalizeLeadValue(manualValue);
+        if (manual) return manual;
+
+        if (!message) return null;
+        const bracketMatch = message.match(/\[lead:(.+?)\]/i);
+        if (bracketMatch) {
+          return normalizeLeadValue(bracketMatch[1]);
+        }
+
+        const hashMatch = message.match(/#lead[:\s-]*([a-z0-9 _-]{2,50})/i);
+        if (hashMatch) {
+          return normalizeLeadValue(hashMatch[1]);
+        }
+
+        const mentionMatch = message.match(/@([a-z][\w\s'-]{1,50})/i);
+        if (mentionMatch) {
+          return normalizeLeadValue(mentionMatch[1]);
+        }
+        return null;
+      }
+
+      async function sendChat(options = {}) {
+        if (isSending) return;
+
+        const action = options.action || "chat";
+        const rawMessage = messageInput.value.trim();
+        let message = rawMessage;
+
+        if (!message && action !== "analyze_lead_context") {
+          setStatus("Bitte gib zuerst eine Nachricht ein.", "error");
+          return;
+        }
+
+        if (!message && action === "analyze_lead_context") {
+          message = "Bitte analysiere diesen Lead für mich.";
+        }
+
+        const leadReference = detectLeadReference(rawMessage, leadInput.value);
+        if (action === "analyze_lead_context" && !leadReference) {
+          setStatus("Für eine Analyse benötige ich den Lead-Namen oder die ID.", "error");
+          return;
+        }
+
+        const historyForApi = conversation.map((entry) => ({ ...entry }));
+        conversation.push({ role: "user", content: message });
+        appendBubble("user", message);
+        updateLeadMeta(leadReference);
+        messageInput.value = "";
+
+        try {
+          setLoading(true);
+          setStatus("Cloud-Bridge aktiviert …", "success");
+          const response = await fetch("/.netlify/functions/ai", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action,
+              message,
+              history: historyForApi,
+              lead: leadReference,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Unbekannter Fehler bei der AI-Bridge.");
+          }
+
+          const data = await response.json();
+          const reply = (data.reply || "Ich habe aktuell keine Antwort.").trim();
+          conversation.push({ role: "assistant", content: reply });
+          appendBubble("assistant", reply);
+
+          if (data.leadContext) {
+            setStatus("Lead-Kontext injiziert und Strategie erstellt.", "success");
+          } else {
+            setStatus("Antwort ohne Lead-Kontext gesendet.", "idle");
+          }
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message || "Die AI-Bridge ist gerade nicht erreichbar.", "error");
+          if (conversation.at(-1)?.role === "user") {
+            conversation.pop();
+          }
+          messageInput.value = rawMessage;
+        } finally {
+          setLoading(false);
+          if (!isSending && statusBanner.dataset.type === "idle") {
+            setStatus("Bereit für deine Fragen.");
+          }
+          messageInput.focus();
+        }
+      }
+
+      messageInput.focus();
+    </script>
+  </body>
+</html>
