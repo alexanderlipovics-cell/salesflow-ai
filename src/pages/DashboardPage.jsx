@@ -1,5 +1,6 @@
 import { usePricingModal } from "../context/PricingModalContext";
 import { useSubscription } from "../hooks/useSubscription";
+import DailyCommandCard from "../features/daily-command/DailyCommandCard";
 
 const DashboardPage = () => {
   const { openPricing } = usePricingModal();
@@ -23,6 +24,9 @@ const DashboardPage = () => {
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <DailyCommandCard horizonDays={3} limit={20} />
+        </div>
         <div className="rounded-2xl border border-white/5 bg-black/20 p-5">
           <p className="text-sm text-gray-400">Lead Scanner</p>
           <p className="mt-2 text-2xl font-semibold">500 neue Signale</p>
