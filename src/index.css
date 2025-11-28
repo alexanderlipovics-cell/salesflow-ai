@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+body {
+  @apply bg-gray-950 text-gray-100 min-h-screen;
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+.glass-panel {
+  @apply bg-gray-900/70 backdrop-blur-xl border border-white/5 rounded-3xl;
+}
+
+.card-sheen {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0)
+  );
+}
