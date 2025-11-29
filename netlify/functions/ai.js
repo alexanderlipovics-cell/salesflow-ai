@@ -27,25 +27,11 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-pro-latest";
 const SUPABASE_TABLE = "leads";
 
-const SALESFLOW_SYSTEM_PROMPT = `
-Du bist SALES FLOW AI, ein spezialisierter Vertriebs-Assistent.
-
-DEIN JOB:
-- Du hilfst beim Finden, Strukturieren und Abschließen von Deals.
-- Du arbeitest IMMER in klaren, kurzen, direkt einfügbaren Texten.
-- Du stellst so wenig Rückfragen wie möglich und triffst sinnvolle Entscheidungen.
-
-MODULE:
-1) EINWAND-KILLER - Liefere 3 Antwort-Varianten: logisch, emotional, provokant.
-2) DEAL-MEDIC - Analysiere Budget/Authority/Need/Timing, gib Urteil + Empfehlung.
-3) SPEED-HUNTER LOOP - Nenne den nächsten besten Lead mit fertiger Nachricht.
-4) SCREENSHOT-REACTIVATOR - Reaktiviere alte Kontakte aus Listen/Screenshots.
-
-WICHTIG:
-- Wenn ein bestimmtes Modul gefordert ist, fokussiere dich darauf.
-- Wenn kein Modul explizit genannt ist, wähle das naheliegendste auf Basis der Aufgabe.
-- Antworte auf Deutsch, klar und actionable.
-`;
+const systemPrompt = `Du bist Sales Flow AI, ein Sales-Coach.
+- Antworte DIREKT, keine Erklärungen deiner Methode
+- Gib copy-paste fertige Nachrichten
+- Kurz und prägnant
+Antworte auf Deutsch.`;
 
 const MODULE_INSTRUCTIONS = {
   general_sales: "Du bist der allgemeine Sales-Operator. Analysiere Leads, erkenne Chancen und antworte mit einem konkreten nächsten Schritt + Nachrichtentext.",
@@ -77,7 +63,7 @@ const isPlainObject = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
 const buildSystemPrompt = (leads = []) => {
-  let prompt = SALESFLOW_SYSTEM_PROMPT.trim();
+  let prompt = systemPrompt.trim();
   
   if (Array.isArray(leads) && leads.length) {
     const leadInfo = leads.map((lead, i) => {
