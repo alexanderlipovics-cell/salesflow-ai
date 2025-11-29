@@ -26,7 +26,7 @@ const defaultLeadContext = `{
   "notes": "Hat Budget für Q1 reserviert"
 }`;
 
-const leadContextFields = [
+const leadFieldLabels = [
   { key: "name", label: "Name" },
   { key: "company", label: "Firma" },
   { key: "status", label: "Status" },
@@ -34,38 +34,62 @@ const leadContextFields = [
   { key: "notes", label: "Notizen" },
 ];
 
-const parseLeadContext = (contextString) => {
-  try {
-    const parsed = JSON.parse(contextString);
-    return typeof parsed === "object" && parsed !== null ? parsed : null;
-  } catch (error) {
-    console.warn("Lead context could not be parsed", error);
-    return null;
-  }
-};
-
-const LeadContextSummary = ({ details }) => {
-  if (!details) {
+const LeadContextSummary = ({ entries, hasError, onEdit, className = "" }) => {
+  if (hasError) {
     return (
-      <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-        Lead-Kontext konnte nicht geladen werden. Bitte das JSON prüfen.
-      </p>
+      <div
+        className={clsx(
+          "rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-50",
+          className
+        )}
+      >
+        <p>Der Lead-Kontext konnte nicht geladen werden. Bitte prüfe dein JSON.</p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-rose-400/50 px-4 py-1.5 text-xs font-semibold text-rose-100 hover:border-rose-200/80"
+          >
+            JSON bearbeiten
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (!entries.length) {
+    return (
+      <div
+        className={clsx(
+          "rounded-2xl border border-slate-800/80 bg-slate-950/40 px-4 py-3 text-sm text-slate-300",
+          className
+        )}
+      >
+        <p>Noch keine Lead-Daten hinterlegt.</p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-slate-700 px-4 py-1.5 text-xs font-semibold text-slate-200 hover:text-white"
+          >
+            Lead-Kontext hinzufügen
+          </button>
+        )}
+      </div>
     );
   }
 
   return (
-    <dl className="space-y-2">
-      {leadContextFields.map(({ key, label }) => (
+    <dl className={clsx("space-y-3", className)}>
+      {entries.map(({ label, value }) => (
         <div
-          key={key}
-          className="rounded-xl border border-slate-800/60 bg-slate-900/40 px-4 py-3"
+          key={label}
+          className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3"
         >
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
             {label}
           </dt>
-          <dd className="text-sm font-medium text-slate-100">
-            {details[key] || "–"}
-          </dd>
+          <dd className="mt-1 text-sm text-slate-100 whitespace-pre-line">{value}</dd>
         </div>
       ))}
     </dl>
@@ -79,7 +103,49 @@ const ChatPage = () => {
   const [contextSaved, setContextSaved] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
   const [contextPanel, setContextPanel] = useState("lead");
-  const [showRawContextEditor, setShowRawContextEditor] = useState(false);
+  const [isEditingLeadContext, setIsEditingLeadContext] = useState(false);
+
+  const parsedLeadContext = useMemo(() => {
+    try {
+      return JSON.parse(leadContext || "{}");
+    } catch (error) {
+      console.error("Ungültiger Lead-Kontext", error);
+      return null;
+    }
+  }, [leadContext]);
+
+  const leadContextEntries = useMemo(() => {
+    if (!parsedLeadContext || typeof parsedLeadContext !== "object") {
+      return [];
+    }
+
+    const prioritized = leadFieldLabels
+      .map(({ key, label }) => {
+        const value = parsedLeadContext[key];
+        if (value === undefined || value === null || value === "") return null;
+        return {
+          label,
+          value:
+            typeof value === "string" ? value : JSON.stringify(value, null, 2),
+        };
+      })
+      .filter(Boolean);
+
+    const additional = Object.entries(parsedLeadContext)
+      .filter(([key, value]) => {
+        if (value === undefined || value === null || value === "") return false;
+        return !leadFieldLabels.some((field) => field.key === key);
+      })
+      .map(([key, value]) => ({
+        label: key
+          .split("_")
+          .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+          .join(" "),
+        value: typeof value === "string" ? value : JSON.stringify(value, null, 2),
+      }));
+
+    return [...prioritized, ...additional];
+  }, [parsedLeadContext]);
 
   const renderedMessages = useMemo(
     () =>
@@ -108,8 +174,6 @@ const ChatPage = () => {
       )),
     [messages]
   );
-
-  const leadDetails = useMemo(() => parseLeadContext(leadContext), [leadContext]);
 
   const handleSendMessage = async (event) => {
     event.preventDefault();
@@ -318,41 +382,58 @@ const ChatPage = () => {
             </div>
 
             {contextPanel === "lead" ? (
-              <form className="space-y-4" onSubmit={handleSaveContext}>
-                <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                  <LeadContextSummary details={leadDetails} />
-                  <div className="space-y-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span>Roher Kontext (JSON)</span>
+              <div className="space-y-4">
+                <LeadContextSummary
+                  entries={leadContextEntries}
+                  hasError={!parsedLeadContext}
+                  onEdit={() => setIsEditingLeadContext(true)}
+                />
+
+                {isEditingLeadContext ? (
+                  <form
+                    className="space-y-3"
+                    onSubmit={(event) => {
+                      handleSaveContext(event);
+                      setIsEditingLeadContext(false);
+                    }}
+                  >
+                    <textarea
+                      value={leadContext}
+                      onChange={(event) => setLeadContext(event.target.value)}
+                      className="h-48 w-full rounded-xl border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs text-emerald-200 outline-none"
+                    />
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        type="submit"
+                        className="flex-1 rounded-xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/30"
+                      >
+                        Kontext speichern
+                      </button>
                       <button
                         type="button"
-                        className="font-semibold text-emerald-300 transition hover:text-emerald-100"
-                        onClick={() => setShowRawContextEditor((prev) => !prev)}
+                        onClick={() => setIsEditingLeadContext(false)}
+                        className="flex-1 rounded-xl border border-slate-800 px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white"
                       >
-                        {showRawContextEditor ? "JSON ausblenden" : "JSON bearbeiten"}
+                        Abbrechen
                       </button>
                     </div>
-                    {showRawContextEditor && (
-                      <textarea
-                        value={leadContext}
-                        onChange={(event) => setLeadContext(event.target.value)}
-                        className="h-48 w-full rounded-xl border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs text-emerald-200 outline-none"
-                      />
-                    )}
-                    <button
-                      type="submit"
-                      className="w-full rounded-xl bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20"
-                    >
-                      Kontext speichern
-                    </button>
-                    {contextSaved && (
-                      <p className="text-center text-xs text-emerald-200">
-                        Kontext aktualisiert · Copilot nutzt die neuesten Daten.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </form>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingLeadContext(true)}
+                    className="w-full rounded-xl border border-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:text-white"
+                  >
+                    Lead-Kontext bearbeiten
+                  </button>
+                )}
+
+                {contextSaved && (
+                  <p className="text-center text-xs text-emerald-200">
+                    Kontext aktualisiert · Copilot nutzt die neuesten Daten.
+                  </p>
+                )}
+              </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-slate-300">
@@ -394,41 +475,18 @@ const ChatPage = () => {
                 </span>
               </div>
 
-              <form className="space-y-4" onSubmit={handleSaveContext}>
-                <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-                  <LeadContextSummary details={leadDetails} />
-                  <div className="space-y-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span>Roher Kontext (JSON)</span>
-                      <button
-                        type="button"
-                        className="font-semibold text-emerald-300 transition hover:text-emerald-100"
-                        onClick={() => setShowRawContextEditor((prev) => !prev)}
-                      >
-                        {showRawContextEditor ? "JSON ausblenden" : "JSON bearbeiten"}
-                      </button>
-                    </div>
-                    {showRawContextEditor && (
-                      <textarea
-                        value={leadContext}
-                        onChange={(event) => setLeadContext(event.target.value)}
-                        className="h-48 w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-4 font-mono text-sm text-emerald-100 outline-none"
-                      />
-                    )}
-                    <button
-                      type="submit"
-                      className="w-full rounded-2xl bg-emerald-400/20 px-4 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/30"
-                    >
-                      Kontext speichern
-                    </button>
-                    {contextSaved && (
-                      <p className="text-center text-xs text-emerald-200">
-                        Kontext aktualisiert · Copilot nutzt die neuesten Daten.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </form>
+              <LeadContextSummary
+                entries={leadContextEntries}
+                hasError={!parsedLeadContext}
+                onEdit={() => setIsEditingLeadContext(true)}
+              />
+              <button
+                type="button"
+                onClick={() => setIsEditingLeadContext(true)}
+                className="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm font-semibold text-slate-200 hover:text-white"
+              >
+                Lead-Kontext bearbeiten
+              </button>
             </section>
 
             <section className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5 space-y-4">
