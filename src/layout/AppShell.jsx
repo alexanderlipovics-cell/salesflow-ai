@@ -67,13 +67,11 @@ const AppShell = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50 antialiased">
-      <aside className="hidden h-screen w-64 flex-col border-r border-slate-900 bg-slate-950/95 py-6 xl:flex">
+      <aside className="hidden h-screen w-64 flex-col space-y-6 border-r border-slate-900 bg-slate-950/95 py-6 xl:flex">
         <div className="flex-1 space-y-6 overflow-y-auto">
           <div className="px-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-              Sales Flow AI
-            </p>
-            <p className="text-lg font-semibold text-slate-50">
+            <p className="text-lg font-semibold text-slate-50">Sales Flow AI</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
               Deal Operating System
             </p>
             <p className="text-[10px] uppercase tracking-[0.28em] text-slate-600">
@@ -82,7 +80,7 @@ const AppShell = () => {
           </div>
 
           {navGroups.map((section) => (
-            <div key={section.title}>
+            <div key={section.title} className="mt-4">
               <div className="px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 {section.title}
               </div>
@@ -155,7 +153,7 @@ const AppShell = () => {
         </div>
 
         <div role="main" className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-6xl px-6 py-8">
             <Outlet />
           </div>
         </div>
