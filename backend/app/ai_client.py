@@ -8,7 +8,8 @@ from typing import Any, List
 
 from openai import OpenAI
 
-from .schemas import ChatMessage
+from .config import get_settings
+from .schemas import ActionData, ActionType, ChatMessage
 
 
 class AIClient:
@@ -68,4 +69,19 @@ class AIClient:
         return "\n".join(chunks).strip() or "Ich habe dazu gerade keine Idee."
 
 
-__all__ = ["AIClient"]
+def choose_model_for_action(action: ActionType, data: ActionData) -> str:
+    """
+    Wählt ein Modell in Abhängigkeit von Action-Typ und Payload.
+    Aktuell: Platzhalter-Logik für zukünftige Research-Modelle.
+    """
+
+    settings = get_settings()
+    gemini_model = getattr(settings, "gemini_model", None)
+
+    if action == "lead_hunter" and gemini_model:
+        return gemini_model
+
+    return settings.openai_model
+
+
+__all__ = ["AIClient", "choose_model_for_action"]

@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 
-from .ai_client import AIClient
+from .ai_client import AIClient, choose_model_for_action
 from .config import get_settings
 from .import_service import LeadImportError, LeadImportService, parse_import_payload
 from .prompts import build_system_prompt
@@ -64,9 +64,11 @@ async def handle_ai(request: ActionRequest) -> ActionResponse:
             status_code=500, detail="OPENAI_API_KEY ist nicht gesetzt."
         )
 
+    model_name = choose_model_for_action(request.action, request.data)
+
     client = AIClient(
         api_key=settings.openai_api_key,
-        model=settings.openai_model,
+        model=model_name,
     )
 
     try:

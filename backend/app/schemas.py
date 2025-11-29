@@ -15,6 +15,7 @@ ActionType = Literal[
     "analyze_lead",
     "create_template",
     "knowledge_answer",
+    "lead_hunter",
 ]
 
 ChatRole = Literal["user", "assistant", "system"]
@@ -54,6 +55,7 @@ class ActionData(BaseModel):
     )
     scenario_vertical: Optional[str] = None
     scenario_tags: Optional[List[str]] = None
+    lead_hunter: Optional["LeadHunterConfig"] = None
 
 
 class ActionRequest(BaseModel):
@@ -68,6 +70,29 @@ class ActionResponse(BaseModel):
 
     action: ActionType
     reply: str
+
+
+class LeadSuggestion(BaseModel):
+    """Vorschlag aus dem Lead-Hunter; Antwort wird derzeit als JSON-String in reply übertragen."""
+
+    name: Optional[str] = None
+    company: Optional[str] = None
+    role: Optional[str] = None
+    website_url: Optional[str] = None
+    impressum_url: Optional[str] = None
+    region: Optional[str] = None
+    source: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class LeadHunterConfig(BaseModel):
+    """Konfiguration für den Lead-Hunter (z. B. Branche, Region, Query)."""
+
+    query: Optional[str] = None
+    industry: Optional[str] = None
+    region: Optional[str] = None
+    min_team_size: Optional[int] = None
+    max_results: int = 20
 
 
 class ImportSummary(BaseModel):
@@ -150,11 +175,11 @@ __all__ = [
     "ActionData",
     "ActionRequest",
     "ActionResponse",
+    "LeadSuggestion",
+    "LeadHunterConfig",
     "ImportSummary",
     "LeadListItem",
     "DailyCommandItem",
     "DailyCommandResponse",
     "NeedsActionResponse",
-    "DailyCommandItem",
-    "DailyCommandResponse",
 ]
