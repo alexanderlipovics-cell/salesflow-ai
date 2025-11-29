@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bot, Paperclip, Send, Sparkles, Upload } from "lucide-react";
+import { Bot, Paperclip, Send, Upload } from "lucide-react";
 
 const initialMessages = [
   {
@@ -138,30 +138,37 @@ const ChatPage = () => {
               <p className="text-xs uppercase tracking-[0.4em] text-gray-500">
                 Conversational Ops
               </p>
-              <h1 className="mt-1 text-3xl font-semibold">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-slate-50">
                 Sales Flow AI · Chat
               </h1>
-              <p className="mt-2 text-sm text-gray-400">
-                Kombiniere Kontext, Uploads und Speed-Hunter-Prompts in einer
-                Oberfläche.
+              <p className="mt-1 text-sm text-slate-400 max-w-xl">
+                Frag nach Follow-ups, Sequenzen oder Speed-Hunter-Kampagnen – dein
+                Copilot nutzt den Lead-Kontext automatisch.
               </p>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-salesflow-accent/30 bg-salesflow-accent/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-salesflow-accent">
-              <Sparkles className="h-4 w-4" /> Live
+            <div
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/40"
+              title="Live-Modus: Antworten basieren auf deinen echten CRM-Daten."
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>LIVE</span>
             </div>
           </header>
 
           <div className="mt-6 space-y-4">
             <div className="flex flex-wrap gap-3">
-              {quickActions.map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  className="rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-gray-300 hover:border-salesflow-accent/40 hover:text-white"
-                >
-                  {action}
-                </button>
-              ))}
+              {quickActions.map((action) => {
+                const isPrimary = action === "Lead analysieren";
+                const buttonClasses = isPrimary
+                  ? "inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-slate-950 shadow-sm hover:bg-emerald-400 transition"
+                  : "inline-flex items-center gap-1 rounded-md border border-slate-700/70 bg-slate-900/60 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800/80 transition";
+
+                return (
+                  <button key={action} type="button" className={buttonClasses}>
+                    {action}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="space-y-4">{renderedMessages}</div>
@@ -170,14 +177,15 @@ const ChatPage = () => {
               <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
                 Prompt an Copilot
               </label>
-              <div className="rounded-2xl border border-white/10 bg-black/30">
+              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 sm:px-5 sm:py-4">
                 <textarea
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   placeholder="Frag nach einem Follow-up, einer Sequenz oder nach einer Speed-Hunter Kampagne…"
-                  className="min-h-[140px] w-full resize-none rounded-2xl bg-transparent px-4 py-3 text-base text-gray-100 outline-none"
+                  rows={3}
+                  className="w-full resize-none bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0"
                 />
-                <div className="flex items-center justify-between border-t border-white/5 px-4 py-3 text-xs text-gray-400">
+                <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-3 text-xs text-slate-400">
                   <div className="flex items-center gap-3">
                     <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 px-3 py-1 hover:border-salesflow-accent/40">
                       <Paperclip className="h-4 w-4" />
@@ -199,24 +207,27 @@ const ChatPage = () => {
         </section>
 
         <aside className="space-y-6">
-          <section className="rounded-3xl border border-white/5 bg-gray-950/60 p-6">
-            <header className="flex items-center justify-between">
+          <section className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5 space-y-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-gray-500">
-                  Kontext
+                <h3 className="text-sm font-semibold text-slate-100">
+                  Lead-Kontext
+                </h3>
+                <p className="mt-1 text-xs text-slate-400">
+                  Kontext für deinen Copilot. Name, Firma, Status & letzte Aktion – der
+                  Chat nutzt diese Infos für Antworten & Follow-ups.
                 </p>
-                <h2 className="mt-1 text-xl font-semibold">Lead-Kontext</h2>
               </div>
               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
                 Sync bereit
               </span>
-            </header>
+            </div>
 
-            <form className="mt-4 space-y-4" onSubmit={handleSaveContext}>
+            <form className="space-y-4" onSubmit={handleSaveContext}>
               <textarea
                 value={leadContext}
                 onChange={(event) => setLeadContext(event.target.value)}
-                className="h-48 w-full rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-sm text-emerald-100 outline-none"
+                className="h-48 w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-4 font-mono text-sm text-emerald-100 outline-none"
               />
               <button
                 type="submit"
@@ -232,23 +243,26 @@ const ChatPage = () => {
             </form>
           </section>
 
-          <section className="rounded-3xl border border-white/5 bg-gray-950/60 p-6">
-            <header className="flex items-center justify-between">
+          <section className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5 space-y-4">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-gray-500">
-                  Datenimporte
-                </p>
-                <h2 className="mt-1 text-xl font-semibold">
+                <h3 className="text-sm font-semibold text-slate-100">
                   Bestandskunden importieren
-                </h2>
+                </h3>
+                <p className="mt-1 text-xs text-slate-400">
+                  Lade CSV-Listen hoch – Sales Flow AI erkennt Status, letzten Kontakt
+                  und schlägt automatisch nächste Schritte vor. Perfekt für Speed-Hunter &
+                  Phönix.
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                  <li>• Segmentiert Interessenten, Kunden & schlafende Kontakte</li>
+                  <li>• Erkennt Follow-up-Bedarf automatisch</li>
+                  <li>• Keine alten Listen mehr im Ordner „Irgendwann“ 😅</li>
+                </ul>
               </div>
-              <Upload className="h-5 w-5 text-gray-500" />
-            </header>
-            <p className="mt-3 text-sm text-gray-400">
-              Lade CSV-Listen oder Alumni-Accounts hoch, damit Speed-Hunter und
-              Phoenix automatisch Segmente bauen.
-            </p>
-            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-sm text-gray-300 hover:border-salesflow-accent/40">
+              <Upload className="h-5 w-5 text-slate-500" />
+            </div>
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 px-4 py-6 text-sm text-slate-300 hover:border-emerald-400/60">
               <Upload className="h-6 w-6" />
               <span>CSV oder XLSX ablegen</span>
               <input
@@ -259,7 +273,7 @@ const ChatPage = () => {
               />
             </label>
             {importStatus && (
-              <p className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-200">
+              <p className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-200">
                 {importStatus}
               </p>
             )}
