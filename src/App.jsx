@@ -9,6 +9,7 @@ import ChatPage from "./pages/ChatPage";
 import DailyCommandPage from "./pages/DailyCommandPage";
 import LeadsProspectsPage from "./pages/LeadsProspectsPage";
 import LeadsCustomersPage from "./pages/LeadsCustomersPage";
+import LeadHunterPage from "./pages/LeadHunterPage";
 import PagePlaceholder from "./pages/PagePlaceholder";
 import AuthPage from "./pages/AuthPage";
 import AppShell from "./layout/AppShell";
@@ -125,6 +126,7 @@ const App = () => {
                       path="leads/customers"
                       element={<LeadsCustomersPage />}
                     />
+                    <Route path="lead-hunter" element={<LeadHunterPage />} />
                     {placeholderRoutes.map((route) => (
                       <Route
                         key={route.path}

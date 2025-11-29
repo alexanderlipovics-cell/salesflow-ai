@@ -33,6 +33,7 @@ const navGroups = [
     items: [
       { label: "Screenshot AI / Scanner", to: "/screenshot-ai", icon: Camera },
       { label: "CSV-Import", to: "/import/csv", icon: FileSpreadsheet },
+      { label: "Lead-Hunter", to: "/lead-hunter", icon: Users },
       { label: "Speed-Hunter", to: "/speed-hunter", icon: Zap },
       { label: "Phönix", to: "/phoenix", icon: Flame },
       { label: "Einwand-Killer", to: "/einwand-killer", icon: ShieldCheck },
