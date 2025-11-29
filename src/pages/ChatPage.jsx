@@ -8,18 +8,6 @@ const initialMessages = [
     content:
       "Hey, ich bin dein Sales Flow Copilot. Lass uns eine Pipeline-Situation lösen.",
   },
-  {
-    id: "user-1",
-    role: "user",
-    content:
-      "Lead: Sebastian K., CFO bei Flowmatic. Wir brauchen eine Follow-up-Nachricht nach Demo.",
-  },
-  {
-    id: "ai-1",
-    role: "assistant",
-    content:
-      "Verstanden. Ich formuliere gleich eine prägnante Nachricht mit CTA für nächste Woche.",
-  },
 ];
 
 const quickActions = [
@@ -72,24 +60,54 @@ const ChatPage = () => {
     [messages]
   );
 
-  const handleSendMessage = (event) => {
+  const handleSendMessage = async (event) => {
     event.preventDefault();
-    if (!input.trim()) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput) return;
 
     const humanMessage = {
       id: `user-${Date.now()}`,
       role: "user",
-      content: input.trim(),
-    };
-    const aiDraft = {
-      id: `ai-${Date.now()}`,
-      role: "assistant",
-      content:
-        "Ich fasse das auf und spiele dir in Kürze einen optimierten Vorschlag aus.",
+      content: trimmedInput,
     };
 
-    setMessages((prev) => [...prev, humanMessage, aiDraft]);
+    setMessages((prev) => [...prev, humanMessage]);
     setInput("");
+
+    try {
+      const response = await fetch("/.netlify/functions/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: humanMessage.content, engine: "gpt" }),
+      });
+
+      const data = await response.json();
+      console.log("AI API reply:", data.reply, data);
+
+      if (!response.ok || !data?.reply) {
+        throw new Error("AI API returned an invalid response.");
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          role: "assistant",
+          content: data.reply,
+        },
+      ]);
+    } catch (error) {
+      console.error("Fehler beim Abrufen der AI-Antwort", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-error-${Date.now()}`,
+          role: "assistant",
+          content:
+            "Es gab ein Problem mit der AI-Antwort. Bitte versuche es erneut.",
+        },
+      ]);
+    }
   };
 
   const handleSaveContext = (event) => {
@@ -114,18 +132,6 @@ const ChatPage = () => {
         content: `Import gestartet: ${fileNames}`,
       },
     ]);
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-import-${Date.now()}`,
-          role: "assistant",
-          content:
-            "Upload verarbeitet. Ich analysiere die Kontakte und melde mich gleich mit Insights.",
-        },
-      ]);
-    }, 1200);
 
     setTimeout(() => setImportStatus(null), 4000);
     event.target.value = "";
