@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { Bot, Paperclip, Send, Upload } from "lucide-react";
+import { Bot, Paperclip, Send, Sparkles, Upload } from "lucide-react";
 
 const initialMessages = [
   {
@@ -168,15 +168,6 @@ const ChatPage = () => {
 
           <div className="pt-2">
             <div className="flex flex-wrap gap-3">
-              {quickActions.map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  className="rounded-full border border-slate-800/80 bg-slate-900/40 px-4 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-emerald-500/40 hover:text-slate-50"
-                >
-                  {action}
-                </button>
-              ))}
               {quickActions.map((action) => {
                 const isPrimary = action === "Lead analysieren";
                 const buttonClasses = isPrimary
