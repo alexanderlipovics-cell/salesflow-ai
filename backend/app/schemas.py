@@ -48,6 +48,7 @@ class ActionData(BaseModel):
     messages: List[ChatMessage] = Field(default_factory=list)
     lead: Optional[LeadData] = None
     knowledge: Optional[str] = None
+    industry: Optional[str] = None
 
 
 class ActionRequest(BaseModel):

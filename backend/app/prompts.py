@@ -9,6 +9,7 @@ from textwrap import dedent
 from typing import List
 
 from .schemas import ActionData, ActionType
+from .verticals import VERTICALS, VerticalConfig
 from .templates import FOLLOWUP_TEMPLATES
 
 BASE_STYLE = dedent(
@@ -67,6 +68,10 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     Baut den Systemprompt für die übergebene Action.
     """
 
+    industry_key = data.industry or "chief"
+    vertical: VerticalConfig = VERTICALS.get(industry_key, VERTICALS["chief"])
+    base_prompt = vertical.system_prompt.strip()
+
     sections: List[str] = [BASE_STYLE]
 
     action_instruction = ACTION_INSTRUCTIONS.get(
@@ -86,7 +91,14 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     if not data.knowledge and action == "knowledge_answer":
         sections.append("Es wurde kein Knowledge-Text geliefert; erkläre das kurz und bitte um mehr Details.")
 
-    return "\n\n".join(section.strip() for section in sections if section).strip()
+    action_instructions = "\n\n".join(
+        section.strip() for section in sections if section
+    ).strip()
+
+    if not action_instructions:
+        return base_prompt
+
+    return f"{base_prompt}\n\n{action_instructions}"
 
 
 __all__ = ["build_system_prompt"]
