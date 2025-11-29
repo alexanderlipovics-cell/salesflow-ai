@@ -155,7 +155,7 @@ const ChatPage = () => {
             </div>
           </header>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-4">
             <div className="flex flex-wrap gap-3">
               {quickActions.map((action) => {
                 const isPrimary = action === "Lead analysieren";
@@ -173,50 +173,53 @@ const ChatPage = () => {
 
             <div className="mt-4 max-h-[52vh] space-y-3 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
               {renderedMessages}
-          <div className="flex flex-wrap gap-2">
-            {quickActions.map((action) => (
-              <button
-                key={action}
-                type="button"
-                className="rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-emerald-500/50 hover:text-slate-50"
-              >
-                {action}
-              </button>
-            ))}
-          </div>
-
-          <div className="max-h-[52vh] space-y-3 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-            {renderedMessages}
-          </div>
-
-          <form onSubmit={handleSendMessage} className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Prompt an Copilot
-            </label>
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3">
-              <textarea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                rows={2}
-                placeholder="Frag nach einem Follow-up, einer Sequenz oder nach einer Speed-Hunter Kampagne…"
-                className="flex-1 resize-none bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
-              />
-              <div className="flex items-center gap-3">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-emerald-400/60 hover:text-slate-50">
-                  <Paperclip className="h-4 w-4" />
-                  <span>Upload</span>
-                  <input type="file" className="hidden" />
-                </label>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400"
-                >
-                  Abschicken
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
             </div>
-          </form>
+
+            <div className="flex flex-wrap gap-2">
+              {quickActions.map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  className="rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-emerald-500/50 hover:text-slate-50"
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
+
+            <div className="max-h-[52vh] space-y-3 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+              {renderedMessages}
+            </div>
+
+            <form onSubmit={handleSendMessage} className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Prompt an Copilot
+              </label>
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3">
+                <textarea
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  rows={2}
+                  placeholder="Frag nach einem Follow-up, einer Sequenz oder nach einer Speed-Hunter Kampagne…"
+                  className="flex-1 resize-none bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                />
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-emerald-400/60 hover:text-slate-50">
+                    <Paperclip className="h-4 w-4" />
+                    <span>Upload</span>
+                    <input type="file" className="hidden" />
+                  </label>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400"
+                  >
+                    Abschicken
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </section>
 
         <aside className="w-full max-w-[360px] shrink-0 space-y-4">
