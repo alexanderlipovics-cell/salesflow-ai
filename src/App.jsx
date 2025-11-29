@@ -10,11 +10,13 @@ import DailyCommandPage from "./pages/DailyCommandPage";
 import LeadsProspectsPage from "./pages/LeadsProspectsPage";
 import LeadsCustomersPage from "./pages/LeadsCustomersPage";
 import PagePlaceholder from "./pages/PagePlaceholder";
+import AuthPage from "./pages/AuthPage";
 import AppShell from "./layout/AppShell";
 import { UserProvider } from "./context/UserContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
 import { FeatureGateProvider } from "./context/FeatureGateContext";
+import { AuthProvider } from "./context/AuthContext";
 import { getBootstrapUser } from "./lib/user";
 
 const App = () => {
@@ -91,44 +93,53 @@ const App = () => {
   ];
 
   return (
-    <UserProvider initialUser={bootstrapUser}>
-      <SubscriptionProvider userId={bootstrapUser.id}>
-        <PricingModalProvider>
-          <FeatureGateProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<AppShell />}>
-                  <Route index element={<Navigate to="/chat" replace />} />
-                  <Route path="chat" element={<ChatPage />} />
-                  <Route path="daily-command" element={<DailyCommandPage />} />
-                  <Route path="dashboard" element={<DashboardPage />} />
-                  <Route path="pricing" element={<PricingPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
-                  <Route path="leads/prospects" element={<LeadsProspectsPage />} />
-                  <Route path="leads/customers" element={<LeadsCustomersPage />} />
-                  {placeholderRoutes.map((route) => (
+    <AuthProvider>
+      <UserProvider initialUser={bootstrapUser}>
+        <SubscriptionProvider userId={bootstrapUser.id}>
+          <PricingModalProvider>
+            <FeatureGateProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<AppShell />}>
+                    <Route index element={<Navigate to="/chat" replace />} />
+                    <Route path="chat" element={<ChatPage />} />
+                    <Route path="daily-command" element={<DailyCommandPage />} />
+                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="pricing" element={<PricingPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
                     <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, "")}
-                      element={
-                        <PagePlaceholder
-                          title={route.title}
-                          description={route.description}
-                          highlights={route.highlights}
-                        />
-                      }
+                      path="leads/prospects"
+                      element={<LeadsProspectsPage />}
                     />
-                  ))}
-                </Route>
-                <Route path="*" element={<Navigate to="/chat" replace />} />
-              </Routes>
-              <PricingModal />
-              <FeatureGateModal />
-            </BrowserRouter>
-          </FeatureGateProvider>
-        </PricingModalProvider>
-      </SubscriptionProvider>
-    </UserProvider>
+                    <Route
+                      path="leads/customers"
+                      element={<LeadsCustomersPage />}
+                    />
+                    {placeholderRoutes.map((route) => (
+                      <Route
+                        key={route.path}
+                        path={route.path.replace(/^\//, "")}
+                        element={
+                          <PagePlaceholder
+                            title={route.title}
+                            description={route.description}
+                            highlights={route.highlights}
+                          />
+                        }
+                      />
+                    ))}
+                  </Route>
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="*" element={<Navigate to="/chat" replace />} />
+                </Routes>
+                <PricingModal />
+                <FeatureGateModal />
+              </BrowserRouter>
+            </FeatureGateProvider>
+          </PricingModalProvider>
+        </SubscriptionProvider>
+      </UserProvider>
+    </AuthProvider>
   );
 };
 
