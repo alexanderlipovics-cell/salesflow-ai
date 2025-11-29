@@ -103,6 +103,70 @@ const ChatPage = () => {
     if (!files || files.length === 0) return;
     setImportStatus(`${files.length} Datei(en) hinzugefügt · Analyse gestartet`);
     setTimeout(() => setImportStatus(null), 4000);
+    setMessages((prev) => [...prev, userMessage]);
+    setDraft("");
+
+    const historyPayload = mapHistory([...messages, userMessage]);
+
+    try {
+      const response = await fetch("/.netlify/functions/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content, engine: "gpt" }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.error || data?.details || "AI Service nicht erreichbar.");
+      }
+
+      const actionResult = data?.type === "action_result" ? data : null;
+      const reply =
+        data?.reply ||
+        actionResult?.description ||
+        actionResult?.result?.followup_text ||
+        "Ich konnte keine Antwort generieren.";
+
+      const engineLabel =
+        ENGINE_OPTIONS.find((option) => option.value === (data?.engine || engine))?.label ||
+        "Sales Flow AI";
+
+      const assistantMessage = {
+        id: createId(),
+        role: "assistant",
+        author: engineLabel,
+        content: reply,
+        actionResult,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      const fallback = error?.message || "Nachricht konnte nicht gesendet werden.";
+      setErrorMessage(fallback);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createId(),
+          role: "system",
+          author: "System",
+          content: fallback,
+          variant: "error",
+        },
+      ]);
+      const response = await fetch("/.netlify/functions/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content, engine: "gpt" }),
+      });
+
+      if (!response.ok) {
+        setErrorMessage("API Fehler");
+      }
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
