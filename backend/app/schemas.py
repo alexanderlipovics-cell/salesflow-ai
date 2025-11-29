@@ -52,6 +52,8 @@ class ActionData(BaseModel):
         default=None,
         description="Optionaler Vertical-Key (z. B. 'chief')."
     )
+    scenario_vertical: Optional[str] = None
+    scenario_tags: Optional[List[str]] = None
 
 
 class ActionRequest(BaseModel):
