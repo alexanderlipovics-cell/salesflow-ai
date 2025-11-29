@@ -2,9 +2,9 @@ import clsx from "clsx";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   AppWindow,
+  BookOpen,
   Camera,
   Command,
-  Copy,
   FileSpreadsheet,
   Flame,
   LayoutDashboard,
@@ -18,188 +18,177 @@ import {
 import { useUser } from "../context/UserContext";
 import { useSubscription } from "../hooks/useSubscription";
 import { usePricingModal } from "../context/PricingModalContext";
-import { PLAN_LABELS } from "../lib/plans";
 
-const primaryLinks = [
+const navGroups = [
   {
-    label: "Sales Flow AI · Chat",
-    description: "Lead-Gespräche & Follow-ups",
-    to: "/chat",
-    icon: MessageSquare,
-  },
-];
-
-const navSections = [
-  {
-    title: "Heute",
+    title: "HEUTE",
     items: [
       { label: "Daily Command", to: "/daily-command", icon: Command },
+      { label: "Chat / KI-Assistent", to: "/chat", icon: MessageSquare },
       { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
-    title: "Network",
+    title: "TOOLS",
     items: [
-      { label: "Mein Team", to: "/network/team", icon: Users },
-      { label: "Duplikation", to: "/network/duplication", icon: Copy },
-    ],
-  },
-  {
-    title: "Import",
-    items: [
-      { label: "Screenshot AI", to: "/screenshot-ai", icon: Camera },
-      { label: "CSV Import", to: "/import/csv", icon: FileSpreadsheet },
-    ],
-  },
-  {
-    title: "Sales Power",
-    items: [
+      { label: "Screenshot AI / Scanner", to: "/screenshot-ai", icon: Camera },
+      { label: "CSV-Import", to: "/import/csv", icon: FileSpreadsheet },
       { label: "Speed-Hunter", to: "/speed-hunter", icon: Zap },
       { label: "Phönix", to: "/phoenix", icon: Flame },
       { label: "Einwand-Killer", to: "/einwand-killer", icon: ShieldCheck },
-      { label: "Alle Tools", to: "/tools", icon: AppWindow },
+      { label: "Alle Tools", to: "/all-tools", icon: AppWindow },
     ],
   },
   {
-    title: "Pipeline",
+    title: "KONTAKTE",
     items: [
-      { label: "Interessenten", to: "/leads/prospects", icon: UserSearch },
+      { label: "Leads", to: "/leads/prospects", icon: UserSearch },
       { label: "Kunden", to: "/leads/customers", icon: UserCheck },
+      { label: "Partner", to: "/network/team", icon: Users },
+    ],
+  },
+  {
+    title: "WISSEN",
+    items: [
+      {
+        label: "Playbooks / Knowledge Base",
+        to: "/knowledge-base",
+        icon: BookOpen,
+      },
     ],
   },
 ];
 
 const AppShell = () => {
   const user = useUser();
-  const { plan } = useSubscription();
+  const { plan, planLabel } = useSubscription();
   const { openPricing } = usePricingModal();
+  const mobileNavItems = navGroups.flatMap((group) => group.items);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-950/80 to-black text-gray-50">
-      <aside className="hidden w-72 flex-col border-r border-white/5 bg-black/40 px-5 py-8 backdrop-blur xl:flex">
-        <div>
-          <p className="text-xs uppercase tracking-[0.5em] text-gray-500">
-            Sales Flow AI
-          </p>
-          <p className="text-lg font-semibold text-white">Deal Operating System</p>
-        </div>
+    <div className="flex min-h-screen bg-slate-950 text-slate-50 antialiased">
+      <aside className="hidden h-screen w-64 flex-col border-r border-slate-900 bg-slate-950/95 py-6 xl:flex">
+        <div className="flex-1 space-y-6 overflow-y-auto">
+          <div className="px-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+              Sales Flow AI
+            </p>
+            <p className="text-lg font-semibold text-slate-50">
+              Deal Operating System
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-slate-600">
+              Network Marketing Pro
+            </p>
+          </div>
 
-        <div className="mt-8 space-y-10">
-          {primaryLinks.map((link) => (
-            <SidebarLink key={link.to} {...link} accent />
-          ))}
-
-          {navSections.map((section) => (
+          {navGroups.map((section) => (
             <div key={section.title}>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-500">
+              <div className="px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 {section.title}
-              </p>
-              <div className="mt-3 space-y-2">
+              </div>
+              <nav className="mt-2 space-y-1 px-2">
                 {section.items.map((item) => (
                   <SidebarLink key={item.to} {...item} />
                 ))}
-              </div>
+              </nav>
             </div>
           ))}
         </div>
 
-        <div className="mt-auto space-y-4">
-          <div className="rounded-2xl border border-white/5 bg-gray-950/80 p-4">
-            <p className="text-xs uppercase tracking-[0.4em] text-gray-500">
+        <div className="space-y-4 border-t border-slate-900/60 px-6 pt-4">
+          <div className="card-surface bg-slate-900/70 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
               Aktueller Plan
             </p>
-            <p className="mt-2 text-xl font-semibold text-white">
-              {PLAN_LABELS[plan] || plan}
-            </p>
+            <p className="mt-2 text-lg font-semibold text-slate-50">{planLabel}</p>
             <button
               onClick={() => openPricing(plan === "free" ? "starter" : "pro")}
-              className="mt-4 w-full rounded-2xl bg-gradient-to-r from-salesflow-accent to-salesflow-accent-strong px-4 py-2 text-sm font-semibold text-black shadow-glow transition hover:scale-[1.02]"
+              className="mt-4 w-full rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400"
             >
               Upgrade entdecken
             </button>
           </div>
 
-          <div className="rounded-2xl border border-white/5 bg-gray-950/60 p-4">
-            <p className="text-xs uppercase tracking-[0.4em] text-gray-600">
+          <div className="card-surface bg-slate-900/70 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
               Eingeloggt
             </p>
-            <p className="mt-2 text-base font-semibold text-white">{user.name}</p>
-            <p className="text-sm text-gray-400">{user.email}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-100">{user.name}</p>
+            <p className="text-xs text-slate-500">{user.email}</p>
           </div>
         </div>
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <div className="border-b border-white/5 bg-black/30 px-4 py-4 backdrop-blur xl:hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="border-b border-slate-900 bg-slate-950/90 px-4 py-4 backdrop-blur xl:hidden">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
                 Sales Flow AI
               </p>
-              <p className="text-base font-semibold text-white">Deal OS</p>
+              <p className="text-base font-semibold text-slate-50">
+                Network Marketing Pro
+              </p>
             </div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-gray-400">
-              {PLAN_LABELS[plan] || plan}
+            <span className="rounded-full border border-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+              {planLabel}
             </span>
           </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-            {primaryLinks.map((link) => (
-              <SidebarLink key={link.to} compact {...link} />
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {mobileNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  clsx(
+                    "whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition",
+                    isActive
+                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30"
+                      : "bg-slate-900/80 text-slate-400 hover:text-slate-100"
+                  )
+                }
+              >
+                {item.label}
+              </NavLink>
             ))}
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
-          <Outlet />
-        </main>
+        <div role="main" className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+            <Outlet />
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-const SidebarLink = ({
-  to,
-  label,
-  icon: Icon,
-  description,
-  accent = false,
-  compact = false,
-}) => (
+const SidebarLink = ({ to, label, icon: Icon }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
       clsx(
-        "group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition",
-        accent
-          ? "border-salesflow-accent/30 bg-salesflow-accent/10 text-white"
-          : "border-white/5 bg-white/0",
-        compact && "flex-1 min-w-[220px]",
+        "flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition",
         isActive
-          ? "border-salesflow-accent/50 bg-salesflow-accent/15 text-white shadow-glow"
-          : "text-gray-400 hover:text-white hover:border-white/20"
+          ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20"
+          : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50"
       )
     }
   >
     {({ isActive }) => (
       <>
-        {Icon && (
-          <Icon
-            className={clsx(
-              "h-4 w-4 transition",
-              accent ? "text-salesflow-accent" : "text-gray-500",
-              (isActive || accent) && "text-salesflow-accent",
-              !isActive && !accent && "group-hover:text-salesflow-accent"
-            )}
-          />
-        )}
-        <div className="flex flex-col">
-          <span className="font-semibold">{label}</span>
-          {description && (
-            <span className="text-xs text-gray-500 group-hover:text-gray-300">
-              {description}
-            </span>
+        <span
+          className={clsx(
+            "flex h-7 w-7 items-center justify-center rounded-full text-xs",
+            isActive
+              ? "bg-slate-950/80 text-slate-50"
+              : "bg-slate-800/80 text-slate-300"
           )}
-        </div>
+        >
+          {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+        </span>
+        <span>{label}</span>
       </>
     )}
   </NavLink>

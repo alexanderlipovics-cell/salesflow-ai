@@ -67,7 +67,7 @@ const statusStyles: Record<
   neu: {
     label: "Neu",
     classes:
-      "border-zinc-700 bg-zinc-800/80 text-zinc-200",
+      "border-slate-800 bg-slate-900/70 text-slate-200",
   },
 };
 
@@ -110,11 +110,11 @@ export const DailyCommandCard = ({
           {skeletonItems.map((_, idx) => (
             <div
               key={idx}
-              className="animate-pulse rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+              className="animate-pulse rounded-xl border border-slate-800 bg-slate-900/40 p-4"
             >
-              <div className="h-4 w-2/3 rounded bg-zinc-800" />
-              <div className="mt-2 h-3 w-1/3 rounded bg-zinc-800" />
-              <div className="mt-4 h-3 w-full rounded bg-zinc-800" />
+              <div className="h-4 w-2/3 rounded bg-slate-800" />
+              <div className="mt-2 h-3 w-1/3 rounded bg-slate-800" />
+              <div className="mt-4 h-3 w-full rounded bg-slate-800" />
             </div>
           ))}
         </div>
@@ -131,7 +131,7 @@ export const DailyCommandCard = ({
 
     if (items.length === 0) {
       return (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 text-center text-sm text-zinc-300">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-6 text-center text-sm text-slate-300">
           Du hast aktuell keine fälligen Aufgaben.
         </div>
       );
@@ -169,14 +169,14 @@ export const DailyCommandCard = ({
           return (
             <div
               key={`${item.id}`}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5"
+              className="rounded-xl border border-slate-800 bg-slate-950/50 p-5"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-lg font-semibold text-zinc-50">
+                  <p className="text-lg font-semibold text-slate-50">
                     {displayName}
                   </p>
-                  <p className="text-sm text-zinc-400">{company}</p>
+                  <p className="text-sm text-slate-400">{company}</p>
                 </div>
                 <span
                   className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wide ${status.classes}`}
@@ -185,31 +185,31 @@ export const DailyCommandCard = ({
                 </span>
               </div>
 
-              <dl className="mt-4 grid gap-4 text-sm text-zinc-200 md:grid-cols-2">
+              <dl className="mt-4 grid gap-4 text-sm text-slate-200 md:grid-cols-2">
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
                     Nächste Aktion
                   </dt>
-                  <dd className="mt-1 text-zinc-100">
+                  <dd className="mt-1 text-slate-100">
                     {nextActionLabel}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
                     Fällig am
                   </dt>
                   <dd className="mt-1">{nextActionAt}</dd>
                 </div>
                 {currencyValue && (
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                    <dt className="text-xs uppercase tracking-wide text-slate-500">
                       Deal Value
                     </dt>
                     <dd className="mt-1">{currencyValue}</dd>
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
                     Status
                   </dt>
                   <dd className="mt-1 capitalize">
@@ -231,21 +231,21 @@ export const DailyCommandCard = ({
   };
 
   return (
-    <section className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-6 text-zinc-100 shadow-2xl">
+    <section className="card-surface p-6 text-slate-100">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
             Heute musst du…
           </p>
-          <h2 className="text-2xl font-semibold text-zinc-50">
+          <h2 className="text-xl font-semibold text-slate-50">
             Daily Command
           </h2>
         </div>
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           {statusHint}
         </p>
       </div>
-      <p className="mt-3 text-sm text-zinc-300">
+      <p className="mt-3 text-sm text-slate-300">
         {mockDailyCommand.message}
       </p>
       <div className="mt-6">{renderItems()}</div>
