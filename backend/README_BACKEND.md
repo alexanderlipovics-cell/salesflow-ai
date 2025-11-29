@@ -36,9 +36,9 @@ Endpoint: `POST /import/leads`
 
 - Content-Type `text/csv`: CSV direkt im Body (siehe `sample_data/import_example.csv`)
 - Content-Type `application/json`: Entweder `{ "csv": "..." }` oder ein Array von Objekten
-- Antwort: `{"total": 12, "with_ai_status": 9, "without_status": 3}`
+- Antwort: `{"total_rows": 12, "imported_count": 12, "needs_action_count": 5, "without_last_contact_count": 2, "errors": []}`
 
-Die Daten werden in die Tabelle `leads` geschrieben. Falls vorhanden, analysiert die KI jedes Lead über `AIClient.generate` und setzt `status`, `next_action`, `last_contact` sowie die Flags `needs_action` und `import_batch_id`.
+Die Daten werden in die Tabelle `leads` geschrieben. Falls vorhanden, analysiert die KI jedes Lead über `AIClient.generate` und setzt `status`, `needs_action`, `next_action_at`, `next_action_description`, `last_contact` sowie das Flag `import_batch_id`.
 
 ### Leads ohne Status anzeigen
 

@@ -1143,10 +1143,16 @@
           }
 
           const data = await response.json();
-          const total = data.total ?? 0;
-          const withStatus = data.with_ai_status ?? 0;
-          const withoutStatus = data.without_status ?? 0;
-          setImportStatus(`Import abgeschlossen: ${total} Kontakte (${withStatus} erkannt, ${withoutStatus} offen).`, "success");
+          const total = data.total_rows ?? 0;
+          const imported = data.imported_count ?? total;
+          const needsAction = data.needs_action_count ?? 0;
+          const missingContact = data.without_last_contact_count ?? 0;
+          const warnings = Array.isArray(data.errors) ? data.errors.length : 0;
+          const warningLabel = warnings ? ` – ${warnings} Warnungen` : "";
+          setImportStatus(
+            `Import: ${imported}/${total} Kontakte, ${needsAction} Follow-ups, ${missingContact} ohne last_contact${warningLabel}.`,
+            "success",
+          );
           fetchNeedsActionLeads();
         } catch (error) {
           console.error(error);

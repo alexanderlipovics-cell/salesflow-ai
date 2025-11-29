@@ -11,6 +11,7 @@ import logging
 import re
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
@@ -46,6 +47,7 @@ HEADER_ALIASES: Dict[str, set[str]] = {
     "name": {
         "name",
         "fullname",
+        "full_name",
         "full name",
         "kontakt",
         "kontaktname",
@@ -57,26 +59,53 @@ HEADER_ALIASES: Dict[str, set[str]] = {
     "email": {"email", "e-mail", "mail"},
     "phone": {"phone", "telefon", "tel", "mobile", "mobil"},
     "company": {"company", "firma", "unternehmen", "organization", "org"},
+    "status": {
     "imported_status": {
         "last_status",
         "status",
+        "last_status",
+        "last status",
+        "lead_status",
         "deal_status",
         "phase",
         "pipeline_stage",
         "letzter status",
+        "letzter_status",
+        "phase_status",
     },
-    "notes": {"notes", "note", "notizen", "kommentar", "comments", "memo"},
+    "notes": {
+        "notes",
+        "note",
+        "notizen",
+        "kommentar",
+        "comments",
+        "comment",
+        "memo",
+        "remark",
+    },
     "last_contact": {
         "last_contact",
         "last_contact_at",
+        "last_contact_date",
         "last_contacted",
         "letzter kontakt",
+        "letzter_kontakt",
         "zuletzt kontaktiert",
         "last_touch",
     },
     "deal_value": {"deal_value", "value", "deal", "betrag", "umsatz", "amount"},
     "tags": {"tags", "labels", "gruppen", "label"},
 }
+
+SUPPORTED_DATE_FORMATS = [
+    "%Y-%m-%d",
+    "%d.%m.%Y",
+    "%d.%m.%y",
+    "%d/%m/%Y",
+    "%Y/%m/%d",
+    "%m/%d/%Y",
+    "%d-%m-%Y",
+]
 
 
 class LeadImportError(ValueError):
@@ -93,8 +122,11 @@ class NormalizedLead:
     phone: Optional[str] = None
     company: Optional[str] = None
     notes: Optional[str] = None
+    status: Optional[str] = None
     imported_status: Optional[str] = None
     last_contact_text: Optional[str] = None
+    last_contact: Optional[datetime] = None
+    last_contact_parse_failed: bool = False
     deal_value: Optional[float] = None
     tags: List[str] = field(default_factory=list)
 
@@ -103,23 +135,21 @@ class NormalizedLead:
 
         return bool(
             (self.notes and self.notes.strip())
+            or (self.status and self.status.strip())
             or (self.imported_status and self.imported_status.strip())
         )
-
-
-@dataclass
-class LeadAnalysis:
-    """Ergebnis der AI-Analyse eines Leads."""
-
-    status: str
-    next_action: Optional[str] = None
-    last_contact_at: Optional[str] = None
 
 
 @dataclass
 class ImportStats:
     """Hilfsobjekt zum Sammeln der Importstatistik."""
 
+    total_rows: int = 0
+    imported_count: int = 0
+    updated_count: int = 0
+    needs_action_count: int = 0
+    without_last_contact_count: int = 0
+    errors: List[str] = field(default_factory=list)
     total: int = 0
     with_ai_status: int = 0
     without_status: int = 0
@@ -231,6 +261,7 @@ def normalize_record(record: Mapping[str, Any], row_number: int) -> Optional[Nor
         "phone": None,
         "company": None,
         "notes": None,
+        "status": None,
         "imported_status": None,
         "last_contact": None,
         "deal_value": None,
@@ -266,6 +297,7 @@ def normalize_record(record: Mapping[str, Any], row_number: int) -> Optional[Nor
 
     tags = split_tags(canonical.get("tags"))
     deal_value = parse_deal_value(canonical.get("deal_value"))
+    last_contact, parse_failed = parse_last_contact(canonical.get("last_contact"))
 
     return NormalizedLead(
         row_number=row_number,
@@ -274,8 +306,11 @@ def normalize_record(record: Mapping[str, Any], row_number: int) -> Optional[Nor
         phone=canonical.get("phone"),
         company=canonical.get("company"),
         notes=canonical.get("notes"),
+        status=canonical.get("status"),
         imported_status=canonical.get("imported_status"),
         last_contact_text=canonical.get("last_contact"),
+        last_contact=last_contact,
+        last_contact_parse_failed=parse_failed,
         deal_value=deal_value,
         tags=tags,
     )
@@ -315,81 +350,69 @@ def parse_deal_value(raw: Optional[str]) -> Optional[float]:
         return None
 
 
-def coerce_date(value: Optional[str]) -> Optional[str]:
-    """Versucht, ein Datum in ISO-Format zu bringen."""
+def parse_last_contact(raw: Optional[str]) -> tuple[Optional[datetime], bool]:
+    """Parst last_contact in ein datetime-Objekt. Gibt (wert, parse_failed) zurück."""
 
-    if not value:
-        return None
-    text = value.strip()
+    if not raw:
+        return None, False
+
+    text = raw.strip()
     if not text:
-        return None
+        return None, False
 
+    # ISO mit Datum/Zeit
     try:
-        dt = datetime.fromisoformat(text)
-        return dt.date().isoformat()
+        parsed = datetime.fromisoformat(text)
+        return parsed, False
     except ValueError:
         pass
 
-    date_formats = [
-        "%d.%m.%Y",
-        "%d.%m.%y",
-        "%Y-%m-%d",
-        "%Y/%m/%d",
-        "%d/%m/%Y",
-        "%m/%d/%Y",
-        "%d-%m-%Y",
-    ]
-    for fmt in date_formats:
+    for fmt in SUPPORTED_DATE_FORMATS:
         try:
             parsed = datetime.strptime(text, fmt)
-            return parsed.date().isoformat()
+            return parsed, False
         except ValueError:
             continue
-    return None
+
+    return None, True
 
 
-def guess_status_from_text(*candidates: Optional[str]) -> Optional[str]:
-    """Heuristik, um Status anhand Freitext zu erraten."""
+STATUS_KEYWORDS: Dict[str, set[str]] = {
+    "new": {"neu", "new", "erstkontakt", "unqualifiziert"},
+    "hot": {"hot", "sofort", "urgent", "kritisch", "abschluss", "deal"},
+    "warm": {"warm", "aktiv", "follow-up", "pipeline"},
+    "cold": {"cold", "funkstille", "inactive", "stalled"},
+    "customer": {"kunde", "kundenstatus", "bestandskunde", "customer", "won", "closed won"},
+    "lost": {"lost", "abgelehnt", "kein interesse", "cancelled", "rejected", "churn"},
+}
 
-    lookup = {
-        "interessiert": [
-            "warm",
-            "hot",
-            "interessiert",
-            "läuft",
-            "in kontakt",
-            "positive",
-        ],
-        "angebot": [
-            "angebot",
-            "proposal",
-            "quote",
-            "angebot verschickt",
-            "evaluation",
-            "verhandlung",
-        ],
-        "kunde": ["kunde", "customer", "won", "bestandskunde", "closed won"],
-        "abgelehnt": ["abgelehnt", "lost", "kein interesse", "cancelled", "rejected"],
-        "funkstille": ["funkstille", "ghost", "keine antwort", "wartet", "no response"],
-    }
+NOTE_STATUS_HINTS: Dict[str, List[str]] = {
+    "customer": ["bestandskunde", "customer", "renewal", "verlängerung"],
+    "hot": ["angebot", "proposal", "deal", "closing"],
+    "lost": ["abgesagt", "lost", "kein interesse", "abbruch", "gekündigt"],
+}
 
-    fragments = [
-        (c or "").strip().lower()
-        for c in candidates
-        if (c or "").strip()
-    ]
-    joined = " ".join(fragments).strip()
-    if not joined:
-        return None
+STATUS_FOLLOW_UP_RULES: Dict[str, Dict[str, Any]] = {
+    "new": {"days": 1, "description": "Erstkontakt herstellen"},
+    "hot": {"days": 1, "description": "Nachfassen nach Angebot"},
+    "warm": {"days": 3, "description": "Check-in zum aktuellen Gespräch"},
+    "cold": {"days": 14, "description": "Reaktivierungsgespräch planen"},
+    "customer": {"days": 90, "description": "Beziehungs-Pflege bei Bestandskunde"},
+    "lost": {"days": 30, "description": "Feedback zum verlorenen Deal sichern"},
+}
 
-    for status, keywords in lookup.items():
-        if any(keyword in joined for keyword in keywords):
-            return status
-    if "neu" in joined or "new" in joined:
-        return "neu"
-    return None
+NEXT_ACTION_BY_STATUS = {
+    "new": "CHECK_IN",
+    "hot": "FOLLOW_UP",
+    "warm": "FOLLOW_UP",
+    "cold": "CHECK_IN",
+    "customer": "VALUE",
+    "lost": "CHECK_IN",
+}
 
 
+def normalize_status_token(value: Optional[str]) -> Optional[str]:
+    """Formt beliebige Statusangaben in die Ziel-Kategorien."""
 def _normalize_status(raw: Optional[str]) -> Optional[str]:
     """Führt eingehende Statuswerte auf unseren Standard zusammen."""
 
@@ -398,6 +421,15 @@ def _normalize_status(raw: Optional[str]) -> Optional[str]:
     text = raw.strip().lower()
     if not text:
         return None
+    text = value.strip().lower()
+    for status, keywords in STATUS_KEYWORDS.items():
+        if any(keyword in text for keyword in keywords):
+            return status
+    return None
+
+
+def infer_status_from_notes(notes: Optional[str]) -> Optional[str]:
+    """Zieht Hinweise aus Freitextnotizen."""
     if text in SUPPORTED_STATUSES:
         return text
 
@@ -501,23 +533,35 @@ def _parse_iso_datetime(raw: Optional[str]) -> Optional[datetime]:
 def normalize_next_action(value: Optional[str]) -> Optional[str]:
     """Bringt Next-Actions in das gewünschte Format."""
 
-    if not value:
+    if not notes:
         return None
-    text = value.strip().upper().replace("-", "_")
-    if text in SUPPORTED_NEXT_ACTIONS:
-        return text
-    mapping = {
-        "FOLLOWUP": "FOLLOW_UP",
-        "CHECKIN": "CHECK_IN",
-        "VALUE_DROP": "VALUE",
-        "REFERRAL_REQUEST": "REFERRAL",
-    }
-    return mapping.get(text)
+    text = notes.strip().lower()
+    if not text:
+        return None
+    for status, keywords in NOTE_STATUS_HINTS.items():
+        if any(keyword in text for keyword in keywords):
+            return status
+    return None
 
 
-def build_notes(lead: NormalizedLead) -> Optional[str]:
-    """Kombiniert Freitext, Tags und den importierten Status."""
+def infer_status_from_last_contact(
+    last_contact: Optional[datetime],
+    fallback_from_notes: Optional[str],
+) -> Optional[str]:
+    """Leitet Status anhand der Kontaktfrische ab."""
 
+    if not last_contact:
+        return None
+
+    days_since_contact = (datetime.utcnow() - last_contact).days
+
+    if days_since_contact <= 3:
+        return "hot"
+    if days_since_contact <= 14:
+        return "warm"
+    if fallback_from_notes:
+        return fallback_from_notes
+    return "customer" if days_since_contact <= 90 else "cold"
     lines: List[str] = []
     if lead.notes:
         lines.append(lead.notes.strip())
@@ -529,14 +573,17 @@ def build_notes(lead: NormalizedLead) -> Optional[str]:
     return joined or None
 
 
-def analyze_imported_lead(
-    lead: NormalizedLead,
-    ai_client: Optional[AIClient],
-) -> Optional[LeadAnalysis]:
+def derive_status_and_next_action(
+    contact: NormalizedLead,
+    ai_client: Optional[AIClient] = None,
+) -> Dict[str, Any]:
     """
-    Ruft optional die KI auf, um Status + nächste Aktion zu bestimmen.
+    Ermittelt Status + nächste Aktion aus Kontaktinformationen bzw. optionaler KI.
     """
 
+    status = normalize_status_token(contact.status)
+    note_hint = infer_status_from_notes(contact.notes)
+    ai_result: Dict[str, Any] = {}
     fallback_status = _normalize_status(
         guess_status_from_text(lead.imported_status, lead.notes)
     )
@@ -551,23 +598,60 @@ def analyze_imported_lead(
             )
         return None
 
-    if not ai_client:
-        if fallback_status:
-            return LeadAnalysis(
-                status=fallback_status,
-                next_action=DEFAULT_NEXT_ACTION_BY_STATUS.get(fallback_status),
-                last_contact_at=fallback_date,
-            )
-        return None
+    if not status and note_hint:
+        status = note_hint
+
+    if not status:
+        status = infer_status_from_last_contact(contact.last_contact, note_hint)
+
+    if not status and ai_client and contact.has_context():
+        ai_result = _call_ai_for_status(contact, ai_client) or {}
+        status = ai_result.get("status") or status
+
+    if not status:
+        status = "new"
+
+    rule = STATUS_FOLLOW_UP_RULES.get(status, STATUS_FOLLOW_UP_RULES["new"])
+    next_action_description = ai_result.get("next_action_description") or rule["description"]
+
+    next_action_at: Optional[datetime] = ai_result.get("next_action_at")
+    if not next_action_at and contact.last_contact and rule["days"] is not None:
+        next_action_at = contact.last_contact + timedelta(days=int(rule["days"]))
+
+    if not contact.last_contact and not next_action_at:
+        next_action_at = None
+
+    needs_action = True
+    if next_action_at:
+        needs_action = next_action_at <= (datetime.utcnow() + timedelta(days=1))
+    elif contact.last_contact and rule["days"] is None:
+        needs_action = False
+
+    return {
+        "status": status,
+        "needs_action": bool(needs_action),
+        "next_action": NEXT_ACTION_BY_STATUS.get(status),
+        "next_action_at": next_action_at,
+        "next_action_description": next_action_description,
+    }
+
+
+def _call_ai_for_status(
+    contact: NormalizedLead,
+    ai_client: AIClient,
+) -> Optional[Dict[str, Any]]:
+    """Fragt optional den KI-Client für Status/Follow-up-Tipps."""
 
     system_prompt = (
-        "Du bist Sales Flow AI. Analysiere Sales-Kontakte und gib ausschließlich JSON "
-        "im Format {\"status\":\"...\",\"next_action\":\"...\",\"last_contact_at\":\"YYYY-MM-DD\"} zurück. "
-        "Erlaubte Status: neu, interessiert, angebot, kunde, abgelehnt, funkstille. "
-        "Erlaubte next_action: FOLLOW_UP, CHECK_IN, VALUE, REFERRAL. "
-        "Wenn unklar, setze status auf 'neu' und next_action auf 'CHECK_IN'."
+        "Du bist Sales Flow AI. Antworte ausschließlich mit kompakter JSON-Struktur "
+        'im Format {"status":"new|hot|warm|cold|customer|lost","next_action_description":"...","next_action_in_days":3}. '
+        "Wenn keine Aktion nötig ist, setze next_action_in_days auf 0."
     )
     payload = {
+        "name": contact.name,
+        "status_hint": contact.status,
+        "last_contact": contact.last_contact_text,
+        "notes": contact.notes,
         "name": lead.name,
         "notes": lead.notes,
         "last_status": lead.imported_status,
@@ -579,38 +663,51 @@ def analyze_imported_lead(
             system_prompt,
             [ChatMessage(role="user", content=json.dumps(payload, ensure_ascii=False))],
         )
-    except Exception:
-        logger.exception("AI-Analyse für Lead %s fehlgeschlagen.", lead.name)
-        reply = ""
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("AI-Analyse für Lead %s fehlgeschlagen.", contact.name)
+        return None
 
-    parsed = extract_analysis_payload(reply)
-    if not parsed and fallback_status:
-        return LeadAnalysis(
-            status=fallback_status,
-            next_action=DEFAULT_NEXT_ACTION_BY_STATUS.get(fallback_status),
-            last_contact_at=fallback_date,
-        )
-
+    data = extract_json_dict(reply)
+    if not isinstance(data, dict):
     status = _normalize_status(parsed.get("status") if parsed else None) or fallback_status
     if not status:
         return None
 
-    next_action = normalize_next_action(parsed.get("next_action")) if parsed else None
-    if not next_action:
-        next_action = DEFAULT_NEXT_ACTION_BY_STATUS.get(status)
+    normalized_status = normalize_status_token(data.get("status"))
+    next_action_desc = data.get("next_action_description")
 
-    last_contact = parsed.get("last_contact_at") if parsed else None
-    normalized_date = coerce_date(last_contact) or fallback_date
+    next_action_at = None
+    if data.get("next_action_at"):
+        parsed, _ = parse_last_contact(str(data["next_action_at"]))
+        next_action_at = parsed
+    elif isinstance(data.get("next_action_in_days"), (int, float)):
+        delta_days = max(0, int(data["next_action_in_days"]))
+        anchor = contact.last_contact or datetime.utcnow()
+        next_action_at = anchor + timedelta(days=delta_days)
 
-    return LeadAnalysis(
-        status=status,
-        next_action=next_action,
-        last_contact_at=normalized_date,
-    )
+    return {
+        "status": normalized_status,
+        "next_action_description": next_action_desc,
+        "next_action_at": next_action_at,
+    }
 
 
-def extract_analysis_payload(reply: str) -> Optional[Dict[str, Any]]:
-    """Extrahiert JSON aus beliebigen KI-Antworten."""
+def build_notes(lead: NormalizedLead) -> Optional[str]:
+    """Kombiniert Freitext, Tags und den importierten Status."""
+
+    lines: List[str] = []
+    if lead.notes:
+        lines.append(lead.notes.strip())
+    if lead.tags:
+        lines.append(f"Tags: {', '.join(lead.tags)}")
+    if lead.status:
+        lines.append(f"Import-Status (roh): {lead.status.strip()}")
+    joined = "\n".join(line for line in lines if line).strip()
+    return joined or None
+
+
+def extract_json_dict(reply: str) -> Optional[Dict[str, Any]]:
+    """Extrahiert JSON aus KI-Antworten oder Freitext."""
 
     if not reply:
         return None
@@ -635,6 +732,15 @@ def extract_analysis_payload(reply: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def format_datetime_for_storage(value: Optional[datetime]) -> Optional[str]:
+    """Gibt ISO-Strings für Supabase zurück."""
+
+    if not value:
+        return None
+    normalized = value.replace(microsecond=0)
+    return normalized.isoformat()
+
+
 class LeadImportService:
     """Kapselt den kompletten Import inkl. Supabase-Insert."""
 
@@ -646,18 +752,33 @@ class LeadImportService:
         if not contacts:
             raise LeadImportError("Es wurden keine Kontakte übergeben.")
 
+        stats = ImportStats(total_rows=len(contacts))
         stats = ImportStats()
         batch_id = str(uuid.uuid4())
         prepared_rows: List[Dict[str, Any]] = []
 
         for lead in contacts:
+            stats.imported_count += 1
             stats.total += 1
             analysis = analyze_imported_lead(lead, self._ai_client)
             status, next_action, next_action_at, needs_action = self._resolve_status(
                 lead, analysis
             )
 
+            derived = derive_status_and_next_action(lead, self._ai_client)
             notes = build_notes(lead)
+            last_contact_iso = format_datetime_for_storage(lead.last_contact)
+            next_action_at_iso = format_datetime_for_storage(derived.get("next_action_at"))
+
+            if lead.last_contact is None:
+                stats.without_last_contact_count += 1
+                if lead.last_contact_parse_failed and lead.last_contact_text:
+                    stats.errors.append(
+                        f"Zeile {lead.row_number}: last_contact '{lead.last_contact_text}' konnte nicht geparst werden."
+                    )
+
+            if derived.get("needs_action"):
+                stats.needs_action_count += 1
             last_contact = (
                 analysis.last_contact_at
                 if analysis and analysis.last_contact_at
@@ -683,12 +804,17 @@ class LeadImportService:
                 "phone": lead.phone,
                 "company": lead.company,
                 "notes": notes,
+                "status": derived.get("status"),
+                "next_action": derived.get("next_action"),
+                "last_contact": last_contact_iso,
                 "status": status,
                 "next_action": next_action,
                 "next_action_at": next_action_at_value,
                 "last_contact": last_contact,
                 "deal_value": lead.deal_value,
-                "needs_action": needs_action,
+                "needs_action": derived.get("needs_action"),
+                "next_action_at": next_action_at_iso,
+                "next_action_description": derived.get("next_action_description"),
                 "import_batch_id": batch_id,
                 "source": "import",
             }
@@ -697,6 +823,14 @@ class LeadImportService:
 
         self._insert_rows(prepared_rows)
         return ImportSummary(
+            total_rows=stats.total_rows,
+            imported_count=stats.imported_count,
+            updated_count=stats.updated_count,
+            needs_action_count=stats.needs_action_count,
+            without_last_contact_count=stats.without_last_contact_count,
+            errors=stats.errors or None,
+        )
+
             total=stats.total,
             with_ai_status=stats.with_ai_status,
             without_status=stats.without_status,
