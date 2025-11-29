@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from datetime import datetime, timedelta, timezone
 
@@ -26,6 +26,7 @@ from .schemas import (
     ImportSummary,
     NeedsActionResponse,
 )
+from .scenario_service import fetch_scenarios, render_scenarios_as_knowledge
 from .supabase_client import SupabaseNotConfiguredError, get_supabase_client
 
 settings = get_settings()
@@ -153,6 +154,37 @@ async def get_needs_action_leads(limit: int = 8) -> NeedsActionResponse:
 
     leads = getattr(response, "data", None) or []
     return NeedsActionResponse(leads=leads)
+
+
+@app.get("/scenarios/preview")
+async def preview_scenarios(
+    vertical: str,
+    tags: Optional[str] = None,
+    limit: int = 3,
+) -> Dict[str, Any]:
+    """
+    Liefert eine kompakte Vorschau von Vertriebsszenarien und dem daraus
+    generierten Knowledge-Text. Gedacht für Tests & Debugging.
+
+    Beispiel:
+    GET /scenarios/preview?vertical=art&tags=winstage,preis&limit=3
+    """
+
+    tag_list = None
+    if tags:
+        parsed = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        tag_list = parsed or None
+
+    scenarios = fetch_scenarios(vertical=vertical, tags=tag_list, limit=limit)
+    knowledge = render_scenarios_as_knowledge(scenarios)
+
+    return {
+        "vertical": vertical,
+        "requested_limit": limit,
+        "count": len(scenarios),
+        "tags": tag_list or [],
+        "knowledge": knowledge,
+    }
 
 
 @app.get("/leads/daily-command", response_model=DailyCommandResponse)

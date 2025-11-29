@@ -9,6 +9,7 @@ from textwrap import dedent
 from typing import List
 
 from .schemas import ActionData, ActionType
+from .scenario_service import fetch_scenarios, render_scenarios_as_knowledge
 from .templates import FOLLOWUP_TEMPLATES
 from .verticals import VERTICALS
 
@@ -96,9 +97,36 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
 
     sections.append(_format_lead_context(data))
 
+    scenario_knowledge = ""
+    scenario_vertical = (getattr(data, "scenario_vertical", None) or "").strip()
+    scenario_tags = getattr(data, "scenario_tags", None) or None
+
+    if scenario_vertical:
+        try:
+            scenarios = fetch_scenarios(
+                vertical=scenario_vertical,
+                tags=scenario_tags,
+                limit=3,
+            )
+        except Exception:
+            scenarios = []
+
+        rendered = render_scenarios_as_knowledge(scenarios)
+        if rendered:
+            scenario_knowledge = rendered.strip()
+
+    existing_knowledge = (data.knowledge or "").strip()
+    combined_knowledge = existing_knowledge
+
+    if scenario_knowledge:
+        if combined_knowledge:
+            combined_knowledge = f"{combined_knowledge}\n\n{scenario_knowledge}"
+        else:
+            combined_knowledge = scenario_knowledge
+
     if action == "knowledge_answer":
-        if data.knowledge:
-            sections.append("Knowledge-Base:\n" + data.knowledge.strip())
+        if combined_knowledge:
+            sections.append("Knowledge-Base:\n" + combined_knowledge)
         else:
             sections.append(
                 "Es wurde kein Knowledge-Text geliefert; erkläre das kurz und bitte um mehr Details."
