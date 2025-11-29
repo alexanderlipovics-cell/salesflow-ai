@@ -12,14 +12,34 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from supabase import Client
+try:
+    from supabase import Client
+except ImportError:  # pragma: no cover - optional dependency for tests
+    Client = Any  # type: ignore
 
-from .ai_client import AIClient
+try:
+    from .ai_client import AIClient
+except ModuleNotFoundError:  # pragma: no cover - optional dependency for tests
+    AIClient = Any  # type: ignore
 from .schemas import ChatMessage, ImportSummary
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_STATUSES = {"neu", "hot", "warm", "cold", "customer", "lost"}
+
+SUPPORTED_NEXT_ACTIONS = {"FOLLOW_UP", "CHECK_IN", "VALUE", "REFERRAL"}
+
+DEFAULT_NEXT_ACTION_BY_STATUS = {
+    "neu": "FOLLOW_UP",
+    "hot": "FOLLOW_UP",
+    "warm": "FOLLOW_UP",
+    "cold": "CHECK_IN",
+    "customer": "VALUE",
+    "lost": "CHECK_IN",
+}
 
 CSV_DELIMITERS = ",;|\t"
 
@@ -40,6 +60,8 @@ HEADER_ALIASES: Dict[str, set[str]] = {
     "phone": {"phone", "telefon", "tel", "mobile", "mobil"},
     "company": {"company", "firma", "unternehmen", "organization", "org"},
     "status": {
+    "imported_status": {
+        "last_status",
         "status",
         "last_status",
         "last status",
@@ -101,6 +123,7 @@ class NormalizedLead:
     company: Optional[str] = None
     notes: Optional[str] = None
     status: Optional[str] = None
+    imported_status: Optional[str] = None
     last_contact_text: Optional[str] = None
     last_contact: Optional[datetime] = None
     last_contact_parse_failed: bool = False
@@ -113,6 +136,7 @@ class NormalizedLead:
         return bool(
             (self.notes and self.notes.strip())
             or (self.status and self.status.strip())
+            or (self.imported_status and self.imported_status.strip())
         )
 
 
@@ -126,6 +150,12 @@ class ImportStats:
     needs_action_count: int = 0
     without_last_contact_count: int = 0
     errors: List[str] = field(default_factory=list)
+    total: int = 0
+    with_ai_status: int = 0
+    without_status: int = 0
+    auto_scheduled_count: int = 0
+    needs_manual_action_count: int = 0
+    without_last_contact_count: int = 0
 
 
 def parse_import_payload(payload: Any) -> List[NormalizedLead]:
@@ -232,6 +262,7 @@ def normalize_record(record: Mapping[str, Any], row_number: int) -> Optional[Nor
         "company": None,
         "notes": None,
         "status": None,
+        "imported_status": None,
         "last_contact": None,
         "deal_value": None,
         "tags": None,
@@ -276,6 +307,7 @@ def normalize_record(record: Mapping[str, Any], row_number: int) -> Optional[Nor
         company=canonical.get("company"),
         notes=canonical.get("notes"),
         status=canonical.get("status"),
+        imported_status=canonical.get("imported_status"),
         last_contact_text=canonical.get("last_contact"),
         last_contact=last_contact,
         last_contact_parse_failed=parse_failed,
@@ -381,8 +413,13 @@ NEXT_ACTION_BY_STATUS = {
 
 def normalize_status_token(value: Optional[str]) -> Optional[str]:
     """Formt beliebige Statusangaben in die Ziel-Kategorien."""
+def _normalize_status(raw: Optional[str]) -> Optional[str]:
+    """Führt eingehende Statuswerte auf unseren Standard zusammen."""
 
-    if not value:
+    if not raw:
+        return None
+    text = raw.strip().lower()
+    if not text:
         return None
     text = value.strip().lower()
     for status, keywords in STATUS_KEYWORDS.items():
@@ -393,6 +430,108 @@ def normalize_status_token(value: Optional[str]) -> Optional[str]:
 
 def infer_status_from_notes(notes: Optional[str]) -> Optional[str]:
     """Zieht Hinweise aus Freitextnotizen."""
+    if text in SUPPORTED_STATUSES:
+        return text
+
+    mapping = {
+        "hot": "hot",
+        "hot lead": "hot",
+        "heiß": "hot",
+        "heiss": "hot",
+        "sehr heiß": "hot",
+        "warm": "warm",
+        "warm lead": "warm",
+        "interessiert": "warm",
+        "angebot": "warm",
+        "angebot erstellt": "warm",
+        "angebot geschickt": "warm",
+        "ghost": "cold",
+        "funkstille": "cold",
+        "kalt": "cold",
+        "cold": "cold",
+        "cold lead": "cold",
+        "abgekühlt": "cold",
+        "kunde": "customer",
+        "customer": "customer",
+        "bestandskunde": "customer",
+        "won": "customer",
+        "closed won": "customer",
+        "lost": "lost",
+        "abgelehnt": "lost",
+        "rejected": "lost",
+        "cancelled": "lost",
+        "storniert": "lost",
+        "neu": "neu",
+        "new": "neu",
+    }
+    return mapping.get(text)
+
+
+def _derive_next_action_and_date(
+    status: Optional[str],
+    last_contact: Optional[datetime],
+    today: Optional[date] = None,
+) -> tuple[Optional[str], Optional[datetime]]:
+    """
+    Bestimmt nächste Aktion + Zeitpunkt auf Basis von Status und Historie.
+    """
+
+    if not status:
+        return None, None
+
+    next_action = DEFAULT_NEXT_ACTION_BY_STATUS.get(status)
+    if today is None:
+        today = datetime.now(timezone.utc).date()
+
+    if status == "neu":
+        return next_action, None
+
+    schedule_days = {
+        "hot": 1,
+        "warm": 3,
+        "cold": 14,
+        "customer": 60,
+        "lost": 30,
+    }
+    delta_days = schedule_days.get(status)
+    if delta_days is None:
+        return next_action, None
+
+    base_dt = (
+        last_contact
+        if last_contact
+        else datetime.combine(today, datetime.min.time(), tzinfo=timezone.utc)
+    )
+    if last_contact:
+        delta_days = max(delta_days, 2)
+    next_action_at = base_dt + timedelta(days=delta_days)
+    return next_action, next_action_at
+
+
+def _parse_iso_datetime(raw: Optional[str]) -> Optional[datetime]:
+    """Wandelt ISO-Strings in UTC-Datetimes um."""
+
+    if not raw:
+        return None
+    text = raw.strip()
+    if not text:
+        return None
+
+    candidate = text
+    if candidate.endswith("Z"):
+        candidate = candidate[:-1] + "+00:00"
+
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def normalize_next_action(value: Optional[str]) -> Optional[str]:
+    """Bringt Next-Actions in das gewünschte Format."""
 
     if not notes:
         return None
@@ -423,6 +562,15 @@ def infer_status_from_last_contact(
     if fallback_from_notes:
         return fallback_from_notes
     return "customer" if days_since_contact <= 90 else "cold"
+    lines: List[str] = []
+    if lead.notes:
+        lines.append(lead.notes.strip())
+    if lead.tags:
+        lines.append(f"Tags: {', '.join(lead.tags)}")
+    if lead.imported_status:
+        lines.append(f"Import-Status (roh): {lead.imported_status.strip()}")
+    joined = "\n".join(line for line in lines if line).strip()
+    return joined or None
 
 
 def derive_status_and_next_action(
@@ -436,6 +584,19 @@ def derive_status_and_next_action(
     status = normalize_status_token(contact.status)
     note_hint = infer_status_from_notes(contact.notes)
     ai_result: Dict[str, Any] = {}
+    fallback_status = _normalize_status(
+        guess_status_from_text(lead.imported_status, lead.notes)
+    )
+    fallback_date = coerce_date(lead.last_contact_text)
+
+    if not lead.has_context():
+        if fallback_status:
+            return LeadAnalysis(
+                status=fallback_status,
+                next_action=DEFAULT_NEXT_ACTION_BY_STATUS.get(fallback_status),
+                last_contact_at=fallback_date,
+            )
+        return None
 
     if not status and note_hint:
         status = note_hint
@@ -491,6 +652,10 @@ def _call_ai_for_status(
         "status_hint": contact.status,
         "last_contact": contact.last_contact_text,
         "notes": contact.notes,
+        "name": lead.name,
+        "notes": lead.notes,
+        "last_status": lead.imported_status,
+        "last_contact": lead.last_contact_text,
     }
 
     try:
@@ -504,6 +669,8 @@ def _call_ai_for_status(
 
     data = extract_json_dict(reply)
     if not isinstance(data, dict):
+    status = _normalize_status(parsed.get("status") if parsed else None) or fallback_status
+    if not status:
         return None
 
     normalized_status = normalize_status_token(data.get("status"))
@@ -586,11 +753,17 @@ class LeadImportService:
             raise LeadImportError("Es wurden keine Kontakte übergeben.")
 
         stats = ImportStats(total_rows=len(contacts))
+        stats = ImportStats()
         batch_id = str(uuid.uuid4())
         prepared_rows: List[Dict[str, Any]] = []
 
         for lead in contacts:
             stats.imported_count += 1
+            stats.total += 1
+            analysis = analyze_imported_lead(lead, self._ai_client)
+            status, next_action, next_action_at, needs_action = self._resolve_status(
+                lead, analysis
+            )
 
             derived = derive_status_and_next_action(lead, self._ai_client)
             notes = build_notes(lead)
@@ -606,6 +779,24 @@ class LeadImportService:
 
             if derived.get("needs_action"):
                 stats.needs_action_count += 1
+            last_contact = (
+                analysis.last_contact_at
+                if analysis and analysis.last_contact_at
+                else coerce_date(lead.last_contact_text)
+            )
+
+            if last_contact is None:
+                stats.without_last_contact_count += 1
+            if next_action_at:
+                stats.auto_scheduled_count += 1
+            if needs_action:
+                stats.needs_manual_action_count += 1
+            if analysis is not None and status != "neu":
+                stats.with_ai_status += 1
+            if status == "neu" or analysis is None:
+                stats.without_status += 1
+
+            next_action_at_value = next_action_at.isoformat() if next_action_at else None
 
             row = {
                 "name": lead.name,
@@ -616,6 +807,10 @@ class LeadImportService:
                 "status": derived.get("status"),
                 "next_action": derived.get("next_action"),
                 "last_contact": last_contact_iso,
+                "status": status,
+                "next_action": next_action,
+                "next_action_at": next_action_at_value,
+                "last_contact": last_contact,
                 "deal_value": lead.deal_value,
                 "needs_action": derived.get("needs_action"),
                 "next_action_at": next_action_at_iso,
@@ -635,6 +830,48 @@ class LeadImportService:
             without_last_contact_count=stats.without_last_contact_count,
             errors=stats.errors or None,
         )
+
+            total=stats.total,
+            with_ai_status=stats.with_ai_status,
+            without_status=stats.without_status,
+            auto_scheduled_count=stats.auto_scheduled_count,
+            needs_manual_action_count=stats.needs_manual_action_count,
+            without_last_contact_count=stats.without_last_contact_count,
+        )
+
+    def _resolve_status(
+        self,
+        lead: NormalizedLead,
+        analysis: Optional[LeadAnalysis],
+    ) -> tuple[str, Optional[str], Optional[datetime], bool]:
+        """Ermittelt finalen Status, nächste Aktion, Termin & needs_action."""
+
+        imported_status = _normalize_status(lead.imported_status)
+        analysis_status = (
+            _normalize_status(analysis.status) if analysis and analysis.status else None
+        )
+        status = imported_status or analysis_status or "neu"
+
+        analysis_last_contact = analysis.last_contact_at if analysis else None
+        raw_last_contact = analysis_last_contact or lead.last_contact_text
+        normalized_last_contact = coerce_date(raw_last_contact)
+        last_contact_ts = _parse_iso_datetime(normalized_last_contact)
+
+        derived_action, next_action_at = _derive_next_action_and_date(
+            status, last_contact_ts
+        )
+        next_action = (
+            normalize_next_action(analysis.next_action) if analysis and analysis.next_action else None
+        )
+        if not next_action:
+            next_action = derived_action
+
+        now = datetime.now(timezone.utc)
+        needs_action = (not status) or (next_action_at is None) or (
+            next_action_at and next_action_at < now
+        )
+
+        return status, next_action, next_action_at, needs_action
 
     def _insert_rows(self, rows: Sequence[Dict[str, Any]]) -> None:
         """Schreibt die Daten in Supabase in Batches."""
@@ -657,3 +894,9 @@ __all__ = [
     "parse_import_payload",
     "NormalizedLead",
 ]
+
+# Import-Pipeline Überblick:
+# - Normalisiert CSV/JSON-Leads inkl. Kontextfeldern.
+# - Respektiert status/last_contact aus dem Import und nutzt KI nur als Fallback.
+# - Leitet next_action sowie next_action_at automatisch her.
+# - Markiert needs_action nur für Leads ohne geplante nächste Schritte.

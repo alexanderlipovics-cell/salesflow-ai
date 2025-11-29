@@ -6,9 +6,11 @@ from __future__ import annotations
 
 import json
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
 
 from .ai_client import AIClient
 from .config import get_settings
@@ -17,6 +19,8 @@ from .prompts import build_system_prompt
 from .schemas import (
     ActionRequest,
     ActionResponse,
+    DailyCommandItem,
+    DailyCommandResponse,
     ImportSummary,
     NeedsActionResponse,
 )
@@ -147,6 +151,55 @@ async def get_needs_action_leads(limit: int = 8) -> NeedsActionResponse:
 
     leads = getattr(response, "data", None) or []
     return NeedsActionResponse(leads=leads)
+
+
+@app.get("/leads/daily-command", response_model=DailyCommandResponse)
+async def get_daily_command_leads(
+    horizon_days: int = 3, limit: int = 20
+) -> DailyCommandResponse:
+    """Liefert eine priorisierte Liste von Leads, die heute bzw. in den nächsten Tagen bearbeitet werden sollten."""
+
+    safe_limit = max(1, min(limit, 100))
+    safe_horizon_days = max(0, min(horizon_days, 30))
+    now_utc = datetime.now(timezone.utc)
+    horizon_end = now_utc + timedelta(days=safe_horizon_days)
+    horizon_iso = horizon_end.isoformat()
+
+    try:
+        supabase = get_supabase_client()
+    except SupabaseNotConfiguredError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    selection = (
+        "id,name,email,company,status,next_action,"
+        "next_action_at,deal_value,needs_action"
+    )
+    filter_expression = (
+        f"and(next_action_at.is.not.null,next_action_at.lte.{horizon_iso}),"
+        "needs_action.is.true"
+    )
+    error_detail = "Supabase-Fehler beim Laden der Daily-Command-Leads."
+
+    try:
+        response = (
+            supabase.table("leads")
+            .select(selection)
+            .or_(filter_expression)
+            .order("next_action_at", desc=False, nulls_first=False)
+            .order("needs_action", desc=True)
+            .order("deal_value", desc=True)
+            .limit(safe_limit)
+            .execute()
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(status_code=502, detail=error_detail) from exc
+
+    if getattr(response, "error", None):
+        raise HTTPException(status_code=502, detail=error_detail)
+
+    leads = getattr(response, "data", None) or []
+    items = [DailyCommandItem(**lead) for lead in leads]
+    return DailyCommandResponse(items=items)
 
 
 __all__ = ["app"]
