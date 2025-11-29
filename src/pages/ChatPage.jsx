@@ -189,6 +189,15 @@ const ChatPage = () => {
           variant: "error",
         },
       ]);
+      const response = await fetch("/.netlify/functions/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content, engine: "gpt" }),
+      });
+
+      if (!response.ok) {
+        setErrorMessage("API Fehler");
+      }
     } finally {
       setIsSending(false);
     }
