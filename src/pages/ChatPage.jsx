@@ -155,6 +155,24 @@ const ChatPage = () => {
             </div>
           </header>
 
+          <div className="pt-2">
+            <div className="flex flex-wrap gap-3">
+              {quickActions.map((action) => {
+                const isPrimary = action === "Lead analysieren";
+                const buttonClasses = isPrimary
+                  ? "inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-slate-950 shadow-sm hover:bg-emerald-400 transition"
+                  : "inline-flex items-center gap-1 rounded-md border border-slate-700/70 bg-slate-900/60 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800/80 transition";
+
+                return (
+                  <button key={action} type="button" className={buttonClasses}>
+                    {action}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 max-h-[52vh] space-y-3 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+              {renderedMessages}
           <div className="flex flex-wrap gap-2">
             {quickActions.map((action) => (
               <button
