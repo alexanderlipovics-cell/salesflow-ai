@@ -77,6 +77,13 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     base_prompt = vertical.system_prompt
 
     sections: List[str] = [BASE_STYLE]
+    industry_key = (data.industry or "").strip().lower() or "chief"
+    vertical: VerticalConfig = VERTICALS.get(industry_key, VERTICALS["chief"])
+
+    sections: List[str] = [
+        vertical.system_prompt.strip(),
+        BASE_STYLE,
+    ]
 
     action_instruction = ACTION_INSTRUCTIONS.get(
         action,
