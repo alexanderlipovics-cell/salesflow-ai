@@ -85,6 +85,16 @@ const App = () => {
       ],
     },
     {
+      path: "/knowledge-base",
+      title: "Playbooks & Knowledge Base",
+      description:
+        "Greif auf Network Marketing Pro Playbooks, Trainings und Snippets zu.",
+      highlights: [
+        "Job-to-be-done Playbooks",
+        "Mindset Notes & Call Scripts",
+      ],
+    },
+    {
       path: "/all-tools",
       title: "Alle Tools",
       description: "Schneller Überblick über alles, was Sales Flow AI bietet.",
