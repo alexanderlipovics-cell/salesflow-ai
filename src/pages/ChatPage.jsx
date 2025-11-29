@@ -98,7 +98,7 @@ const ChatPage = () => {
     setTimeout(() => setContextSaved(false), 1800);
   };
 
-  const handleImport = (event) => {
+  const handleImport = async (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     setImportStatus(`${files.length} Datei(en) hinzugefügt · Analyse gestartet`);

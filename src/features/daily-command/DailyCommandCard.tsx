@@ -1,12 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  DailyCommandItem,
-  fetchDailyCommand,
-} from "../../api/dailyCommand";
+import { DailyCommandItem } from "../../api/dailyCommand";
 
 type DailyCommandCardProps = {
   horizonDays?: number;
   limit?: number;
+};
+
+const mockDailyCommand = {
+  message: "Heute: 5 Follow-ups, 2 Demos geplant",
+  leads: [
+    { name: "Max Müller", action: "Follow-up senden" },
+    { name: "Anna Schmidt", action: "Demo bestätigen" },
+  ],
+};
+
+const buildMockDailyCommandItems = (
+  limit: number,
+  horizonDays: number
+): DailyCommandItem[] => {
+  const now = new Date();
+  const horizon = Math.max(1, horizonDays);
+
+  return mockDailyCommand.leads.slice(0, limit).map((lead, index) => {
+    const dueDate = new Date(now);
+    dueDate.setDate(now.getDate() + Math.min(index + 1, horizon));
+
+    const statusCycle = ["hot", "warm", "neu"];
+    const status = statusCycle[index % statusCycle.length];
+
+    return {
+      id: `mock-${index}`,
+      name: lead.name,
+      company: "Pipeline",
+      status,
+      next_action: lead.action,
+      next_action_at: dueDate.toISOString(),
+      deal_value: null,
+      needs_action: true,
+    };
+  });
 };
 
 const statusStyles: Record<
@@ -54,23 +86,15 @@ export const DailyCommandCard = ({
     setLoading(true);
     setError(null);
 
-    fetchDailyCommand(horizonDays, limit)
-      .then((data) => {
-        if (!active) return;
-        setItems(data);
-      })
-      .catch((err: Error) => {
-        if (!active) return;
-        setItems([]);
-        setError(err.message || "Unbekannter Fehler beim Laden.");
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
+    const timer = setTimeout(() => {
+      if (!active) return;
+      setItems(buildMockDailyCommandItems(limit, horizonDays));
+      setLoading(false);
+    }, 300);
 
     return () => {
       active = false;
+      clearTimeout(timer);
     };
   }, [horizonDays, limit]);
 
@@ -221,6 +245,9 @@ export const DailyCommandCard = ({
           {statusHint}
         </p>
       </div>
+      <p className="mt-3 text-sm text-zinc-300">
+        {mockDailyCommand.message}
+      </p>
       <div className="mt-6">{renderItems()}</div>
     </section>
   );
