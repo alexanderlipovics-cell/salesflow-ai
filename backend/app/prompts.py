@@ -11,7 +11,6 @@ from typing import List, Optional
 from .schemas import ActionData, ActionType
 from .scenario_service import fetch_scenarios, render_scenarios_as_knowledge
 from .templates import FOLLOWUP_TEMPLATES
-from .supabase_client import SupabaseNotConfiguredError, get_supabase_client
 from .verticals import VERTICALS
 
 BASE_STYLE = dedent(
@@ -103,23 +102,14 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     scenario_tags: Optional[List[str]] = getattr(data, "scenario_tags", None) or None
 
     if scenario_vertical:
-        supabase = None
         try:
-            supabase = get_supabase_client()
-        except SupabaseNotConfiguredError:
-            supabase = None
-
-        scenarios = []
-        if supabase:
-            try:
-                scenarios = fetch_scenarios(
-                    supabase=supabase,
-                    vertical=scenario_vertical,
-                    tags=scenario_tags,
-                    limit=3,
-                )
-            except Exception:
-                scenarios = []
+            scenarios = fetch_scenarios(
+                vertical=scenario_vertical,
+                tag_filter=scenario_tags,
+                limit=3,
+            )
+        except Exception:
+            scenarios = []
 
         rendered = render_scenarios_as_knowledge(scenarios)
         if rendered:

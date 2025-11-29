@@ -175,15 +175,9 @@ async def preview_scenarios(
         parsed = [tag.strip() for tag in tags.split(",") if tag.strip()]
         tag_list = parsed or None
 
-    try:
-        supabase = get_supabase_client()
-    except SupabaseNotConfiguredError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
     scenarios = fetch_scenarios(
-        supabase=supabase,
         vertical=vertical,
-        tags=tag_list,
+        tag_filter=tag_list,
         limit=limit,
     )
     knowledge = render_scenarios_as_knowledge(scenarios)
