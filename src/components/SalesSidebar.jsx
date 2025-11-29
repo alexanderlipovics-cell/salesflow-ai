@@ -52,6 +52,8 @@ const quickActions = [
   { icon: Bell, label: "Reminder", helper: "Slack Push" },
 ];
 
+const sidebarLogoSrc = "/logo.ico";
+
 const SalesSidebar = ({
   user,
   planLabel,
@@ -67,16 +69,24 @@ const SalesSidebar = ({
     <aside className="space-y-6 lg:sticky lg:top-28">
       <section className="rounded-3xl border border-white/5 bg-gradient-to-b from-gray-900/80 to-black/60 p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-gray-500">
-              SalesFlow Command Deck
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">
-              Willkommen{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
-            </h2>
-            <p className="mt-1 text-sm text-gray-400">
-              Dein Plan: {planLabel} · Status {planStatus}
-            </p>
+          <div className="flex items-center gap-4">
+            <img
+              src={sidebarLogoSrc}
+              alt="SalesFlow Logo"
+              loading="lazy"
+              className="h-12 w-12 flex-shrink-0 rounded-2xl border border-white/10 bg-white/5 object-contain p-2"
+            />
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-gray-500">
+                SalesFlow Command Deck
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Willkommen{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
+              </h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Dein Plan: {planLabel} · Status {planStatus}
+              </p>
+            </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-right text-xs">
             <p className="font-semibold text-white">{user?.company || "Speed Squad"}</p>
