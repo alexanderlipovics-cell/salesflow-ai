@@ -9,30 +9,6 @@ const createId = () => {
   return `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-const sampleMessages = [
-  {
-    id: "m1",
-    role: "assistant",
-    author: "Sales Flow AI",
-    content:
-      "Hi Lena! Ich habe deine letzten Sales Touchpoints gescannt. Willst du Maximilian ein Update zu seinem POC schicken?",
-  },
-  {
-    id: "m2",
-    role: "user",
-    author: "Du",
-    content:
-      "Ja, bitte. Er wartet auf das neue Integrations-Video. Frag ihn auch, ob Dienstag 14 Uhr passt.",
-  },
-  {
-    id: "m3",
-    role: "assistant",
-    author: "Sales Flow AI",
-    content:
-      "Verstanden. Ich formuliere eine Message im Tonfall 'direkt & freundlich'. Ready?",
-  },
-];
-
 const leads = [
   { label: "Name", value: "Maximilian Vogt" },
   { label: "Firma", value: "Nexora Energy" },
@@ -42,7 +18,7 @@ const leads = [
 ];
 
 const ChatPage = () => {
-  const [messages, setMessages] = useState(sampleMessages);
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
 
@@ -55,19 +31,49 @@ const ChatPage = () => {
     []
   );
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!draft.trim()) return;
+    if (!draft.trim() || isSending) return;
+
     setIsSending(true);
-    const payload = {
+    const userMessage = {
       id: createId(),
       role: "user",
       author: "Du",
       content: draft.trim(),
     };
-    setMessages((prev) => [...prev, payload]);
+
+    setMessages((prev) => [...prev, userMessage]);
     setDraft("");
-    setTimeout(() => {
+
+    try {
+      const response = await fetch("/.netlify/functions/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content, engine: "gpt" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const reply =
+        typeof data?.reply === "string" && data.reply.trim().length > 0
+          ? data.reply
+          : "Die AI konnte keine Antwort liefern. Bitte versuche es erneut.";
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createId(),
+          role: "assistant",
+          author: "Sales Flow AI",
+          content: reply,
+        },
+      ]);
+    } catch (error) {
+      console.error("AI request failed", error);
       setMessages((prev) => [
         ...prev,
         {
@@ -75,11 +81,12 @@ const ChatPage = () => {
           role: "assistant",
           author: "Sales Flow AI",
           content:
-            "Hier ist dein Follow-up Entwurf. Ich habe das Demo-Video verlinkt und eine konkrete Uhrzeit vorgeschlagen.",
+            "Ups, etwas ist schiefgelaufen. Versuch es gleich nochmal oder kontaktiere den Support.",
         },
       ]);
+    } finally {
       setIsSending(false);
-    }, 600);
+    }
   };
 
   return (
