@@ -16,8 +16,8 @@
   - `/network/duplication` → `NetworkDuplicationPage` (`src/pages/PlaceholderPages.jsx`)
   - `/einwand-killer` → `EinwandKillerPage` (`src/pages/PlaceholderPages.jsx`)
   - `/tools` → `AlleToolsPage` (`src/pages/PlaceholderPages.jsx`)
-  - `/leads/prospects` → `LeadsProspectsPage` (`src/pages/PlaceholderPages.jsx`)
-  - `/leads/customers` → `LeadsCustomersPage` (`src/pages/PlaceholderPages.jsx`)
+  - `/leads/prospects` → `LeadsProspectsPage` (`src/pages/LeadsProspectsPage.jsx`)
+  - `/leads/customers` → `LeadsCustomersPage` (`src/pages/LeadsCustomersPage.jsx`)
   - `/settings` → `SettingsPage` (`src/pages/SettingsPage.jsx`)
   - `/pricing` → `PricingPage` (`src/components/PricingPage.jsx`, außerhalb des AppShell-Layouts)
 

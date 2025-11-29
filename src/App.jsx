@@ -7,6 +7,8 @@ import DashboardPage from "./pages/DashboardPage";
 import SettingsPage from "./pages/SettingsPage";
 import ChatPage from "./pages/ChatPage";
 import DailyCommandPage from "./pages/DailyCommandPage";
+import LeadsProspectsPage from "./pages/LeadsProspectsPage";
+import LeadsCustomersPage from "./pages/LeadsCustomersPage";
 import PagePlaceholder from "./pages/PagePlaceholder";
 import AppShell from "./layout/AppShell";
 import { UserProvider } from "./context/UserContext";
@@ -86,24 +88,6 @@ const App = () => {
       description: "Schneller Überblick über alles, was Sales Flow AI bietet.",
       highlights: ["Filter nach Job-to-be-done", "Favoriten anpinnbar"],
     },
-    {
-      path: "/leads/prospects",
-      title: "Interessenten",
-      description: "Segmentierte Ansicht aller heißen Prospects.",
-      highlights: [
-        "Lead Scores & letzte Aktivität",
-        "Direkte Übergabe an Chat oder Speed-Hunter",
-      ],
-    },
-    {
-      path: "/leads/customers",
-      title: "Kunden",
-      description: "Customer Success spielt hier mit Sales zusammmen.",
-      highlights: [
-        "Renewal-Playbooks",
-        "Automatische Signale für Upsells",
-      ],
-    },
   ];
 
   return (
@@ -120,6 +104,8 @@ const App = () => {
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="pricing" element={<PricingPage />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="leads/prospects" element={<LeadsProspectsPage />} />
+                  <Route path="leads/customers" element={<LeadsCustomersPage />} />
                   {placeholderRoutes.map((route) => (
                     <Route
                       key={route.path}
