@@ -1,6 +1,7 @@
 import { Activity, Flame, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import DailyCommandCard from "../features/daily-command/DailyCommandCard";
+import LeadHunterTasksCard from "../features/lead-hunter/LeadHunterTasksCard";
 import SalesSidebar from "../components/SalesSidebar";
 import { usePricingModal } from "../context/PricingModalContext";
 import { useSubscription } from "../hooks/useSubscription";
@@ -229,6 +230,8 @@ const DashboardPage = () => {
               </div>
             </section>
           </div>
+
+          <LeadHunterTasksCard limit={5} />
 
           <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 sm:p-6 space-y-4">
             <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
