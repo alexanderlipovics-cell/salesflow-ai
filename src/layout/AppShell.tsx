@@ -40,6 +40,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Sales Power",
     items: [
+      { label: "Lead-Hunter", to: "/lead-hunter" },
       { label: "Speed-Hunter", to: "/speed-hunter" },
       { label: "Phönix", to: "/phoenix" },
       { label: "Einwand-Killer", to: "/einwand-killer" },
