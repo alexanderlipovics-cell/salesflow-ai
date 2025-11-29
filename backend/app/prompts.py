@@ -9,7 +9,9 @@ from textwrap import dedent
 from typing import List
 
 from .schemas import ActionData, ActionType
+from .verticals import VERTICALS, VerticalConfig
 from .templates import FOLLOWUP_TEMPLATES
+from .verticals import VERTICALS, VerticalConfig
 
 BASE_STYLE = dedent(
     """
@@ -18,6 +20,19 @@ BASE_STYLE = dedent(
     Lieber praxisnah als akademisch. Nutze Emojis sparsam und nur wenn sie Mehrwert bringen.
     """
 ).strip()
+
+
+DEFAULT_VERTICAL_KEY = "chief"
+
+
+def _resolve_vertical(data: ActionData) -> VerticalConfig:
+    """Ermittelt die Vertikale anhand der Industry-Angabe."""
+
+    candidate = (data.industry or "").strip().lower()
+    if candidate and candidate in VERTICALS:
+        return VERTICALS[candidate]
+
+    return VERTICALS[DEFAULT_VERTICAL_KEY]
 
 
 def _format_lead_context(data: ActionData) -> str:
@@ -67,7 +82,12 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     Baut den Systemprompt für die übergebene Action.
     """
 
-    sections: List[str] = [BASE_STYLE]
+    vertical_config = _resolve_vertical(data)
+
+    sections: List[str] = [vertical_config.system_prompt, BASE_STYLE]
+    industry_key = (data.industry or "").strip().lower() or "chief"
+    vertical: VerticalConfig = VERTICALS.get(industry_key, VERTICALS["chief"])
+    sections: List[str] = [vertical.system_prompt.strip(), BASE_STYLE]
 
     action_instruction = ACTION_INSTRUCTIONS.get(
         action,
@@ -86,7 +106,11 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     if not data.knowledge and action == "knowledge_answer":
         sections.append("Es wurde kein Knowledge-Text geliefert; erkläre das kurz und bitte um mehr Details.")
 
-    return "\n\n".join(section.strip() for section in sections if section).strip()
+    full_prompt = "\n\n".join(
+        section.strip() for section in sections if section
+    ).strip()
+
+    return full_prompt
 
 
 __all__ = ["build_system_prompt"]

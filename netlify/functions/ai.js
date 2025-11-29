@@ -6,7 +6,7 @@
  * - Liefert bei Bedarf Debug-Informationen über ausgeführte Queries
  */
 
-const { getSupabase } = require("./supabaseClient");
+import { getSupabase } from "./supabaseClient.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -532,8 +532,6 @@ const detectActionFromMessage = (text) => {
   return null;
 };
 
-
-exports.handler = async (event) => {
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };

@@ -48,6 +48,11 @@ class ActionData(BaseModel):
     messages: List[ChatMessage] = Field(default_factory=list)
     lead: Optional[LeadData] = None
     knowledge: Optional[str] = None
+    industry: Optional[str] = None
+    industry: Optional[str] = Field(
+        default=None,
+        description="Optionaler Vertical-Key (z. B. 'chief')."
+    )
 
 
 class ActionRequest(BaseModel):
