@@ -15,6 +15,7 @@ ActionType = Literal[
     "analyze_lead",
     "create_template",
     "knowledge_answer",
+    "lead_hunter",
 ]
 
 ChatRole = Literal["user", "assistant", "system"]
