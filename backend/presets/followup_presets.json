@@ -1,1 +1,732 @@
-
+{
+  "presets": [
+    {
+      "industry_key": "network_marketing",
+      "label": "Network Marketing / MLM",
+      "settings": {
+        "best_contact_time": "18:00",
+        "allow_weekend": true,
+        "max_attempts": 8,
+        "cooldown_days_after_abort": 90
+      },
+      "sequence": [
+        {
+          "day_offset": 1,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Danke & Infos",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nDanke für unser Gespräch! Ich schick dir wie versprochen die Infos rüber.\n\nWenn du sie angeschaut hast, schick mir kurz ein 👌 – dann planen wir die nächsten Schritte."
+        },
+        {
+          "day_offset": 3,
+          "type": "soft_followup",
+          "priority": "medium",
+          "title": "Schon angesehen?",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nkurz nachgehakt: Konntest du dir das schon anschauen?\n\nWenn Fragen aufgetaucht sind, schreib mir einfach kurz – dann gehen wir es gemeinsam durch."
+        },
+        {
+          "day_offset": 7,
+          "type": "value",
+          "priority": "high",
+          "title": "Erfolgsgeschichte",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nkurzes Update: [PARTNER] hat in 3 Wochen ihre ersten 500 € verdient.\n\nHast du Lust, dass wir kurz durchrechnen, wie das bei dir aussehen könnte?"
+        },
+        {
+          "day_offset": 14,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Weiter oder parken?",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nSollen wir das Thema **dieses Monat anstarten** oder lieber erstmal parken?\nBeides ist völlig okay – ich will nur wissen, wie ich dich einplanen soll."
+        },
+        {
+          "day_offset": 21,
+          "type": "urgency",
+          "priority": "medium",
+          "title": "Event/Webinar",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nAm [DATUM] haben wir ein Live-Webinar mit einem unserer Top-Verdiener.\n\nSoll ich dir einen Platz reservieren? Schreib mir einfach **JA**, wenn du dabei sein willst."
+        },
+        {
+          "day_offset": 30,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Check-in",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nwie geht's dir? Wollte mich mal wieder melden.\n\nWenn das Thema irgendwann wieder passt, schreib mir einfach – ich bin da."
+        },
+        {
+          "day_offset": 60,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Update & Reaktivierung",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nlange nichts gehört – ich hoffe, bei dir ist alles gut!\n\nBei uns hat sich einiges getan. Interesse an einem kurzen Update-Call? Wenn ja, schreib mir gern **UPDATE**."
+        },
+        {
+          "day_offset": 90,
+          "type": "last_chance",
+          "priority": "low",
+          "title": "Liste aufräumen",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nich räume gerade meine Kontaktliste auf.\n\nSoll ich dich auf \"später\" setzen oder ganz rausnehmen?\nAntworte einfach mit **SPÄTER** oder **RAUS**."
+        }
+      ]
+    },
+    {
+      "industry_key": "coaching_consulting",
+      "label": "Coaching & Beratung",
+      "settings": {
+        "best_contact_time": "10:00",
+        "allow_weekend": false,
+        "max_attempts": 8,
+        "cooldown_days_after_abort": 90
+      },
+      "sequence": [
+        {
+          "day_offset": 1,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Danke & Recap",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nDanke für das tolle Gespräch gestern!\nHier nochmal die Kernpunkte:\n• [PUNKT1]\n• [PUNKT2]\n\nWenn du magst, können wir im nächsten Call einen konkreten 90-Tage-Plan bauen.\nPasst dir eher **[DATUM1/UHRZEIT]** oder **[DATUM2/UHRZEIT]**?"
+        },
+        {
+          "day_offset": 3,
+          "type": "value",
+          "priority": "medium",
+          "title": "Hilfreicher Content",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nich hab dir einen kurzen Content vorbereitet, der gut zu deiner Situation passt:\n\n[LINK/RESOURCE]\n\nGibt es einen Punkt darin, der bei dir besonders resoniert?"
+        },
+        {
+          "day_offset": 7,
+          "type": "soft_followup",
+          "priority": "high",
+          "title": "Nachfassen",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nkonntest du dir die Unterlagen schon ansehen?\n\nGibt es noch Fragen, bevor du eine Entscheidung triffst?"
+        },
+        {
+          "day_offset": 14,
+          "type": "case_study",
+          "priority": "high",
+          "title": "Case Study",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nkurze Story: Ein Kunde von mir hatte eine sehr ähnliche Ausgangssituation wie du.\nInnerhalb von 8 Wochen hat er [ERGEBNIS] erreicht.\n\nWenn du willst, erzähle ich dir in einem kurzen Call genau, wie wir das gemacht haben.\nHättest du diese oder nächste Woche 15 Minuten?"
+        },
+        {
+          "day_offset": 21,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Entscheidung",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nwo stehst du gerade mit deiner Entscheidung?\n\nIst das Coaching für dich eher ein **Ja**, ein **Nein** oder ein **Später**?"
+        },
+        {
+          "day_offset": 30,
+          "type": "offer",
+          "priority": "medium",
+          "title": "Special Offer",
+          "channel": "email",
+          "template": "Hey [NAME],\n\nich kann dir für einen Einstieg bis [DATUM] noch folgendes anbieten:\n\n[ANGEBOT/BONUS]\n\nWäre das für dich ein zusätzlicher Grund, jetzt zu starten?"
+        },
+        {
+          "day_offset": 45,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Check-in",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nich wollte nur kurz nachfragen, wie sich deine Situation seit unserem Gespräch entwickelt hat.\n\nIst das Thema für dich noch aktuell?"
+        },
+        {
+          "day_offset": 90,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Reaktivierung",
+          "channel": "email",
+          "template": "Hey [NAME],\n\nwir hatten vor einiger Zeit über [THEMA] gesprochen.\nInzwischen haben wir mit einigen Kunden sehr spannende Ergebnisse erzielt.\n\nWenn du ein kurzes Update möchtest, antworte einfach mit **UPDATE**."
+        }
+      ]
+    },
+    {
+      "industry_key": "real_estate",
+      "label": "Immobilien / Makler",
+      "settings": {
+        "best_contact_time": "09:00",
+        "allow_weekend": false,
+        "max_attempts": 9,
+        "cooldown_days_after_abort": 180
+      },
+      "sequence": [
+        {
+          "day_offset": 1,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Danke & Exposé",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nvielen Dank für Ihr Interesse an [OBJEKT].\nAnbei erhalten Sie das Exposé.\n\nWenn Sie möchten, können wir auch gleich einen Besichtigungstermin vormerken – viele Interessenten planen gerade ihre Woche.\n\nFreundliche Grüße\n[MAKLERNAME]"
+        },
+        {
+          "day_offset": 2,
+          "type": "value",
+          "priority": "medium",
+          "title": "Marktinfo",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nkurze Ergänzung zu [OBJEKT]:\nDer Markt in [REGION] ist aktuell sehr dynamisch, vergleichbare Objekte liegen bei [KURZER MARKTINFO].\n\nIch melde mich gerne, sobald es neue Entwicklungen gibt."
+        },
+        {
+          "day_offset": 5,
+          "type": "soft_followup",
+          "priority": "high",
+          "title": "Besichtigung anbieten",
+          "channel": "telefon",
+          "template": "Guten Tag [NAME],\n\nkonnten Sie sich das Exposé zu [OBJEKT] bereits ansehen?\n\nHätten Sie grundsätzlich Interesse an einer Besichtigung?\nPasst Ihnen eher **unter der Woche abends** oder **am Samstag Vormittag**?"
+        },
+        {
+          "day_offset": 10,
+          "type": "market_update",
+          "priority": "medium",
+          "title": "Neue Objekte",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nich wollte Sie kurz informieren: Wir haben neue Objekte, die zu Ihren Kriterien passen könnten.\n\nWenn Sie mögen, kann ich Ihnen eine kleine Auswahl schicken."
+        },
+        {
+          "day_offset": 14,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Interesse klären",
+          "channel": "telefon",
+          "template": "Guten Tag [NAME],\n\nich wollte nachhaken, wie Ihr Eindruck zu [OBJEKT] ist.\n\nIst das Objekt weiterhin für Sie interessant oder sollen wir uns auf Alternativen konzentrieren?"
+        },
+        {
+          "day_offset": 7,
+          "type": "urgency",
+          "priority": "medium",
+          "title": "Weitere Interessenten",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nkurze Info: Für [OBJEKT] gibt es mittlerweile mehrere konkrete Anfragen.\n\nWenn Sie weiterhin interessiert sind, sollten wir zeitnah sprechen.\n\nFreundliche Grüße\n[MAKLERNAME]"
+        },
+        {
+          "day_offset": 30,
+          "type": "alternatives",
+          "priority": "low",
+          "title": "Alternative Objekte",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nauch wenn [OBJEKT] vielleicht nicht perfekt passt: Ich habe einige alternative Objekte, die interessant sein könnten.\n\nMöchten Sie eine kurze Übersicht erhalten?"
+        },
+        {
+          "day_offset": 60,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Langzeit-Check",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nich hoffe, es geht Ihnen gut.\n\nSind Sie weiterhin aktuell auf der Suche nach einer Immobilie oder hat sich Ihre Planung verändert?"
+        },
+        {
+          "day_offset": 180,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Halbjahres-Check",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nwir hatten vor einiger Zeit wegen [OBJEKT/IMMOBILIENWUNSCH] Kontakt.\n\nFalls das Thema Immobilie wieder aktuell ist, unterstütze ich Sie gerne erneut.\n\nFreundliche Grüße\n[MAKLERNAME]"
+        }
+      ]
+    },
+    {
+      "industry_key": "insurance_finance",
+      "label": "Versicherung & Finanzen",
+      "settings": {
+        "best_contact_time": "10:00",
+        "allow_weekend": false,
+        "max_attempts": 8,
+        "cooldown_days_after_abort": 60
+      },
+      "sequence": [
+        {
+          "day_offset": 1,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Danke & Unterlagen",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nvielen Dank für das Gespräch.\nIm Anhang finden Sie die besprochenen Unterlagen zu [THEMA/PRODUKT].\n\nBei Rückfragen stehe ich Ihnen gerne zur Verfügung."
+        },
+        {
+          "day_offset": 3,
+          "type": "value",
+          "priority": "medium",
+          "title": "Hilfreicher Tipp",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nviele Kunden übersehen aktuell, dass [RISIKO / LÜCKE].\n\nTrifft das auch auf Ihre Situation zu oder sind Sie in diesem Punkt bereits gut abgesichert?"
+        },
+        {
+          "day_offset": 7,
+          "type": "soft_followup",
+          "priority": "high",
+          "title": "Fragen klären",
+          "channel": "telefon",
+          "template": "Guten Tag [NAME],\n\nkonnten Sie sich die Unterlagen bereits ansehen?\n\nGibt es Punkte, die wir gemeinsam durchgehen oder anpassen sollten?"
+        },
+        {
+          "day_offset": 14,
+          "type": "reminder",
+          "priority": "high",
+          "title": "Angebots-Erinnerung",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nich wollte kurz daran erinnern, dass Ihr Angebot zu [PRODUKT] noch bis [DATUM] gültig ist.\n\nWenn Sie Anpassungswünsche haben oder etwas unklar ist, melden Sie sich gerne – dann passen wir es gemeinsam an."
+        },
+        {
+          "day_offset": 21,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Entscheidung",
+          "channel": "telefon",
+          "template": "Guten Tag [NAME],\n\nwie ist Ihr aktueller Eindruck zu dem vorgeschlagenen Konzept?\n\nIst das für Sie eher ein Ja, ein Nein oder möchten Sie es auf später verschieben?"
+        },
+        {
+          "day_offset": 30,
+          "type": "alternative",
+          "priority": "medium",
+          "title": "Alternative Optionen",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nfalls das aktuelle Angebot nicht ganz passt, könnte es Alternativen geben, z.B. mit anderer Laufzeit oder Beitragsstruktur.\n\nSoll ich Ihnen dazu 1–2 Varianten vorbereiten?"
+        },
+        {
+          "day_offset": 60,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Situations-Check",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nich wollte kurz nachfragen, ob sich Ihre Lebens- oder Finanzsituation seit unserem letzten Kontakt verändert hat.\n\nEin kurzer Check kann sinnvoll sein, um zu prüfen, ob alles noch gut passt."
+        },
+        {
+          "day_offset": 365,
+          "type": "annual_review",
+          "priority": "medium",
+          "title": "Jahres-Check",
+          "channel": "email",
+          "template": "Guten Tag [NAME],\n\nein Jahr ist vergangen – Zeit für einen kostenlosen Vertrags-Check.\n\nMöchten Sie, dass wir Ihre Absicherungen und Verträge einmal gemeinsam durchgehen?\nDann schlage ich Ihnen gerne 2–3 Termine vor."
+        }
+      ]
+    },
+    {
+      "industry_key": "online_courses",
+      "label": "Online-Kurse & digitale Produkte",
+      "settings": {
+        "best_contact_time": "19:00",
+        "allow_weekend": true,
+        "max_attempts": 8,
+        "cooldown_days_after_abort": 30
+      },
+      "sequence": [
+        {
+          "day_offset": 0,
+          "type": "welcome",
+          "priority": "high",
+          "title": "Willkommen / Opt-in",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nmega, dass du dich für [KURS/THEMA] interessierst!\nHier ist dein Zugang/Freebie: [LINK].\n\nWenn du magst, antworte kurz mit **READY**, dann weiß ich, dass alles geklappt hat."
+        },
+        {
+          "day_offset": 1,
+          "type": "value",
+          "priority": "high",
+          "title": "Gratis-Content",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nhier ist ein kurzer Input, der dir sofort weiterhilft:\n\n[LINK/CONTENT]\n\nSchreib mir gern, was deine größte Herausforderung in dem Bereich ist."
+        },
+        {
+          "day_offset": 2,
+          "type": "soft_followup",
+          "priority": "medium",
+          "title": "Fragen?",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nkonntest du dir den Content schon anschauen?\n\nGibt es eine Frage, bei der du dir gerade am meisten Unterstützung wünschst?"
+        },
+        {
+          "day_offset": 4,
+          "type": "social_proof",
+          "priority": "high",
+          "title": "Testimonial",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nkurze Story: [KUNDE] hat mit [KURS] in [ZEIT] [ERGEBNIS] erreicht.\n\nWenn du willst, kann ich dir zeigen, mit welchem Modul du starten solltest, damit du schnell Resultate siehst."
+        },
+        {
+          "day_offset": 7,
+          "type": "urgency",
+          "priority": "high",
+          "title": "Bonus endet",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nnur kurz: Der Early-Bird-Bonus für [KURS] endet morgen um Mitternacht.\n\nDanach ist [BONUS] weg.\n\nWillst du den Bonus mitnehmen oder lieber auf einen späteren Start warten?"
+        },
+        {
+          "day_offset": 10,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Letzte Chance",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nsoll ich dir den Link zur Anmeldung nochmal schicken oder ist [KURS] für dich erstmal vom Tisch?\n\nAntwort einfach mit **LINK** oder **SPÄTER**."
+        },
+        {
+          "day_offset": 14,
+          "type": "downsell",
+          "priority": "medium",
+          "title": "Downsell / Mini-Kurs",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nich verstehe, wenn [KURS] gerade zu groß ist.\n\nIch habe auch einen Mini-Kurs für nur [PREIS] € – perfekt zum Reinschnuppern.\n\nSoll ich dir die Infos dazu schicken?"
+        },
+        {
+          "day_offset": 30,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Neuer Launch / Update",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nkurzes Update: Es gibt neue Inhalte/Termine zu [KURS/THEMA].\n\nMöchtest du eine Übersicht, was sich geändert hat?"
+        }
+      ]
+    },
+    {
+      "industry_key": "b2b_saas",
+      "label": "B2B / SaaS / Software",
+      "settings": {
+        "best_contact_time": "09:00",
+        "allow_weekend": false,
+        "max_attempts": 9,
+        "cooldown_days_after_abort": 90
+      },
+      "sequence": [
+        {
+          "day_offset": 0,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Demo-Recap am gleichen Tag",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nvielen Dank für das Gespräch/die Demo heute.\nKurz zusammengefasst haben wir gesehen, dass Sie mit [PRODUKT] voraussichtlich [ERGEBNIS] erreichen können.\n\nDer nächste Schritt wäre typischerweise, dass wir [TEAM/IT/FINANZ] kurz abholen.\nSoll ich Ihnen dazu 2–3 Terminvorschläge schicken?"
+        },
+        {
+          "day_offset": 3,
+          "type": "value",
+          "priority": "high",
+          "title": "Case Study",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nhier eine kurze Fallstudie von einem Kunden aus Ihrer Branche, der mit [PRODUKT] [ERGEBNIS] erreicht hat:\n\n[KURZE CASE STUDY]\n\nWenn Sie möchten, können wir gemeinsam prüfen, welche Teile davon auf Ihr Unternehmen passen."
+        },
+        {
+          "day_offset": 7,
+          "type": "soft_followup",
+          "priority": "medium",
+          "title": "Team-Abstimmung",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nkonnten Sie das Thema intern bereits besprechen?\n\nGibt es Einwände oder Fragen aus dem Team, bei denen ich unterstützen kann?"
+        },
+        {
+          "day_offset": 10,
+          "type": "roi",
+          "priority": "high",
+          "title": "ROI-Rechnung",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nich habe eine grobe ROI-Rechnung gemacht:\nMit [PRODUKT] würden Sie ca. [X] € pro Jahr sparen bzw. [Y] Stunden pro Monat einsparen.\n\nWollen wir die Kalkulation einmal gemeinsam durchgehen, damit Sie es intern leichter argumentieren können?"
+        },
+        {
+          "day_offset": 14,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Nächste Schritte",
+          "channel": "telefon",
+          "template": "Hallo [NAME],\n\nwo stehen Sie aktuell mit der Entscheidung zu [PRODUKT]?\n\nSollen wir einen nächsten Schritt definieren (z.B. Testphase, Pilotprojekt, Termin mit weiteren Stakeholdern)?"
+        },
+        {
+          "day_offset": 21,
+          "type": "stakeholder",
+          "priority": "medium",
+          "title": "Weitere Entscheider",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\ngibt es neben Ihnen noch Entscheider, die wir in das Gespräch holen sollten (z.B. IT, Fachbereich, Geschäftsführung)?\n\nGerne kann ich einen gemeinsamen Termin anbieten, bei dem wir alle Fragen bündeln."
+        },
+        {
+          "day_offset": 30,
+          "type": "trial",
+          "priority": "medium",
+          "title": "Test anbieten",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nfalls Sie noch praktische Eindrücke sammeln möchten, können wir eine Testphase/Pilot einrichten.\n\nWäre ein 14- oder 30-tägiger Test für Sie sinnvoll?"
+        },
+        {
+          "day_offset": 45,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Budget-Zyklus",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\npasst das Thema [PRODUKT] in Ihren aktuellen Budget- bzw. Planungszyklus oder wäre ein anderer Zeitpunkt günstiger?\n\nDann kann ich mich rechtzeitig wieder melden."
+        },
+        {
+          "day_offset": 90,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Neues Feature / Update",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nes gibt spannende neue Funktionen/Referenzen zu [PRODUKT], die für Sie interessant sein könnten.\n\nMöchten Sie ein kurzes Update dazu?"
+        }
+      ]
+    },
+    {
+      "industry_key": "fitness",
+      "label": "Fitness / Personal Training",
+      "settings": {
+        "best_contact_time": "17:00",
+        "allow_weekend": true,
+        "max_attempts": 7,
+        "cooldown_days_after_abort": 30
+      },
+      "sequence": [
+        {
+          "day_offset": 1,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Danke für Probetraining",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nwar cool, dass du gestern beim Probetraining dabei warst!\n\nWie hast du dich danach gefühlt?"
+        },
+        {
+          "day_offset": 2,
+          "type": "motivation",
+          "priority": "high",
+          "title": "Motivations-Push",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nNa, Muskelkater? 😄\n\nDas ist ein gutes Zeichen – dein Körper passt sich an. Bleib dran, es lohnt sich!"
+        },
+        {
+          "day_offset": 5,
+          "type": "soft_followup",
+          "priority": "medium",
+          "title": "Wie fühlst du dich?",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nwie fühlst du dich seit dem Probetraining?\n\nGibt es etwas, das dir schwerfällt oder Fragen, die aufgetaucht sind?\nIch helfe dir gern, einen Plan für die nächsten 4 Wochen zu bauen."
+        },
+        {
+          "day_offset": 7,
+          "type": "social_proof",
+          "priority": "high",
+          "title": "Transformation zeigen",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nschau mal, so sah der Fortschritt von [KUNDE] nach 8 Wochen aus: [BEFORE_AFTER/RESULT].\n\nWenn du möchtest, können wir ein ähnliches Ziel für dich festlegen."
+        },
+        {
+          "day_offset": 10,
+          "type": "urgency",
+          "priority": "high",
+          "title": "Angebot läuft ab",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nmein Einstiegsangebot für dich (z.B. 4 Wochen Coaching für [PREIS]) gilt noch bis [DATUM].\n\nWillst du es nutzen oder lieber später einsteigen?"
+        },
+        {
+          "day_offset": 14,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Entscheidung",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nsollen wir gemeinsam starten oder willst du es erstmal noch offen lassen?\n\nAntwort einfach mit **START** oder **SPÄTER**."
+        },
+        {
+          "day_offset": 30,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Neues Programm",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nich starte bald ein neues Programm zu [THEMA/ZIEL].\n\nWillst du Infos dazu haben?"
+        }
+      ]
+    },
+    {
+      "industry_key": "ecommerce",
+      "label": "E-Commerce / Online-Shop",
+      "settings": {
+        "best_contact_time": "20:00",
+        "allow_weekend": true,
+        "max_attempts": 6,
+        "cooldown_days_after_abort": 30
+      },
+      "sequence": [
+        {
+          "day_offset": 0,
+          "type": "cart_abandon",
+          "priority": "high",
+          "title": "Warenkorb vergessen?",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\ndu hast noch [PRODUKT] im Warenkorb liegen.\n\nWenn du Fragen dazu hast (Größe, Farbe, passt das zu XY?), schreib mir kurz – ich helfe dir gern."
+        },
+        {
+          "day_offset": 1,
+          "type": "reminder",
+          "priority": "high",
+          "title": "Produkt noch verfügbar",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nnur als Erinnerung: [PRODUKT] ist noch für dich reserviert.\n\nWenn du es haben möchtest, kannst du deine Bestellung hier abschließen: [LINK]."
+        },
+        {
+          "day_offset": 3,
+          "type": "social_proof",
+          "priority": "medium",
+          "title": "Bewertungen",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nandere Kunden sagen über [PRODUKT]:\n\n[BEWERTUNG/KUNDENSTIMMEN]\n\nVielleicht hilft dir das bei deiner Entscheidung 🙂"
+        },
+        {
+          "day_offset": 7,
+          "type": "discount",
+          "priority": "high",
+          "title": "Kleiner Rabatt",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nich hab einen kleinen Gutschein für dich: **[CODE]** für 10 % Rabatt auf [PRODUKT].\n\nGilt 48 Stunden – such dir in Ruhe aus, ob es wirklich zu dir passt."
+        },
+        {
+          "day_offset": 14,
+          "type": "alternatives",
+          "priority": "low",
+          "title": "Ähnliche Produkte",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nfalls [PRODUKT] nicht ganz gepasst hat – hier ein paar Alternativen, die oft dazu passen:\n\n[PRODUKT-LISTE]\n\nVielleicht ist da etwas für dich dabei."
+        },
+        {
+          "day_offset": 30,
+          "type": "reactivation",
+          "priority": "low",
+          "title": "Wir vermissen dich",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nwir haben dich schon länger nicht mehr im Shop gesehen.\n\nWenn du magst, bekommst du mit **[CODE]** einen kleinen Willkommensrabatt auf deine nächste Bestellung."
+        }
+      ]
+    },
+    {
+      "industry_key": "local_services",
+      "label": "Handwerk & lokale Services",
+      "settings": {
+        "best_contact_time": "08:00",
+        "allow_weekend": false,
+        "max_attempts": 6,
+        "cooldown_days_after_abort": 30
+      },
+      "sequence": [
+        {
+          "day_offset": 0,
+          "type": "inquiry_confirm",
+          "priority": "high",
+          "title": "Anfrage erhalten",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nvielen Dank für Ihre Anfrage zu [LEISTUNG].\n\nIch melde mich spätestens bis [UHRZEIT/HEUTE ABEND] mit einem Vorschlag.\n\nFreundliche Grüße\n[NAME/FIRMA]"
+        },
+        {
+          "day_offset": 1,
+          "type": "quote_sent",
+          "priority": "high",
+          "title": "Angebot gesendet",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nanbei erhalten Sie das Angebot zu [LEISTUNG].\n\nWenn Sie Fragen haben oder Anpassungen wünschen, geben Sie mir gerne Bescheid."
+        },
+        {
+          "day_offset": 3,
+          "type": "soft_followup",
+          "priority": "high",
+          "title": "Angebot gesehen?",
+          "channel": "telefon",
+          "template": "Hallo [NAME],\n\nkonnten Sie sich das Angebot bereits ansehen?\n\nGibt es Punkte, die wir anpassen sollten (Termin, Umfang, Budget)?"
+        },
+        {
+          "day_offset": 7,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Termin vereinbaren?",
+          "channel": "telefon",
+          "template": "Hallo [NAME],\n\nsollen wir einen Termin für [LEISTUNG] fixieren oder möchten Sie noch etwas abwarten?\n\nIch richte mich gerne nach Ihrem Zeitplan."
+        },
+        {
+          "day_offset": 14,
+          "type": "urgency",
+          "priority": "medium",
+          "title": "Kalenderlücke",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nich habe nächste Woche noch eine Lücke im Kalender.\n\nWenn Sie [LEISTUNG] noch vor [DATUM] erledigt haben möchten, könnten wir diesen Slot nutzen.\n\nPasst das für Sie?"
+        },
+        {
+          "day_offset": 30,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Noch aktuell?",
+          "channel": "email",
+          "template": "Hallo [NAME],\n\nist [LEISTUNG] für Sie noch aktuell oder hat sich Ihre Planung geändert?\n\nDann kann ich meinen Kalender entsprechend anpassen."
+        }
+      ]
+    },
+    {
+      "industry_key": "art_creative",
+      "label": "Kunst & kreative Services",
+      "settings": {
+        "best_contact_time": "11:00",
+        "allow_weekend": true,
+        "max_attempts": 7,
+        "cooldown_days_after_abort": 60
+      },
+      "sequence": [
+        {
+          "day_offset": 1,
+          "type": "thank_you",
+          "priority": "high",
+          "title": "Danke fürs Gespräch",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nDanke für das schöne Gespräch zu [PROJEKT/IDEEN].\n\nIch freue mich sehr über dein Interesse an meiner Arbeit."
+        },
+        {
+          "day_offset": 5,
+          "type": "value",
+          "priority": "medium",
+          "title": "Inspiration teilen",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nich habe etwas entdeckt, das gut zu unserer Idee passt:\n\n[LINK/BILD/INSPIRATION]\n\nVielleicht inspiriert es dich noch weiter."
+        },
+        {
+          "day_offset": 10,
+          "type": "process",
+          "priority": "medium",
+          "title": "Behind the Scenes",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nich arbeite gerade an [PROJEKT].\nHier ein kleiner Blick hinter die Kulissen: [BILD/VIDEO]\n\nSo entstehen meine Werke."
+        },
+        {
+          "day_offset": 14,
+          "type": "soft_followup",
+          "priority": "high",
+          "title": "Resoniert es?",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nwie fühlt sich das, was wir besprochen haben, für dich an?\n\nHast du das Gefühl, dass [PROJEKT/WORK] zu dir/eurem Raum passt – oder ist es noch zu früh?"
+        },
+        {
+          "day_offset": 21,
+          "type": "portfolio",
+          "priority": "low",
+          "title": "Neue Werke",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nich habe ein paar neue Arbeiten fertiggestellt, die gut zu deinem Geschmack passen könnten.\n\nWenn du magst, schicke ich dir eine kleine Auswahl."
+        },
+        {
+          "day_offset": 30,
+          "type": "direct_followup",
+          "priority": "high",
+          "title": "Nächste Schritte",
+          "channel": "whatsapp",
+          "template": "Hey [NAME] 🙂\n\nwenn du möchtest, können wir jetzt die nächsten Schritte festlegen (Motiv, Format, Budgetrahmen).\n\nLieber ein kurzer Call oder sollen wir alles schriftlich klären?"
+        },
+        {
+          "day_offset": 60,
+          "type": "checkin",
+          "priority": "low",
+          "title": "Beziehungspflege",
+          "channel": "email",
+          "template": "Hey [NAME] 🙂\n\nich wollte einfach mal Hallo sagen und fragen, wie es dir geht.\n\nFalls du wieder etwas für deine Räume / dein Projekt planst, erzähl mir gerne davon."
+        }
+      ]
+    }
+  ]
+}
