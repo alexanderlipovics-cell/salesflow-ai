@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.5.3",
     "@headlessui/react": "^1.7.18",
     "@supabase/supabase-js": "^2.86.0",
     "clsx": "^2.1.0",

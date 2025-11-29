@@ -1,23 +1,59 @@
-const BASE_PLAN_PRICES = {
-  free: 0,
-  starter: 69,
-  pro: 149,
-  enterprise: 349,
+const envSource =
+  (typeof import.meta !== "undefined" && import.meta.env) || (typeof process !== "undefined" && process.env) || {};
+
+export const PLANS = {
+  free: {
+    id: "free",
+    name: "Free",
+    price: 0,
+    features: ["5 AI-Anfragen/Tag", "Basis-Module", "Community Support"],
+  },
+  starter: {
+    id: "starter",
+    name: "Starter",
+    price: 29,
+    priceId:
+      envSource.VITE_STRIPE_PRICE_STARTER ||
+      envSource.VITE_STRIPE_PRICE_STARTER_MONTH ||
+      envSource.STRIPE_PRICE_STARTER_MONTH,
+    features: ["100 AI-Anfragen/Tag", "Alle Module", "CSV Import"],
+  },
+  pro: {
+    id: "pro",
+    name: "Pro",
+    price: 79,
+    priceId:
+      envSource.VITE_STRIPE_PRICE_PRO || envSource.VITE_STRIPE_PRICE_PRO_MONTH || envSource.STRIPE_PRICE_PRO_MONTH,
+    features: ["Unlimited AI", "Team Features", "Priority Support"],
+  },
+  enterprise: {
+    id: "enterprise",
+    name: "Enterprise",
+    price: 149,
+    priceId:
+      envSource.VITE_STRIPE_PRICE_ENTERPRISE ||
+      envSource.VITE_STRIPE_PRICE_ENTERPRISE_MONTH ||
+      envSource.STRIPE_PRICE_ENTERPRISE_MONTH,
+    features: ["Dedicated CSM", "Unbegrenzte Module", "Custom Integrationen"],
+  },
 };
 
-export const PLAN_ORDER = ["free", "starter", "pro", "enterprise"];
-
-export const PLAN_LABELS = {
-  free: "Free",
-  starter: "Starter",
-  pro: "Professional",
-  enterprise: "Enterprise",
+export const getPlan = (planId) => {
+  const normalized = planId?.toLowerCase?.() || planId;
+  return PLANS[normalized] || PLANS.free;
 };
+
+export const PLAN_ORDER = Object.keys(PLANS);
+
+export const PLAN_LABELS = PLAN_ORDER.reduce((labels, planId) => {
+  labels[planId] = PLANS[planId].name;
+  return labels;
+}, {});
 
 export const PLAN_LIMITS = {
-  free: { maxLeads: 50, maxAiRequests: 200, maxTeamMembers: 1 },
-  starter: { maxLeads: 500, maxAiRequests: 2000, maxTeamMembers: 3 },
-  pro: { maxLeads: 5000, maxAiRequests: 10000, maxTeamMembers: 10 },
+  free: { maxLeads: 50, maxAiRequests: 50, maxTeamMembers: 1 },
+  starter: { maxLeads: 1000, maxAiRequests: 500, maxTeamMembers: 3 },
+  pro: { maxLeads: 10000, maxAiRequests: Infinity, maxTeamMembers: 10 },
   enterprise: { maxLeads: Infinity, maxAiRequests: Infinity, maxTeamMembers: Infinity },
 };
 
@@ -30,46 +66,14 @@ export const FEATURE_MATRIX = {
   prioritySupport: { minPlan: "pro" },
 };
 
-export const PLAN_CATALOG = [
-  {
-    id: "free",
-    name: "Free",
-    featureBullets: [
-      "Daily Command Light",
-      "Basis Lead-Import",
-      "Community Support",
-    ],
-  },
-  {
-    id: "starter",
-    name: "Starter",
-    featureBullets: [
-      "Sales Flow AI · Chat",
-      "Speed-Hunter Playbooks",
-      "Automatischer CSV Import",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Professional",
-    featureBullets: [
-      "Team Seats & Rollen",
-      "Screenshot AI",
-      "Phönix Sequenzen",
-      "Priority Support",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    featureBullets: [
-      "Dedicated CSM & SLA",
-      "Alle Tools unbegrenzt",
-      "Einwand-Killer Automationen",
-      "Custom Integrationen",
-    ],
-  },
-];
+export const PLAN_CATALOG = PLAN_ORDER.map((planId) => {
+  const plan = PLANS[planId];
+  return {
+    id: planId,
+    name: plan.name,
+    featureBullets: plan.features,
+  };
+});
 
 export const formatCurrency = (value) => {
   const formatter = new Intl.NumberFormat("de-DE", {
@@ -85,12 +89,11 @@ export const formatCurrency = (value) => {
  * Yearly prices apply a 20% discount by default.
  */
 export const getBillingPrice = (planId, interval = "month") => {
-  const normalized = planId?.toLowerCase();
-  const basePrice = BASE_PLAN_PRICES[normalized] ?? BASE_PLAN_PRICES.free;
+  const plan = getPlan(planId);
+  const basePrice = plan.price ?? 0;
 
   if (interval === "year") {
-    const yearly = Math.round(basePrice * 12 * 0.8);
-    return yearly;
+    return Math.round(basePrice * 12 * 0.8);
   }
 
   return basePrice;

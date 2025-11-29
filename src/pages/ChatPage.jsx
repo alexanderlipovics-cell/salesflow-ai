@@ -9,6 +9,91 @@ const createId = () => {
   return `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const sampleMessages = [
+  {
+    id: "m1",
+    role: "assistant",
+    author: "Sales Flow AI",
+    content:
+      "Hi Lena! Ich habe deine letzten Sales Touchpoints gescannt. Willst du Maximilian ein Update zu seinem POC schicken?",
+  },
+  {
+    id: "m2",
+    role: "user",
+    author: "Du",
+    content:
+      "Ja, bitte. Er wartet auf das neue Integrations-Video. Frag ihn auch, ob Dienstag 14 Uhr passt.",
+  },
+  {
+    id: "m3",
+    role: "assistant",
+    author: "Sales Flow AI",
+    content:
+      "Verstanden. Ich formuliere eine Message im Tonfall 'direkt & freundlich'. Ready?",
+  },
+];
+
+const ENGINE_OPTIONS = [
+  { value: "claude", label: "Claude 3.5 Sonnet" },
+  { value: "gpt", label: "OpenAI GPT-4o" },
+  { value: "gemini", label: "Google Gemini 1.5" },
+];
+
+const MODULE_OPTIONS = [
+  {
+    value: "general_sales",
+    label: "Sales Operator",
+    helper: "Fokussiert auf allgemeine Sales-Taktiken",
+  },
+  {
+    value: "einwand_killer",
+    label: "Einwand-Killer",
+    helper: "3 Antwort-Varianten auf Einwände",
+  },
+  {
+    value: "deal_medic",
+    label: "Deal Medic",
+    helper: "Analysiert BANT & nächste Schritte",
+  },
+  {
+    value: "speed_hunter_loop",
+    label: "Speed-Hunter Loop",
+    helper: "Findet nächste heiße Leads",
+  },
+  {
+    value: "screenshot_reactivator",
+    label: "Screenshot-Reactivator",
+    helper: "Reaktiviert Kontakte aus Listen",
+  },
+];
+
+const mapHistory = (history = []) =>
+  history.map((entry) => ({
+    role: entry.role === "assistant" ? "assistant" : "user",
+    content: entry.content,
+  }));
+
+const formatActionResult = (actionResult) => {
+  if (!actionResult || !actionResult.result) return null;
+  const snapshot = actionResult.result;
+
+  if (Array.isArray(snapshot.leads) && snapshot.leads.length) {
+    return snapshot.leads
+      .map((lead, index) => {
+        const label = lead.name || lead.company || `Lead ${index + 1}`;
+        const status = lead.status ? ` · ${lead.status}` : "";
+        const next =
+          lead.next_action_description || lead.next_action_at
+            ? `\n→ ${lead.next_action_description || lead.next_action_at}`
+            : "";
+        return `${label}${status}${next}`.trim();
+      })
+      .join("\n\n");
+  }
+
+  return JSON.stringify(snapshot, null, 2);
+};
+
 const leads = [
   { label: "Name", value: "Maximilian Vogt" },
   { label: "Firma", value: "Nexora Energy" },
@@ -20,6 +105,9 @@ const leads = [
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
+  const [engine, setEngine] = useState("claude");
+  const [module, setModule] = useState("general_sales");
+  const [errorMessage, setErrorMessage] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
   const timeline = useMemo(
@@ -33,6 +121,12 @@ const ChatPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const trimmed = draft.trim();
+    if (!trimmed || isSending) return;
+
+    setIsSending(true);
+    setErrorMessage(null);
+
     if (!draft.trim() || isSending) return;
 
     setIsSending(true);
@@ -40,16 +134,56 @@ const ChatPage = () => {
       id: createId(),
       role: "user",
       author: "Du",
-      content: draft.trim(),
+      content: trimmed,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setDraft("");
 
+    const historyPayload = mapHistory([...messages, userMessage]);
+
     try {
       const response = await fetch("/.netlify/functions/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmed,
+          engine,
+          module,
+          history: historyPayload,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.error || data?.details || "AI Service nicht erreichbar.");
+      }
+
+      const actionResult = data?.type === "action_result" ? data : null;
+      const reply =
+        data?.reply ||
+        actionResult?.description ||
+        actionResult?.result?.followup_text ||
+        "Ich konnte keine Antwort generieren.";
+
+      const engineLabel =
+        ENGINE_OPTIONS.find((option) => option.value === (data?.engine || engine))?.label ||
+        "Sales Flow AI";
+
+      const assistantMessage = {
+        id: createId(),
+        role: "assistant",
+        author: engineLabel,
+        content: reply,
+        actionResult,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      const fallback = error?.message || "Nachricht konnte nicht gesendet werden.";
+      setErrorMessage(fallback);
         body: JSON.stringify({ message: userMessage.content, engine: "gpt" }),
       });
 
@@ -78,6 +212,10 @@ const ChatPage = () => {
         ...prev,
         {
           id: createId(),
+          role: "system",
+          author: "System",
+          content: fallback,
+          variant: "error",
           role: "assistant",
           author: "Sales Flow AI",
           content:
@@ -133,15 +271,28 @@ const ChatPage = () => {
                 key={message.id}
                 className={clsx(
                   "max-w-3xl rounded-2xl border px-5 py-4",
-                  message.role === "assistant"
-                    ? "border-salesflow-accent/30 bg-salesflow-accent/5 text-white"
-                    : "border-white/10 bg-white/5 text-gray-100"
+                  message.role === "assistant" && "border-salesflow-accent/30 bg-salesflow-accent/5 text-white",
+                  message.role === "user" && "border-white/10 bg-white/5 text-gray-100",
+                  message.role === "system" &&
+                    "border-red-400/40 bg-red-500/10 text-red-100 backdrop-blur"
                 )}
               >
                 <p className="text-xs uppercase tracking-[0.4em] text-gray-400">
                   {message.author}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed">{message.content}</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
+                  {message.content}
+                </p>
+                {message.actionResult && (
+                  <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.5em] text-gray-500">
+                      {message.actionResult.name || message.actionResult.action}
+                    </p>
+                    <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-gray-200">
+                      {formatActionResult(message.actionResult)}
+                    </pre>
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -161,6 +312,52 @@ const ChatPage = () => {
               onChange={(event) => setDraft(event.target.value)}
               className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition focus:border-salesflow-accent/50"
             />
+            <div className="grid gap-3 text-xs text-gray-300 sm:grid-cols-2">
+              <label className="space-y-1">
+                <span className="tracking-[0.3em] text-gray-500">AI Engine</span>
+                <select
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+                  value={engine}
+                  onChange={(event) => setEngine(event.target.value)}
+                >
+                  {ENGINE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-1">
+                <span className="tracking-[0.3em] text-gray-500">Modus</span>
+                <select
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+                  value={module}
+                  onChange={(event) => setModule(event.target.value)}
+                >
+                  {MODULE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {module !== "general_sales" && (
+              <p className="text-xs text-gray-500">
+                {
+                  MODULE_OPTIONS.find((option) => option.value === module)?.helper ??
+                  "Sales Flow AI wählt automatisch den passenden Modus."
+                }
+              </p>
+            )}
+
+            {errorMessage && (
+              <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-2 text-xs text-red-200">
+                {errorMessage}
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-gray-500">
                 Sales Flow AI nutzt automatisch den Lead-Kontext & dein Daily Command.

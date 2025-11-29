@@ -28,15 +28,13 @@ const PricingPage = ({ focusPlan = null, onClose = null }) => {
     setLoadingPlan(planId);
 
     try {
-      const { checkoutUrl } = await createCheckoutSession({
+      const result = await createCheckoutSession({
         plan: planId,
         interval: billingInterval,
         userId,
       });
 
-      if (checkoutUrl) {
-        window.location.assign(checkoutUrl);
-      } else {
+      if (!result?.redirected) {
         window.location.assign("/settings?success=true");
       }
     } catch (checkoutError) {
