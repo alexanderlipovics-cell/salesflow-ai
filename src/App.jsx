@@ -1,11 +1,25 @@
 import { useMemo } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import Navbar from "./components/Navbar";
 import PricingPage from "./components/PricingPage";
 import PricingModal from "./components/PricingModal";
 import FeatureGateModal from "./components/FeatureGateModal";
 import DashboardPage from "./pages/DashboardPage";
 import SettingsPage from "./pages/SettingsPage";
+import ChatPage from "./pages/ChatPage";
+import DailyCommandPage from "./pages/DailyCommandPage";
+import {
+  AlleToolsPage,
+  CsvImportPage,
+  EinwandKillerPage,
+  LeadsCustomersPage,
+  LeadsProspectsPage,
+  NetworkDuplicationPage,
+  NetworkTeamPage,
+  PhoenixPage,
+  ScreenshotAIPage,
+  SpeedHunterPage,
+} from "./pages/PlaceholderPages";
+import AppShell from "./layout/AppShell";
 import { UserProvider } from "./context/UserContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
@@ -21,16 +35,31 @@ const App = () => {
         <PricingModalProvider>
           <FeatureGateProvider>
             <BrowserRouter>
-              <div className="flex min-h-screen flex-col bg-gray-950 text-gray-100">
-                <Navbar />
-                <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
-                  <Routes>
-                    <Route path="/" element={<DashboardPage />} />
-                    <Route path="/pricing" element={<PricingPage />} />
+              <div className="min-h-screen bg-gray-950 text-gray-100">
+                <Routes>
+                  <Route element={<AppShell />}>
+                    <Route index element={<Navigate to="/chat" replace />} />
+                    <Route path="/chat" element={<ChatPage />} />
+                    <Route path="/daily-command" element={<DailyCommandPage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/speed-hunter" element={<SpeedHunterPage />} />
+                    <Route path="/phoenix" element={<PhoenixPage />} />
+                    <Route path="/import/csv" element={<CsvImportPage />} />
+                    <Route path="/screenshot-ai" element={<ScreenshotAIPage />} />
+                    <Route path="/leads/prospects" element={<LeadsProspectsPage />} />
+                    <Route path="/leads/customers" element={<LeadsCustomersPage />} />
+                    <Route path="/network/team" element={<NetworkTeamPage />} />
+                    <Route
+                      path="/network/duplication"
+                      element={<NetworkDuplicationPage />}
+                    />
+                    <Route path="/einwand-killer" element={<EinwandKillerPage />} />
+                    <Route path="/tools" element={<AlleToolsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </main>
+                  </Route>
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="*" element={<Navigate to="/chat" replace />} />
+                </Routes>
                 <PricingModal />
                 <FeatureGateModal />
               </div>
