@@ -70,6 +70,9 @@ class ImportSummary(BaseModel):
     total: int
     with_ai_status: int
     without_status: int
+    auto_scheduled_count: int = 0
+    needs_manual_action_count: int = 0
+    without_last_contact_count: int = 0
 
 
 class LeadListItem(BaseModel):
@@ -107,6 +110,26 @@ class NeedsActionResponse(BaseModel):
     leads: List[LeadListItem] = Field(default_factory=list)
 
 
+class DailyCommandItem(BaseModel):
+    """Ein Lead, der für den Daily Sales Command priorisiert wurde."""
+
+    id: str | int
+    name: Optional[str] = None
+    email: Optional[str] = None
+    company: Optional[str] = None
+    status: Optional[str] = None
+    next_action: Optional[str] = None
+    next_action_at: Optional[datetime] = None
+    deal_value: Optional[float] = None
+    needs_action: bool
+
+
+class DailyCommandResponse(BaseModel):
+    """Antwortformat für den Daily Sales Command."""
+
+    items: List[DailyCommandItem] = Field(default_factory=list)
+
+
 __all__ = [
     "ActionType",
     "ChatRole",
@@ -120,4 +143,6 @@ __all__ = [
     "DailyCommandItem",
     "DailyCommandResponse",
     "NeedsActionResponse",
+    "DailyCommandItem",
+    "DailyCommandResponse",
 ]

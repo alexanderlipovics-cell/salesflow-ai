@@ -8,6 +8,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
@@ -163,6 +165,13 @@ async def get_daily_command_leads(
     safe_horizon = max(0, min(horizon_days, 30))
     today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     horizon_end = today_utc + timedelta(days=safe_horizon)
+    """Liefert eine priorisierte Liste von Leads, die heute bzw. in den nächsten Tagen bearbeitet werden sollten."""
+
+    safe_limit = max(1, min(limit, 100))
+    safe_horizon_days = max(0, min(horizon_days, 30))
+    now_utc = datetime.now(timezone.utc)
+    horizon_end = now_utc + timedelta(days=safe_horizon_days)
+    horizon_iso = horizon_end.isoformat()
 
     try:
         supabase = get_supabase_client()
@@ -219,6 +228,35 @@ async def get_daily_command_leads(
             break
 
     return DailyCommandResponse(items=prioritized_items)
+        "id,name,email,company,status,next_action,"
+        "next_action_at,deal_value,needs_action"
+    )
+    filter_expression = (
+        f"and(next_action_at.is.not.null,next_action_at.lte.{horizon_iso}),"
+        "needs_action.is.true"
+    )
+    error_detail = "Supabase-Fehler beim Laden der Daily-Command-Leads."
+
+    try:
+        response = (
+            supabase.table("leads")
+            .select(selection)
+            .or_(filter_expression)
+            .order("next_action_at", desc=False, nulls_first=False)
+            .order("needs_action", desc=True)
+            .order("deal_value", desc=True)
+            .limit(safe_limit)
+            .execute()
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(status_code=502, detail=error_detail) from exc
+
+    if getattr(response, "error", None):
+        raise HTTPException(status_code=502, detail=error_detail)
+
+    leads = getattr(response, "data", None) or []
+    items = [DailyCommandItem(**lead) for lead in leads]
+    return DailyCommandResponse(items=items)
 
 
 __all__ = ["app"]
