@@ -9,9 +9,8 @@ from textwrap import dedent
 from typing import List
 
 from .schemas import ActionData, ActionType
-from .verticals import VERTICALS, VerticalConfig
 from .templates import FOLLOWUP_TEMPLATES
-from .verticals import VERTICALS, VerticalConfig
+from .verticals import VERTICALS
 
 BASE_STYLE = dedent(
     """
@@ -23,16 +22,6 @@ BASE_STYLE = dedent(
 
 
 DEFAULT_VERTICAL_KEY = "chief"
-
-
-def _resolve_vertical(data: ActionData) -> VerticalConfig:
-    """Ermittelt die Vertikale anhand der Industry-Angabe."""
-
-    candidate = (data.industry or "").strip().lower()
-    if candidate and candidate in VERTICALS:
-        return VERTICALS[candidate]
-
-    return VERTICALS[DEFAULT_VERTICAL_KEY]
 
 
 def _format_lead_context(data: ActionData) -> str:
@@ -82,12 +71,12 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     Baut den Systemprompt für die übergebene Action.
     """
 
-    vertical_config = _resolve_vertical(data)
+    industry_candidate = (getattr(data, "industry", None) or "").strip().lower()
+    industry_key = industry_candidate or DEFAULT_VERTICAL_KEY
+    vertical = VERTICALS.get(industry_key) or VERTICALS[DEFAULT_VERTICAL_KEY]
+    base_prompt = vertical.system_prompt
 
-    sections: List[str] = [vertical_config.system_prompt, BASE_STYLE]
-    industry_key = (data.industry or "").strip().lower() or "chief"
-    vertical: VerticalConfig = VERTICALS.get(industry_key, VERTICALS["chief"])
-    sections: List[str] = [vertical.system_prompt.strip(), BASE_STYLE]
+    sections: List[str] = [BASE_STYLE]
 
     action_instruction = ACTION_INSTRUCTIONS.get(
         action,
@@ -100,17 +89,22 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
 
     sections.append(_format_lead_context(data))
 
-    if data.knowledge and action == "knowledge_answer":
-        sections.append("Knowledge-Base:\n" + data.knowledge.strip())
+    if action == "knowledge_answer":
+        if data.knowledge:
+            sections.append("Knowledge-Base:\n" + data.knowledge.strip())
+        else:
+            sections.append(
+                "Es wurde kein Knowledge-Text geliefert; erkläre das kurz und bitte um mehr Details."
+            )
 
-    if not data.knowledge and action == "knowledge_answer":
-        sections.append("Es wurde kein Knowledge-Text geliefert; erkläre das kurz und bitte um mehr Details.")
-
-    full_prompt = "\n\n".join(
+    action_instructions = "\n\n".join(
         section.strip() for section in sections if section
     ).strip()
 
-    return full_prompt
+    if action_instructions:
+        return base_prompt.rstrip() + "\n\n" + action_instructions.lstrip()
+
+    return base_prompt
 
 
 __all__ = ["build_system_prompt"]
