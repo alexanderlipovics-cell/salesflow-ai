@@ -184,30 +184,6 @@ const ChatPage = () => {
       console.error("Chat error:", error);
       const fallback = error?.message || "Nachricht konnte nicht gesendet werden.";
       setErrorMessage(fallback);
-        body: JSON.stringify({ message: userMessage.content, engine: "gpt" }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`AI request failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const reply =
-        typeof data?.reply === "string" && data.reply.trim().length > 0
-          ? data.reply
-          : "Die AI konnte keine Antwort liefern. Bitte versuche es erneut.";
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: createId(),
-          role: "assistant",
-          author: "Sales Flow AI",
-          content: reply,
-        },
-      ]);
-    } catch (error) {
-      console.error("AI request failed", error);
       setMessages((prev) => [
         ...prev,
         {
@@ -216,10 +192,6 @@ const ChatPage = () => {
           author: "System",
           content: fallback,
           variant: "error",
-          role: "assistant",
-          author: "Sales Flow AI",
-          content:
-            "Ups, etwas ist schiefgelaufen. Versuch es gleich nochmal oder kontaktiere den Support.",
         },
       ]);
     } finally {
