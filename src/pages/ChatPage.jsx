@@ -72,7 +72,7 @@ const ChatPage = () => {
     [messages]
   );
 
-  const handleSendMessage = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!input.trim()) return;
 
@@ -168,7 +168,7 @@ const ChatPage = () => {
 
             <div className="space-y-4">{renderedMessages}</div>
 
-            <form onSubmit={handleSendMessage} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
                 Prompt an Copilot
               </label>
