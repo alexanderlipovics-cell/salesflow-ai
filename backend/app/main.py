@@ -130,8 +130,12 @@ async def import_leads(request: Request) -> ImportSummary:
 
 
 @app.get("/leads/needs-action", response_model=NeedsActionResponse)
-async def get_needs_action_leads(limit: int = 8) -> NeedsActionResponse:
-    """Liefert eine kompakte Liste aller Leads ohne Status."""
+async def get_needs_action_leads(
+    limit: int = 8,
+    source: Optional[str] = None,
+    needs_action: Optional[bool] = True,
+) -> NeedsActionResponse:
+    """Liefert eine kompakte Liste aller Leads mit optionalen Filtern."""
 
     safe_limit = max(1, min(limit, 20))
     try:
@@ -139,13 +143,26 @@ async def get_needs_action_leads(limit: int = 8) -> NeedsActionResponse:
     except SupabaseNotConfiguredError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    response = (
+    query = (
         supabase.table("leads")
-        .select("id,name,email,company,last_contact")
-        .eq("needs_action", True)
+        .select("id,name,email,company,last_contact,phone,status,source")
         .limit(safe_limit)
-        .execute()
+        .order("last_contact", desc=True)
+        .order("created_at", desc=True)
     )
+
+    if needs_action is not None:
+        query = query.eq("needs_action", needs_action)
+
+    if source:
+        query = query.eq("source", source)
+
+    try:
+        response = query.execute()
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(
+            status_code=502, detail="Supabase-Fehler beim Laden der Leads."
+        ) from exc
 
     if getattr(response, "error", None):
         raise HTTPException(

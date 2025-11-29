@@ -95,6 +95,9 @@ class LeadListItem(BaseModel):
     email: Optional[str] = None
     company: Optional[str] = None
     last_contact: Optional[str] = None
+    phone: Optional[str] = None
+    status: Optional[str] = None
+    source: Optional[str] = None
 
 
 class DailyCommandItem(BaseModel):
