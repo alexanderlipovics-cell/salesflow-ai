@@ -8,6 +8,7 @@ import { usePricingModal } from "../context/PricingModalContext";
 type NavItem = {
   label: string;
   to: string;
+  iconLabel?: string;
 };
 
 type NavGroup = {
@@ -40,6 +41,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Sales Power",
     items: [
+      { label: "Lead-Hunter", to: "/lead-hunter", iconLabel: "LH" },
       { label: "Speed-Hunter", to: "/speed-hunter" },
       { label: "Phönix", to: "/phoenix" },
       { label: "Einwand-Killer", to: "/einwand-killer" },
@@ -103,7 +105,12 @@ const AppShell = ({ children }: AppShellProps) => {
               </p>
               <div className="mt-3 space-y-1">
                 {group.items.map((item) => (
-                  <SidebarLink key={item.to} to={item.to} label={item.label} />
+                  <SidebarLink
+                    key={item.to}
+                    to={item.to}
+                    label={item.label}
+                    iconLabel={item.iconLabel}
+                  />
                 ))}
               </div>
             </div>
@@ -163,7 +170,15 @@ const AppShell = ({ children }: AppShellProps) => {
   );
 };
 
-const SidebarLink = ({ to, label }: { to: string; label: string }) => (
+const SidebarLink = ({
+  to,
+  label,
+  iconLabel,
+}: {
+  to: string;
+  label: string;
+  iconLabel?: string;
+}) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
@@ -175,7 +190,14 @@ const SidebarLink = ({ to, label }: { to: string; label: string }) => (
       )
     }
   >
-    {label}
+    <span className="flex items-center gap-3">
+      {iconLabel && (
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold uppercase tracking-wide text-white/80">
+          {iconLabel}
+        </span>
+      )}
+      <span>{label}</span>
+    </span>
   </NavLink>
 );
 
