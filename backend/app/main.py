@@ -5,6 +5,8 @@ FastAPI-Einstiegspunkt für Sales Flow AI.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
 
 from datetime import datetime, timedelta, timezone
 
@@ -157,6 +159,12 @@ async def get_needs_action_leads(limit: int = 8) -> NeedsActionResponse:
 async def get_daily_command_leads(
     horizon_days: int = 3, limit: int = 20
 ) -> DailyCommandResponse:
+    """Liefert eine priorisierte Liste von Leads, die heute bzw. bald bearbeitet werden sollten."""
+
+    safe_limit = max(1, min(limit, 50))
+    safe_horizon = max(0, min(horizon_days, 30))
+    today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    horizon_end = today_utc + timedelta(days=safe_horizon)
     """Liefert eine priorisierte Liste von Leads, die heute bzw. in den nächsten Tagen bearbeitet werden sollten."""
 
     safe_limit = max(1, min(limit, 100))
@@ -171,6 +179,55 @@ async def get_daily_command_leads(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     selection = (
+        "id,name,company,status,next_action,next_action_at,deal_value,needs_action"
+    )
+
+    def fetch_rows(builder: Any) -> list[Dict[str, Any]]:
+        try:
+            response = builder.execute()
+        except Exception as exc:  # pragma: no cover - defensive
+            raise HTTPException(
+                status_code=502,
+                detail="Supabase-Fehler beim Laden der Daily-Command-Leads.",
+            ) from exc
+
+        if getattr(response, "error", None):
+            raise HTTPException(
+                status_code=502,
+                detail="Supabase-Fehler beim Laden der Daily-Command-Leads.",
+            )
+        data = getattr(response, "data", None) or []
+        return data
+
+    scheduled_rows = fetch_rows(
+        supabase.table("leads")
+        .select(selection)
+        .filter("next_action_at", "lte", horizon_end.isoformat())
+        .order("next_action_at")
+        .order("deal_value", desc=True)
+        .limit(safe_limit)
+    )
+
+    needs_action_rows = fetch_rows(
+        supabase.table("leads")
+        .select(selection)
+        .eq("needs_action", True)
+        .order("deal_value", desc=True)
+        .limit(safe_limit)
+    )
+
+    prioritized_items: list[DailyCommandItem] = []
+    seen_ids: set[str | int] = set()
+    for row in scheduled_rows + needs_action_rows:
+        lead_id = row.get("id")
+        if lead_id is None or lead_id in seen_ids:
+            continue
+        seen_ids.add(lead_id)
+        prioritized_items.append(DailyCommandItem(**row))
+        if len(prioritized_items) >= safe_limit:
+            break
+
+    return DailyCommandResponse(items=prioritized_items)
         "id,name,email,company,status,next_action,"
         "next_action_at,deal_value,needs_action"
     )
