@@ -82,9 +82,10 @@ const ChatPage = () => {
       });
 
       const data = await response.json();
-      console.log("AI API reply:", data.reply, data);
+      console.log('API Response:', data);
 
-      if (!response.ok || !data?.reply) {
+      const reply = data?.reply;
+      if (!response.ok || !reply) {
         throw new Error("AI API returned an invalid response.");
       }
 
@@ -93,20 +94,11 @@ const ChatPage = () => {
         {
           id: `ai-${Date.now()}`,
           role: "assistant",
-          content: data.reply,
+          content: reply,
         },
       ]);
     } catch (error) {
       console.error("Fehler beim Abrufen der AI-Antwort", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-error-${Date.now()}`,
-          role: "assistant",
-          content:
-            "Es gab ein Problem mit der AI-Antwort. Bitte versuche es erneut.",
-        },
-      ]);
     }
   };
 
