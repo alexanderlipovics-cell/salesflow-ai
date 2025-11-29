@@ -68,11 +68,9 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     Baut den Systemprompt für die übergebene Action.
     """
 
-    industry_key = data.industry or "chief"
+    industry_key = (data.industry or "").strip().lower() or "chief"
     vertical: VerticalConfig = VERTICALS.get(industry_key, VERTICALS["chief"])
-    base_prompt = vertical.system_prompt.strip()
-
-    sections: List[str] = [BASE_STYLE]
+    sections: List[str] = [vertical.system_prompt.strip(), BASE_STYLE]
 
     action_instruction = ACTION_INSTRUCTIONS.get(
         action,
@@ -91,14 +89,11 @@ def build_system_prompt(action: ActionType, data: ActionData) -> str:
     if not data.knowledge and action == "knowledge_answer":
         sections.append("Es wurde kein Knowledge-Text geliefert; erkläre das kurz und bitte um mehr Details.")
 
-    action_instructions = "\n\n".join(
+    full_prompt = "\n\n".join(
         section.strip() for section in sections if section
     ).strip()
 
-    if not action_instructions:
-        return base_prompt
-
-    return f"{base_prompt}\n\n{action_instructions}"
+    return full_prompt
 
 
 __all__ = ["build_system_prompt"]
