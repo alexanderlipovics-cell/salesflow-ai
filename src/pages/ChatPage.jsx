@@ -26,6 +26,52 @@ const defaultLeadContext = `{
   "notes": "Hat Budget für Q1 reserviert"
 }`;
 
+const leadContextFields = [
+  { key: "name", label: "Name" },
+  { key: "company", label: "Firma" },
+  { key: "status", label: "Status" },
+  { key: "next_step", label: "Nächster Schritt" },
+  { key: "notes", label: "Notizen" },
+];
+
+const parseLeadContext = (contextString) => {
+  try {
+    const parsed = JSON.parse(contextString);
+    return typeof parsed === "object" && parsed !== null ? parsed : null;
+  } catch (error) {
+    console.warn("Lead context could not be parsed", error);
+    return null;
+  }
+};
+
+const LeadContextSummary = ({ details }) => {
+  if (!details) {
+    return (
+      <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+        Lead-Kontext konnte nicht geladen werden. Bitte das JSON prüfen.
+      </p>
+    );
+  }
+
+  return (
+    <dl className="space-y-2">
+      {leadContextFields.map(({ key, label }) => (
+        <div
+          key={key}
+          className="rounded-xl border border-slate-800/60 bg-slate-900/40 px-4 py-3"
+        >
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+            {label}
+          </dt>
+          <dd className="text-sm font-medium text-slate-100">
+            {details[key] || "–"}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+};
+
 const ChatPage = () => {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
@@ -33,6 +79,7 @@ const ChatPage = () => {
   const [contextSaved, setContextSaved] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
   const [contextPanel, setContextPanel] = useState("lead");
+  const [showRawContextEditor, setShowRawContextEditor] = useState(false);
 
   const renderedMessages = useMemo(
     () =>
@@ -61,6 +108,8 @@ const ChatPage = () => {
       )),
     [messages]
   );
+
+  const leadDetails = useMemo(() => parseLeadContext(leadContext), [leadContext]);
 
   const handleSendMessage = async (event) => {
     event.preventDefault();
@@ -269,23 +318,40 @@ const ChatPage = () => {
             </div>
 
             {contextPanel === "lead" ? (
-              <form className="space-y-3" onSubmit={handleSaveContext}>
-                <textarea
-                  value={leadContext}
-                  onChange={(event) => setLeadContext(event.target.value)}
-                  className="h-48 w-full rounded-xl border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs text-emerald-200 outline-none"
-                />
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20"
-                >
-                  Kontext speichern
-                </button>
-                {contextSaved && (
-                  <p className="text-center text-xs text-emerald-200">
-                    Kontext aktualisiert · Copilot nutzt die neuesten Daten.
-                  </p>
-                )}
+              <form className="space-y-4" onSubmit={handleSaveContext}>
+                <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                  <LeadContextSummary details={leadDetails} />
+                  <div className="space-y-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span>Roher Kontext (JSON)</span>
+                      <button
+                        type="button"
+                        className="font-semibold text-emerald-300 transition hover:text-emerald-100"
+                        onClick={() => setShowRawContextEditor((prev) => !prev)}
+                      >
+                        {showRawContextEditor ? "JSON ausblenden" : "JSON bearbeiten"}
+                      </button>
+                    </div>
+                    {showRawContextEditor && (
+                      <textarea
+                        value={leadContext}
+                        onChange={(event) => setLeadContext(event.target.value)}
+                        className="h-48 w-full rounded-xl border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs text-emerald-200 outline-none"
+                      />
+                    )}
+                    <button
+                      type="submit"
+                      className="w-full rounded-xl bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20"
+                    >
+                      Kontext speichern
+                    </button>
+                    {contextSaved && (
+                      <p className="text-center text-xs text-emerald-200">
+                        Kontext aktualisiert · Copilot nutzt die neuesten Daten.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </form>
             ) : (
               <div className="space-y-4">
@@ -329,22 +395,39 @@ const ChatPage = () => {
               </div>
 
               <form className="space-y-4" onSubmit={handleSaveContext}>
-                <textarea
-                  value={leadContext}
-                  onChange={(event) => setLeadContext(event.target.value)}
-                  className="h-48 w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-4 font-mono text-sm text-emerald-100 outline-none"
-                />
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl bg-emerald-400/20 px-4 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/30"
-                >
-                  Kontext speichern
-                </button>
-                {contextSaved && (
-                  <p className="text-center text-xs text-emerald-200">
-                    Kontext aktualisiert · Copilot nutzt die neuesten Daten.
-                  </p>
-                )}
+                <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+                  <LeadContextSummary details={leadDetails} />
+                  <div className="space-y-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span>Roher Kontext (JSON)</span>
+                      <button
+                        type="button"
+                        className="font-semibold text-emerald-300 transition hover:text-emerald-100"
+                        onClick={() => setShowRawContextEditor((prev) => !prev)}
+                      >
+                        {showRawContextEditor ? "JSON ausblenden" : "JSON bearbeiten"}
+                      </button>
+                    </div>
+                    {showRawContextEditor && (
+                      <textarea
+                        value={leadContext}
+                        onChange={(event) => setLeadContext(event.target.value)}
+                        className="h-48 w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-4 font-mono text-sm text-emerald-100 outline-none"
+                      />
+                    )}
+                    <button
+                      type="submit"
+                      className="w-full rounded-2xl bg-emerald-400/20 px-4 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/30"
+                    >
+                      Kontext speichern
+                    </button>
+                    {contextSaved && (
+                      <p className="text-center text-xs text-emerald-200">
+                        Kontext aktualisiert · Copilot nutzt die neuesten Daten.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </form>
             </section>
 
