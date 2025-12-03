@@ -6,27 +6,13 @@ type ToastOptions = {
 
 export function useToast() {
   const toast = ({ title, description, variant }: ToastOptions) => {
+    const prefix = variant === 'destructive' ? '[ERROR]' : '[INFO]';
     if (variant === 'destructive') {
-      console.error(`[toast] ${title ?? ''} ${description ?? ''}`.trim());
+      console.error(`${prefix} ${title ?? ''} ${description ?? ''}`.trim());
     } else {
-      console.log(`[toast] ${title ?? ''} ${description ?? ''}`.trim());
+      console.log(`${prefix} ${title ?? ''} ${description ?? ''}`.trim());
     }
   };
 
   return { toast };
 }
-type ToastPayload = {
-  title: string;
-  description?: string;
-  variant?: "default" | "destructive";
-};
-
-export function useToast() {
-  const toast = ({ title, description, variant }: ToastPayload) => {
-    const prefix = variant === "destructive" ? "⚠️" : "ℹ️";
-    console.info(`${prefix} ${title}${description ? ` – ${description}` : ""}`);
-  };
-
-  return { toast };
-}
-
