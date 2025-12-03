@@ -1,0 +1,413 @@
+{
+  "playbooks": [
+    {
+      "playbook_name": "Preis-Einwand: Value Reframe",
+      "category": "Preis",
+      "difficulty": "beginner",
+      "estimated_time_minutes": 10,
+      "success_rate": "high",
+      "description": "Klassische Technik um Preis-Einwände durch Wert-Kommunikation zu überwinden",
+      "when_to_use": "Wenn der Kunde 'zu teuer' oder ähnliche Preis-Einwände bringt. Funktioniert am besten wenn bereits etwas Rapport besteht.",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Einwand annehmen & validieren",
+          "description": "Zeige Verständnis für die Sorge",
+          "example": "Verstehe ich total, das ist eine wichtige Überlegung!",
+          "tips": ["Nie defensiv werden", "Pausiere kurz bevor du antwortest", "Nutze 'Du' statt 'Sie' wenn passend"]
+        },
+        {
+          "step_number": 2,
+          "title": "Reframe auf Opportunitätskosten",
+          "description": "Verschiebe den Fokus von Kosten auf verpasste Chancen",
+          "example": "Was kostet es dich, wenn du NICHT startest?",
+          "tips": ["Mache es konkret (Zahlen, Szenarien)", "Nutze Beispiele von anderen Kunden"]
+        },
+        {
+          "step_number": 3,
+          "title": "Social Proof einbauen",
+          "description": "Zeige dass andere in gleicher Situation investiert haben",
+          "example": "Sarah hat auch erst gezögert - nach 3 Monaten hat sie mir gesagt...",
+          "tips": ["Echte Namen nutzen (wenn erlaubt)", "Konkrete Erfolge nennen"]
+        },
+        {
+          "step_number": 4,
+          "title": "Soft Close",
+          "description": "Stelle eine Entscheidungsfrage ohne Druck",
+          "example": "Lass uns 30 Min reingehen - passt heute Abend?",
+          "tips": ["Keine Ja/Nein Frage", "Biete konkrete nächste Schritte an"]
+        }
+      ],
+      "common_mistakes": [
+        "Sofort Rabatt anbieten",
+        "Preis verteidigen statt Wert zeigen",
+        "Zu schnell zum Close drängen"
+      ]
+    },
+    {
+      "playbook_name": "Zeit-Einwand: Urgency Builder",
+      "category": "Zeit",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      "success_rate": "medium",
+      "description": "Schaffe sanften Zeitdruck ohne aggressive Sales-Taktiken",
+      "when_to_use": "Wenn Lead sagt 'keine Zeit' oder 'später'. Besonders wirksam bei warmen Leads die grundsätzlich Interesse haben.",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Empathie zeigen",
+          "description": "Zeige dass du den Zeitmangel verstehst",
+          "example": "Ich kenne das Gefühl - wer hat schon genug Zeit?",
+          "tips": ["Sei authentisch", "Teile eigene Erfahrung"]
+        },
+        {
+          "step_number": 2,
+          "title": "Opportunitätsfenster aufzeigen",
+          "description": "Erkläre warum JETZT der richtige Zeitpunkt ist",
+          "example": "Genau deswegen ist jetzt der beste Moment zu starten - bevor es noch voller wird",
+          "tips": ["Nutze externe Faktoren", "Zeige Markttrends"]
+        },
+        {
+          "step_number": 3,
+          "title": "Minimale Zeitinvestition betonen",
+          "description": "Reduziere wahrgenommenen Zeitaufwand",
+          "example": "Du brauchst nur 10-15 Min am Tag - weniger als Netflix",
+          "tips": ["Konkrete Zahlen nennen", "Vergleiche mit Alltäglichem"]
+        }
+      ],
+      "common_mistakes": [
+        "Druck aufbauen",
+        "Zeitaufwand schönreden",
+        "Nicht auf echte Zeitprobleme eingehen"
+      ]
+    },
+    {
+      "playbook_name": "Vertrauen-Einwand: Social Proof Stack",
+      "category": "Vertrauen",
+      "difficulty": "beginner",
+      "estimated_time_minutes": 12,
+      "success_rate": "high",
+      "description": "Nutze soziale Bewährtheit um Vertrauen aufzubauen",
+      "when_to_use": "Bei neuen Leads oder wenn Misstrauen spürbar ist. Ideal für B2C wo Testimonials stark wirken.",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Verständnis zeigen",
+          "description": "Validiere das Bedürfnis nach Vertrauen",
+          "example": "Ich verstehe das komplett - Vertrauen muss man sich verdienen",
+          "tips": ["Nicht defensiv sein", "Zeige dass du es ernst nimmst"]
+        },
+        {
+          "step_number": 2,
+          "title": "3-Layer Social Proof",
+          "description": "Biete verschiedene Vertrauensanker",
+          "example": "Schau dir an: 1) Unsere Zertifizierungen, 2) Kundenbewertungen, 3) Sprich mit Sarah (echter Kunde)",
+          "tips": ["Mix aus objektiven & subjektiven Beweisen", "Lass Lead wählen"]
+        },
+        {
+          "step_number": 3,
+          "title": "Direkter Kundenkontakt anbieten",
+          "description": "Echte Menschen sprechen lassen",
+          "example": "Willst du mit 2-3 meiner Kunden sprechen? Ich verbinde euch",
+          "tips": ["Bereite Kunden vor", "Wähle ähnliche Profile"]
+        }
+      ],
+      "common_mistakes": [
+        "Zu viele Beweise auf einmal",
+        "Nur Zertifikate zeigen ohne Menschen",
+        "Fake Testimonials"
+      ]
+    },
+    {
+      "playbook_name": "MLM-Pyramiden-Einwand",
+      "category": "Network Marketing spezifisch",
+      "difficulty": "advanced",
+      "estimated_time_minutes": 20,
+      "success_rate": "medium",
+      "description": "Professioneller Umgang mit dem häufigsten Network Marketing Einwand",
+      "when_to_use": "Sobald das Wort 'Pyramide', 'MLM' oder 'Schneeballsystem' fällt. Proaktiv ansprechen bei skeptischen Leads.",
+      "industry": ["Network Marketing"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Frage wertschätzen",
+          "description": "Zeige dass die Frage berechtigt ist",
+          "example": "Mega gute Frage! Das zeigt dass du kritisch denkst",
+          "tips": ["Niemals abwertend reagieren", "Zeige Respekt für Skepsis"]
+        },
+        {
+          "step_number": 2,
+          "title": "Unterschied klar definieren",
+          "description": "Erkläre den Unterschied Pyramide vs. Network Marketing",
+          "example": "Pyramide = Oben verdient, unten zahlt, kein echtes Produkt. Wir = Echte Produkte, du verdienst an Verkäufen",
+          "tips": ["Nutze einfache Sprache", "Zeige rechtliche Unterschiede"]
+        },
+        {
+          "step_number": 3,
+          "title": "Fakten & Zahlen",
+          "description": "Untermauere mit objektiven Daten",
+          "example": "Unternehmen seit 15 Jahren, IHK-zertifiziert, 50.000 Kunden",
+          "tips": ["Bereite Zahlen vor", "Zeige Regulierungen"]
+        },
+        {
+          "step_number": 4,
+          "title": "Transparenz zeigen",
+          "description": "Biete volle Einsicht in Vergütungsplan",
+          "example": "Hier ist der komplette Vergütungsplan - ich zeige dir genau wie du verdienst",
+          "tips": ["Nichts verstecken", "Sei bereit alle Fragen zu beantworten"]
+        }
+      ],
+      "common_mistakes": [
+        "Defensiv werden",
+        "MLM-Begriff vermeiden statt zu erklären",
+        "Komplizierte Erklärungen"
+      ]
+    },
+    {
+      "playbook_name": "Konkurrenz-Einwand: Positioning",
+      "category": "Konkurrenz",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      "success_rate": "medium",
+      "description": "Positioniere dich gegen Wettbewerber ohne diese schlecht zu machen",
+      "when_to_use": "Wenn Lead andere Anbieter erwähnt oder vergleicht. Wichtig: Nie Konkurrenz schlechtreden!",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Konkurrenz respektieren",
+          "description": "Erkenne die Qualität des Wettbewerbers an",
+          "example": "Firma XYZ ist auch gut - die machen gute Arbeit",
+          "tips": ["Nie schlechtreden", "Zeige Professionalität"]
+        },
+        {
+          "step_number": 2,
+          "title": "USPs klar benennen",
+          "description": "Zeige was dich unterscheidet",
+          "example": "Unterschied bei uns: 1) Persönliche 1:1 Betreuung, 2) ...",
+          "tips": ["Max 3 USPs", "Konkret & messbar"]
+        },
+        {
+          "step_number": 3,
+          "title": "Lead entscheiden lassen",
+          "description": "Gib die Entscheidung zurück",
+          "example": "Am Ende musst du dich wohlfühlen - willst du beide vergleichen?",
+          "tips": ["Kein Druck", "Biete Hilfe an"]
+        }
+      ],
+      "common_mistakes": [
+        "Konkurrenz schlecht machen",
+        "Zu viele USPs aufzählen",
+        "Druck aufbauen"
+      ]
+    },
+    {
+      "playbook_name": "Immobilien-Standort-Einwand",
+      "category": "Immobilien spezifisch",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 18,
+      "success_rate": "medium",
+      "description": "Überwinde Bedenken bezüglich Lage/Standort",
+      "when_to_use": "Wenn Käufer die Lage kritisiert oder Bedenken hat",
+      "industry": ["Immobilien"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Bedenken ernst nehmen",
+          "description": "Validiere die Standort-Sorgen",
+          "example": "Verstehe ich - die Lage ist eines der wichtigsten Kriterien",
+          "tips": ["Nicht wegdiskutieren", "Zeige Verständnis"]
+        },
+        {
+          "step_number": 2,
+          "title": "Hidden Gems aufzeigen",
+          "description": "Zeige Entwicklungspotential der Gegend",
+          "example": "Schau mal: Neues Einkaufszentrum in 2 Jahren, S-Bahn-Anbindung kommt...",
+          "tips": ["Fakten recherchieren", "Zukunftspotential zeigen"]
+        },
+        {
+          "step_number": 3,
+          "title": "Vergleich mit akzeptierten Lagen",
+          "description": "Zeige dass andere Lagen auch Schwächen haben",
+          "example": "Lage A ist zentral - aber 40% teurer und laut. Hier: ruhig und Wertsteigerung",
+          "tips": ["Fair vergleichen", "Trade-offs aufzeigen"]
+        }
+      ],
+      "common_mistakes": [
+        "Nachteile ignorieren",
+        "Unrealistische Versprechen",
+        "Location schönreden"
+      ]
+    },
+    {
+      "playbook_name": "Finanz-Risiko-Einwand",
+      "category": "Finanzberatung spezifisch",
+      "difficulty": "advanced",
+      "estimated_time_minutes": 25,
+      "success_rate": "medium",
+      "description": "Adressiere Risiko-Bedenken bei Finanzprodukten",
+      "when_to_use": "Bei Investmentprodukten, Versicherungen oder wenn Kunde 'zu riskant' sagt",
+      "industry": ["Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Risiko-Verständnis abfragen",
+          "description": "Verstehe was genau der Kunde unter Risiko versteht",
+          "example": "Was genau bereitet dir Sorgen? Verlustrisiko, Volatilität oder was anderes?",
+          "tips": ["Offene Fragen stellen", "Echte Sorgen identifizieren"]
+        },
+        {
+          "step_number": 2,
+          "title": "Risiko-Bildung",
+          "description": "Erkläre verschiedene Risiko-Arten",
+          "example": "Es gibt Verlustrisiko und Nicht-Handeln-Risiko. Inflation ist auch ein Risiko",
+          "tips": ["Einfache Sprache", "Visuell erklären wenn möglich"]
+        },
+        {
+          "step_number": 3,
+          "title": "Absicherungsstrategien zeigen",
+          "description": "Zeige wie Risiken minimiert werden",
+          "example": "Wir diversifizieren über 3 Asset-Klassen, Stop-Loss bei -10%",
+          "tips": ["Konkrete Zahlen", "Zeige Track Record"]
+        },
+        {
+          "step_number": 4,
+          "title": "Risiko-Profil matchen",
+          "description": "Passe Empfehlung an Risikotoleranz an",
+          "example": "Für dich würde ich eher konservativ empfehlen - hier ist ein Beispiel",
+          "tips": ["Individualisieren", "Szenarien durchspielen"]
+        }
+      ],
+      "common_mistakes": [
+        "Risiken verharmlosen",
+        "Zu technisch werden",
+        "Garantien aussprechen"
+      ]
+    },
+    {
+      "playbook_name": "Partner-Entscheidungs-Einwand",
+      "category": "Entscheidungsprozess",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      "success_rate": "high",
+      "description": "Wenn Entscheidung mit Partner/Ehepartner abgestimmt werden muss",
+      "when_to_use": "'Muss erst mit meiner Frau/Mann sprechen' - sehr häufig bei größeren Investitionen",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Validieren",
+          "description": "Zeige dass gemeinsame Entscheidung richtig ist",
+          "example": "Das ist mega wichtig dass ihr das zusammen entscheidet!",
+          "tips": ["Nie Druck machen", "Respektiere die Beziehung"]
+        },
+        {
+          "step_number": 2,
+          "title": "3er-Gespräch anbieten",
+          "description": "Biete an mit beiden zu sprechen",
+          "example": "Sollen wir einen Call zu dritt machen? Dann kann dein Partner alle Fragen stellen",
+          "tips": ["Mache es einfach", "Biete Termine an"]
+        },
+        {
+          "step_number": 3,
+          "title": "Material mitgeben",
+          "description": "Gib Unterlagen zum gemeinsamen Durchgehen",
+          "example": "Hier sind die wichtigsten Infos - schau's euch zusammen an",
+          "tips": ["Einfach & visuell", "FAQs beilegen"]
+        }
+      ],
+      "common_mistakes": [
+        "Versuchen ohne Partner abzuschließen",
+        "Partner als Hindernis sehen",
+        "Zu viel Material geben"
+      ]
+    },
+    {
+      "playbook_name": "Follow-Up Sequenz: 7-Tage",
+      "category": "Follow-Up",
+      "difficulty": "beginner",
+      "estimated_time_minutes": 30,
+      "success_rate": "high",
+      "description": "Systematische 7-Tage Follow-Up Strategie",
+      "when_to_use": "Nach erstem Kontakt wenn Lead interessiert ist aber noch nicht abgeschlossen hat",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Tag 0: Sofort-Follow-Up",
+          "description": "Direkt nach Gespräch Zusammenfassung senden",
+          "example": "Danke für das tolle Gespräch! Hier nochmal die 3 wichtigsten Punkte...",
+          "tips": ["Innerhalb 1h senden", "Personalisiert"]
+        },
+        {
+          "step_number": 2,
+          "title": "Tag 2: Value Add",
+          "description": "Sende relevanten Mehrwert ohne zu verkaufen",
+          "example": "Hier ist der Artikel über [Thema] über den wir gesprochen haben",
+          "tips": ["Kein Sales-Pitch", "Echten Wert bieten"]
+        },
+        {
+          "step_number": 3,
+          "title": "Tag 4: Social Proof",
+          "description": "Teile relevante Success Story",
+          "example": "Schau mal - genau das haben wir mit Sarah erreicht [Link]",
+          "tips": ["Passende Story wählen", "Kurz halten"]
+        },
+        {
+          "step_number": 4,
+          "title": "Tag 7: Check-In Call",
+          "description": "Frage nach nächsten Schritten",
+          "example": "Hast du noch Fragen? Wollen wir die nächsten Schritte besprechen?",
+          "tips": ["Direkter CTA", "Konkrete Optionen anbieten"]
+        }
+      ],
+      "common_mistakes": [
+        "Zu früh aufgeben",
+        "Jeden Tag nerven",
+        "Immer nur verkaufen"
+      ]
+    },
+    {
+      "playbook_name": "Reaktivierung: Cold Leads",
+      "category": "Reaktivierung",
+      "difficulty": "advanced",
+      "estimated_time_minutes": 20,
+      "success_rate": "low",
+      "description": "Erwecke kalte Leads nach 30+ Tagen wieder zum Leben",
+      "when_to_use": "Lead war interessiert, dann 30+ Tage still. Letzte Chance bevor du aufgibst.",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Break the Pattern",
+          "description": "Neue Ansprache, nicht Standard-Follow-Up",
+          "example": "Hey! Lange nichts gehört... vermisse dich! 😄",
+          "tips": ["Humor nutzen", "Persönlich sein", "Keine Sales-Sprache"]
+        },
+        {
+          "step_number": 2,
+          "title": "Neuer Hook",
+          "description": "Biete etwas Neues/Anderes",
+          "example": "Wir haben gerade [Neues Feature] gelauncht - dachte sofort an dich",
+          "tips": ["Echter neuer Wert", "Nicht das Gleiche nochmal"]
+        },
+        {
+          "step_number": 3,
+          "title": "Low-Commitment Ask",
+          "description": "Frage nach minimalem Commitment",
+          "example": "10 Min Call? Einfach nur Update - keine Verpflichtung",
+          "tips": ["Niedrige Schwelle", "Zeitlich begrenzen"]
+        }
+      ],
+      "common_mistakes": [
+        "Gleiche Nachricht wie vorher",
+        "Zu viel Druck",
+        "Zu früh aufgeben"
+      ]
+    }
+  ]
+}
+

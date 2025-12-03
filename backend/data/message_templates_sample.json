@@ -1,0 +1,84 @@
+{
+  "templates": [
+    {
+      "name": "Erstkontakt - Warmherzige Begrüßung",
+      "category": "first_contact",
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "template_text": "Hey {name}! 👋\n\nSchön, dass du dich für {angebot} interessierst. Ich bin {dein_name} und helfe Menschen wie dir, {hauptnutzen} zu erreichen.\n\nWann hättest du 15 Minuten für ein kurzes Kennenlerngespräch? 📅",
+      "variables": [
+        {"name": "name", "description": "Vorname des Leads", "example": "Sarah", "required": true},
+        {"name": "angebot", "description": "Dein Produkt/Service", "example": "passives Einkommen", "required": true},
+        {"name": "dein_name", "description": "Dein Name", "example": "Max", "required": true},
+        {"name": "hauptnutzen", "description": "Hauptvorteil", "example": "finanzielle Freiheit", "required": true}
+      ],
+      "tone": "casual",
+      "success_rate": "high",
+      "use_case": "Erste Kontaktaufnahme nach Leadgenerierung",
+      "tags": ["erstkontakt", "warm", "persönlich"]
+    },
+    {
+      "name": "Follow-up Tag 3 - Value First",
+      "category": "follow_up",
+      "industry": ["network_marketing", "finance"],
+      "template_text": "Hi {name}! 😊\n\nHabe gerade an unser Gespräch gedacht. Hier ein Quick-Tipp für dich:\n\n💡 {tipp}\n\nKeine Verpflichtung – wollte nur helfen!\n\nWie läuft's bei dir?",
+      "variables": [
+        {"name": "name", "description": "Vorname", "example": "Anna", "required": true},
+        {"name": "tipp", "description": "Wertvoller Tipp", "example": "Mit 3 Posts pro Woche erreichst du 10x mehr Leads als mit 1 Post", "required": true}
+      ],
+      "tone": "empathetic",
+      "success_rate": "high",
+      "use_case": "Nachfassen nach 3 Tagen ohne Druck",
+      "tags": ["follow-up", "value", "tipps"]
+    },
+    {
+      "name": "Einwand: Zu teuer - ROI Reframe",
+      "category": "objection_response",
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "template_text": "Verstehe ich total, {name}! 💰\n\nLass uns kurz rechnen: Wenn du durch {lösung} nur {anzahl_deals} zusätzliche Deals im Monat machst à {deal_wert}€ – was macht das im Jahr?\n\n{anzahl_deals} x {deal_wert}€ x 12 = {jahresumsatz}€\n\nUnd das kostet dich {preis}€. Lohnt sich, oder?",
+      "variables": [
+        {"name": "name", "description": "Vorname", "example": "Tom", "required": true},
+        {"name": "lösung", "description": "Dein Angebot", "example": "Sales Flow AI", "required": true},
+        {"name": "anzahl_deals", "description": "Anzahl Extra-Deals", "example": "2", "required": true},
+        {"name": "deal_wert", "description": "Wert pro Deal", "example": "500", "required": true},
+        {"name": "jahresumsatz", "description": "Jahresumsatz berechnet", "example": "12.000", "required": true},
+        {"name": "preis", "description": "Preis deines Angebots", "example": "149", "required": true}
+      ],
+      "tone": "consultative",
+      "success_rate": "high",
+      "use_case": "Wenn Lead sagt 'zu teuer'",
+      "tags": ["einwand", "preis", "roi"]
+    },
+    {
+      "name": "Closing - Direkter Abschluss",
+      "category": "closing",
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "template_text": "Perfekt, {name}! 🎯\n\nDann lass uns loslegen:\n\n1️⃣ {schritt1}\n2️⃣ {schritt2}\n3️⃣ {schritt3}\n\nHast du noch Fragen, oder starten wir direkt?",
+      "variables": [
+        {"name": "name", "description": "Vorname", "example": "Lisa", "required": true},
+        {"name": "schritt1", "description": "Erster Schritt", "example": "Account anlegen (2 Min)", "required": true},
+        {"name": "schritt2", "description": "Zweiter Schritt", "example": "Onboarding-Call buchen", "required": true},
+        {"name": "schritt3", "description": "Dritter Schritt", "example": "Los geht's!", "required": true}
+      ],
+      "tone": "confident",
+      "success_rate": "medium",
+      "use_case": "Wenn Lead kaufbereit ist",
+      "tags": ["closing", "abschluss", "direkt"]
+    },
+    {
+      "name": "Reactivation - Stale Lead",
+      "category": "reactivation",
+      "industry": ["network_marketing", "finance"],
+      "template_text": "Hey {name}! 👋\n\nLange nichts gehört von dir. Alles gut?\n\nFalls {thema} noch interessant ist: Wir haben gerade {neues_feature} gelauncht – könnte genau das sein, was du gesucht hast.\n\nKurzer Call? 5 Minuten reichen. 📞",
+      "variables": [
+        {"name": "name", "description": "Vorname", "example": "Michael", "required": true},
+        {"name": "thema", "description": "Ursprüngliches Interesse", "example": "passives Einkommen", "required": true},
+        {"name": "neues_feature", "description": "Neue Feature/Angebot", "example": "AI Objection Coach", "required": true}
+      ],
+      "tone": "casual",
+      "success_rate": "medium",
+      "use_case": "Leads reaktivieren nach 30+ Tagen Inaktivität",
+      "tags": ["reactivation", "stale-lead", "comeback"]
+    }
+  ]
+}
+

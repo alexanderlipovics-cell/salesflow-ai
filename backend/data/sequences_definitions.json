@@ -1,0 +1,338 @@
+{
+  "sequences": [
+    {
+      "name": "7-Day Cold Lead Nurture",
+      "description": "Kalte B2B Leads systematisch aufwärmen über 7 Tage - Multi-Channel Approach",
+      "trigger_type": "manual",
+      "is_active": true,
+      "steps": [
+        {
+          "step_order": 1,
+          "step_name": "Initial LinkedIn Connection Request",
+          "type": "linkedin",
+          "delay_hours": 0,
+          "template_ref": "Cold Outreach LinkedIn Connection",
+          "task_note": "Personalisierte Connection Request mit Bezug auf gemeinsame Interessen"
+        },
+        {
+          "step_order": 2,
+          "step_name": "Follow-up Email - Value Introduction",
+          "type": "email",
+          "delay_hours": 48,
+          "template_ref": "Cold Email Value Intro",
+          "task_note": "Kurze Email mit 1-2 Pain Points und Link zu Case Study"
+        },
+        {
+          "step_order": 3,
+          "step_name": "LinkedIn Message - Content Share",
+          "type": "linkedin",
+          "delay_hours": 72,
+          "template_ref": "LinkedIn Follow-up Content",
+          "task_note": "Teile relevanten Content (Blog, Video) ohne Sales-Pitch"
+        },
+        {
+          "step_order": 4,
+          "step_name": "Email - Social Proof",
+          "type": "email",
+          "delay_hours": 120,
+          "template_ref": "Cold Email Social Proof",
+          "task_note": "Zeige ähnliche Kunden, die Erfolg hatten"
+        },
+        {
+          "step_order": 5,
+          "step_name": "Phone Call Attempt",
+          "type": "call",
+          "delay_hours": 144,
+          "task_note": "Kurzer Check-in Call - kein Sales Pitch, nur Wert-Check"
+        },
+        {
+          "step_order": 6,
+          "step_name": "Final Email - Soft CTA",
+          "type": "email",
+          "delay_hours": 168,
+          "template_ref": "Cold Email Final Touch",
+          "task_note": "Letzte sanfte Einladung - wenn keine Antwort, Lead auf Pause"
+        }
+      ]
+    },
+    {
+      "name": "14-Day Trial Close",
+      "description": "Nach Demo/Trial: Systematischer Weg zum Abschluss in 14 Tagen",
+      "trigger_type": "auto_stage",
+      "is_active": true,
+      "steps": [
+        {
+          "step_order": 1,
+          "step_name": "Demo Follow-up - Same Day",
+          "type": "email",
+          "delay_hours": 2,
+          "template_ref": "Post-Demo Thank You",
+          "task_note": "Danke für Demo, Key Takeaways wiederholen"
+        },
+        {
+          "step_order": 2,
+          "step_name": "Trial Setup Reminder",
+          "type": "email",
+          "delay_hours": 48,
+          "template_ref": "Trial Setup Guide",
+          "task_note": "Setup-Guide senden, Onboarding-Termin anbieten"
+        },
+        {
+          "step_order": 3,
+          "step_name": "Mid-Trial Check-in Call",
+          "type": "call",
+          "delay_hours": 96,
+          "task_note": "Proaktiver Call - Fragen klären, Erfolge feiern"
+        },
+        {
+          "step_order": 4,
+          "step_name": "ROI Calculator Share",
+          "type": "email",
+          "delay_hours": 168,
+          "template_ref": "ROI Calculator Email",
+          "task_note": "Individuelle ROI-Berechnung teilen basierend auf Trial-Nutzung"
+        },
+        {
+          "step_order": 5,
+          "step_name": "Case Study Relevance",
+          "type": "email",
+          "delay_hours": 240,
+          "template_ref": "Similar Customer Success",
+          "task_note": "Zeige Case Study eines ähnlichen Kunden"
+        },
+        {
+          "step_order": 6,
+          "step_name": "Trial End - Closing Call",
+          "type": "call",
+          "delay_hours": 312,
+          "task_note": "Abschluss-Gespräch: Ergebnisse review, Einwände klären, Angebot"
+        },
+        {
+          "step_order": 7,
+          "step_name": "Final Proposal Email",
+          "type": "email",
+          "delay_hours": 336,
+          "template_ref": "Closing Proposal",
+          "task_note": "Formales Angebot mit Trial-Ergebnissen als Begründung"
+        }
+      ]
+    },
+    {
+      "name": "30-Day Re-Engagement",
+      "description": "Stille Leads reaktivieren - sanfter Multi-Touch über 30 Tage",
+      "trigger_type": "auto_tag",
+      "is_active": true,
+      "steps": [
+        {
+          "step_order": 1,
+          "step_name": "Break the Ice - Soft Reintro",
+          "type": "email",
+          "delay_hours": 0,
+          "template_ref": "Re-engagement Soft Intro",
+          "task_note": "Kein Vorwurf, nur: 'Wir haben gesehen, dass...'"
+        },
+        {
+          "step_order": 2,
+          "step_name": "Value Bomb - No Ask",
+          "type": "email",
+          "delay_hours": 120,
+          "template_ref": "Re-engagement Value Content",
+          "task_note": "Pure Value: eBook, Checklist, Tool - ohne Verkaufsabsicht"
+        },
+        {
+          "step_order": 3,
+          "step_name": "LinkedIn Soft Touch",
+          "type": "linkedin",
+          "delay_hours": 240,
+          "task_note": "Like + Comment auf Lead's Content, dann kurze Message"
+        },
+        {
+          "step_order": 4,
+          "step_name": "Industry Insight Share",
+          "type": "email",
+          "delay_hours": 360,
+          "template_ref": "Re-engagement Industry Insight",
+          "task_note": "Teile Trend/Insight aus ihrer Branche"
+        },
+        {
+          "step_order": 5,
+          "step_name": "Low-Friction Call Offer",
+          "type": "email",
+          "delay_hours": 480,
+          "template_ref": "Re-engagement Call Offer",
+          "task_note": "15-Min Call anbieten - nur zum Austausch, kein Verkauf"
+        },
+        {
+          "step_order": 6,
+          "step_name": "Final Permission-Based Ask",
+          "type": "email",
+          "delay_hours": 720,
+          "template_ref": "Re-engagement Final Ask",
+          "task_note": "Respektvoller Exit: 'Soll ich noch in Kontakt bleiben?'"
+        }
+      ]
+    },
+    {
+      "name": "60-Day Onboarding Success",
+      "description": "Neue Kunden zum Power-User machen in 60 Tagen",
+      "trigger_type": "auto_stage",
+      "is_active": true,
+      "steps": [
+        {
+          "step_order": 1,
+          "step_name": "Welcome Email Day 1",
+          "type": "email",
+          "delay_hours": 2,
+          "template_ref": "Onboarding Welcome",
+          "task_note": "Willkommen, erste Schritte, Support-Kontakt"
+        },
+        {
+          "step_order": 2,
+          "step_name": "Quick Win Setup - Day 3",
+          "type": "email",
+          "delay_hours": 48,
+          "template_ref": "Onboarding Quick Win",
+          "task_note": "Zeige 1 Feature, das sofort Wert bringt"
+        },
+        {
+          "step_order": 3,
+          "step_name": "Personal Check-in Call",
+          "type": "call",
+          "delay_hours": 120,
+          "task_note": "Persönlicher Call: Wie läuft's? Fragen? Blocker?"
+        },
+        {
+          "step_order": 4,
+          "step_name": "Power User Feature - Week 2",
+          "type": "email",
+          "delay_hours": 336,
+          "template_ref": "Onboarding Advanced Feature",
+          "task_note": "Zeige fortgeschrittene Features für Power-User"
+        },
+        {
+          "step_order": 5,
+          "step_name": "Mid-Onboarding Review Call",
+          "type": "call",
+          "delay_hours": 720,
+          "task_note": "30-Tage Review: Erfolge feiern, Roadblocks identifizieren"
+        },
+        {
+          "step_order": 6,
+          "step_name": "Best Practices Email - Week 6",
+          "type": "email",
+          "delay_hours": 1008,
+          "template_ref": "Onboarding Best Practices",
+          "task_note": "Teile Best Practices von anderen erfolgreichen Kunden"
+        },
+        {
+          "step_order": 7,
+          "step_name": "Onboarding Complete - Success Call",
+          "type": "call",
+          "delay_hours": 1440,
+          "task_note": "Glückwunsch-Call, nächste Schritte, Upsell-Potential erkunden"
+        }
+      ]
+    },
+    {
+      "name": "90-Day Upsell Campaign",
+      "description": "Bestandskunden systematisch zu Upgrade/Add-ons führen",
+      "trigger_type": "manual",
+      "is_active": true,
+      "steps": [
+        {
+          "step_order": 1,
+          "step_name": "Usage Analysis Email",
+          "type": "email",
+          "delay_hours": 0,
+          "template_ref": "Upsell Usage Report",
+          "task_note": "Zeige ihre Nutzung + wo sie mehr herausholen könnten"
+        },
+        {
+          "step_order": 2,
+          "step_name": "ROI Showcase Call",
+          "type": "call",
+          "delay_hours": 168,
+          "task_note": "Review bisherige Erfolge, zeige was mit Upgrade möglich wäre"
+        },
+        {
+          "step_order": 3,
+          "step_name": "Feature Gap Analysis",
+          "type": "email",
+          "delay_hours": 336,
+          "template_ref": "Upsell Feature Gap",
+          "task_note": "Zeige Features die sie aktuell nicht nutzen können"
+        },
+        {
+          "step_order": 4,
+          "step_name": "Peer Success Story",
+          "type": "email",
+          "delay_hours": 720,
+          "template_ref": "Upsell Peer Success",
+          "task_note": "Case Study eines Kunden der geupgradet hat"
+        },
+        {
+          "step_order": 5,
+          "step_name": "Exclusive Upgrade Offer",
+          "type": "email",
+          "delay_hours": 1440,
+          "template_ref": "Upsell Special Offer",
+          "task_note": "Exklusives Angebot für loyale Kunden (Rabatt/Bonus)"
+        },
+        {
+          "step_order": 6,
+          "step_name": "Final Decision Call",
+          "type": "call",
+          "delay_hours": 2160,
+          "task_note": "Abschluss-Call: Einwände klären, Entscheidung herbeiführen"
+        }
+      ]
+    },
+    {
+      "name": "5-Day Event Follow-up",
+      "description": "Nach Messe/Event/Webinar: Schneller Follow-up in 5 Tagen",
+      "trigger_type": "manual",
+      "is_active": true,
+      "steps": [
+        {
+          "step_order": 1,
+          "step_name": "Same-Day Thank You",
+          "type": "email",
+          "delay_hours": 2,
+          "template_ref": "Event Follow-up Thank You",
+          "task_note": "Danke für Gespräch, Slides/Material anhängen"
+        },
+        {
+          "step_order": 2,
+          "step_name": "LinkedIn Connection",
+          "type": "linkedin",
+          "delay_hours": 24,
+          "task_note": "Personalisierte Connection Request mit Event-Bezug"
+        },
+        {
+          "step_order": 3,
+          "step_name": "Value-Add Email",
+          "type": "email",
+          "delay_hours": 72,
+          "template_ref": "Event Follow-up Value",
+          "task_note": "Relevanter Content basierend auf Event-Gespräch"
+        },
+        {
+          "step_order": 4,
+          "step_name": "Meeting Booking Call",
+          "type": "call",
+          "delay_hours": 96,
+          "task_note": "Proaktiver Call: Demo/Deep-Dive anbieten"
+        },
+        {
+          "step_order": 5,
+          "step_name": "Final Touchpoint Email",
+          "type": "email",
+          "delay_hours": 120,
+          "template_ref": "Event Follow-up Final",
+          "task_note": "Letzte Einladung mit klarem CTA + Zeitdruck"
+        }
+      ]
+    }
+  ]
+}
+

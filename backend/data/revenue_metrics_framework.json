@@ -1,0 +1,278 @@
+{
+  "deal_value_prediction_model": {
+    "description": "Predict expected deal value based on product, users, billing cycle, and historical data",
+    "inputs": {
+      "product_plan": ["Starter", "Professional", "Enterprise", "Custom"],
+      "num_users_planned": "integer",
+      "base_list_price_per_user": "float",
+      "discount_pct": "float (0.0-1.0)",
+      "billing_cycle": ["monthly", "quarterly", "annual"],
+      "contract_term_months": "integer",
+      "industry": "string",
+      "deal_stage": ["discovery", "qualified", "proposal", "negotiation"],
+      "similar_closed_deals_avg_acv": "float",
+      "expansion_potential_factor": "float (1.0-3.0)"
+    },
+    "calculation": {
+      "base_formula": "num_users_planned * base_list_price_per_user * (1 - discount_pct) * contract_term_months",
+      "billing_cycle_multiplier": {
+        "monthly": 1.0,
+        "quarterly": 0.98,
+        "annual": 0.92
+      },
+      "industry_adjustment": {
+        "tech": 1.2,
+        "finance": 1.15,
+        "healthcare": 1.1,
+        "retail": 0.95,
+        "default": 1.0
+      },
+      "stage_confidence_factor": {
+        "discovery": 0.3,
+        "qualified": 0.5,
+        "proposal": 0.75,
+        "negotiation": 0.95
+      },
+      "final_formula": "(base_value * industry_adj * stage_factor) * 0.7 + (historical_avg * 0.3) * expansion_factor"
+    },
+    "output": {
+      "predicted_deal_value": "float",
+      "confidence_score": "float (0-100)"
+    }
+  },
+  "close_probability_calculator": {
+    "description": "Calculate win probability based on engagement, stage, objections, and historical patterns",
+    "inputs": {
+      "deal_stage": ["discovery", "qualified", "proposal", "negotiation"],
+      "days_in_stage": "integer",
+      "lead_score": "integer (0-100)",
+      "num_interactions": "integer",
+      "num_objections_handled": "integer",
+      "champion_identified": "boolean",
+      "budget_confirmed": "boolean",
+      "decision_maker_engaged": "boolean",
+      "competitors_mentioned": "integer",
+      "historical_win_rate_this_stage": "float (0-1)"
+    },
+    "calculation": {
+      "base_probability_by_stage": {
+        "discovery": 10,
+        "qualified": 25,
+        "proposal": 50,
+        "negotiation": 75
+      },
+      "stage_velocity_penalty": {
+        "formula": "IF days_in_stage > expected_duration THEN -2 per extra day",
+        "expected_duration_days": {
+          "discovery": 14,
+          "qualified": 21,
+          "proposal": 14,
+          "negotiation": 7
+        }
+      },
+      "engagement_boost": {
+        "lead_score_impact": "+0.3 per score point above 50",
+        "interactions_impact": "+2 per interaction (max +20)",
+        "objections_handled_impact": "+5 per objection resolved"
+      },
+      "qualification_boost": {
+        "champion_identified": "+15",
+        "budget_confirmed": "+10",
+        "decision_maker_engaged": "+10"
+      },
+      "competition_penalty": {
+        "0_competitors": 0,
+        "1_competitor": -5,
+        "2_competitors": -10,
+        "3+_competitors": -15
+      },
+      "final_formula": "CLAMP(0, 100, base_prob + engagement_boost + qualification_boost - velocity_penalty - competition_penalty)"
+    },
+    "output": {
+      "close_probability": "integer (0-100)",
+      "confidence": "string [low, medium, high]",
+      "key_factors": ["array of strings"]
+    }
+  },
+  "revenue_forecasting_formulas": {
+    "description": "Calculate revenue forecasts for different time horizons",
+    "monthly_forecast": {
+      "formula": "SUM(deal_value * win_probability / 100) WHERE expected_close_date IN month",
+      "confidence_levels": {
+        "committed": "SUM deals with >80% probability",
+        "best_case": "SUM deals with >50% probability",
+        "pipeline": "SUM all open deals"
+      }
+    },
+    "quarterly_forecast": {
+      "formula": "SUM(monthly_forecast) for 3 months",
+      "seasonality_adjustment": {
+        "Q1": 0.95,
+        "Q2": 1.05,
+        "Q3": 0.9,
+        "Q4": 1.1
+      }
+    },
+    "scenario_calculator": {
+      "inputs": {
+        "current_pipeline_value": "float",
+        "current_avg_win_rate": "float",
+        "current_avg_deal_size": "float",
+        "win_rate_change": "float (-1.0 to +1.0)",
+        "deal_size_change": "float (-1.0 to +1.0)",
+        "pipeline_growth": "float (-1.0 to +1.0)"
+      },
+      "calculation": {
+        "new_pipeline": "current_pipeline * (1 + pipeline_growth)",
+        "new_win_rate": "current_avg_win_rate * (1 + win_rate_change)",
+        "new_deal_size": "current_avg_deal_size * (1 + deal_size_change)",
+        "projected_revenue": "new_pipeline * new_win_rate * new_deal_size"
+      }
+    }
+  },
+  "churn_risk_indicators": {
+    "description": "Detect customers at risk of churning",
+    "inputs": {
+      "account_id": "string",
+      "days_since_last_login": "integer",
+      "support_tickets_last_30d": "integer",
+      "usage_trend": "string [increasing, stable, decreasing]",
+      "payment_issues_count": "integer",
+      "contract_renewal_date": "date",
+      "nps_score": "integer (-100 to 100)",
+      "engagement_score": "integer (0-100)",
+      "feature_adoption_rate": "float (0-1)"
+    },
+    "risk_factors": {
+      "usage_red_flags": {
+        "no_login_30_days": {"weight": 30, "severity": "high"},
+        "decreasing_usage_trend": {"weight": 20, "severity": "medium"},
+        "low_feature_adoption": {"weight": 15, "severity": "medium"}
+      },
+      "support_red_flags": {
+        "high_ticket_volume": {"weight": 15, "severity": "medium"},
+        "unresolved_critical_tickets": {"weight": 25, "severity": "high"}
+      },
+      "financial_red_flags": {
+        "payment_failures": {"weight": 20, "severity": "high"},
+        "downgrade_requests": {"weight": 15, "severity": "medium"}
+      },
+      "sentiment_red_flags": {
+        "negative_nps": {"weight": 20, "severity": "high"},
+        "low_engagement_score": {"weight": 10, "severity": "low"}
+      }
+    },
+    "churn_probability_formula": "SUM(active_risk_factor_weights) / 100",
+    "output": {
+      "churn_risk_score": "integer (0-100)",
+      "risk_level": "string [low, medium, high, critical]",
+      "primary_risk_factors": "array of strings",
+      "recommended_actions": "array of strings"
+    }
+  },
+  "expansion_opportunity_scores": {
+    "description": "Identify upsell and cross-sell opportunities in existing accounts",
+    "inputs": {
+      "account_id": "string",
+      "current_mrr": "float",
+      "current_plan": "string",
+      "num_active_users": "integer",
+      "license_utilization_pct": "float (0-1)",
+      "feature_usage_by_tier": "object",
+      "days_as_customer": "integer",
+      "nps_score": "integer",
+      "engagement_score": "integer (0-100)",
+      "support_satisfaction": "float (0-5)"
+    },
+    "opportunity_types": {
+      "seat_expansion": {
+        "triggers": [
+          "license_utilization > 0.8",
+          "frequent_user_limit_warnings",
+          "team_size_growth_detected"
+        ],
+        "potential_value": "current_mrr * 0.3",
+        "probability": "high if utilization > 90%"
+      },
+      "plan_upgrade": {
+        "triggers": [
+          "usage_of_premium_features_blocked",
+          "API_rate_limit_hits",
+          "storage_limit_approaching"
+        ],
+        "potential_value": "(next_tier_price - current_price) * 12",
+        "probability": "medium if engagement_score > 70"
+      },
+      "add_on_products": {
+        "triggers": [
+          "feature_requests_for_add_ons",
+          "similar_customers_using_add_ons",
+          "workflow_gaps_identified"
+        ],
+        "potential_value": "add_on_price * 12",
+        "probability": "low to medium depending on fit"
+      },
+      "enterprise_migration": {
+        "triggers": [
+          "company_size > 100 employees",
+          "compliance_requirements_mentioned",
+          "sso_requests",
+          "custom_integration_needs"
+        ],
+        "potential_value": "enterprise_price - current_price",
+        "probability": "high if company_size > 250"
+      }
+    },
+    "scoring_formula": {
+      "base_score": "engagement_score * 0.4 + nps_normalized * 0.3 + tenure_factor * 0.3",
+      "tenure_factor": {
+        "<3_months": 0.3,
+        "3-6_months": 0.6,
+        "6-12_months": 0.8,
+        "12+_months": 1.0
+      },
+      "opportunity_multiplier": {
+        "seat_expansion": 1.2,
+        "plan_upgrade": 1.5,
+        "add_on": 1.0,
+        "enterprise": 2.0
+      },
+      "final_score": "base_score * opportunity_multiplier * (1 + potential_value_factor)"
+    },
+    "output": {
+      "expansion_score": "integer (0-100)",
+      "top_opportunities": "array of objects",
+      "estimated_expansion_value": "float",
+      "recommended_next_actions": "array of strings"
+    }
+  },
+  "deal_health_scoring": {
+    "description": "Comprehensive health score for individual deals",
+    "factors": {
+      "velocity": {
+        "weight": 25,
+        "calculation": "100 - (days_in_stage / expected_duration * 100)"
+      },
+      "engagement": {
+        "weight": 30,
+        "calculation": "lead_score * 0.7 + (interactions_last_7d * 5)"
+      },
+      "qualification": {
+        "weight": 25,
+        "calculation": "(champion * 33) + (budget * 33) + (decision_maker * 34)"
+      },
+      "timeline_alignment": {
+        "weight": 20,
+        "calculation": "IF expected_close < today THEN 0 ELSE 100"
+      }
+    },
+    "health_score_formula": "SUM(factor_score * weight) / SUM(weights)",
+    "health_categories": {
+      "excellent": "80-100",
+      "good": "60-79",
+      "at_risk": "40-59",
+      "critical": "0-39"
+    }
+  }
+}
+

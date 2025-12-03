@@ -1,0 +1,370 @@
+{
+  "playbooks": [
+    {
+      "playbook_name": "Cold B2B SaaS Outreach",
+      "description": "Systematischer Ansatz für kalte B2B SaaS Leads - von Erstkontakt bis Demo",
+      "industry": ["saas", "software", "technology"],
+      "target_persona": "Head of Sales, VP Sales, CRO",
+      "sales_stage": "prospecting",
+      "playbook_type": "standard",
+      "is_active": true,
+      "win_rate": 18.5,
+      "avg_deal_size": 12000.00,
+      "avg_time_to_close": 45,
+      "steps": [
+        {
+          "step_number": 1,
+          "step_name": "LinkedIn Research & Connection",
+          "description": "Recherchiere Lead auf LinkedIn, finde gemeinsame Connections, sende personalisierte Connection Request",
+          "duration_days": 1,
+          "success_criteria": "Connection akzeptiert"
+        },
+        {
+          "step_number": 2,
+          "step_name": "Cold Email - Value Introduction",
+          "description": "Erste Email mit konkretem Value Proposition und Social Proof",
+          "duration_days": 2,
+          "success_criteria": "Email geöffnet"
+        },
+        {
+          "step_number": 3,
+          "step_name": "Follow-up Email - Case Study",
+          "description": "Relevante Case Study eines ähnlichen Kunden teilen",
+          "duration_days": 3,
+          "success_criteria": "Reply oder Link-Click"
+        },
+        {
+          "step_number": 4,
+          "step_name": "LinkedIn Message - Soft Touch",
+          "description": "Unverbindliche LinkedIn Message mit Mehrwert (Content, Tool, etc.)",
+          "duration_days": 2,
+          "success_criteria": "Antwort oder Reaction"
+        },
+        {
+          "step_number": 5,
+          "step_name": "Phone Call Attempt",
+          "description": "Telefonischer Kontaktversuch - kein Pitch, nur Wert-Check",
+          "duration_days": 1,
+          "success_criteria": "Gespräch geführt"
+        },
+        {
+          "step_number": 6,
+          "step_name": "Demo Buchung Email",
+          "description": "Direkter CTA für Demo-Buchung mit konkreten Zeitslots",
+          "duration_days": 2,
+          "success_criteria": "Demo gebucht"
+        }
+      ],
+      "qualifying_questions": [
+        "Verwenden Sie aktuell ein CRM-System?",
+        "Wie groß ist Ihr Vertriebsteam?",
+        "Was ist Ihre größte Herausforderung im Vertrieb?",
+        "Wann wollen Sie eine Lösung implementieren?",
+        "Wer trifft die finale Kaufentscheidung?"
+      ],
+      "objection_handling": {
+        "zu_teuer": "ROI-Kalkulator zeigen, auf Trial verweisen",
+        "kein_budget": "Umsatzsteigerungs-Potential aufzeigen",
+        "keine_zeit": "Quick-Win Beispiele, minimaler Setup-Aufwand betonen"
+      },
+      "success_metrics": {
+        "response_rate": "25%",
+        "demo_booking_rate": "12%",
+        "demo_to_trial_rate": "45%"
+      }
+    },
+    {
+      "playbook_name": "Trial-to-Paid Conversion",
+      "description": "Systematische Begleitung von Trial-Usern zum zahlenden Kunden",
+      "industry": ["saas", "software"],
+      "target_persona": "Decision Maker in Trial Phase",
+      "sales_stage": "trial",
+      "playbook_type": "nurture",
+      "is_active": true,
+      "win_rate": 42.3,
+      "avg_deal_size": 8500.00,
+      "avg_time_to_close": 14,
+      "steps": [
+        {
+          "step_number": 1,
+          "step_name": "Welcome Email + Setup Guide",
+          "description": "Sofort nach Trial-Start: Willkommens-Email mit personalisierten Quick-Win Tipps",
+          "duration_days": 0,
+          "success_criteria": "Email geöffnet, Guide heruntergeladen"
+        },
+        {
+          "step_number": 2,
+          "step_name": "Day 3 Check-in Call",
+          "description": "Proaktiver Anruf: Wie läuft's? Fragen? Blocker identifizieren",
+          "duration_days": 3,
+          "success_criteria": "Call geführt, Blocker gelöst"
+        },
+        {
+          "step_number": 3,
+          "step_name": "Day 7 Value Email",
+          "description": "Email mit Trial-Nutzungsstatistik und bereits erzielten Erfolgen",
+          "duration_days": 7,
+          "success_criteria": "Engagement mit Email"
+        },
+        {
+          "step_number": 4,
+          "step_name": "Day 10 ROI Showcase",
+          "description": "Individuelle ROI-Berechnung basierend auf Nutzungsdaten",
+          "duration_days": 10,
+          "success_criteria": "ROI-Report geöffnet"
+        },
+        {
+          "step_number": 5,
+          "step_name": "Day 12 Closing Call",
+          "description": "Abschlussgespräch: Ergebnisse reviewen, Einwände klären, Angebot präsentieren",
+          "duration_days": 12,
+          "success_criteria": "Angebot präsentiert"
+        },
+        {
+          "step_number": 6,
+          "step_name": "Day 14 Final Proposal",
+          "description": "Schriftliches Angebot mit Special Trial-Discount",
+          "duration_days": 14,
+          "success_criteria": "Vertrag unterschrieben"
+        }
+      ],
+      "qualifying_questions": [
+        "Welche Features nutzen Sie am meisten?",
+        "Sehen Sie bereits Verbesserungen?",
+        "Was würde Sie vom Kauf abhalten?",
+        "Wer muss noch zustimmen?",
+        "Wann wollen Sie starten?"
+      ],
+      "objection_handling": {
+        "brauchen_mehr_zeit": "Trial verlängern + konkrete Meilensteine definieren",
+        "zu_komplex": "Onboarding-Support anbieten, Complexity Sorge nehmen",
+        "muss_mit_team_besprechen": "Team-Demo anbieten, Stakeholder einbinden"
+      },
+      "success_metrics": {
+        "trial_activation_rate": "78%",
+        "trial_to_paid_rate": "42%",
+        "avg_trial_duration": "14 Tage"
+      }
+    },
+    {
+      "playbook_name": "Enterprise Deal Closer",
+      "description": "Multi-Stakeholder Prozess für Enterprise Deals über €50k",
+      "industry": ["all"],
+      "target_persona": "C-Level, VP, Director",
+      "sales_stage": "negotiation",
+      "playbook_type": "enterprise",
+      "is_active": true,
+      "win_rate": 35.2,
+      "avg_deal_size": 85000.00,
+      "avg_time_to_close": 120,
+      "steps": [
+        {
+          "step_number": 1,
+          "step_name": "Champion Identification",
+          "description": "Identifiziere internen Champion, der dich unterstützt",
+          "duration_days": 7,
+          "success_criteria": "Champion gefunden und briefed"
+        },
+        {
+          "step_number": 2,
+          "step_name": "Stakeholder Mapping",
+          "description": "Alle Entscheider identifizieren, Rollen klären",
+          "duration_days": 14,
+          "success_criteria": "Vollständige Stakeholder-Map"
+        },
+        {
+          "step_number": 3,
+          "step_name": "Technical Deep-Dive",
+          "description": "Technischer Workshop mit IT/Security Team",
+          "duration_days": 21,
+          "success_criteria": "Technical Sign-off"
+        },
+        {
+          "step_number": 4,
+          "step_name": "Business Case Präsentation",
+          "description": "Executive Presentation mit ROI, Business Case, Implementation Plan",
+          "duration_days": 30,
+          "success_criteria": "Executive Buy-in"
+        },
+        {
+          "step_number": 5,
+          "step_name": "Proposal & Negotiation",
+          "description": "Formales Proposal, Vertragsverhandlungen, Legal Review",
+          "duration_days": 45,
+          "success_criteria": "Agreement on terms"
+        },
+        {
+          "step_number": 6,
+          "step_name": "Contract & Kick-off",
+          "description": "Vertragsunterzeichnung, Kick-off Meeting planen",
+          "duration_days": 3,
+          "success_criteria": "Signed contract, kick-off scheduled"
+        }
+      ],
+      "qualifying_questions": [
+        "Wer sind alle Stakeholder in diesem Prozess?",
+        "Was ist der Business Case aus Sicht des C-Levels?",
+        "Welche Compliance/Security Requirements gibt es?",
+        "Wie sieht der typische Approval-Prozess aus?",
+        "Was ist der realistische Zeitrahmen?"
+      ],
+      "objection_handling": {
+        "zu_teuer": "TCO-Analyse, 3-Jahres-ROI, konkrete Einsparungen aufzeigen",
+        "security_bedenken": "Security-Audit anbieten, Zertifikate zeigen",
+        "vendor_lock_in": "Exit-Strategy zeigen, Datenportabilität garantieren"
+      },
+      "success_metrics": {
+        "avg_deal_size": "€85.000",
+        "win_rate": "35%",
+        "sales_cycle": "120 Tage"
+      }
+    },
+    {
+      "playbook_name": "Upsell Existing Customer",
+      "description": "Bestandskunden zu höherem Tier oder Add-ons bewegen",
+      "industry": ["all"],
+      "target_persona": "Existing Customer - Admin/Owner",
+      "sales_stage": "expansion",
+      "playbook_type": "upsell",
+      "is_active": true,
+      "win_rate": 55.8,
+      "avg_deal_size": 4500.00,
+      "avg_time_to_close": 30,
+      "steps": [
+        {
+          "step_number": 1,
+          "step_name": "Usage Analysis",
+          "description": "Analysiere Nutzungsdaten, identifiziere Feature-Gaps",
+          "duration_days": 3,
+          "success_criteria": "Gap-Analysis erstellt"
+        },
+        {
+          "step_number": 2,
+          "step_name": "Success Review Call",
+          "description": "Quarterly Business Review: Erfolge feiern, Potenzial aufzeigen",
+          "duration_days": 7,
+          "success_criteria": "QBR durchgeführt, Upgrade-Interest geweckt"
+        },
+        {
+          "step_number": 3,
+          "step_name": "Feature Demo",
+          "description": "Zeige konkrete Features aus höherem Tier die ihnen helfen würden",
+          "duration_days": 10,
+          "success_criteria": "Demo gebucht und durchgeführt"
+        },
+        {
+          "step_number": 4,
+          "step_name": "ROI Calculation",
+          "description": "Zeige ROI des Upgrades basierend auf ihrer aktuellen Nutzung",
+          "duration_days": 14,
+          "success_criteria": "ROI-Calc akzeptiert"
+        },
+        {
+          "step_number": 5,
+          "step_name": "Special Upgrade Offer",
+          "description": "Limitiertes Angebot für loyale Kunden (Rabatt, Free Month, etc.)",
+          "duration_days": 21,
+          "success_criteria": "Angebot präsentiert"
+        },
+        {
+          "step_number": 6,
+          "step_name": "Closing Call",
+          "description": "Einwände klären, Upgrade finalisieren",
+          "duration_days": 7,
+          "success_criteria": "Upgrade bestätigt"
+        }
+      ],
+      "qualifying_questions": [
+        "Welche Features fehlen Ihnen aktuell?",
+        "Was würde Ihre Arbeit noch einfacher machen?",
+        "Wie oft stoßen Sie an Limits?",
+        "Wächst Ihr Team?",
+        "Was sind Ihre Ziele für die nächsten 6 Monate?"
+      ],
+      "objection_handling": {
+        "aktueller_plan_reicht": "Zeige ungenutzte Power-Features, Wachstums-Szenario",
+        "zu_teuer": "Prorate Current Plan, zeige Zusatz-ROI",
+        "timing": "Flexibles Start-Datum anbieten"
+      },
+      "success_metrics": {
+        "upsell_rate": "55%",
+        "avg_expansion_revenue": "€4.500",
+        "time_to_upsell": "30 Tage"
+      }
+    },
+    {
+      "playbook_name": "Churn Prevention - At-Risk Customer",
+      "description": "Systematische Rettung von kündigungsgefährdeten Kunden",
+      "industry": ["all"],
+      "target_persona": "At-Risk Customer",
+      "sales_stage": "retention",
+      "playbook_type": "retention",
+      "is_active": true,
+      "win_rate": 62.4,
+      "avg_deal_size": 0.00,
+      "avg_time_to_close": 14,
+      "steps": [
+        {
+          "step_number": 1,
+          "step_name": "At-Risk Identification",
+          "description": "Erkenne Churn-Signale: Niedrige Nutzung, Support-Tickets, fehlende Logins",
+          "duration_days": 0,
+          "success_criteria": "At-Risk Flag gesetzt"
+        },
+        {
+          "step_number": 2,
+          "step_name": "Immediate Outreach",
+          "description": "Proaktiver Anruf BEVOR sie kündigen: 'Wir haben bemerkt...'",
+          "duration_days": 1,
+          "success_criteria": "Gespräch geführt, Grund identifiziert"
+        },
+        {
+          "step_number": 3,
+          "step_name": "Problem Solving",
+          "description": "Konkrete Lösungen anbieten: Training, Feature-Walkthrough, Prozess-Optimierung",
+          "duration_days": 3,
+          "success_criteria": "Action Plan erstellt"
+        },
+        {
+          "step_number": 4,
+          "step_name": "Value Re-Activation",
+          "description": "Zeige wieder den ursprünglichen Value: Quick Wins, Success Stories",
+          "duration_days": 7,
+          "success_criteria": "Engagement erhöht"
+        },
+        {
+          "step_number": 5,
+          "step_name": "Executive Check-in",
+          "description": "Senior-Level Check-in: 'Wie können wir besser werden?'",
+          "duration_days": 10,
+          "success_criteria": "Feedback gesammelt, Verbesserungen zugesagt"
+        },
+        {
+          "step_number": 6,
+          "step_name": "Retention Offer",
+          "description": "Falls nötig: Retention-Angebot (Discount, Free Months, Extra Support)",
+          "duration_days": 4,
+          "success_criteria": "Kunde bleibt"
+        }
+      ],
+      "qualifying_questions": [
+        "Was hat sich geändert?",
+        "Wo sehen Sie den größten Pain Point?",
+        "Was müsste passieren, damit Sie bleiben?",
+        "Gibt es Alternativen die Sie evaluieren?",
+        "Können wir irgendetwas tun?"
+      ],
+      "objection_handling": {
+        "zu_komplex": "Dedicated Onboarding anbieten, Vereinfachung zeigen",
+        "keine_ergebnisse": "Success Framework implementieren, Benchmarks setzen",
+        "besseres_angebot_konkurrenz": "Value Gap Analysis, einzigartiges Value Prop zeigen"
+      },
+      "success_metrics": {
+        "churn_prevention_rate": "62%",
+        "avg_ltv_saved": "€15.000",
+        "time_to_save": "14 Tage"
+      }
+    }
+  ]
+}
+

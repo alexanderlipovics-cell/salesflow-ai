@@ -1,0 +1,58 @@
+# FastAPI Core
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# AI / LLM
+openai>=1.10.0
+tenacity==8.2.3
+tiktoken>=0.5.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+
+# Data / Database
+supabase>=2.3.0
+databases[asyncpg]>=0.9.0
+asyncpg>=0.29.0
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0  # Excel support for import/export
+
+# Email Integration
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.100.0
+msal>=1.24.0  # Microsoft Authentication Library
+
+# WhatsApp Integration
+twilio>=8.10.0  # WhatsApp via Twilio
+
+# Video Conferencing
+google-api-python-client>=2.100.0  # Google Calendar/Meet
+google-auth-httplib2>=0.1.1
+google-auth-oauthlib>=1.1.0
+
+# Utilities
+python-dotenv==1.0.0
+python-multipart==0.0.6
+email-validator>=2.1.0
+requests>=2.31.0
+exponent-server-sdk>=2.0.0  # Push notifications
+
+# Caching & Rate limiting
+redis==5.0.1
+slowapi==0.1.9
+
+# Job Scheduling (Follow-up System)
+schedule==1.2.0
+
+# Testing & Quality
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+pytest-cov==4.1.0
+black==24.1.1
+ruff==0.1.14
+mypy==1.8.0

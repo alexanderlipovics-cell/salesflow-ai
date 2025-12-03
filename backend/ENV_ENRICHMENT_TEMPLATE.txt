@@ -1,0 +1,34 @@
+# =====================================================
+# LEAD ENRICHMENT API KEYS
+# =====================================================
+
+# Clearbit API (https://clearbit.com)
+# Free: 50 requests/month
+# Paid: Starting at $99/month
+CLEARBIT_API_KEY=sk_your_clearbit_key_here
+
+# Hunter.io API (https://hunter.io)
+# Free: 50 searches/month
+# Paid: Starting at $49/month for 500 searches
+HUNTER_API_KEY=your_hunter_api_key_here
+
+# LinkedIn API (Optional - requires OAuth setup)
+# https://www.linkedin.com/developers/
+LINKEDIN_API_KEY=your_linkedin_key_here
+LINKEDIN_API_SECRET=your_linkedin_secret_here
+
+# =====================================================
+# ENRICHMENT SETTINGS
+# =====================================================
+
+# Cache expiry (days)
+ENRICHMENT_CACHE_DAYS=30
+
+# Rate limiting (seconds between requests)
+ENRICHMENT_RATE_LIMIT_SECONDS=2
+
+# Enable/Disable specific providers
+ENABLE_CLEARBIT=true
+ENABLE_HUNTER=true
+ENABLE_LINKEDIN=false
+

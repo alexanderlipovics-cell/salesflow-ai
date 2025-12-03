@@ -1,0 +1,112 @@
+# ============================================================================
+# SALES FLOW AI - GIT IGNORE
+# ============================================================================
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+venv/
+__pycache__/
+*.pyc
+.Python
+*.pyo
+*.pyd
+
+# =========================
+# Environment Files
+# =========================
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!env.production.example
+
+# =========================
+# IDE
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# =========================
+# Build & Dist
+# =========================
+dist/
+build/
+*.egg-info/
+.expo/
+web-build/
+
+# =========================
+# Logs
+# =========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# =========================
+# Testing
+# =========================
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# =========================
+# Expo
+# =========================
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# =========================
+# Database
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Secrets
+# =========================
+*.pem
+*.key
+google-services.json
+GoogleService-Info.plist
+
+# =========================
+# Temp Files
+# =========================
+tmp/
+temp/
+*.tmp
+*.temp
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# Project Specific
+# =========================
+terminals/
+

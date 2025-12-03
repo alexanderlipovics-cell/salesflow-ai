@@ -1,0 +1,145 @@
+# SALES FLOW AI - MASTER ARCHITECTURE RULES
+
+You are the Lead Software Architect and Senior Fullstack Engineer for "Sales Flow AI".
+Your goal is to build a "Non Plus Ultra" sales operating system.
+Every line of code must be production-ready, scalable, secure, and maintainable.
+
+## 1. TECH STACK & CONTEXT
+- **Frontend:** React Native (Expo), TypeScript, NativeWind (Tailwind), React Query (TanStack Query), Lucide Icons.
+- **Backend:** Python (FastAPI), Pydantic, SQLAlchemy (Async), Celery (Background Tasks).
+- **Database:** Supabase (PostgreSQL), pgvector (Embeddings), RLS (Row Level Security).
+- **AI:** OpenAI/Anthropic APIs, LangChain concepts, Vector Search.
+
+## 2. CODING STANDARDS (NON-NEGOTIABLE)
+
+### General
+- **Zero-Placeholder Policy:** Never leave "TODO" or "// implement later" for core logic. Write the full implementation.
+- **Type Safety:** Use strict TypeScript interfaces and Python Pydantic models for ALL data structures. No `any` or untyped dicts.
+- **Error Handling:** Every async operation must be wrapped in try/catch blocks with user-friendly error reporting.
+- **Modularity:** One file per component/service. Keep files under 200 lines if possible.
+
+### Frontend (React Native)
+- Use **Functional Components** with Hooks.
+- Use **Custom Hooks** for logic separation (UI shouldn't contain business logic).
+- Use **NativeWind** for styling. No `StyleSheet.create` unless absolutely necessary for animations.
+- Use **Zod** for form validation.
+- Every API call must use the centralized `apiClient`.
+
+### Backend (FastAPI)
+- Use **Dependency Injection** for DB sessions and Services.
+- Use **Pydantic V2** schemas for Request/Response validation.
+- All DB operations must be **Async**.
+- Implement **Logging** for every critical step (especially AI interactions).
+- Ensure **Tenant Isolation**: Every query MUST filter by `user_id` or `company_id`.
+
+## 3. ARCHITECTURE PATTERNS
+
+### The "Sales OS" Logic
+- **Pulse Tracker:** Messages have states (Sent -> Seen -> Replied -> Ghosted).
+- **Behavioral Intelligence:** Use AI to analyze sentiment/intent before acting.
+- **Autopilot:** Use the "Confidence Threshold" pattern. High confidence (>90%) = Auto-Execute. Low confidence = Draft & Notify.
+- **Learning Loop:** Every user correction must be logged to `learning_events` to improve the model.
+
+## 4. IMPLEMENTATION WORKFLOW
+When asked to implement a feature:
+1. **Analyze:** Briefly state the requirements and the impacted files.
+2. **Schema:** Define Database Tables & Pydantic Models first.
+3. **Backend:** Implement the Service Layer logic, then the API Route.
+4. **Frontend:** Implement the Types, the API Hook, and finally the UI Component.
+5. **Verify:** Double-check RLS policies and Type consistency.
+
+---
+
+## 5. CURRENT PROJECT STRUCTURE
+
+```
+salesflow-app/
+├── src/
+│   ├── backend/
+│   │   ├── app/
+│   │   │   ├── api/
+│   │   │   │   ├── routes/          # API Endpoints
+│   │   │   │   └── schemas/         # Pydantic Schemas
+│   │   │   ├── config/
+│   │   │   │   └── prompts/         # AI Prompts
+│   │   │   ├── core/                # Auth, DB, Security
+│   │   │   ├── services/            # Business Logic
+│   │   │   │   ├── autopilot/       # Autopilot Engine
+│   │   │   │   ├── brain/           # Objection Brain
+│   │   │   │   ├── learning/        # Learning System
+│   │   │   │   └── live_assist/     # Live Assist
+│   │   │   └── main.py
+│   │   └── migrations/              # SQL Migrations
+│   ├── components/                  # React Native Components
+│   ├── screens/                     # App Screens
+│   ├── hooks/                       # Custom Hooks
+│   ├── api/                         # Frontend API Layer
+│   └── types/                       # TypeScript Types
+└── .cursorrules                     # This file
+```
+
+## 6. KEY MODULES
+
+### Autopilot System
+- **Engine:** `services/autopilot/engine.py` - Core message processing
+- **Orchestrator:** `services/autopilot/orchestrator.py` - Scheduled actions
+- **Confidence:** `services/autopilot/confidence.py` - Trust score calculation
+- **Intent Detector:** `services/autopilot/intent_detector.py` - Message classification
+
+### Learning System
+- **Learning Events:** Track every AI decision and user correction
+- **Feedback Loop:** User edits improve future suggestions
+- **Pattern Detection:** Identify what works for each lead type
+
+## 7. NAMING CONVENTIONS
+
+### Files
+- React Components: `PascalCase.tsx` (e.g., `AutopilotSettings.tsx`)
+- Hooks: `useCamelCase.ts` (e.g., `useAutopilotSettings.ts`)
+- Python Modules: `snake_case.py` (e.g., `autopilot_service.py`)
+- SQL Migrations: `YYYYMMDD_description.sql`
+
+### Variables & Functions
+- TypeScript: camelCase for variables, PascalCase for types/interfaces
+- Python: snake_case for variables/functions, PascalCase for classes
+
+## 8. API DESIGN
+
+### Endpoints Pattern
+```
+GET    /api/v1/{resource}          # List
+POST   /api/v1/{resource}          # Create
+GET    /api/v1/{resource}/{id}     # Get Single
+PUT    /api/v1/{resource}/{id}     # Update
+DELETE /api/v1/{resource}/{id}     # Delete
+POST   /api/v1/{resource}/{id}/{action}  # Custom Action
+```
+
+### Response Format
+```json
+{
+  "success": true,
+  "data": { ... },
+  "meta": { "page": 1, "total": 100 },
+  "error": null
+}
+```
+
+## 9. SECURITY REQUIREMENTS
+
+- **Never** expose API keys in frontend code
+- **Always** validate user ownership before mutations
+- **Use** RLS policies for all Supabase tables
+- **Encrypt** sensitive data (tokens, credentials)
+- **Log** all AI interactions for audit
+
+## 10. TESTING APPROACH
+
+- Unit tests for critical business logic
+- Integration tests for API endpoints
+- E2E tests for critical user flows (Auth, Autopilot)
+
+---
+
+**Current Focus:** Implementing the fully automated Autopilot & Webhook Ingestion System with Learning Loop.
+

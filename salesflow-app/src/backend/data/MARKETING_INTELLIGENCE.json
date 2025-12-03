@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "name": "Sales Flow AI - Marketing Intelligence",
+    "version": "1.0.0",
+    "created": "2024-12-02",
+    "description": "Brand Messaging, Landing Pages, Social Content & Investor Materials",
+    "total_items": 8
+  },
+  "items": [
+    {
+      "id": "marketing_001",
+      "domain": "company",
+      "type": "company_overview",
+      "topic": "Brand Positioning",
+      "subtopic": "Core Messaging",
+      "title": "Sales Flow AI - Brand Positioning & Core Messages",
+      "content": "**SALES FLOW AI - BRAND POSITIONING**\n\n**Tagline:**\n\"Mehr Abschlüsse mit derselben Leadmenge – ohne mehr Chaos, ohne mehr Tools.\"\n\n**Elevator Pitch (30 Sek):**\n\"Sales Flow AI ist ein KI-Vertriebs-Copilot für Teams im Bereich Network Marketing, Immobilien und Finance. Wir helfen Vertriebsleitern, ihre Team-Performance zu steigern, indem wir KI nutzen, um die besten Nachfass-Strategien, Einwand-Behandlungen und Vorlagen-Templates automatisch vorzuschlagen. Das Ergebnis: Bis zu 40% mehr Termine aus derselben Leadmenge.\"\n\n**Problem Statement:**\n\"Vertriebsleiter verlieren bis zu 67% ihrer Leads durch fehlendes oder falsches Follow-up. CRMs sind zu kompliziert, Vertriebsmitarbeiter nutzen sie nicht konsequent, und wertvolle Insights gehen verloren.\"\n\n**Solution Statement:**\n\"Sales Flow AI ist kein weiteres CRM – es ist ein KI-Copilot, der sich in dein bestehendes System integriert und deinem Team jeden Tag sagt, WEN sie kontaktieren sollen, WIE und WARUM.\"\n\n**Key Value Props:**\n1. **Power Hour Engine**: Tägliche To-Do-Liste mit den wichtigsten Kontakten\n2. **Objection Brain**: KI-gestützte Einwandbehandlung in Echtzeit\n3. **Follow-Up Autopilot**: Automatische Sequenzen, die konvertieren\n4. **Team Analytics**: Sehen, was funktioniert – für alle replizierbar\n\n**Tone of Voice:**\n- Direkt, klar, kein Marketing-Sprech\n- ROI-fokussiert, Ergebnisse über Features\n- Du-Ansprache, auf Augenhöhe\n- Deutsch, mit Expertise-Autorität",
+      "content_short": "Sales Flow AI: KI-Copilot für Vertriebsteams. Mehr Termine, weniger Chaos.",
+      "keywords": ["brand", "positioning", "messaging", "tagline", "pitch", "value-prop"]
+    },
+    {
+      "id": "marketing_002",
+      "domain": "company",
+      "type": "product_line",
+      "topic": "Pricing",
+      "subtopic": "Paketstruktur",
+      "title": "Sales Flow AI - Pricing & Packages",
+      "content": "**SALES FLOW AI - PAKETE & PREISE**\n\n---\n\n**1. SALES FLOW SOLO** (1-3 Nutzer)\n*Für Solo-Closer & kleine Teams*\n\n- Preis: ab 149 €/Monat\n- Setup: Selbst-Onboarding\n\n**Features:**\n✓ Daily Power Hour Engine\n✓ Follow-Up Sequenzen (3 aktive)\n✓ Objection Brain (Standard-Set)\n✓ Basic Analytics\n✓ 1 Company Knowledge Setup\n\n---\n\n**2. SALES FLOW TEAM** (5-25 Nutzer)\n*Für Vertriebsleiter & wachsende Teams*\n\n- Preis: ab 990 €/Monat\n- Setup: 3.000-5.000 € einmalig\n\n**Features:**\n✓ Alles aus Solo\n✓ Team Dashboard & Leaderboards\n✓ Erweiterte Analytics & Reports\n✓ Objection Playbooks (Team-shared)\n✓ Rollen & Berechtigungen\n✓ Onboarding-Workshops (2x 90 Min)\n✓ Priority Support\n\n---\n\n**3. SALES FLOW ENTERPRISE** (50+ Nutzer)\n*Für Unternehmen & Multi-Location*\n\n- Preis: ab 2.400 €/Monat\n- Setup: ab 9.800 € einmalig\n- Mindestlaufzeit: 12 Monate\n\n**Features:**\n✓ Alles aus Team\n✓ Custom Integrations\n✓ White-Label Option\n✓ Dedicated Success Manager\n✓ SLA & Uptime Guarantee\n✓ Eigenes Knowledge-Training\n\n---\n\n**Hinweis:** Alle Preise verstehen sich als Richtwerte (ab-Preise). Individuelles Angebot nach Discovery Call.",
+      "content_short": "Solo ab 149€, Team ab 990€/Mo, Enterprise ab 2.400€/Mo + Setup.",
+      "keywords": ["pricing", "preise", "pakete", "solo", "team", "enterprise"]
+    },
+    {
+      "id": "marketing_003",
+      "domain": "company",
+      "type": "faq",
+      "topic": "Landingpage Copy",
+      "subtopic": "Hero Section",
+      "title": "Landingpage - Hero Section Copy",
+      "content": "**HERO SECTION - LANDING PAGE**\n\n---\n\n**Pre-Headline:**\n\"Für Vertriebsleiter im Network Marketing, Immobilien & Finance\"\n\n**Headline:**\n\"Stopp das Lead-Sterben.\nMehr Termine. Weniger Chaos. Null CRM-Drama.\"\n\n**Subheadline:**\n\"Sales Flow AI ist dein KI-Vertriebs-Copilot, der deinem Team jeden Tag sagt, wen sie anrufen sollen – und was sie sagen müssen. Kein weiteres Tool. Kein Tracking-Stress. Einfach Ergebnisse.\"\n\n**CTA Button:**\n\"Demo buchen – Ergebnisse in 15 Min sehen\"\n\n**Trust Badges:**\n- \"⭐ 4.9/5 Nutzerbewertung\"\n- \"🚀 500+ aktive Vertriebler\"\n- \"🏆 2024 AI Sales Tool Award\"\n\n**Social Proof Mini:**\n\"Zinzino Team Frankfurt: +47% Terminquote in 90 Tagen\"\n\n---\n\n**Alternative Headlines (A/B Test):**\n\n*Option B:*\n\"67% deiner Leads sterben im Follow-up. Wir ändern das.\"\n\n*Option C:*\n\"Dein Team hat genug Leads. Es braucht eine bessere Strategie.\"",
+      "content_short": "Hero: 'Stopp das Lead-Sterben' + KI-Copilot Positionierung + Demo CTA.",
+      "keywords": ["landingpage", "hero", "headline", "copy", "cta", "conversion"]
+    },
+    {
+      "id": "marketing_004",
+      "domain": "company",
+      "type": "faq",
+      "topic": "Social Media",
+      "subtopic": "LinkedIn Post Templates",
+      "title": "LinkedIn Content Templates",
+      "content": "**LINKEDIN POST TEMPLATES**\n\n---\n\n**Template 1: Problem-Agitate-Solve**\n\n🔴 Harte Wahrheit:\n\n67% deiner Leads werden nie zum zweiten Mal kontaktiert.\n\nNicht weil dein Team faul ist.\nSondern weil niemand weiß, WEN man WANN WOMIT kontaktieren soll.\n\nDas Ergebnis?\n- Heiße Leads werden kalt\n- Follow-ups vergessen\n- Geld auf dem Tisch liegen gelassen\n\nWir haben das für 500+ Vertriebler gelöst.\n\nMit einem KI-Copilot, der jeden Morgen sagt:\n\"Diese 5 Leute. Diese Nachricht. Jetzt.\"\n\nKein CRM. Keine Komplexität. Nur Ergebnisse.\n\n→ Link in Bio für Demo\n\n---\n\n**Template 2: Before/After**\n\nVorher: \n📋 Excel-Listen, vergessene Follow-ups, \"Ich ruf morgen an\"\n\nNachher:\n🎯 KI-gesteuerte Power Hour, 40% mehr Termine, Team das liefert\n\nDer Unterschied?\n5 Minuten Setup. Ein Tool. Null Drama.\n\nWir zeigen dir wie.\n\n---\n\n**Template 3: Curiosity Hook**\n\nIch habe letzte Woche etwas Verrücktes gesehen.\n\nEin Vertriebler hat 3x so viele Termine gemacht wie seine Kollegen.\n\nSein Geheimnis?\nEr wusste jeden Morgen GENAU:\n- Wen anrufen\n- Was sagen\n- Wann nachfassen\n\nNicht Talent. Nicht Glück. Sondern System.\n\nUnd dieses System kann jeder haben.\n\nFrag mich wie. 👇",
+      "content_short": "LinkedIn Templates: Problem-Agitate-Solve, Before/After, Curiosity Hook.",
+      "keywords": ["linkedin", "social", "post", "template", "content", "marketing"]
+    },
+    {
+      "id": "marketing_005",
+      "domain": "company",
+      "type": "faq",
+      "topic": "Email Sequences",
+      "subtopic": "Outbound Sequence",
+      "title": "Cold Outreach Email Sequence",
+      "content": "**COLD OUTREACH SEQUENCE (5 Emails)**\n\n---\n\n**Email 1: Problem Hook** (Tag 0)\n\nBetreff: 67% deiner Leads sterben still\n\n[Vorname],\n\nschnelle Frage:\n\nWie viele Leads hat dein Team letzte Woche ein zweites Mal kontaktiert?\n\nWenn die Antwort \"keine Ahnung\" ist – bist du nicht allein.\n\nDas ist das #1 Problem im Vertrieb: Nicht zu wenig Leads. Sondern zu wenig System.\n\nIch zeige Vertriebsleitern, wie sie 40% mehr Termine aus der GLEICHEN Leadmenge holen.\n\nOhne neues CRM. Ohne Tracking-Terror.\n\nHast du 15 Min diese Woche?\n\n---\n\n**Email 2: Value Add** (Tag 3)\n\nBetreff: Re: 67% deiner Leads\n\n[Vorname],\n\nich teile mal was, das funktioniert:\n\nDie \"5-3-1 Regel\" für Follow-ups:\n- 5 Kontaktversuche minimum\n- 3 verschiedene Kanäle\n- 1 klarer Next Step in jeder Nachricht\n\nTeams, die das umsetzen, sehen 30-50% mehr Conversions.\n\nProblem: Manuell ist das Chaos. \n\nDeswegen haben wir's automatisiert.\n\n15 Min für eine Demo?\n\n---\n\n**Email 3: Social Proof** (Tag 7)\n\nBetreff: Was [Bekanntes Team] anders macht\n\n[Vorname],\n\n[Kundenname] hatte das gleiche Problem wie du.\n\n47 Leads pro Woche. 3 Termine.\n\nNach 90 Tagen mit unserem System:\n47 Leads. 14 Termine.\n\nKein Wunder. Kein Zufall. System.\n\nMöchtest du sehen, wie?\n\n---\n\n**Email 4: Direct Ask** (Tag 14)\n\nBetreff: Ja oder Nein?\n\n[Vorname],\n\nich halte es kurz:\n\nIch glaube, wir können deinem Team helfen, mehr aus euren Leads rauszuholen.\n\nAber ich weiß es nicht sicher – ich kenne euren Case noch nicht.\n\n15 Minuten. Kein Pitch. Nur Klarheit.\n\nJa oder Nein – beides ist ok.\n\n---\n\n**Email 5: Breakup** (Tag 21)\n\nBetreff: Soll ich aufhören zu schreiben?\n\n[Vorname],\n\nkeine Antwort ist auch eine Antwort. Ich respektiere das.\n\nFalls sich deine Situation ändert – du weißt wo du mich findest.\n\nAlles Gute mit deinem Team!\n\nP.S. Falls das Timing einfach schlecht war: Antworte mit \"Später\" und ich melde mich in 3 Monaten nochmal.",
+      "content_short": "5-Email Cold Sequence: Hook, Value, Proof, Direct, Breakup.",
+      "keywords": ["email", "sequence", "outreach", "cold", "sales", "follow-up"]
+    },
+    {
+      "id": "marketing_006",
+      "domain": "company",
+      "type": "faq",
+      "topic": "Investor Materials",
+      "subtopic": "Pitch Deck Narrative",
+      "title": "Investor Pitch - Narrative Outline",
+      "content": "**INVESTOR PITCH NARRATIVE**\n\n---\n\n**SLIDE 1: Title**\nSales Flow AI\n\"KI-Copilot für Vertriebsteams\"\nSeed Round | €1.5M\n\n---\n\n**SLIDE 2: Problem**\n€4.7B werden jährlich in D-A-CH für Leads ausgegeben.\n67% davon sterben im Follow-up.\n\nWarum?\n- CRMs sind zu komplex → Adoption <30%\n- Keine klare Priorisierung → Wichtige Leads gehen unter\n- Kein Wissenstransfer → Jeder macht sein eigenes Ding\n\n---\n\n**SLIDE 3: Solution**\nSales Flow AI = Der KI-Copilot, den CRMs versprochen haben.\n\n✓ Tägliche Power Hour mit priorisierten Kontakten\n✓ KI-Einwandbehandlung in Echtzeit\n✓ Team-Analytics: Beste Praktiken für alle\n\nKein Ersatz für CRM. Eine Intelligenz-Schicht darüber.\n\n---\n\n**SLIDE 4: Product Demo**\n[Screenshot/Video]\n\n---\n\n**SLIDE 5: Market**\nTAM: €12B (Sales Enablement Software, Europa)\nSAM: €2.1B (SMB Sales Teams, DACH)\nSOM: €180M (Network Marketing + Immobilien + Finance)\n\nInitial Wedge: Network Marketing (10K+ Teams in DACH)\n\n---\n\n**SLIDE 6: Traction**\n- 500+ aktive User\n- €180K ARR (Monat 8)\n- 125% Net Revenue Retention\n- CAC: €420 | LTV: €4.200 (10:1)\n\n---\n\n**SLIDE 7: Business Model**\nSaaS + Setup Fees\n\nSolo: €149/Mo (1-3 User)\nTeam: €990/Mo (5-25 User) + €4K Setup\nEnterprise: Custom\n\nExpansion: Knowledge Modules, API Access, White-Label\n\n---\n\n**SLIDE 8: Team**\n[Gründer + Key Hires]\n\n---\n\n**SLIDE 9: The Ask**\nRaising: €1.5M Seed\n\nUse of Funds:\n- 60% Engineering (AI + Product)\n- 25% Sales & Marketing\n- 15% Operations\n\n18 Monate Runway → Series A Metrics",
+      "content_short": "Pitch Deck: Problem (67% Lead-Verlust) → Solution (KI-Copilot) → €1.5M Seed.",
+      "keywords": ["investor", "pitch", "deck", "funding", "startup", "seed"]
+    },
+    {
+      "id": "marketing_007",
+      "domain": "generic",
+      "type": "template_helper",
+      "topic": "Testimonial Requests",
+      "subtopic": "Wie man Testimonials bekommt",
+      "title": "Testimonial Request Templates",
+      "content": "**TESTIMONIAL REQUEST TEMPLATES**\n\n---\n\n**Template 1: Nach positiver Interaktion**\n\nHey [Name]!\n\nKurze Frage: Du hast letzte Woche erwähnt, dass [spezifisches Ergebnis].\n\nWärst du bereit, das in 2-3 Sätzen für unsere Website aufzuschreiben?\n\nNur das, was du mir erzählt hast – keine Sales-Sprache nötig. 😊\n\nWenn ja, kannst du mir einfach antworten oder hier klicken: [Link]\n\nDanke dir!\n\n---\n\n**Template 2: Video-Testimonial Anfrage**\n\nHey [Name]!\n\nIch bin mega stolz auf deine Ergebnisse – [spezifisches Ergebnis].\n\nHättest du Lust, das in einem kurzen Video (60-90 Sek) zu teilen?\n\nKeine Sorge, das muss nicht perfekt sein:\n- Aufnehmen mit dem Handy\n- Einfach erzählen, was sich verändert hat\n- Senden per WhatsApp oder [Link]\n\nIch gebe dir auch gerne Stichwort-Fragen vorab.\n\nWas sagst du?\n\n---\n\n**Fragen für Video-Testimonials:**\n\n1. \"Was war deine größte Herausforderung bevor wir zusammengearbeitet haben?\"\n2. \"Was hat sich seit der Nutzung von [Produkt/Service] verändert?\"\n3. \"Was würdest du jemandem sagen, der noch überlegt?\"\n\n---\n\n**Pro-Tipps:**\n- Frag innerhalb von 48h nach einem Erfolg\n- Mach es SO EINFACH wie möglich\n- Biete an, es für sie zu formulieren (sie müssen nur bestätigen)\n- Verlinke direkt zu einem Formular/Upload-Link",
+      "content_short": "Testimonial Requests: Nach Erfolg fragen, einfach machen, Video optional.",
+      "keywords": ["testimonial", "review", "feedback", "social-proof", "marketing"]
+    },
+    {
+      "id": "marketing_008",
+      "domain": "generic",
+      "type": "template_helper",
+      "topic": "Case Study Framework",
+      "subtopic": "Wie man Case Studies schreibt",
+      "title": "Case Study Template",
+      "content": "**CASE STUDY FRAMEWORK**\n\n---\n\n**STRUKTUR:**\n\n**1. Headline** (Ergebnis im Fokus)\n\"Wie [Kunde] [X% Verbesserung] in [Y Zeitraum] erreicht hat\"\n\nBeispiel:\n\"Wie Team Fischer +47% mehr Termine in 90 Tagen generiert hat\"\n\n---\n\n**2. Snapshot Box**\n- Kunde: [Name/Firma]\n- Branche: [Vertical]\n- Teamgröße: [X Personen]\n- Zeitraum: [X Wochen/Monate]\n- Ergebnis: [Haupt-KPI]\n\n---\n\n**3. Die Herausforderung** (Problem)\n\"Bevor [Kunde] zu uns kam, hatte das Team mit [spezifisches Problem].\"\n\n- Was war der Status quo?\n- Was haben sie vorher versucht?\n- Was hat nicht funktioniert?\n- Was war der Pain Point? (emotional + rational)\n\n---\n\n**4. Die Lösung** (Was wir gemacht haben)\n\"Gemeinsam haben wir [Maßnahme 1], [Maßnahme 2] und [Maßnahme 3] implementiert.\"\n\n- Welche Features/Module genutzt?\n- Wie war der Onboarding-Prozess?\n- Was war der Zeitaufwand?\n\n---\n\n**5. Die Ergebnisse** (Zahlen, Zahlen, Zahlen)\n\"Nach [Zeitraum] hat [Kunde] folgende Ergebnisse erzielt:\"\n\n- **Haupt-KPI:** +47% mehr Termine\n- **Sekundär-KPI:** 3x schnellere Follow-up Zeit\n- **Qualitativ:** \"Das Team ist motivierter\"\n\n---\n\n**6. Zitat** (Testimonial)\n\"[Wörtliches Zitat vom Kunden, 2-3 Sätze]\"\n– [Name], [Position] bei [Firma]\n\n---\n\n**7. CTA** (Handlungsaufruf)\n\"Möchtest du ähnliche Ergebnisse? [Button: Demo buchen]\"",
+      "content_short": "Case Study: Headline → Snapshot → Problem → Lösung → Ergebnisse → Zitat → CTA.",
+      "keywords": ["case-study", "template", "success-story", "marketing", "content"]
+    }
+  ]
+}

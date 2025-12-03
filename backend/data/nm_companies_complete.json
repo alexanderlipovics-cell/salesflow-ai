@@ -1,0 +1,1764 @@
+{
+  "companies": [
+    {
+      "name": "Zinzino",
+      "legal_name": "Zinzino AB",
+      "founded_year": 2007,
+      "headquarters_country": "SE",
+      "headquarters_city": "Gothenburg",
+      "industry": "health",
+      "product_category": [
+        "omega3",
+        "supplements",
+        "skincare",
+        "nutrition"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "SE",
+        "NO",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 250000,
+      "estimated_distributors_dach": 15000,
+      "website_url": "https://www.zinzino.com",
+      "description": "Zinzino ist ein skandinavisches Network-Marketing-Unternehmen, das sich auf Omega-3-Balance-Produkte spezialisiert hat. Mit dem BalanceTest und BalanceOil hat Zinzino eine wissenschaftlich fundierte Produktlinie entwickelt, die in DACH stark wächst.",
+      "founded_by": "Örjan Saele",
+      "key_selling_points": [
+        "Wissenschaftlich basierter BalanceTest zur Messung des Omega-6:3-Verhältnisses",
+        "Premium Omega-3 Produkte mit Polyphenolen aus Oliven",
+        "Starkes digitales Vertriebssystem mit Auto-Ship",
+        "Fokus auf messbare Gesundheitsresultate"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste Menschen, die wissenschaftlich fundierte Supplements mit nachweisbaren Ergebnissen suchen.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Herbalife",
+      "legal_name": "Herbalife Nutrition Ltd.",
+      "founded_year": 1980,
+      "headquarters_country": "US",
+      "headquarters_city": "Los Angeles",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "weight_loss",
+        "nutrition",
+        "personal_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 4300000,
+      "estimated_distributors_dach": 85000,
+      "website_url": "https://www.herbalife.com",
+      "description": "Herbalife ist ein weltweit tätiges Network-Marketing-Unternehmen für Ernährungs- und Wellnessprodukte. In DACH wird vor allem mit Abnehm- und Vitalprogrammen gearbeitet, die über selbstständige Vertriebspartner vermarktet werden.",
+      "founded_by": "Mark R. Hughes",
+      "key_selling_points": [
+        "Breit aufgestelltes Portfolio an Ernährungsprodukten",
+        "Starke internationale Marke mit hoher Bekanntheit",
+        "Umfangreiche Schulungs- und Eventstruktur für Vertriebspartner"
+      ],
+      "target_customer_profile": "Gesundheits- und figurbewusste Konsumenten, die Abnehm- und Vitalprogramme mit persönlicher Betreuung suchen.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Amway",
+      "legal_name": "Amway Corporation",
+      "founded_year": 1959,
+      "headquarters_country": "US",
+      "headquarters_city": "Ada",
+      "industry": "multi_category",
+      "product_category": [
+        "nutrition",
+        "beauty",
+        "home_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 1000000,
+      "estimated_distributors_dach": 45000,
+      "website_url": "https://www.amway.com",
+      "description": "Amway ist eines der größten Direktvertriebsunternehmen der Welt und vertreibt Nahrungsergänzung, Kosmetik und Haushaltsprodukte. In DACH arbeitet Amway mit einem großen Netzwerk an selbstständigen Geschäftspartnern.",
+      "founded_by": "Rich DeVos und Jay Van Andel",
+      "key_selling_points": [
+        "Sehr breites Produktportfolio aus einer Hand",
+        "Langjährige Marktpräsenz und hohe Systemsicherheit",
+        "Ausgebautes Schulungs- und Unterstützungssystem für Partner"
+      ],
+      "target_customer_profile": "Familien und Haushalte, die hochwertige Produkte rund um Gesundheit, Schönheit und Haushalt aus einer Quelle bevorzugen.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Vorwerk",
+      "legal_name": "Vorwerk SE & Co. KG",
+      "founded_year": 1883,
+      "headquarters_country": "DE",
+      "headquarters_city": "Wuppertal",
+      "industry": "household",
+      "product_category": [
+        "kitchen_appliances",
+        "vacuum_cleaners"
+      ],
+      "compensation_plan": "party_plan",
+      "active_in_dach": true,
+      "active_countries": [
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 98000,
+      "estimated_distributors_dach": 98000,
+      "website_url": "https://www.vorwerk.de",
+      "description": "Vorwerk ist ein traditionsreicher Direktvertriebskonzern und in DACH vor allem durch Thermomix und Kobold bekannt. Der Vertrieb erfolgt über Berater:innen, die Produktvorführungen vor Ort oder online durchführen.",
+      "founded_by": "Carl und Adolf Vorwerk",
+      "key_selling_points": [
+        "Premium-Haushaltsgeräte mit sehr hoher Markenbekanntheit",
+        "Bewährtes Direktvertriebsmodell über persönliche Beratung",
+        "Hohe Kundenbindung durch Service und Ersatzteilversorgung"
+      ],
+      "target_customer_profile": "Haushalte mit Qualitätsanspruch, die in langlebige Premiumgeräte investieren und persönliche Beratung schätzen.",
+      "member_of_associations": [
+        "BDD",
+        "DSE"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "PM International",
+      "legal_name": "PM-International AG",
+      "founded_year": 1993,
+      "headquarters_country": "LU",
+      "headquarters_city": "Schengen",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "weight_management",
+        "sports_nutrition"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "DE",
+        "AT",
+        "CH",
+        "LU"
+      ],
+      "estimated_distributors": 180000,
+      "estimated_distributors_dach": 45000,
+      "website_url": "https://www.pm-international.com",
+      "description": "PM-International vertreibt unter der Marke FitLine hochwertige Nahrungsergänzungen und Fitnessprodukte. Der Fokus liegt auf sichtbaren Ergebnissen, Sportkooperationen und einem professionellen Markenauftritt.",
+      "founded_by": "Rolf Sorg",
+      "key_selling_points": [
+        "Starke Gesundheits- und Fitnessmarke (FitLine)",
+        "International skalierter Vergütungsplan mit Karrierestufen",
+        "Intensive Aus- und Weiterbildung der Vertriebspartner"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste Menschen, Sportler:innen und Lifestyle-orientierte Kund:innen, die Premium-Supplements suchen.",
+      "member_of_associations": [
+        "DSA",
+        "DSE"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "LR Health & Beauty",
+      "legal_name": "LR Health & Beauty SE",
+      "founded_year": 1985,
+      "headquarters_country": "DE",
+      "headquarters_city": "Ahlen",
+      "industry": "beauty_health",
+      "product_category": [
+        "supplements",
+        "aloevera",
+        "fragrances",
+        "cosmetics"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 120000,
+      "estimated_distributors_dach": 65000,
+      "website_url": "https://www.lrworld.com",
+      "description": "LR Health & Beauty ist ein deutsches Network-Marketing-Unternehmen für Nahrungsergänzung und Beautyprodukte. Besonders bekannt sind die Aloe-Vera- und Parfümserien.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Made-in-Germany-Positionierung mit Qualitätsfokus",
+        "Breite Produktpalette von Gesundheit bis Beauty",
+        "Attraktives Bonus- und Autokonzept für Führungskräfte"
+      ],
+      "target_customer_profile": "Kund:innen, die hochwertige Gesundheits- und Beautyprodukte aus deutscher Produktion bevorzugen.",
+      "member_of_associations": [
+        "BDD"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Juice Plus",
+      "legal_name": "The Juice Plus+ Company",
+      "founded_year": 1993,
+      "headquarters_country": "US",
+      "headquarters_city": "Collierville",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "whole_food_concentrates"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 150000,
+      "estimated_distributors_dach": 25000,
+      "website_url": "https://www.juiceplus.com",
+      "description": "Juice Plus vertreibt Nahrungsergänzungen auf Basis von Obst- und Gemüsekonzentraten sowie Shakes und Riegel. Der Fokus liegt auf Familiengesundheit und langfristiger Einnahme.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Einfache, alltagstaugliche Supplement-Konzepte",
+        "Starke Community-Programme wie 'Healthy Starts for Families'",
+        "Langjährige Marktpräsenz in Europa"
+      ],
+      "target_customer_profile": "Familien und Vielbeschäftigte, die ihre Ernährung unkompliziert ergänzen möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Forever Living Products",
+      "legal_name": "Forever Living Products International, Inc.",
+      "founded_year": 1978,
+      "headquarters_country": "US",
+      "headquarters_city": "Scottsdale",
+      "industry": "health_beauty",
+      "product_category": [
+        "aloevera",
+        "supplements",
+        "personal_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 250000,
+      "estimated_distributors_dach": 35000,
+      "website_url": "https://www.foreverliving.com",
+      "description": "Forever Living Products ist auf Aloe-Vera-basierte Getränke, Nahrungsergänzung und Pflegeprodukte spezialisiert. Der Vertrieb erfolgt weltweit über selbstständige FBOs.",
+      "founded_by": "Rex Maughan",
+      "key_selling_points": [
+        "Starke Spezialisierung auf Aloe-Vera-Produkte",
+        "Vertikal integrierte Wertschöpfungskette (eigene Plantagen)",
+        "Langjährige, stabile Präsenz im Direktvertrieb"
+      ],
+      "target_customer_profile": "Gesundheits- und naturbewusste Menschen, die Aloe-Vera-Produkte für inneres und äußeres Wohlbefinden nutzen möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Ringana",
+      "legal_name": "RINGANA GmbH",
+      "founded_year": 1996,
+      "headquarters_country": "AT",
+      "headquarters_city": "Sankt Johann in der Haide",
+      "industry": "beauty_health",
+      "product_category": [
+        "fresh_cosmetics",
+        "supplements",
+        "superfoods"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "AT",
+        "DE",
+        "CH"
+      ],
+      "estimated_distributors": 75000,
+      "estimated_distributors_dach": 75000,
+      "website_url": "https://www.ringana.com",
+      "description": "Ringana ist ein österreichisches Unternehmen für frische Naturkosmetik und Nahrungsergänzung. Alle Produkte werden frisch in Österreich produziert und ohne Konservierungsstoffe ausgeliefert.",
+      "founded_by": "Andreas Wilfinger und Ulla Wannemacher",
+      "key_selling_points": [
+        "Frische, vegane Naturkosmetik ohne Konservierungsstoffe",
+        "Nachhaltige Verpackungs- und Logistiklösungen",
+        "Starke Marke im DACH-Raum mit Green-Lifestyle-Positionierung"
+      ],
+      "target_customer_profile": "Nachhaltigkeitsorientierte Konsument:innen, die frische Naturkosmetik und Supplements aus Österreich bevorzugen.",
+      "member_of_associations": [
+        "BDD"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "doTERRA",
+      "legal_name": "doTERRA International, LLC",
+      "founded_year": 2008,
+      "headquarters_country": "US",
+      "headquarters_city": "Pleasant Grove",
+      "industry": "essential_oils",
+      "product_category": [
+        "essential_oils",
+        "aromatherapy",
+        "wellness"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 500000,
+      "estimated_distributors_dach": 55000,
+      "website_url": "https://www.doterra.com",
+      "description": "doTERRA ist auf ätherische Öle und aromatherapeutische Produkte spezialisiert. Berater:innen arbeiten viel über Produkterlebnisse, Workshops und Online-Communities.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Breites Sortiment an ätherischen Ölen in hoher Qualität",
+        "Starkes Storytelling rund um Herkunft und Reinheit",
+        "Viele Schulungsressourcen zu Anwendung und Wirkung"
+      ],
+      "target_customer_profile": "Personen, die natürliche Alternativen für Wohlbefinden, Raumduft und Hausapotheke suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Young Living",
+      "legal_name": "Young Living Essential Oils LC",
+      "founded_year": 1993,
+      "headquarters_country": "US",
+      "headquarters_city": "Lehi",
+      "industry": "essential_oils",
+      "product_category": [
+        "essential_oils",
+        "home_products",
+        "personal_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 450000,
+      "estimated_distributors_dach": 48000,
+      "website_url": "https://www.youngliving.com",
+      "description": "Young Living ist einer der Pioniere im Bereich ätherische Öle und vertreibt ein breites Sortiment an Ölen und Lifestyle-Produkten. Der Vertrieb erfolgt über begeisterte Produktanwender:innen.",
+      "founded_by": "Gary Young",
+      "key_selling_points": [
+        "Eigene Farmen und 'Seed to Seal'-Qualitätsversprechen",
+        "Große internationale Community und Events",
+        "Breites Lifestyle-Sortiment über Öle hinaus"
+      ],
+      "target_customer_profile": "Kund:innen, die ätherische Öle intensiv in Alltag und Haushalt integrieren möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Mary Kay",
+      "legal_name": "Mary Kay Inc.",
+      "founded_year": 1963,
+      "headquarters_country": "US",
+      "headquarters_city": "Dallas",
+      "industry": "beauty",
+      "product_category": [
+        "cosmetics",
+        "skincare",
+        "fragrances"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 350000,
+      "estimated_distributors_dach": 28000,
+      "website_url": "https://www.marykay.com",
+      "description": "Mary Kay ist ein globales Kosmetikunternehmen, das ausschließlich über selbstständige Beauty Consultants vertreibt. Das Unternehmen ist bekannt für seine pinken Cadillacs und die starke Frauenförderung.",
+      "founded_by": "Mary Kay Ash",
+      "key_selling_points": [
+        "Ikonische Marke mit starker Historie",
+        "Umfassendes Produktportfolio für Hautpflege und Make-up",
+        "Fokus auf weibliches Unternehmertum und Empowerment"
+      ],
+      "target_customer_profile": "Frauen, die qualitativ hochwertige Kosmetik mit persönlicher Beratung und Produkterlebnis suchen.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Avon",
+      "legal_name": "Avon Products, Inc.",
+      "founded_year": 1886,
+      "headquarters_country": "GB",
+      "headquarters_city": "London",
+      "industry": "beauty",
+      "product_category": [
+        "cosmetics",
+        "skincare",
+        "fragrances",
+        "jewelry"
+      ],
+      "compensation_plan": "direct_selling",
+      "active_in_dach": true,
+      "active_countries": [
+        "GB",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 500000,
+      "estimated_distributors_dach": 42000,
+      "website_url": "https://www.avon.com",
+      "description": "Avon ist eine der ältesten und bekanntesten Direktvertriebsmarken weltweit. Das Unternehmen vertreibt Kosmetik, Schmuck und Wellness-Produkte über Representatives.",
+      "founded_by": "David H. McConnell",
+      "key_selling_points": [
+        "Sehr lange Marktpräsenz und hohe Markenbekanntheit",
+        "Breites Produktportfolio zu erschwinglichen Preisen",
+        "Traditionelles Katalog- und Online-Vertriebsmodell"
+      ],
+      "target_customer_profile": "Preisbewusste Kundinnen, die Qualitätsprodukte zu fairen Preisen über persönliche Beziehungen kaufen möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Tupperware",
+      "legal_name": "Tupperware Brands Corporation",
+      "founded_year": 1946,
+      "headquarters_country": "US",
+      "headquarters_city": "Orlando",
+      "industry": "household",
+      "product_category": [
+        "storage_containers",
+        "kitchen_products"
+      ],
+      "compensation_plan": "party_plan",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 180000,
+      "estimated_distributors_dach": 25000,
+      "website_url": "https://www.tupperware.com",
+      "description": "Tupperware ist der Pionier des Party-Plan-Verkaufs und weltbekannt für seine Kunststoff-Aufbewahrungslösungen. Der Vertrieb erfolgt hauptsächlich über Tupperpartys.",
+      "founded_by": "Earl Tupper",
+      "key_selling_points": [
+        "Ikonische Marke mit sehr hoher Bekanntheit",
+        "Langlebige, hochwertige Produkte mit Garantie",
+        "Bewährtes Party-Konzept mit sozialem Aspekt"
+      ],
+      "target_customer_profile": "Haushalte, die langlebige Aufbewahrungslösungen und Küchenprodukte in geselliger Atmosphäre kennenlernen möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Nu Skin",
+      "legal_name": "Nu Skin Enterprises, Inc.",
+      "founded_year": 1984,
+      "headquarters_country": "US",
+      "headquarters_city": "Provo",
+      "industry": "beauty_health",
+      "product_category": [
+        "skincare",
+        "supplements",
+        "devices"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 120000,
+      "estimated_distributors_dach": 18000,
+      "website_url": "https://www.nuskin.com",
+      "description": "Nu Skin kombiniert Hautpflege mit innovativen Beauty-Geräten und Nahrungsergänzung. Das Unternehmen setzt auf Wissenschaft und Innovation im Premium-Segment.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Innovative Beauty-Devices wie ageLOC-Geräte",
+        "Wissenschaftlich fundierte Anti-Aging-Produkte",
+        "Globale Reichweite mit starkem asiatischem Markt"
+      ],
+      "target_customer_profile": "Anspruchsvolle Kund:innen, die bereit sind, in Premium-Anti-Aging-Lösungen zu investieren.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Jeunesse",
+      "legal_name": "Jeunesse Global Holdings, LLC",
+      "founded_year": 2009,
+      "headquarters_country": "US",
+      "headquarters_city": "Lake Mary",
+      "industry": "beauty_health",
+      "product_category": [
+        "skincare",
+        "supplements",
+        "weight_management"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 95000,
+      "estimated_distributors_dach": 12000,
+      "website_url": "https://www.jeunesseglobal.com",
+      "description": "Jeunesse fokussiert sich auf jugendliche Ausstrahlung und Vitalität mit seiner Instantly Ageless Produktlinie und Y.E.S. Youth Enhancement System.",
+      "founded_by": "Randy Ray und Wendy Lewis",
+      "key_selling_points": [
+        "Sofort sichtbare Ergebnisse durch Instantly Ageless",
+        "Modernes digitales Marketing und Social-Media-Fokus",
+        "Schnelles globales Wachstum"
+      ],
+      "target_customer_profile": "Trendbewusste Menschen, die schnelle Anti-Aging-Ergebnisse und moderne Produkte suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Oriflame",
+      "legal_name": "Oriflame Cosmetics SA",
+      "founded_year": 1967,
+      "headquarters_country": "CH",
+      "headquarters_city": "Schaffhausen",
+      "industry": "beauty",
+      "product_category": [
+        "cosmetics",
+        "skincare",
+        "fragrances",
+        "wellness"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "CH",
+        "DE",
+        "AT"
+      ],
+      "estimated_distributors": 320000,
+      "estimated_distributors_dach": 28000,
+      "website_url": "https://www.oriflame.com",
+      "description": "Oriflame ist ein schwedisch-schweizerisches Beauty-Unternehmen mit starker Präsenz in Europa. Das Unternehmen setzt auf natürliche Inhaltsstoffe und Nachhaltigkeit.",
+      "founded_by": "Jonas af Jochnick und Robert af Jochnick",
+      "key_selling_points": [
+        "Schwedische Natural Beauty-Tradition",
+        "Breites Produktportfolio mit Fokus auf Naturkosmetik",
+        "Starke Präsenz in Osteuropa und aufstrebenden Märkten"
+      ],
+      "target_customer_profile": "Frauen, die natürliche Schönheitsprodukte mit skandinavischem Design schätzen.",
+      "member_of_associations": [
+        "WFDSA",
+        "DSE"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Natura",
+      "legal_name": "Natura Cosméticos S.A.",
+      "founded_year": 1969,
+      "headquarters_country": "BR",
+      "headquarters_city": "São Paulo",
+      "industry": "beauty",
+      "product_category": [
+        "cosmetics",
+        "skincare",
+        "fragrances"
+      ],
+      "compensation_plan": "direct_selling",
+      "active_in_dach": false,
+      "active_countries": [
+        "BR",
+        "AR",
+        "CL",
+        "MX"
+      ],
+      "estimated_distributors": 185000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.natura.com",
+      "description": "Natura ist ein brasilianisches Kosmetikunternehmen, das für nachhaltige Produkte aus dem Amazonas bekannt ist. In Europa nur begrenzt aktiv.",
+      "founded_by": "Luiz Seabra",
+      "key_selling_points": [
+        "Nachhaltige Produkte aus Amazonas-Rohstoffen",
+        "Starke Corporate Social Responsibility",
+        "Marktführer in Lateinamerika"
+      ],
+      "target_customer_profile": "Umweltbewusste Kund:innen, die natürliche Kosmetik aus nachhaltiger Produktion bevorzugen.",
+      "member_of_associations": [
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Partylite",
+      "legal_name": "PartyLite Worldwide, LLC",
+      "founded_year": 1973,
+      "headquarters_country": "US",
+      "headquarters_city": "Plymouth",
+      "industry": "home_decor",
+      "product_category": [
+        "candles",
+        "home_fragrance",
+        "decor"
+      ],
+      "compensation_plan": "party_plan",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 45000,
+      "estimated_distributors_dach": 8500,
+      "website_url": "https://www.partylite.com",
+      "description": "PartyLite ist spezialisiert auf hochwertige Kerzen und Raumdüfte. Der Verkauf erfolgt über Candle Parties und Online-Shows.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Premium-Kerzen mit langer Brenndauer",
+        "Gemütliches Party-Konzept rund um Düfte und Ambiente",
+        "Saisonale Kollektionen und Dekor-Produkte"
+      ],
+      "target_customer_profile": "Menschen, die ihr Zuhause mit hochwertigen Kerzen und Düften gemütlich gestalten möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Scentsy",
+      "legal_name": "Scentsy, Inc.",
+      "founded_year": 2004,
+      "headquarters_country": "US",
+      "headquarters_city": "Meridian",
+      "industry": "home_fragrance",
+      "product_category": [
+        "wax_warmers",
+        "fragrances",
+        "home_decor"
+      ],
+      "compensation_plan": "party_plan",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 125000,
+      "estimated_distributors_dach": 12000,
+      "website_url": "https://www.scentsy.com",
+      "description": "Scentsy revolutionierte den Duftkerzen-Markt mit flammlosen Wachswärmern. Das Unternehmen vertreibt Duftwachs und elektrische Warmer über Consultants.",
+      "founded_by": "Orville Thompson und Heidi Thompson",
+      "key_selling_points": [
+        "Sichere Alternative zu Duftkerzen (flammlos)",
+        "Große Duftvielfalt mit häufigen Neuheiten",
+        "Dekorative Warmer-Designs für jeden Geschmack"
+      ],
+      "target_customer_profile": "Familien und Haustierbesitzer, die sichere Raumdüfte ohne offene Flamme bevorzugen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Modere",
+      "legal_name": "Modere Inc.",
+      "founded_year": 1987,
+      "headquarters_country": "US",
+      "headquarters_city": "Springville",
+      "industry": "health_beauty",
+      "product_category": [
+        "supplements",
+        "skincare",
+        "household"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 65000,
+      "estimated_distributors_dach": 8500,
+      "website_url": "https://www.modere.com",
+      "description": "Modere (ehemals Neways) fokussiert auf Clean-Label-Produkte ohne schädliche Chemikalien. Das Portfolio umfasst Wellness, Beauty und Haushaltsprodukte.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Live Clean-Philosophie ohne Schadstoffe",
+        "Wissenschaftlich entwickelte Formulierungen",
+        "Fokus auf Kollagen und Anti-Aging"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste Verbraucher, die Wert auf saubere, schadstofffreie Produkte legen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Arbonne",
+      "legal_name": "Arbonne International, LLC",
+      "founded_year": 1980,
+      "headquarters_country": "US",
+      "headquarters_city": "Irvine",
+      "industry": "beauty_health",
+      "product_category": [
+        "skincare",
+        "nutrition",
+        "cosmetics"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 85000,
+      "estimated_distributors_dach": 9500,
+      "website_url": "https://www.arbonne.com",
+      "description": "Arbonne ist bekannt für vegane, tierversuchsfreie Premium-Hautpflege und Wellness-Produkte. Die Marke spricht gesundheits- und umweltbewusste Konsument:innen an.",
+      "founded_by": "Petter Mørck",
+      "key_selling_points": [
+        "100% vegan und cruelty-free",
+        "Hochwertige Hautpflege mit Schweizer Wurzeln",
+        "Ganzheitlicher Wellness-Ansatz"
+      ],
+      "target_customer_profile": "Ethisch bewusste Konsument:innen, die vegane Premium-Beauty und Wellness-Produkte suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Usana",
+      "legal_name": "USANA Health Sciences, Inc.",
+      "founded_year": 1992,
+      "headquarters_country": "US",
+      "headquarters_city": "Salt Lake City",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "skincare",
+        "weight_management"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 75000,
+      "estimated_distributors_dach": 7200,
+      "website_url": "https://www.usana.com",
+      "description": "Usana entwickelt wissenschaftlich fundierte Nahrungsergänzungsmittel in pharmazeutischer Qualität. Das Unternehmen ist bekannt für höchste Produktstandards.",
+      "founded_by": "Dr. Myron Wentz",
+      "key_selling_points": [
+        "Pharmazeutische Herstellungsqualität",
+        "Wissenschaftlich entwickelte Formulierungen",
+        "Athleten-Sponsorings und Sportfokus"
+      ],
+      "target_customer_profile": "Qualitätsbewusste Menschen, die in Premium-Nahrungsergänzung mit wissenschaftlichem Hintergrund investieren.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Isagenix",
+      "legal_name": "Isagenix International LLC",
+      "founded_year": 2002,
+      "headquarters_country": "US",
+      "headquarters_city": "Gilbert",
+      "industry": "health",
+      "product_category": [
+        "weight_loss",
+        "supplements",
+        "energy_drinks"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 68000,
+      "estimated_distributors_dach": 6800,
+      "website_url": "https://www.isagenix.com",
+      "description": "Isagenix ist spezialisiert auf Detox-Programme und Gewichtsmanagement-Systeme. Das Kernprodukt sind die 30-Tage-Cleanse-Programme.",
+      "founded_by": "Jim Coover und Kathy Coover",
+      "key_selling_points": [
+        "Strukturierte Abnehm- und Cleanse-Systeme",
+        "Community-Support und Challenges",
+        "Fokus auf Transformation und Lifestyle-Änderung"
+      ],
+      "target_customer_profile": "Menschen, die einen strukturierten Ansatz zum Abnehmen und zur Körperreinigung suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Kyäni",
+      "legal_name": "Kyäni, Inc.",
+      "founded_year": 2005,
+      "headquarters_country": "US",
+      "headquarters_city": "Idaho Falls",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "superfoods",
+        "skincare"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 55000,
+      "estimated_distributors_dach": 5500,
+      "website_url": "https://www.kyani.com",
+      "description": "Kyäni nutzt Superfoods aus Alaska wie wilde Blaubeeren und Rotlachs für seine Triangle of Health Produktlinie.",
+      "founded_by": "Hansen Familie",
+      "key_selling_points": [
+        "Alaska Superfoods als Hauptzutaten",
+        "Triangle of Health System (Sunrise, Sunset, Nitro)",
+        "Fokus auf Nitro-Boost und Energie"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die natürliche Superfoods für Energie und Vitalität suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "LifeWave",
+      "legal_name": "LifeWave, Inc.",
+      "founded_year": 2004,
+      "headquarters_country": "US",
+      "headquarters_city": "San Diego",
+      "industry": "wellness",
+      "product_category": [
+        "wellness_patches",
+        "phototherapy"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 42000,
+      "estimated_distributors_dach": 4200,
+      "website_url": "https://www.lifewave.com",
+      "description": "LifeWave entwickelt Phototherapie-Patches, die durch Lichtreflexion auf Akupunkturpunkte wirken sollen. Einzigartige Nischenpositionierung.",
+      "founded_by": "David Schmidt",
+      "key_selling_points": [
+        "Innovative Phototherapie-Technologie",
+        "Nicht-transdermale Patches (keine Substanzabgabe)",
+        "Über 70 Patente"
+      ],
+      "target_customer_profile": "Wellness-Enthusiasten, die alternative Gesundheitsmethoden ausprobieren möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Kannaway",
+      "legal_name": "Kannaway, LLC",
+      "founded_year": 2014,
+      "headquarters_country": "US",
+      "headquarters_city": "San Diego",
+      "industry": "wellness",
+      "product_category": [
+        "cbd_products",
+        "hemp_oil",
+        "wellness"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 38000,
+      "estimated_distributors_dach": 4800,
+      "website_url": "https://www.kannaway.com",
+      "description": "Kannaway ist ein Pionier im CBD/Hanföl-Network-Marketing. Das Unternehmen vertreibt eine breite Palette von Hanf-basierten Wellness-Produkten.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Erster CBD-MLM-Anbieter weltweit",
+        "Breites CBD-Produktportfolio",
+        "Wachsender CBD-Markt"
+      ],
+      "target_customer_profile": "Wellness-orientierte Menschen, die natürliche CBD-Produkte zur Entspannung und Regeneration suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Pruvit",
+      "legal_name": "Pruvit Ventures, Inc.",
+      "founded_year": 2015,
+      "headquarters_country": "US",
+      "headquarters_city": "Melissa",
+      "industry": "health",
+      "product_category": [
+        "keto_supplements",
+        "ketones",
+        "weight_loss"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 92000,
+      "estimated_distributors_dach": 9200,
+      "website_url": "https://www.pruvit.com",
+      "description": "Pruvit ist der Marktführer für exogene Ketone und Keto-Lifestyle-Produkte. Das Flaggschiff-Produkt KETO//OS ist sehr beliebt.",
+      "founded_by": "Brian Underwood",
+      "key_selling_points": [
+        "Marktführer bei exogenen Ketonen",
+        "Wissenschaftlich fundierte Keto-Technologie",
+        "Starke Social-Media-Community"
+      ],
+      "target_customer_profile": "Keto-Diät-Anhänger und Menschen, die schnelle Energie und mentale Klarheit suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "WorldVentures",
+      "legal_name": "WorldVentures Holdings, LLC",
+      "founded_year": 2005,
+      "headquarters_country": "US",
+      "headquarters_city": "Plano",
+      "industry": "travel",
+      "product_category": [
+        "travel_memberships",
+        "vacation_packages"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 65000,
+      "estimated_distributors_dach": 8500,
+      "website_url": "https://www.worldventures.com",
+      "description": "WorldVentures bietet Reise-Memberships mit vergünstigten Urlaubspaketen. Das Unternehmen kombiniert Reisen mit Network Marketing.",
+      "founded_by": "Wayne Nugent und Mike Azcue",
+      "key_selling_points": [
+        "Zugang zu vergünstigten Luxus-Reisen",
+        "DreamTrips - exklusive Gruppen-Reiseerlebnisse",
+        "You Should Be Here (YSBH) Lifestyle-Marketing"
+      ],
+      "target_customer_profile": "Reisebegeisterte, die gerne in der Gruppe verreisen und dabei sparen möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "ACN",
+      "legal_name": "ACN Inc.",
+      "founded_year": 1993,
+      "headquarters_country": "US",
+      "headquarters_city": "Concord",
+      "industry": "telecommunications",
+      "product_category": [
+        "telecommunications",
+        "energy",
+        "home_security"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 85000,
+      "estimated_distributors_dach": 8500,
+      "website_url": "https://www.acn.com",
+      "description": "ACN ist ein Telekommunikations- und Essential-Services-Anbieter im Network Marketing. Vertrieb von Telefonie, Internet, Energie und Sicherheitssystemen.",
+      "founded_by": "Greg Provenzano, Robert Stevanovski, Tony Cupisz, Mike Cupisz",
+      "key_selling_points": [
+        "Diversifiziertes Essential-Services-Portfolio",
+        "Residuales Einkommen durch monatliche Kundenzahlungen",
+        "Große internationale Präsenz"
+      ],
+      "target_customer_profile": "Menschen, die ihre Haushaltskosten senken und gleichzeitig ein Business aufbauen möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Xango",
+      "legal_name": "Xango, LLC",
+      "founded_year": 2002,
+      "headquarters_country": "US",
+      "headquarters_city": "Lehi",
+      "industry": "health",
+      "product_category": [
+        "mangosteen_juice",
+        "supplements"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": false,
+      "active_countries": [
+        "US"
+      ],
+      "estimated_distributors": 25000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.xango.com",
+      "description": "Xango war bekannt für Mangosteen-Saft, wurde aber von Zija International übernommen. Heute nur noch begrenzt aktiv.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Pionier bei Mangosteen-Produkten",
+        "Antioxidantien-Fokus"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die exotische Superfruit-Säfte bevorzugen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "limited"
+    },
+    {
+      "name": "Zija International",
+      "legal_name": "Zija International, Inc.",
+      "founded_year": 2008,
+      "headquarters_country": "US",
+      "headquarters_city": "Lehi",
+      "industry": "health",
+      "product_category": [
+        "moringa",
+        "supplements",
+        "weight_loss"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 48000,
+      "estimated_distributors_dach": 4200,
+      "website_url": "https://www.zijainternational.com",
+      "description": "Zija fokussiert auf Moringa-basierte Wellness-Produkte. Moringa gilt als Superfood mit vielen Nährstoffen.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Spezialisierung auf Moringa-Superfood",
+        "Gewichtsmanagement-Programme",
+        "Natürliche Energie-Drinks"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die natürliche Superfoods für Energie und Vitalität nutzen möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Rodan + Fields",
+      "legal_name": "Rodan + Fields, LLC",
+      "founded_year": 2002,
+      "headquarters_country": "US",
+      "headquarters_city": "San Francisco",
+      "industry": "skincare",
+      "product_category": [
+        "skincare",
+        "anti_aging"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": false,
+      "active_countries": [
+        "US",
+        "CA"
+      ],
+      "estimated_distributors": 125000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.rodanandfields.com",
+      "description": "Rodan + Fields wurde von den Entwicklern von Proactiv gegründet. Premium-Hautpflege mit dermatologischem Hintergrund. Hauptsächlich USA/Kanada.",
+      "founded_by": "Dr. Katie Rodan und Dr. Kathy Fields",
+      "key_selling_points": [
+        "Von Dermatologen entwickelt",
+        "Multi-Med Therapy-Ansatz",
+        "Premium-Hautpflege-Regimen"
+      ],
+      "target_customer_profile": "Qualitätsbewusste Kund:innen, die dermatologisch entwickelte Hautpflege bevorzugen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Beautycounter",
+      "legal_name": "Beautycounter Corporation",
+      "founded_year": 2013,
+      "headquarters_country": "US",
+      "headquarters_city": "Santa Monica",
+      "industry": "beauty",
+      "product_category": [
+        "clean_beauty",
+        "skincare",
+        "makeup"
+      ],
+      "compensation_plan": "direct_selling",
+      "active_in_dach": false,
+      "active_countries": [
+        "US",
+        "CA"
+      ],
+      "estimated_distributors": 48000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.beautycounter.com",
+      "description": "Beautycounter ist eine Clean-Beauty-Marke mit Mission. Das Unternehmen setzt sich für strengere Kosmetikgesetze ein und verbietet über 1.800 bedenkliche Inhaltsstoffe.",
+      "founded_by": "Gregg Renfrew",
+      "key_selling_points": [
+        "Strikte Never List von verbotenen Inhaltsstoffen",
+        "Transparenz und Advocacy für bessere Gesetze",
+        "Premium Clean Beauty"
+      ],
+      "target_customer_profile": "Umwelt- und gesundheitsbewusste Konsument:innen, die sichere Kosmetik ohne bedenkliche Chemikalien suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Plexus Worldwide",
+      "legal_name": "Plexus Worldwide, Inc.",
+      "founded_year": 2006,
+      "headquarters_country": "US",
+      "headquarters_city": "Scottsdale",
+      "industry": "health",
+      "product_category": [
+        "weight_loss",
+        "supplements",
+        "gut_health"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 82000,
+      "estimated_distributors_dach": 7400,
+      "website_url": "https://www.plexusworldwide.com",
+      "description": "Plexus fokussiert auf Darmgesundheit und Gewichtsmanagement. Das Pink Drink (Plexus Slim) ist das bekannteste Produkt.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Fokus auf Darmgesundheit als Schlüssel zum Wohlbefinden",
+        "Pink Drink als ikonisches Produkt",
+        "Ganzheitlicher Wellness-Ansatz"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die Verdauung und Gewicht über Darmgesundheit verbessern möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "It Works!",
+      "legal_name": "It Works! Global, Inc.",
+      "founded_year": 2001,
+      "headquarters_country": "US",
+      "headquarters_city": "Aventura",
+      "industry": "health_beauty",
+      "product_category": [
+        "body_wraps",
+        "supplements",
+        "skincare"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 105000,
+      "estimated_distributors_dach": 10500,
+      "website_url": "https://www.itworks.com",
+      "description": "It Works! wurde bekannt durch Body Wraps zur Körperstraffung. Heute umfasst das Portfolio Wellness, Beauty und Lifestyle-Produkte.",
+      "founded_by": "Mark Pentecost",
+      "key_selling_points": [
+        "Ikonische Ultimate Body Wraps",
+        "Schnelle sichtbare Ergebnisse",
+        "Lifestyle-Produkte für moderne Wellness"
+      ],
+      "target_customer_profile": "Menschen, die schnelle Body-Contouring-Ergebnisse und Wellness-Produkte suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Neora",
+      "legal_name": "Neora, LLC",
+      "founded_year": 2011,
+      "headquarters_country": "US",
+      "headquarters_city": "Addison",
+      "industry": "beauty_wellness",
+      "product_category": [
+        "skincare",
+        "wellness",
+        "brain_health"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 72000,
+      "estimated_distributors_dach": 7200,
+      "website_url": "https://www.neora.com",
+      "description": "Neora (ehemals Nerium) kombiniert alterswidrige Hautpflege mit Wellness und Brain-Health-Produkten. Fokus auf innovative Inhaltsstoffe.",
+      "founded_by": "Jeff Olson",
+      "key_selling_points": [
+        "Patentierte SIG-1273 Technologie",
+        "Ganzheitlicher Age-Defying-Ansatz",
+        "Brain-Health und Wellness-Fokus"
+      ],
+      "target_customer_profile": "Anspruchsvolle Kund:innen, die innovative Anti-Aging-Lösungen für Haut und Geist suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Melaleuca",
+      "legal_name": "Melaleuca, Inc.",
+      "founded_year": 1985,
+      "headquarters_country": "US",
+      "headquarters_city": "Idaho Falls",
+      "industry": "wellness",
+      "product_category": [
+        "supplements",
+        "cleaning_products",
+        "personal_care"
+      ],
+      "compensation_plan": "consumer_direct_marketing",
+      "active_in_dach": false,
+      "active_countries": [
+        "US",
+        "CA"
+      ],
+      "estimated_distributors": 95000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.melaleuca.com",
+      "description": "Melaleuca ist ein Wellness-Unternehmen mit Consumer Direct Marketing Modell. Fokus auf natürliche Haushalts- und Gesundheitsprodukte.",
+      "founded_by": "Frank VanderSloot",
+      "key_selling_points": [
+        "Über 450 Produkte für den ganzen Haushalt",
+        "Tea Tree Oil als Markenzeichen",
+        "Preferred Customer Modell"
+      ],
+      "target_customer_profile": "Familien, die natürliche Produkte für Gesundheit, Haushalt und Körperpflege bevorzugen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Beachbody",
+      "legal_name": "Beachbody LLC",
+      "founded_year": 1998,
+      "headquarters_country": "US",
+      "headquarters_city": "El Segundo",
+      "industry": "fitness",
+      "product_category": [
+        "fitness_programs",
+        "supplements",
+        "nutrition"
+      ],
+      "compensation_plan": "network_marketing",
+      "active_in_dach": false,
+      "active_countries": [
+        "US",
+        "CA",
+        "GB"
+      ],
+      "estimated_distributors": 385000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.beachbody.com",
+      "description": "Beachbody ist bekannt für Fitness-Programme wie P90X und Insanity. Das Unternehmen kombiniert Workouts mit Shakeology-Ernährung.",
+      "founded_by": "Carl Daikeler und Jon Congdon",
+      "key_selling_points": [
+        "Ikonische Fitness-Programme (P90X, Insanity, 21 Day Fix)",
+        "Beachbody On Demand Streaming-Plattform",
+        "Shakeology Premium-Shakes"
+      ],
+      "target_customer_profile": "Fitnessbegeisterte, die strukturierte Home-Workout-Programme mit Ernährungsunterstützung suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Valentus",
+      "legal_name": "Valentus, Inc.",
+      "founded_year": 2014,
+      "headquarters_country": "US",
+      "headquarters_city": "Los Angeles",
+      "industry": "health",
+      "product_category": [
+        "coffee",
+        "weight_loss",
+        "supplements"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 52000,
+      "estimated_distributors_dach": 5800,
+      "website_url": "https://www.valentus.com",
+      "description": "Valentus ist spezialisiert auf funktionale Kaffeegetränke zum Abnehmen. SlimROAST Coffee ist das Hauptprodukt.",
+      "founded_by": "Dave Jordan",
+      "key_selling_points": [
+        "Gewichtsverlust-Kaffee mit Functional Ingredients",
+        "Einfache Produktanwendung im Alltag",
+        "Schnell wachsende Social-Media-Präsenz"
+      ],
+      "target_customer_profile": "Kaffeetrinker, die abnehmen möchten ohne ihre Morgenroutine zu ändern.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Velovita",
+      "legal_name": "Velovita Corp.",
+      "founded_year": 2019,
+      "headquarters_country": "US",
+      "headquarters_city": "Las Vegas",
+      "industry": "health",
+      "product_category": [
+        "biohacking",
+        "brain_health",
+        "energy"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 38000,
+      "estimated_distributors_dach": 4200,
+      "website_url": "https://www.velovita.com",
+      "description": "Velovita ist ein junges Biohacking-Unternehmen mit Fokus auf Brain-Health und Energie. Produkte in Snap-Form für schnelle Wirkung.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Moderne Biohacking-Produkte",
+        "Snap-Technologie für schnelle Absorption",
+        "Fokus auf mentale Performance"
+      ],
+      "target_customer_profile": "Leistungsorientierte Menschen, die Biohacking für mentale Klarheit und Energie nutzen möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Total Life Changes",
+      "legal_name": "Total Life Changes, LLC",
+      "founded_year": 1999,
+      "headquarters_country": "US",
+      "headquarters_city": "Fair Haven",
+      "industry": "health",
+      "product_category": [
+        "weight_loss",
+        "detox",
+        "supplements"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 68000,
+      "estimated_distributors_dach": 6200,
+      "website_url": "https://www.totallifechanges.com",
+      "description": "Total Life Changes (TLC) ist bekannt für Detox-Tees und Gewichtsverlust-Produkte. Iaso Tea ist das Flaggschiff-Produkt.",
+      "founded_by": "Jack Fallon",
+      "key_selling_points": [
+        "Iaso Detox Tea als Bestseller",
+        "Erschwingliche Produktpreise",
+        "Breite Produktpalette für Gewichtsverlust"
+      ],
+      "target_customer_profile": "Preisbewusste Menschen, die natürliche Detox- und Abnehm-Produkte suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "4Life Research",
+      "legal_name": "4Life Research, LLC",
+      "founded_year": 1998,
+      "headquarters_country": "US",
+      "headquarters_city": "Sandy",
+      "industry": "health",
+      "product_category": [
+        "immune_support",
+        "supplements"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 58000,
+      "estimated_distributors_dach": 5200,
+      "website_url": "https://www.4life.com",
+      "description": "4Life spezialisiert sich auf Immunsystem-Unterstützung mit patentiertem Transfer Factor. Wissenschaftlich fundierte Immunologie-Produkte.",
+      "founded_by": "David und Bianca Lisonbee",
+      "key_selling_points": [
+        "Patentierte Transfer Factor Technologie",
+        "Fokus auf Immungesundheit",
+        "Über 50 Länder weltweit"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die ihr Immunsystem mit wissenschaftlich fundierten Produkten stärken möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Synergy WorldWide",
+      "legal_name": "Synergy WorldWide, Inc.",
+      "founded_year": 1999,
+      "headquarters_country": "US",
+      "headquarters_city": "Pleasant Grove",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "nutrition",
+        "essential_oils"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 45000,
+      "estimated_distributors_dach": 4500,
+      "website_url": "https://www.synergyworldwide.com",
+      "description": "Synergy WorldWide kombiniert moderne Wissenschaft mit traditioneller Kräuterkunde. ProArgi-9+ für Herz-Kreislauf-Gesundheit ist das Hauptprodukt.",
+      "founded_by": null,
+      "key_selling_points": [
+        "ProArgi-9+ für Herz-Kreislauf-Gesundheit",
+        "Hughes Center for Research & Innovation",
+        "Kombination aus Wissenschaft und Naturheilkunde"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste ab 40+, die in Herz-Kreislauf-Gesundheit investieren möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Farmasi",
+      "legal_name": "Farmasi Kozmetik A.Ş.",
+      "founded_year": 1950,
+      "headquarters_country": "TR",
+      "headquarters_city": "Istanbul",
+      "industry": "beauty",
+      "product_category": [
+        "cosmetics",
+        "skincare",
+        "fragrances"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "TR",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 185000,
+      "estimated_distributors_dach": 18500,
+      "website_url": "https://www.farmasi.com",
+      "description": "Farmasi ist ein türkisches Beauty-Unternehmen mit wachsender Präsenz in Europa. Erschwingliche Kosmetik und Pflege zu attraktiven Preisen.",
+      "founded_by": "Dr. C. Tuna",
+      "key_selling_points": [
+        "Sehr wettbewerbsfähige Preise",
+        "Breites Produktportfolio",
+        "Wachsende europäische Präsenz"
+      ],
+      "target_customer_profile": "Preisbewusste Konsument:innen, die Qualitätskosmetik zu günstigen Preisen suchen.",
+      "member_of_associations": [
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Rain International",
+      "legal_name": "Rain International, LLC",
+      "founded_year": 2009,
+      "headquarters_country": "US",
+      "headquarters_city": "American Fork",
+      "industry": "health",
+      "product_category": [
+        "seed_nutrition",
+        "supplements"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 35000,
+      "estimated_distributors_dach": 3500,
+      "website_url": "https://www.rainlifestyle.com",
+      "description": "Rain fokussiert auf Seed-Based Nutrition mit schwarzen Samen. Soul, Core und Bend sind die Hauptprodukte.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Einzigartiger Fokus auf Samen-Ernährung",
+        "Schwarzkümmel als Hauptzutat",
+        "Premium-Positionierung"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die alternative Superfoods mit Fokus auf Samen-Nutrition suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Monat Global",
+      "legal_name": "Monat Global Corp.",
+      "founded_year": 2014,
+      "headquarters_country": "US",
+      "headquarters_city": "Doral",
+      "industry": "beauty",
+      "product_category": [
+        "haircare",
+        "skincare"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 95000,
+      "estimated_distributors_dach": 9500,
+      "website_url": "https://www.monatglobal.com",
+      "description": "Monat ist spezialisiert auf Premium-Haarpflege mit natürlichen Inhaltsstoffen. Fokus auf Haarwachstum und Anti-Aging für Haar.",
+      "founded_by": "Alcora Familie",
+      "key_selling_points": [
+        "Vegan und cruelty-free Haarpflege",
+        "Fokus auf Haargesundheit und -wachstum",
+        "Social-Media-getriebenes Marketing"
+      ],
+      "target_customer_profile": "Frauen, die in Premium-Haarpflege mit natürlichen Inhaltsstoffen investieren möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Immunotec",
+      "legal_name": "Immunotec Inc.",
+      "founded_year": 1996,
+      "headquarters_country": "CA",
+      "headquarters_city": "Vaudreuil-Dorion",
+      "industry": "health",
+      "product_category": [
+        "immune_support",
+        "glutathione",
+        "supplements"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "CA",
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 32000,
+      "estimated_distributors_dach": 3200,
+      "website_url": "https://www.immunotec.com",
+      "description": "Immunotec ist spezialisiert auf Glutathion-Erhöhung für Immungesundheit. Immunocal ist das patentierte Hauptprodukt.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Patentiertes Immunocal für Glutathion",
+        "Wissenschaftlich fundierte Immunologie",
+        "Ärztlich empfohlen"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste, die wissenschaftlich fundierte Immununterstützung suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Javita",
+      "legal_name": "Javita, LLC",
+      "founded_year": 2009,
+      "headquarters_country": "US",
+      "headquarters_city": "Boca Raton",
+      "industry": "health",
+      "product_category": [
+        "coffee",
+        "tea",
+        "weight_loss"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": false,
+      "active_countries": [
+        "US",
+        "CA"
+      ],
+      "estimated_distributors": 28000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.javita.com",
+      "description": "Javita vertreibt Gourmet-Kaffee und Tees mit gesundheitlichen Benefits. Fokus auf Gewichtsverlust und Energie.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Premium-Kaffee mit Functional Benefits",
+        "Burn + Control Gewichtsverlust-Kaffee",
+        "Einfache Integration in Morgenroutine"
+      ],
+      "target_customer_profile": "Kaffeeliebhaber, die gesundheitliche Benefits in ihren täglichen Kaffee integrieren möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    }
+  ]
+}

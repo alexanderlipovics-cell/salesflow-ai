@@ -1,0 +1,84 @@
+{
+  "metrics": [
+    {
+      "name": "response_rate",
+      "label": "Antwortquote",
+      "category": "top_of_funnel",
+      "formula": "responses / messages_sent",
+      "description": "Anteil der Kontakte, die auf eine Erstnachricht oder Follow-up überhaupt reagieren.",
+      "target_range": [0.2, 0.4]
+    },
+    {
+      "name": "opt_in_rate",
+      "label": "Info-Opt-in-Rate",
+      "category": "qualification",
+      "formula": "prospects_opted_in / total_contacts",
+      "description": "Anteil der Kontakte, die aktiv zustimmen, mehr Infos zu bekommen.",
+      "target_range": [0.15, 0.3]
+    },
+    {
+      "name": "appointment_rate",
+      "label": "Terminvereinbarungsrate",
+      "category": "mid_funnel",
+      "formula": "appointments_scheduled / prospects_opted_in",
+      "description": "Wie viele Interessenten stimmen einem Gespräch / einer Demo zu.",
+      "target_range": [0.3, 0.6]
+    },
+    {
+      "name": "show_up_rate",
+      "label": "Show-up-Rate",
+      "category": "mid_funnel",
+      "formula": "appointments_attended / appointments_scheduled",
+      "description": "Anteil der vereinbarten Termine, die wirklich wahrgenommen werden.",
+      "target_range": [0.6, 0.85]
+    },
+    {
+      "name": "close_rate",
+      "label": "Abschlussquote",
+      "category": "bottom_of_funnel",
+      "formula": "new_customers / appointments_attended",
+      "description": "Wie viele der geführten Gespräche führen zu Erstbestellung oder Einstieg.",
+      "target_range": [0.1, 0.3]
+    },
+    {
+      "name": "avg_order_value",
+      "label": "Durchschnittlicher Bestellwert",
+      "category": "revenue",
+      "formula": "total_revenue / number_of_orders",
+      "description": "Wie viel Umsatz pro Bestellung generiert wird.",
+      "target_range": null
+    },
+    {
+      "name": "repeat_order_rate",
+      "label": "Wiederbestellrate",
+      "category": "retention",
+      "formula": "customers_with_2plus_orders / total_customers",
+      "description": "Anteil der Kunden, die mindestens ein zweites Mal bestellt haben.",
+      "target_range": [0.4, 0.7]
+    },
+    {
+      "name": "churn_rate",
+      "label": "Abwanderungsrate",
+      "category": "retention",
+      "formula": "inactive_customers_last_90d / active_customers_last_90d",
+      "description": "Wie viele Kunden in den letzten 90 Tagen 'eingeschlafen' sind.",
+      "target_range": [0.0, 0.3]
+    },
+    {
+      "name": "referral_rate",
+      "label": "Empfehlungsrate",
+      "category": "growth",
+      "formula": "new_leads_from_referrals / total_new_leads",
+      "description": "Anteil der neuen Leads, die über Empfehlungen kommen.",
+      "target_range": [0.1, 0.4]
+    },
+    {
+      "name": "lead_to_customer_cycle_days",
+      "label": "Zyklusdauer Lead → Kunde (Tage)",
+      "category": "speed",
+      "formula": "avg(days_between_first_contact_and_first_order)",
+      "description": "Wie viele Tage im Schnitt von Erstkontakt bis erster Bestellung vergehen.",
+      "target_range": null
+    }
+  ]
+}

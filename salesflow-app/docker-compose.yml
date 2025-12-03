@@ -1,0 +1,123 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  SALES FLOW AI - DOCKER COMPOSE (Production)                               ║
+# ╠════════════════════════════════════════════════════════════════════════════╣
+# ║  Usage:                                                                     ║
+# ║    docker-compose up -d           # Start all services                     ║
+# ║    docker-compose logs -f api     # Follow API logs                        ║
+# ║    docker-compose down            # Stop all services                      ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # API Service (FastAPI Backend)
+  # ═══════════════════════════════════════════════════════════════════════════
+  api:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: salesflow-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://app.salesflow.ai}
+      - SUPABASE_URL=${SUPABASE_URL:?SUPABASE_URL is required}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - salesflow-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.salesflow.ai`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Redis (Caching & Rate Limiting)
+  # ═══════════════════════════════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    container_name: salesflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - salesflow-network
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Traefik (Reverse Proxy & SSL)
+  # ═══════════════════════════════════════════════════════════════════════════
+  traefik:
+    image: traefik:v3.0
+    container_name: salesflow-traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@salesflow.ai}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - salesflow-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.salesflow.ai`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH:-admin:$$apr1$$xyz}"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════════════════
+volumes:
+  redis-data:
+  traefik-certs:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════════════
+networks:
+  salesflow-network:
+    driver: bridge
+

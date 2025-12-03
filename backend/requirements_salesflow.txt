@@ -1,0 +1,43 @@
+# ╔════════════════════════════════════════════════════════════════╗
+# ║  SALES FLOW AI - PYTHON DEPENDENCIES                          ║
+# ╚════════════════════════════════════════════════════════════════╝
+
+# Core
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# Database
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# OpenAI
+openai==1.3.5
+
+# Email
+sendgrid==6.11.0
+
+# WhatsApp (Twilio optional)
+twilio==8.10.0
+
+# Scheduling
+schedule==1.2.0
+
+# HTTP Requests
+requests==2.31.0
+
+# Utilities
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0  # For JWT
+passlib[bcrypt]==1.7.4  # For password hashing
+
+# Optional: Google APIs (for Gmail)
+# google-api-python-client==2.108.0
+# google-auth==2.25.2
+# google-auth-oauthlib==1.2.0
+# google-auth-httplib2==0.2.0
+
+# Optional: Lead Enrichment
+# clearbit==0.1.7
+

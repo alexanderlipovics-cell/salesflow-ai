@@ -1,0 +1,481 @@
+{
+  "common": {
+    "online": "在线",
+    "offline": "离线",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "done": "完成",
+    "yes": "是",
+    "no": "否",
+    "logout": "退出登录",
+    "refresh": "刷新",
+    "updated": "已更新",
+    "dashboard_reloaded": "仪表盘已重新加载",
+    "could_not_load": "无法加载数据",
+    "search": "搜索",
+    "all": "全部",
+    "today": "今天",
+    "tomorrow": "明天",
+    "overdue": "逾期",
+    "later": "稍后",
+    "completed": "已完成",
+    "open": "待处理",
+    "new": "新建",
+    "add": "添加",
+    "create": "创建",
+    "close": "关闭",
+    "copy": "复制",
+    "copied": "已复制！",
+    "send": "发送",
+    "demo_mode": "演示模式"
+  },
+
+  "greetings": {
+    "morning": "早上好",
+    "afternoon": "下午好",
+    "evening": "晚上好"
+  },
+
+  "dashboard": {
+    "title": "仪表盘",
+    "today": "今日",
+    "open": "待处理",
+    "leads": "线索",
+    "conversion": "转化率",
+    "system_status": "🚀 系统状态",
+    "backend_connected": "后端已连接",
+    "backend_offline": "后端离线 - 演示模式",
+    "quick_actions": "快捷操作",
+    "admin_tools": "🛠️ 管理工具",
+    "daily_tip": "💡 每日提示",
+    "daily_tip_text": "使用AI聊天为您当前的潜在客户生成个性化的异议处理方案。",
+    "try_now": "立即尝试 →",
+    "chat_import": "导入聊天",
+    "chat_import_platforms": "Instagram、WhatsApp、Facebook...",
+    "lead_imported": "✅ 线索已导入",
+    "chat_analyzed": "聊天已成功分析并创建线索。",
+    "go_to_leads": "前往线索"
+  },
+
+  "actions": {
+    "autopilot": "自动驾驶",
+    "autopilot_desc": "自动回复",
+    "ai_chat": "AI聊天",
+    "ai_chat_desc": "询问CHIEF",
+    "sequences": "序列",
+    "sequences_desc": "自动外联",
+    "email_accounts": "邮箱账户",
+    "email_accounts_desc": "SMTP设置",
+    "outreach": "外联",
+    "outreach_desc": "幽灵追踪",
+    "ghosts": "幽灵客户",
+    "ghosts_desc": "重新激活",
+    "finance": "财务",
+    "finance_desc": "收入与目标",
+    "leads": "线索",
+    "leads_desc": "管理联系人",
+    "import": "导入",
+    "import_desc": "CSV/Excel导入",
+    "followups": "跟进",
+    "followups_desc": "待办任务",
+    "playbooks": "剧本",
+    "playbooks_desc": "销售策略",
+    "analytics": "分析",
+    "analytics_desc": "团队绩效",
+    "team": "团队",
+    "team_desc": "顶尖成员",
+    "team_leader": "团队领导",
+    "team_leader_desc": "团队仪表盘",
+    "onboarding": "入职",
+    "onboarding_desc": "快速开始",
+    "security": "安全",
+    "security_desc": "锁定模块™",
+    "compliance": "合规",
+    "compliance_desc": "责任盾牌",
+    "ab_tests": "A/B测试",
+    "ab_tests_desc": "实验",
+    "ask_chief": "询问CHIEF",
+    "templates": "模板",
+    "stats": "统计"
+  },
+
+  "chat": {
+    "title": "AI聊天",
+    "placeholder": "输入消息...",
+    "send": "发送",
+    "listening": "正在收听...",
+    "processing": "处理中...",
+    "speaking": "正在播放...",
+    "voice_mode": "语音模式",
+    "auto_read": "自动朗读",
+    "templates": "📚 模板",
+    "copy_message": "复制消息",
+    "copied": "已复制！",
+    "regenerate": "重新生成",
+    "chief_intro": "您好！👋 我是CHIEF，您的AURA OS助手。\n\n🎯 CHIEF已为您准备好今天的工作并了解您的线索！\n\n我可以帮助您：\n• 每日规划和优先事项\n• 处理异议\n• 跟进策略\n• 成交技巧\n\n今天有什么安排？",
+    "error_sending": "发送消息时出错",
+    "error_connection": "连接错误，请重试。",
+    "live_assist": "实时助手",
+    "live_assist_active": "实时助手已激活",
+    "live_assist_inactive": "实时助手未激活",
+    "disc_profile": "DISC档案",
+    "compliance_warning": "合规提醒",
+    "feedback": {
+      "helpful": "有帮助",
+      "not_helpful": "没帮助",
+      "thanks": "感谢您的反馈！"
+    },
+    "actions": {
+      "call": "电话",
+      "email": "邮件",
+      "message": "消息",
+      "meeting": "会议",
+      "followup": "跟进"
+    }
+  },
+
+  "leads": {
+    "title": "线索",
+    "search_placeholder": "搜索线索...",
+    "no_leads": "暂无线索",
+    "add_lead": "添加线索",
+    "import_leads": "导入线索",
+    "status": {
+      "new": "新建",
+      "contacted": "已联系",
+      "qualified": "已筛选",
+      "proposal_sent": "已发送方案",
+      "won": "已成交",
+      "lost": "已流失"
+    },
+    "priority": {
+      "high": "🔥 高",
+      "medium": "⚡ 中",
+      "low": "📌 低"
+    },
+    "fields": {
+      "name": "姓名",
+      "company": "公司",
+      "email": "邮箱",
+      "phone": "电话",
+      "notes": "备注",
+      "last_contact": "最近联系",
+      "score": "分数"
+    },
+    "score_categories": {
+      "hot": "🔥 热门",
+      "warm": "🌡️ 温热",
+      "cool": "❄️ 凉",
+      "cold": "🥶 冷"
+    },
+    "bant": {
+      "title": "BANT评分",
+      "budget": "预算",
+      "authority": "权限",
+      "need": "需求",
+      "timeline": "时间线"
+    },
+    "actions": {
+      "call": "拨打电话",
+      "email": "发送邮件",
+      "message": "发送消息",
+      "schedule_followup": "安排跟进",
+      "view_history": "查看历史",
+      "ask_chief": "询问CHIEF"
+    },
+    "filter": {
+      "all": "全部",
+      "active": "活跃",
+      "hot": "热门线索",
+      "new_this_week": "本周新增"
+    },
+    "empty_state": "未找到线索。导入聊天或手动创建线索。",
+    "auto_reminder": "自动提醒已激活"
+  },
+
+  "followups": {
+    "title": "跟进",
+    "today": "今天",
+    "tomorrow": "明天",
+    "overdue": "逾期",
+    "later": "稍后",
+    "completed": "已完成",
+    "show_completed": "显示已完成",
+    "hide_completed": "隐藏已完成",
+    "no_followups": "没有待处理的跟进",
+    "add_followup": "添加跟进",
+    "mark_complete": "标记完成",
+    "mark_incomplete": "标记未完成",
+    "get_suggestion": "💡 获取建议",
+    "suggestion": {
+      "title": "CHIEF建议",
+      "loading": "生成建议中...",
+      "copy": "复制",
+      "use": "使用"
+    },
+    "action_types": {
+      "call": "📞 电话",
+      "email": "📧 邮件",
+      "meeting": "🤝 会议",
+      "message": "💬 消息",
+      "follow_up": "📋 跟进"
+    },
+    "priority": {
+      "high": "🔥 高",
+      "medium": "⚡ 中",
+      "low": "📌 低"
+    },
+    "form": {
+      "lead_name": "线索名称",
+      "action": "操作",
+      "description": "描述",
+      "due_date": "截止日期",
+      "priority": "优先级"
+    },
+    "stats": {
+      "open": "待处理",
+      "completed_today": "今日完成",
+      "overdue": "逾期"
+    }
+  },
+
+  "finance": {
+    "title": "财务",
+    "overview": "概览",
+    "revenue": "收入",
+    "expenses": "支出",
+    "profit": "利润",
+    "goals": "目标",
+    "this_month": "本月",
+    "this_year": "今年",
+    "projections": "预测"
+  },
+
+  "playbooks": {
+    "title": "剧本",
+    "subtitle": "销售策略和最佳实践",
+    "categories": {
+      "prospecting": "开发客户",
+      "qualification": "资格审查",
+      "closing": "成交",
+      "objections": "异议处理"
+    }
+  },
+
+  "settings": {
+    "title": "设置",
+    "account": "账户",
+    "notifications": "通知",
+    "language": "语言",
+    "theme": "主题",
+    "about": "关于AURA OS",
+    "version": "版本",
+    "privacy": "隐私",
+    "terms": "服务条款",
+    "logout": "退出登录"
+  },
+
+  "editions": {
+    "default": {
+      "name": "Sales Flow",
+      "tagline": "您的AI销售助手",
+      "quick_access": "快捷访问",
+      "features": {
+        "messages": "🎯 个性化消息",
+        "analytics": "📈 销售分析",
+        "ai_support": "🤖 AI支持",
+        "automation": "⚡ 自动化"
+      },
+      "tips": {
+        "tip1": "使用剧本进行一致的跟进",
+        "tip2": "在推销前先筛选您的线索",
+        "tip3": "个性化您的前3条消息",
+        "tip4": "分析哪些模板效果最好",
+        "tip5": "自动化重复性任务"
+      }
+    },
+    "zinzino": {
+      "name": "Zinzino",
+      "tagline": "测试。个性化。平衡。",
+      "quick_help": "🚀 Zinzino快速帮助",
+      "features": {
+        "balance_test": "🧪 解释平衡测试结果",
+        "omega_ratio": "📈 理解Omega-3/6比率",
+        "products": "💊 产品推荐",
+        "comp_plan": "🎯 优化薪酬计划"
+      },
+      "quick_questions": {
+        "balance_test": "如何解释平衡测试？",
+        "omega_ratio": "15:1的Omega比率是什么意思？",
+        "comp_plan": "解释Zinzino薪酬计划",
+        "usage": "如何正确服用BalanceOil？"
+      },
+      "tips": {
+        "tip1": "将平衡测试解释为\"细胞血液测试\"",
+        "tip2": "以3:1的Omega比率为目标",
+        "tip3": "BalanceOil+是完美的对话开场白"
+      }
+    },
+    "pm_international": {
+      "name": "PM-International",
+      "tagline": "FitLine - 胜利从内心开始",
+      "features": {
+        "products": "🏋️ FitLine产品咨询",
+        "tracking": "📊 绩效追踪",
+        "team_building": "🎯 团队建设策略"
+      },
+      "tips": {
+        "tip1": "NTC是您最强的卖点",
+        "tip2": "运动员和健身爱好者是理想目标"
+      }
+    },
+    "lr_health_beauty": {
+      "name": "LR Health & Beauty",
+      "tagline": "为您的生活增添品质",
+      "features": {
+        "beauty": "🌸 美容咨询",
+        "supplements": "💊 营养补充剂",
+        "gifts": "🎁 客户礼品"
+      },
+      "tips": {
+        "tip1": "芦荟是LR的核心",
+        "tip2": "组合套装提供最佳入门点"
+      }
+    },
+    "doterra": {
+      "name": "dōTERRA",
+      "tagline": "生命精油",
+      "features": {
+        "oils": "🌿 精油",
+        "wellness": "🧘 健康咨询",
+        "tips": "💆 使用技巧"
+      },
+      "tips": {
+        "tip1": "薰衣草是完美的入门精油",
+        "tip2": "家庭必备套装适合新客户"
+      }
+    }
+  },
+
+  "branding": {
+    "tip_of_day": "每日提示",
+    "chief_helps": "CHIEF可以帮助您：",
+    "strict": "🛡️ 严格",
+    "note": "⚠️ 注意："
+  },
+
+  "language": {
+    "title": "语言",
+    "select": "选择语言",
+    "german": "Deutsch",
+    "english": "English",
+    "spanish": "Español",
+    "chinese": "中文"
+  },
+
+  "navigation": {
+    "home": "首页",
+    "daily_flow": "每日流程",
+    "leads": "线索",
+    "followups": "跟进",
+    "ai_chat": "AI聊天"
+  },
+
+  "autopilot": {
+    "title": "CHIEF自动驾驶",
+    "subtitle": "系统自主运行",
+    "approval_required": "需要批准",
+    "live_mode": "实时模式",
+    "messages": "消息",
+    "pending": "待处理",
+    "accuracy": "准确率",
+    "decisions": "决策",
+    "executed": "已执行",
+    "waiting": "等待中",
+    "active_agents": "活跃代理：",
+    "active_background": "自动驾驶已激活 - 后台运行中",
+    "pending_actions": "{{count}} 个操作等待您的批准",
+    "modes": {
+      "hunter": "猎手",
+      "closer": "成交者",
+      "supporter": "支持者",
+      "passive": "被动",
+      "advisory": "顾问",
+      "supervised": "监督",
+      "autonomous": "自主",
+      "full_auto": "全自动"
+    },
+    "mode_desc": {
+      "passive": "仅观察",
+      "advisory": "显示建议",
+      "supervised": "需要批准",
+      "autonomous": "独立行动",
+      "full_auto": "完全自主"
+    },
+    "settings": {
+      "title": "自动驾驶设置",
+      "autonomy_level": "自主级别",
+      "autonomy_desc": "CHIEF应该独立做多少？",
+      "observer": "观察者",
+      "observer_desc": "我分析并建议 - 您决定一切",
+      "assistant": "助手",
+      "assistant_desc": "日常自动，重要的您审核",
+      "autopilot": "自动驾驶",
+      "autopilot_desc": "几乎全部自动 - 您只需打电话",
+      "full_auto": "全自动",
+      "full_auto_desc": "完整自动化包括成交",
+      "confidence": "置信度阈值",
+      "confidence_desc": "CHIEF应在什么置信度下自动发送？",
+      "more_auto": "更自动",
+      "safer": "更安全",
+      "permissions": "权限",
+      "permissions_desc": "CHIEF可以自动做什么？",
+      "answer_info": "回答信息咨询",
+      "suggest_meetings": "建议会议",
+      "book_meetings": "预订会议",
+      "mention_prices": "提及价格",
+      "handle_objections": "处理异议"
+    }
+  },
+
+  "onboarding": {
+    "welcome": "欢迎使用AURA OS",
+    "setup": "设置",
+    "complete": "设置完成",
+    "step": "第 {{current}} 步，共 {{total}} 步",
+    "continue": "继续",
+    "skip": "跳过",
+    "finish": "完成"
+  },
+
+  "errors": {
+    "network": "网络错误，请检查您的连接。",
+    "auth": "认证错误，请重新登录。",
+    "server": "服务器错误，请稍后再试。",
+    "unknown": "发生未知错误。"
+  },
+
+  "notifications": {
+    "new_lead": "新线索",
+    "followup_due": "跟进到期",
+    "goal_reached": "目标达成！",
+    "message_received": "新消息"
+  },
+
+  "time": {
+    "just_now": "刚刚",
+    "minutes_ago": "{{count}} 分钟前",
+    "hours_ago": "{{count}} 小时前",
+    "days_ago": "{{count}} 天前",
+    "yesterday": "昨天",
+    "today": "今天",
+    "tomorrow": "明天"
+  }
+}

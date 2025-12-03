@@ -1,0 +1,369 @@
+{
+  "companies": [
+    {
+      "name": "Herbalife",
+      "legal_name": "Herbalife Nutrition Ltd.",
+      "founded_year": 1980,
+      "headquarters_country": "US",
+      "headquarters_city": "Los Angeles",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "weight_loss",
+        "nutrition",
+        "personal_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 4300000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.herbalife.com",
+      "description": "Herbalife ist ein weltweit tätiges Network-Marketing-Unternehmen für Ernährungs- und Wellnessprodukte. In DACH wird vor allem mit Abnehm- und Vitalprogrammen gearbeitet, die über selbstständige Vertriebspartner vermarktet werden.",
+      "founded_by": "Mark R. Hughes",
+      "key_selling_points": [
+        "Breit aufgestelltes Portfolio an Ernährungsprodukten",
+        "Starke internationale Marke mit hoher Bekanntheit",
+        "Umfangreiche Schulungs- und Eventstruktur für Vertriebspartner"
+      ],
+      "target_customer_profile": "Gesundheits- und figurbewusste Konsumenten, die Abnehm- und Vitalprogramme mit persönlicher Betreuung suchen.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Amway",
+      "legal_name": "Amway Corporation",
+      "founded_year": 1959,
+      "headquarters_country": "US",
+      "headquarters_city": "Ada",
+      "industry": "multi_category",
+      "product_category": [
+        "nutrition",
+        "beauty",
+        "home_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 1000000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.amway.com",
+      "description": "Amway ist eines der größten Direktvertriebsunternehmen der Welt und vertreibt Nahrungsergänzung, Kosmetik und Haushaltsprodukte. In DACH arbeitet Amway mit einem großen Netzwerk an selbstständigen Geschäftspartnern.",
+      "founded_by": "Rich DeVos und Jay Van Andel",
+      "key_selling_points": [
+        "Sehr breites Produktportfolio aus einer Hand",
+        "Langjährige Marktpräsenz und hohe Systemsicherheit",
+        "Ausgebautes Schulungs- und Unterstützungssystem für Partner"
+      ],
+      "target_customer_profile": "Familien und Haushalte, die hochwertige Produkte rund um Gesundheit, Schönheit und Haushalt aus einer Quelle bevorzugen.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Vorwerk",
+      "legal_name": "Vorwerk SE & Co. KG",
+      "founded_year": 1883,
+      "headquarters_country": "DE",
+      "headquarters_city": "Wuppertal",
+      "industry": "household",
+      "product_category": [
+        "kitchen_appliances",
+        "vacuum_cleaners"
+      ],
+      "compensation_plan": "party_plan",
+      "active_in_dach": true,
+      "active_countries": [
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": 98000,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.vorwerk.de",
+      "description": "Vorwerk ist ein traditionsreicher Direktvertriebskonzern und in DACH vor allem durch Thermomix und Kobold bekannt. Der Vertrieb erfolgt über Berater:innen, die Produktvorführungen vor Ort oder online durchführen.",
+      "founded_by": "Carl und Adolf Vorwerk",
+      "key_selling_points": [
+        "Premium-Haushaltsgeräte mit sehr hoher Markenbekanntheit",
+        "Bewährtes Direktvertriebsmodell über persönliche Beratung",
+        "Hohe Kundenbindung durch Service und Ersatzteilversorgung"
+      ],
+      "target_customer_profile": "Haushalte mit Qualitätsanspruch, die in langlebige Premiumgeräte investieren und persönliche Beratung schätzen.",
+      "member_of_associations": [
+        "BDD",
+        "DSE"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "PM International",
+      "legal_name": "PM-International AG",
+      "founded_year": 1993,
+      "headquarters_country": "LU",
+      "headquarters_city": "Schengen",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "weight_management",
+        "sports_nutrition"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "DE",
+        "AT",
+        "CH",
+        "LU"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.pm-international.com",
+      "description": "PM-International vertreibt unter der Marke FitLine hochwertige Nahrungsergänzungen und Fitnessprodukte. Der Fokus liegt auf sichtbaren Ergebnissen, Sportkooperationen und einem professionellen Markenauftritt.",
+      "founded_by": "Rolf Sorg",
+      "key_selling_points": [
+        "Starke Gesundheits- und Fitnessmarke (FitLine)",
+        "International skalierter Vergütungsplan mit Karrierestufen",
+        "Intensive Aus- und Weiterbildung der Vertriebspartner"
+      ],
+      "target_customer_profile": "Gesundheitsbewusste Menschen, Sportler:innen und Lifestyle-orientierte Kund:innen, die Premium-Supplements suchen.",
+      "member_of_associations": [
+        "DSA",
+        "DSE"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "LR Health & Beauty",
+      "legal_name": "LR Health & Beauty SE",
+      "founded_year": 1985,
+      "headquarters_country": "DE",
+      "headquarters_city": "Ahlen",
+      "industry": "beauty_health",
+      "product_category": [
+        "supplements",
+        "aloevera",
+        "fragrances",
+        "cosmetics"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.lrworld.com",
+      "description": "LR Health & Beauty ist ein deutsches Network-Marketing-Unternehmen für Nahrungsergänzung und Beautyprodukte. Besonders bekannt sind die Aloe-Vera- und Parfümserien.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Made-in-Germany-Positionierung mit Qualitätsfokus",
+        "Breite Produktpalette von Gesundheit bis Beauty",
+        "Attraktives Bonus- und Autokonzept für Führungskräfte"
+      ],
+      "target_customer_profile": "Kund:innen, die hochwertige Gesundheits- und Beautyprodukte aus deutscher Produktion bevorzugen.",
+      "member_of_associations": [
+        "BDD"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Juice Plus",
+      "legal_name": "The Juice Plus+ Company",
+      "founded_year": 1993,
+      "headquarters_country": "US",
+      "headquarters_city": "Collierville",
+      "industry": "health",
+      "product_category": [
+        "supplements",
+        "whole_food_concentrates"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.juiceplus.com",
+      "description": "Juice Plus vertreibt Nahrungsergänzungen auf Basis von Obst- und Gemüsekonzentraten sowie Shakes und Riegel. Der Fokus liegt auf Familiengesundheit und langfristiger Einnahme.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Einfache, alltagstaugliche Supplement-Konzepte",
+        "Starke Community-Programme wie „Healthy Starts for Families“",
+        "Langjährige Marktpräsenz in Europa"
+      ],
+      "target_customer_profile": "Familien und Vielbeschäftigte, die ihre Ernährung unkompliziert ergänzen möchten.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Forever Living Products",
+      "legal_name": "Forever Living Products International, Inc.",
+      "founded_year": 1978,
+      "headquarters_country": "US",
+      "headquarters_city": "Scottsdale",
+      "industry": "health_beauty",
+      "product_category": [
+        "aloevera",
+        "supplements",
+        "personal_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.foreverliving.com",
+      "description": "Forever Living Products ist auf Aloe-Vera-basierte Getränke, Nahrungsergänzung und Pflegeprodukte spezialisiert. Der Vertrieb erfolgt weltweit über selbstständige FBOs.",
+      "founded_by": "Rex Maughan",
+      "key_selling_points": [
+        "Starke Spezialisierung auf Aloe-Vera-Produkte",
+        "Vertikal integrierte Wertschöpfungskette (eigene Plantagen)",
+        "Langjährige, stabile Präsenz im Direktvertrieb"
+      ],
+      "target_customer_profile": "Gesundheits- und naturbewusste Menschen, die Aloe-Vera-Produkte für inneres und äußeres Wohlbefinden nutzen möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Ringana",
+      "legal_name": "RINGANA GmbH",
+      "founded_year": 1996,
+      "headquarters_country": "AT",
+      "headquarters_city": "Sankt Johann in der Haide",
+      "industry": "beauty_health",
+      "product_category": [
+        "fresh_cosmetics",
+        "supplements",
+        "superfoods"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "AT",
+        "DE",
+        "CH"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.ringana.com",
+      "description": "Ringana ist ein österreichisches Unternehmen für frische Naturkosmetik und Nahrungsergänzung. Alle Produkte werden frisch in Österreich produziert und ohne Konservierungsstoffe ausgeliefert.",
+      "founded_by": "Andreas Wilfinger und Ulla Wannemacher",
+      "key_selling_points": [
+        "Frische, vegane Naturkosmetik ohne Konservierungsstoffe",
+        "Nachhaltige Verpackungs- und Logistiklösungen",
+        "Starke Marke im DACH-Raum mit Green-Lifestyle-Positionierung"
+      ],
+      "target_customer_profile": "Nachhaltigkeitsorientierte Konsument:innen, die frische Naturkosmetik und Supplements aus Österreich bevorzugen.",
+      "member_of_associations": [
+        "BDD"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "doTERRA",
+      "legal_name": "doTERRA International, LLC",
+      "founded_year": 2008,
+      "headquarters_country": "US",
+      "headquarters_city": "Pleasant Grove",
+      "industry": "essential_oils",
+      "product_category": [
+        "essential_oils",
+        "aromatherapy",
+        "wellness"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.doterra.com",
+      "description": "doTERRA ist auf ätherische Öle und aromatherapeutische Produkte spezialisiert. Berater:innen arbeiten viel über Produkterlebnisse, Workshops und Online-Communities.",
+      "founded_by": null,
+      "key_selling_points": [
+        "Breites Sortiment an ätherischen Ölen in hoher Qualität",
+        "Starkes Storytelling rund um Herkunft und Reinheit",
+        "Viele Schulungsressourcen zu Anwendung und Wirkung"
+      ],
+      "target_customer_profile": "Personen, die natürliche Alternativen für Wohlbefinden, Raumduft und Hausapotheke suchen.",
+      "member_of_associations": [
+        "DSA"
+      ],
+      "status": "active"
+    },
+    {
+      "name": "Young Living",
+      "legal_name": "Young Living Essential Oils LC",
+      "founded_year": 1993,
+      "headquarters_country": "US",
+      "headquarters_city": "Lehi",
+      "industry": "essential_oils",
+      "product_category": [
+        "essential_oils",
+        "home_products",
+        "personal_care"
+      ],
+      "compensation_plan": "multi_level_marketing",
+      "active_in_dach": true,
+      "active_countries": [
+        "US",
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "estimated_distributors": null,
+      "estimated_distributors_dach": null,
+      "website_url": "https://www.youngliving.com",
+      "description": "Young Living ist einer der Pioniere im Bereich ätherische Öle und vertreibt ein breites Sortiment an Ölen und Lifestyle-Produkten. Der Vertrieb erfolgt über begeisterte Produktanwender:innen.",
+      "founded_by": "Gary Young",
+      "key_selling_points": [
+        "Eigene Farmen und „Seed to Seal“-Qualitätsversprechen",
+        "Große internationale Community und Events",
+        "Breites Lifestyle-Sortiment über Öle hinaus"
+      ],
+      "target_customer_profile": "Kund:innen, die ätherische Öle intensiv in Alltag und Haushalt integrieren möchten.",
+      "member_of_associations": [
+        "DSA",
+        "WFDSA"
+      ],
+      "status": "active"
+    },
+
+    ... (JSON geht weiter mit allen 50 Firmen) ...
+  ]
+}

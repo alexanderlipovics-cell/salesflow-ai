@@ -1,0 +1,45 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  SALES FLOW AI - RENDER.COM DEPLOYMENT                                    ║
+# ║  https://render.com/docs/blueprint-spec                                   ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BACKEND API
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: web
+    name: salesflow-api
+    runtime: python
+    region: frankfurt  # EU für DSGVO-Konformität
+    
+    # Build Settings
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    
+    # Health Check
+    healthCheckPath: /health
+    
+    # Scaling
+    plan: starter  # $7/Monat - kann auf "free" geändert werden zum Testen
+    
+    # Environment Variables
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: DEBUG
+        value: "false"
+      - key: SUPABASE_URL
+        value: https://lncwvbhcafkdorypnpnz.supabase.co
+      - key: SUPABASE_ANON_KEY
+        sync: false  # Manuell in Dashboard setzen
+      - key: ANTHROPIC_API_KEY
+        sync: false  # ⚠️ WICHTIG: Manuell in Dashboard setzen!
+      - key: LLM_PROVIDER
+        value: "anthropic"
+      - key: ENABLE_CHIEF_CONTEXT
+        value: "true"
+
+    # Auto-Deploy bei Push auf main
+    autoDeploy: true
+    branch: main
+

@@ -1,0 +1,49 @@
+/**
+ * AURA OS AI - LinkedIn Content Script Styles
+ */
+
+#salesflow-quick-action {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+  color: white !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+}
+
+#salesflow-quick-action:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+.salesflow-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  animation: slideIn 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.salesflow-notification.success {
+  border-left: 4px solid #22c55e;
+}
+
+.salesflow-notification.error {
+  border-left: 4px solid #ef4444;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+

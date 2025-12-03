@@ -1,0 +1,61 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Hintergrund-Glow -->
+    <radialGradient id="bg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="45%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#00010a"/>
+    </radialGradient>
+
+    <!-- Neon-Cyan-Gradient -->
+    <linearGradient id="auraCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5f3fc"/>
+      <stop offset="50%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+
+    <!-- Weicher Glow -->
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feColorMatrix
+        in="blur"
+        type="matrix"
+        values="0 0 0 0 0.13
+                0 0 0 0 0.85
+                0 0 0 0 0.96
+                0 0 0 0.9 0" />
+    </filter>
+
+    <!-- Inner Glow -->
+    <filter id="innerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feComposite in="blur" in2="SourceGraphic" operator="atop"/>
+    </filter>
+  </defs>
+
+  <!-- Runde Icon-Fläche -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="url(#bg)"/>
+
+  <!-- Diffuser Cyan-Glow hinter dem Symbol -->
+  <circle cx="256" cy="256" r="150" fill="#22d3ee" opacity="0.25" filter="url(#softGlow)"/>
+
+  <!-- Orbitales AURA-Symbol -->
+  <g transform="translate(256 256)" fill="none" stroke="url(#auraCyan)" stroke-width="10" filter="url(#innerGlow)">
+    <!-- Hauptorbit -->
+    <ellipse rx="122" ry="72" transform="rotate(-18)" />
+    <!-- Gegenläufiger Orbit -->
+    <ellipse rx="72" ry="122" transform="rotate(32)" opacity="0.7"/>
+
+    <!-- Energiekern -->
+    <circle cx="0" cy="0" r="36" fill="none" stroke="url(#auraCyan)" stroke-width="8"/>
+    <circle cx="0" cy="0" r="16" fill="#a5f3fc"/>
+
+    <!-- Kleiner Energie-Knoten auf dem Orbit -->
+    <circle cx="86" cy="-18" r="10" fill="#a5f3fc"/>
+  </g>
+
+  <!-- Dezenter Außen-Highlight-Strich -->
+  <rect x="32.5" y="32.5" width="447" height="447" rx="128"
+        fill="none" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="2"/>
+</svg>
+

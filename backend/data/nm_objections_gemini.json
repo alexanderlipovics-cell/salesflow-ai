@@ -1,0 +1,426 @@
+{
+  "companies": [
+    {
+      "company_name": "Herbalife",
+      "objections": [
+        {
+          "objection_text": "Ist das nicht so ein Schneeballsystem? Ich habe die Doku gesehen.",
+          "objection_category": "mlm_stigma",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Ich verstehe die Sorge, der Begriff wird oft falsch verwendet. Herbalife ist ein an der New Yorker Börse notiertes Unternehmen, das strengen Kontrollen unterliegt und primär vom Produktverkauf lebt, nicht vom Anwerben.",
+              "tone": "fact_based",
+              "effectiveness_rating": 9,
+              "key_points": ["Börsennotiert (NYSE)", "Produktverkauf im Fokus", "Legales Handelsmodell"]
+            },
+            {
+              "response_text": "Schneeballsysteme sind illegal und haben kein echtes Produkt. Wir sind seit über 40 Jahren Marktführer im Bereich Mahlzeitenersatz und haben Millionen zufriedener Kunden weltweit.",
+              "tone": "confident",
+              "effectiveness_rating": 8,
+              "key_points": ["40+ Jahre am Markt", "Echtes Produkt", "Marktführer"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Die Shakes sind viel zu teuer, Proteinpulver gibt es im Drogeriemarkt billiger.",
+          "objection_category": "price",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Wenn man nur das Pulver vergleicht, stimmt das. Aber ein Formula-1-Shake ist eine komplette Mahlzeit mit allen Mikronährstoffen, was dich pro Essen weniger kostet als ein belegtes Brötchen beim Bäcker.",
+              "tone": "consultative",
+              "effectiveness_rating": 9,
+              "key_points": ["Mahlzeitenersatz vs. Protein", "Kosten pro Mahlzeit", "Mikronährstoffe"]
+            },
+            {
+              "response_text": "Billige Drogerieprodukte haben oft Füllstoffe und Zucker. Herbalife investiert Millionen in Forschung und Qualitätskontrolle 'Seed to Feed', um höchste Reinheit zu garantieren.",
+              "tone": "quality_focused",
+              "effectiveness_rating": 7,
+              "key_points": ["Seed to Feed", "Forschung", "Keine Füllstoffe"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich will meinen Freunden nichts aufschwatzen.",
+          "objection_category": "social_circle",
+          "occurs_at_stage": "recruiting",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Das ist auch nicht unser Ziel. Wir arbeiten heute viel über Social Media oder Healthy Active Lifestyle Clubs, wo Interessenten auf uns zukommen, statt Freunde zu nerven.",
+              "tone": "relieving",
+              "effectiveness_rating": 8,
+              "key_points": ["Pull-Marketing", "Nutrition Clubs", "Kein Hard-Selling"]
+            },
+            {
+              "response_text": "Empfehlen ist nicht Aufschwatzen. Wenn du von einem Restaurant begeistert bist, erzählst du es ja auch weiter – genau so funktioniert unser Modell, nur dass du hier daran beteiligt wirst.",
+              "tone": "analogy",
+              "effectiveness_rating": 7,
+              "key_points": ["Empfehlungsmarketing", "Begeisterung teilen"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "Vorwerk (Thermomix/Kobold)",
+      "objections": [
+        {
+          "objection_text": "1.400 Euro für eine Küchenmaschine ist Wahnsinn.",
+          "objection_category": "price",
+          "occurs_at_stage": "closing",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Es ist viel Geld auf einmal, das stimmt. Wenn man aber rechnet, dass der Thermomix 12 andere Küchengeräte ersetzt und bei täglicher Nutzung über 15 Jahre weniger als 25 Cent pro Tag kostet, relativiert sich das.",
+              "tone": "logical",
+              "effectiveness_rating": 9,
+              "key_points": ["Kosten pro Nutzung", "Geräteersatz", "Langlebigkeit"]
+            },
+            {
+              "response_text": "Qualität aus Wuppertal hat ihren Preis. Dafür hast du ein Gerät, das über Generationen hält, und sparst durch das Selbermachen von Brot, Joghurt und Co. im Supermarkt massiv Geld.",
+              "tone": "value_focused",
+              "effectiveness_rating": 8,
+              "key_points": ["Ersparnis beim Einkauf", "Made in Germany/Europe", "Wertstabilität"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Warum kann ich das nicht einfach im Laden kaufen? Ich mag diese Vertreter-Besuche nicht.",
+          "objection_category": "reputation",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Der Thermomix kann so viel, dass er im Regal verstauben würde, weil niemand die Funktionen erklärt. Das Erlebniskochen garantiert, dass du das Gerät vom ersten Tag an voll nutzen kannst.",
+              "tone": "educational",
+              "effectiveness_rating": 9,
+              "key_points": ["Erklärungsbedarf", "Service inklusive", "Keine Fehlkäufe"]
+            },
+            {
+              "response_text": "Vorwerk setzt auf direkten Service ohne Zwischenhändler. Du hast mit mir immer einen persönlichen Ansprechpartner, falls mal was ist, statt in einer Hotline zu hängen.",
+              "tone": "service_oriented",
+              "effectiveness_rating": 8,
+              "key_points": ["Persönlicher Service", "Kein Zwischenhandel", "Direkter Draht"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "PM International (FitLine)",
+      "objections": [
+        {
+          "objection_text": "Das Nährstoff-Transport-Konzept (NTC) ist doch nur Marketing.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "PM hält über 70 Patente im Bereich NTC. Zudem kannst du den Effekt oft spüren, wie beim 'Activize'-Flush, der zeigt, dass der Sauerstofftransport in den Zellen tatsächlich angeregt wird.",
+              "tone": "scientific",
+              "effectiveness_rating": 8,
+              "key_points": ["70+ Patente", "Spürbarer Effekt", "Sauerstofftransport"]
+            },
+            {
+              "response_text": "Wir lassen uns freiwillig vom TÜV SÜD ELAB prüfen und stehen auf der Kölner Liste für dopingfreie Sportnahrung. Spitzensportler würden das nicht nehmen, wenn es nur Marketing wäre.",
+              "tone": "authority_proof",
+              "effectiveness_rating": 9,
+              "key_points": ["TÜV SÜD", "Kölner Liste", "Spitzensportler"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Die Produkte sind im Vergleich zu anderen Vitaminen viel zu teuer.",
+          "objection_category": "price",
+          "occurs_at_stage": "closing",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Teuer ist nur das, was der Körper nicht aufnimmt und wieder ausscheidet. Durch die hohe Bioverfügbarkeit beim FitLine-Konzept kommt das Geld quasi direkt in der Zelle an.",
+              "tone": "logical",
+              "effectiveness_rating": 8,
+              "key_points": ["Bioverfügbarkeit", "Aufnahmeeffizienz", "Preis-Leistung"]
+            },
+            {
+              "response_text": "Qualität 'Made in Germany' und GMP-Standard, der eigentlich für Medikamente gilt, kostet in der Herstellung einfach mehr als Standard-Ware aus Fernost.",
+              "tone": "quality_focused",
+              "effectiveness_rating": 7,
+              "key_points": ["GMP Standard", "Made in Germany", "Reinheit"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "LR Health & Beauty",
+      "objections": [
+        {
+          "objection_text": "Das mit den Autos (Mercedes/VW) ist doch nur Leasing, das ich am Ende selbst zahle.",
+          "objection_category": "income",
+          "occurs_at_stage": "recruiting",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Es ist ein Firmenwagen-Konzept. Solange du deine Ziele erreichst, übernimmt LR die Rate komplett oder anteilig. Es ist ein transparenter Leistungsbonus, genau wie im klassischen Vertrieb.",
+              "tone": "transparent",
+              "effectiveness_rating": 9,
+              "key_points": ["Leistungsprinzip", "Firmenwagen", "Transparenz"]
+            },
+            {
+              "response_text": "Richtig, es ist an Leistung gekoppelt. Der Vorteil ist: Du bekommst Großkunden-Konditionen ohne Anzahlung, die du als Privatperson so niemals erhalten würdest.",
+              "tone": "benefit_focused",
+              "effectiveness_rating": 7,
+              "key_points": ["Großkundenkonditionen", "Keine Anzahlung", "Sonderstatus"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Aloe Vera kann ich auch im Reformhaus kaufen.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "occasional",
+          "recommended_responses": [
+            {
+              "response_text": "Nicht jede Aloe ist gleich. LR ist einer der größten Hersteller weltweit und trägt das strenge Fresenius-Qualitätssiegel, das regelmäßige verdeckte Kontrollen garantiert.",
+              "tone": "authority_proof",
+              "effectiveness_rating": 8,
+              "key_points": ["Fresenius Siegel", "Marktführer Aloe", "Verdeckte Kontrollen"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "Ringana",
+      "objections": [
+        {
+          "objection_text": "Die Produkte sind ja kaum haltbar, das nervt mich.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Das kurze Haltbarkeitsdatum ist unser Qualitätsmerkmal, kein Mangel. Es beweist, dass wir auf künstliche Konservierungsstoffe verzichten und 100% Wirkstoff liefern.",
+              "tone": "reframing",
+              "effectiveness_rating": 10,
+              "key_points": ["Feature not Bug", "Keine Konservierungsstoffe", "100% Wirkstoff"]
+            },
+            {
+              "response_text": "Frisch gepresster Orangensaft hält auch nicht ewig, ist aber gesünder als Dosenware. Ringana produziert frisch und versendet direkt, damit die Antioxidantien noch wirken.",
+              "tone": "analogy",
+              "effectiveness_rating": 8,
+              "key_points": ["Frische-Vergleich", "Direktversand", "Antioxidantien"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Das Zahnöl und die Deo-Creme sind gewöhnungsbedürftig.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Absolut, weil wir natürliche Alternativen zu Chemie nutzen. Ölziehen ist eine uralte Tradition für die Mundflora, an die man sich erst gewöhnt, die aber langfristig viel gesünder ist.",
+              "tone": "educational",
+              "effectiveness_rating": 7,
+              "key_points": ["Natur statt Chemie", "Traditionelles Wissen", "Gesundheit"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "Amway",
+      "objections": [
+        {
+          "objection_text": "Amway ist doch total verstaubt, das haben meine Eltern schon gemacht.",
+          "objection_category": "reputation",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Amway ist das älteste, aber auch modernste Direct-Selling Unternehmen. Mit einem Umsatz von über 8 Mrd. Dollar und komplett digitalen Tools ist das Business heute 100% online steuerbar.",
+              "tone": "confident",
+              "effectiveness_rating": 8,
+              "key_points": ["Marktführer", "Digitalisierung", "Umsatzstärke"]
+            },
+            {
+              "response_text": "Beständigkeit schafft Sicherheit. Viele Hype-Firmen verschwinden nach 2 Jahren, Amway zahlt seit über 60 Jahren pünktlich jeden Bonus aus.",
+              "tone": "trust_building",
+              "effectiveness_rating": 9,
+              "key_points": ["Stabilität", "60 Jahre", "Pünktliche Zahlung"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Das wirkt alles sehr sektenartig auf den Events.",
+          "objection_category": "mlm_stigma",
+          "occurs_at_stage": "recruiting",
+          "frequency": "occasional",
+          "recommended_responses": [
+            {
+              "response_text": "Ich verstehe den Eindruck, wenn viele begeisterte Menschen zusammenkommen. Im Kern ist es aber ein Ausbildungssystem für Unternehmer, das persönlichen Wachstum fördert.",
+              "tone": "understanding",
+              "effectiveness_rating": 7,
+              "key_points": ["Ausbildungssystem", "Persönlichkeitsentwicklung", "Begeisterung vs. Sekte"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "Juice Plus+",
+      "objections": [
+        {
+          "objection_text": "Kapseln können doch kein echtes Obst und Gemüse ersetzen.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Stimmt absolut, es soll auch kein Ersatz sein, sondern die Lücke schließen ('Bridge the Gap'). Wir schaffen es im Alltag oft nicht, die empfohlenen 5-7 Portionen reif geerntetes Gemüse zu essen.",
+              "tone": "agreement_redirect",
+              "effectiveness_rating": 9,
+              "key_points": ["Kein Ersatz", "Lücke schließen", "Reif geerntet"]
+            },
+            {
+              "response_text": "Juice Plus ist eines der am besten untersuchten Nahrungsergänzungsmittel weltweit mit über 40 klinischen Studien renommierter Universitäten, die die Wirkung im Blut belegen.",
+              "tone": "scientific",
+              "effectiveness_rating": 9,
+              "key_points": ["40+ Studien", "Wissenschaft", "Nachweisbarkeit"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich will kein Abo abschließen.",
+          "objection_category": "commitment",
+          "occurs_at_stage": "closing",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Der Körper braucht mindestens 4 Monate, um sich zu erneuern, deshalb macht eine einmalige Einnahme kaum Sinn. Das Ratenzahlungs-Modell macht die Gesundheit aber für jeden leistbar.",
+              "tone": "biological_logic",
+              "effectiveness_rating": 8,
+              "key_points": ["Zellerneuerung", "4-Monats-Zyklus", "Leistbarkeit"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "doTerra",
+      "objections": [
+        {
+          "objection_text": "Die Öle sind extrem teuer, im Bioladen kriege ich Lavendel für 5 Euro.",
+          "objection_category": "price",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Viele Öle im Laden sind synthetisch gestreckt oder enthalten Pestizide. doTerra nutzt den CPTG-Standard (Certified Pure Tested Grade), was bedeutet: 100% rein, therapeutische Qualität und sicher.",
+              "tone": "quality_comparison",
+              "effectiveness_rating": 9,
+              "key_points": ["CPTG Standard", "Synthetik vs. Natur", "Therapeutische Qualität"]
+            },
+            {
+              "response_text": "Wir arbeiten mit 'Co-Impact Sourcing', das heißt, wir zahlen den Bauern faire Löhne und bauen Schulen. Das kostet mehr, sichert aber auch die beste Erntequalität.",
+              "tone": "ethical",
+              "effectiveness_rating": 8,
+              "key_points": ["Co-Impact Sourcing", "Fair Trade", "Soziale Verantwortung"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich glaube nicht an diese esoterische Heilwirkung.",
+          "objection_category": "trust",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Es geht nicht um Glauben, sondern um Biochemie. Ätherische Öle sind hochkonzentrierte Pflanzenwirkstoffe, die pharmakologisch wirken – das ist reine Wissenschaft, keine Esoterik.",
+              "tone": "scientific",
+              "effectiveness_rating": 8,
+              "key_points": ["Biochemie", "Pflanzenwirkstoffe", "Wissenschaft"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "Young Living",
+      "objections": [
+        {
+          "objection_text": "Was ist der Unterschied zu doTerra? Ist doch das Gleiche.",
+          "objection_category": "competition",
+          "occurs_at_stage": "presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Young Living ist der Pionier seit über 25 Jahren und besitzt eigene Farmen weltweit ('Seed to Seal'). Wir kontrollieren den Prozess vom Samen bis zum Siegel komplett selbst, statt nur zuzukaufen.",
+              "tone": "differentiation",
+              "effectiveness_rating": 9,
+              "key_points": ["Seed to Seal", "Eigene Farmen", "Pionier-Status"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Man muss erst so ein teures Starter-Set kaufen.",
+          "objection_category": "commitment",
+          "occurs_at_stage": "closing",
+          "frequency": "occasional",
+          "recommended_responses": [
+            {
+              "response_text": "Du musst nicht, aber es ist der schlauste Weg. Das Set ist massiv rabattiert im Vergleich zum Einzelkauf und gibt dir eine 'Hausapotheke', mit der du sofort starten kannst.",
+              "tone": "financial_logic",
+              "effectiveness_rating": 8,
+              "key_points": ["Preisvorteil", "Hausapotheke", "Sofort startklar"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "company_name": "Forever Living Products",
+      "objections": [
+        {
+          "objection_text": "Der Markt ist doch total gesättigt, jeder kennt Aloe Vera.",
+          "objection_category": "market_saturation",
+          "occurs_at_stage": "recruiting",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Jeder kennt es, aber kaum jemand trinkt es täglich. Der Markt für Gesundheit wächst rasant, und Forever ist als Weltmarktführer der sicherste Partner, um davon zu profitieren.",
+              "tone": "opportunity",
+              "effectiveness_rating": 7,
+              "key_points": ["Bekanntheit vs. Nutzung", "Wachstumsmarkt", "Weltmarktführer"]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich muss jeden Monat Mindestumsatz machen, um meinen Bonus zu kriegen.",
+          "objection_category": "commitment",
+          "occurs_at_stage": "closing",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Die 4 CC (Case Credits) sind ein Ziel für aktive Unternehmer, die ein großes Business aufbauen wollen. Wer nur Produkte nutzt oder klein verkauft, hat keinen Druck.",
+              "tone": "clarification",
+              "effectiveness_rating": 8,
+              "key_points": ["Unternehmer-Ziel", "Kein Zwang", "Differenzierung"]
+            },
+            {
+              "response_text": "Das ist dein 'Ladenmiete' im Kopf. Wer ein Geschäft betreibt, sollte auch einen minimalen Umsatz bewegen. Es motiviert dazu, aktiv zu bleiben und nicht einzuschlafen.",
+              "tone": "business_mindset",
+              "effectiveness_rating": 7,
+              "key_points": ["Business Mindset", "Aktivität", "Motivation"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

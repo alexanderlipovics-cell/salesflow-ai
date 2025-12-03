@@ -1,0 +1,883 @@
+{
+  "companies": [
+    {
+      "company_name": "Herbalife",
+      "objections": [
+        {
+          "objection_text": "Herbalife ist doch ein Pyramiden- oder Schneeballsystem!",
+          "objection_category": "mlm_stigma",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Ich verstehe den Eindruck, weil man viel Negatives über MLM hört. Der entscheidende Punkt ist: Bei Herbalife geht es um den Verkauf echter Ernährungsprodukte, nicht um das reine Anwerben von Leuten. Das Unternehmen existiert seit 1980, ist international reguliert unterwegs und hat sein Vergütungsmodell stärker an nachweisbare Produktumsätze gekoppelt.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Fokus auf Produktverkauf statt reiner Rekrutierung",
+                "Seit Jahrzehnten am Markt",
+                "Vergütung an echte Umsätze gebunden"
+              ]
+            },
+            {
+              "response_text": "Dein Einwand ist absolut legitim, und es ist gut, kritisch zu sein. Illegal wäre es, wenn Menschen nur fürs Anwerben bezahlt würden und keine echten Produkte verkauft würden – das wäre ein Schneeballsystem. Bei Herbalife bekommst du nur dann Provision, wenn Produkte tatsächlich beim Kunden landen und bezahlt werden.",
+              "tone": "casual_confident",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kritische Haltung wertschätzen",
+                "Erklären, was ein illegales System ausmacht",
+                "Provision an Produktumsatz knüpfen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Die Herbalife-Produkte sind mir einfach zu teuer.",
+          "objection_category": "price",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Preis ist immer relativ zu dem, was man dafür bekommt. Herbalife investiert in hochwertige Rohstoffe, eigene Produktionsprozesse und Qualitätskontrollen – das spiegelt sich natürlich im Preis wider. Am Ende ist wichtig, ob dir die Produkte einen spürbaren Mehrwert im Alltag geben.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Qualität und Kontrolle kosten",
+                "Mehrwert statt nur Preis",
+                "Kundenerfahrung in den Fokus"
+              ]
+            },
+            {
+              "response_text": "Fairer Punkt – im Supermarkt gibt es vieles günstiger. Der Unterschied ist: Bei Herbalife bekommst du ein komplettes Konzept mit Betreuung und nicht nur ein Produkt aus dem Regal. Wenn der Nutzen für dich nicht passt, ist es auch völlig okay, Nein zu sagen.",
+              "tone": "casual_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Vergleich mit Supermarkt einordnen",
+                "Betreuung als Zusatzwert",
+                "Nein als legitime Option anerkennen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich habe keine Zeit für sowas neben meinem Job und der Familie.",
+          "objection_category": "time",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Dass du deine Zeit schützen willst, ist absolut richtig. Herbalife ist als flexibles Nebenbusiness gedacht – viele starten mit wenigen Stunden pro Woche und testen erst einmal, ob es überhaupt zu ihrem Alltag passt. Ohne realistisch verfügbaren Zeitrahmen würde ich dir eher davon abraten.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Zeitrespekt betonen",
+                "Klein starten",
+                "Auch vom Einstieg abraten können"
+              ]
+            },
+            {
+              "response_text": "Wir suchen keine Menschen, die sich zusätzlich stressen, sondern die vorhandene Kontakte und Routinen sinnvoll nutzen. Wenn du aktuell null Luft hast, ist der Zeitpunkt vielleicht einfach nicht der richtige – das darf man auch so stehen lassen.",
+              "tone": "empathetic",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kein Druck aufbauen",
+                "Timing thematisieren",
+                "Freiwilligkeit betonen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich vertraue Herbalife nicht – man hört so viel Unterschiedliches.",
+          "objection_category": "trust",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Ehrlich gesagt wäre es komisch, wenn du einfach blind vertraust. Herbalife ist seit Jahrzehnten weltweit aktiv und wurde auch schon kritisch geprüft – genau deshalb wurden Vergütungsmodelle und Transparenz verbessert. Am sinnvollsten ist, wenn du dir selbst ein Bild machst: Produkte testen, offizielle Infos ansehen und offen über deine Fragezeichen sprechen.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Skepsis normalisieren",
+                "Historie + Prüfungen erwähnen",
+                "Eigenes Bild bilden"
+              ]
+            },
+            {
+              "response_text": "Statt dir etwas schönzureden, lade ich dich lieber ein, konkret nachzufragen. Wenn dir nach etwas Recherche immer noch das Bauchgefühl fehlt, ist vielleicht einfach kein Match da – und das ist völlig in Ordnung.",
+              "tone": "calm_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Transparenz anbieten",
+                "Bauchgefühl respektieren",
+                "Druck rausnehmen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Bringen die Herbalife-Produkte überhaupt etwas oder ist das nur Marketing?",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Kein Produkt ist ein Wundermittel, und gesunde Ernährung ersetzt es nie. Herbalife arbeitet mit standardisierten Rezepturen und Qualitätskontrollen, aber am Ende zählt, ob du persönlich einen Unterschied bei dir bemerkst – daher arbeite ich gern mit Testphasen und ehrlichem Feedback.",
+              "tone": "professional_realistic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Keine Wunder versprechen",
+                "Qualitätsprozesse erwähnen",
+                "Eigene Erfahrung in den Fokus"
+              ]
+            },
+            {
+              "response_text": "Viele Kunden nutzen Herbalife-Produkte, weil sie damit strukturierter essen und weniger „Mist“ zwischendurch konsumieren. Ob das dir hilft, hängt von deinem Alltag, deiner Ernährung und deinen Zielen ab – das kann man nur im Einzelfall testen.",
+              "tone": "casual_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Struktur statt Wundermittel",
+                "Individuelle Wirkung betonen",
+                "Testen statt Versprechen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Der Markt ist doch mit Herbalife schon total übersättigt.",
+          "objection_category": "market_saturation",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Gefühlt ist vieles „übersättigt“, weil wir in Social Media in einer Blase leben. In meinem Umfeld treffe ich trotzdem ständig Menschen, die Herbalife noch gar nicht kennen oder nur vom Hörensagen. Entscheidend ist, ob du deine Zielgruppe klar definierst und strukturiert arbeitest – nicht, wie laut die eigene Bubble ist.",
+              "tone": "casual_confident",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Social-Media-Blase relativieren",
+                "Lokale Wahrnehmung",
+                "Struktur statt Masse"
+              ]
+            },
+            {
+              "response_text": "Wenn du selbst das Gefühl hast, du findest keine Menschen mehr, denen du ehrlich helfen kannst, wäre Herbalife für dich kein guter Fit. Network Marketing lebt davon, dass du dich mit dem Produkt identifizieren kannst und gern darüber sprichst.",
+              "tone": "honest_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Persönliches Empfinden ernst nehmen",
+                "Produktidentifikation wichtig",
+                "Passung vor Umsatz"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Kann man mit Herbalife wirklich Geld verdienen? Ich habe gehört, die meisten verdienen fast nichts.",
+          "objection_category": "income_claims",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Die Aussage, dass die meisten im Network Marketing nur wenig verdienen, stimmt generell – das zeigen auch offizielle Einkommensstatistiken vieler Firmen. Herbalife ist kein Lottogewinn, sondern ein Provisionsmodell: Wer wenig Zeit investiert oder unstrukturiert arbeitet, verdient wenig; wer langfristig und professionell aufbaut, kann sich einen Neben- oder Haupterwerb aufbauen.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Realistische Erwartung setzen",
+                "Einkommensverteilung ansprechen",
+                "Arbeit und Struktur nötig"
+              ]
+            },
+            {
+              "response_text": "Ich verspreche niemandem „schnell reich“. Was ich anbieten kann, ist ein System, mit dem du Schritt für Schritt Kunden und Team aufbauen kannst – aber nur, wenn du bereit bist, wirklich zu lernen und dranzubleiben. Wenn du das nicht möchtest, ist es besser, ehrlich bei „nein“ zu bleiben.",
+              "tone": "direct_respectful",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kein Get-rich-quick",
+                "System und Lernen betonen",
+                "Klares Nein akzeptieren"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich will mich nicht langfristig binden oder irgendwelche Mindestumsätze erfüllen.",
+          "objection_category": "commitment",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Dein Wunsch nach Flexibilität ist nachvollziehbar. Bei Herbalife kannst du als Kunde oder Partner starten und die konkreten Bedingungen – wie Mindestbestellungen oder Qualifikationen – stehen schwarz auf weiß im Vertrag, den du in Ruhe prüfen solltest, bevor du irgendetwas unterschreibst.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Flexibilität anerkennen",
+                "Vertragsklarheit betonen",
+                "Keine Unterschrift im Affekt"
+              ]
+            },
+            {
+              "response_text": "Ich dränge niemanden in Verpflichtungen, die nicht zum Leben passen. Lass uns lieber zuerst anschauen, was du überhaupt willst – wenn dich das Modell mit den Bedingungen nicht überzeugt, ist das ein klares Zeichen dagegen.",
+              "tone": "calm_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kein Druck",
+                "Bedürfnisse klären",
+                "Commitment als gemeinsame Entscheidung"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich möchte meine Freunde und Familie nicht mit Herbalife nerven.",
+          "objection_category": "friends_family",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Das verstehe ich total – niemand mag dieses aggressive „Freunde abklappern“. Man kann Herbalife heute auch über Social Media, Empfehlungen und Menschen erreichen, die sich aktiv für Ernährung interessieren, ohne das private Umfeld zu überfahren.",
+              "tone": "casual_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Abgrenzung zu Klischees",
+                "Alternative Akquisewege",
+                "Privatsphäre respektieren"
+              ]
+            },
+            {
+              "response_text": "Wir bauen lieber mit Menschen, die freiwillig interessiert sind, als mit Leuten, die sich bedrängt fühlen. Du entscheidest immer selbst, wen du ansprichst – und Familie ist aus meiner Sicht eher Bonus, nicht Pflicht.",
+              "tone": "relaxed",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Freiwilligkeit betonen",
+                "Keine Pflichtliste",
+                "Langfristige Beziehungen schützen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Herbalife hat doch einen schlechten Ruf, da gab es doch schon Skandale.",
+          "objection_category": "reputation",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Ja, Herbalife stand in der Vergangenheit in der Kritik, und genau deshalb wurde das Vergütungsmodell stärker an echte Produktumsätze geknüpft und transparenter gemacht. Ich finde es wichtig, das nicht unter den Teppich zu kehren, sondern offen anzusprechen – und dann zu schauen, ob dir die heutige Arbeitsweise zusagt.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Kritik nicht leugnen",
+                "Änderungen erwähnen",
+                "Transparenz anbieten"
+              ]
+            },
+            {
+              "response_text": "Im Internet findest du über jede größere Firma sowohl Lob als auch harte Kritik. Am Ende zählt, welche Regeln heute gelten, wie mit Kunden umgegangen wird und ob du dich mit den Werten identifizieren kannst – wenn nicht, ist es nicht dein Unternehmen.",
+              "tone": "balanced_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Internetmeinungen relativieren",
+                "Werte- und Regel-Fokus",
+                "Persönliche Passung entscheidend"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "company_name": "PM International",
+      "objections": [
+        {
+          "objection_text": "PM International klingt für mich nach einem typischen Pyramiden-System.",
+          "objection_category": "mlm_stigma",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Der Einwand ist verständlich, weil viele mit Network Marketing schlechte Erfahrungen verbinden. Bei PM International geht es um den Vertrieb von FitLine-Nahrungsergänzungen und Kosmetik, die über direkte Kundenbestellungen laufen – Vergütung gibt es nur, wenn Produkte umgesetzt werden, nicht fürs reine Anwerben.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Produktfokus FitLine/Kosmetik",
+                "Vergütung an Umsatz gekoppelt",
+                "Skepsis normalisieren"
+              ]
+            },
+            {
+              "response_text": "Illegal wäre es, wenn Geld fast ausschließlich durch neue Partner und Einstiegspakete fließt. Bei PM International steht der Produktkonsum der Kunden im Vordergrund, und genau darauf baut das Provisionsmodell auf.",
+              "tone": "casual_confident",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Abgrenzung illegales System",
+                "Kundenkonsum als Basis",
+                "Einfache Erklärung"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Die FitLine-Produkte von PM sind einfach zu teuer im Vergleich zu anderen Supplements.",
+          "objection_category": "price",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Ja, PM bewegt sich preislich im Premium-Segment. Dafür stehen unter anderem eigene Rezepturen, Markenaufbau und eine direkte Betreuung durch Partner – wichtig ist, ob dir das Paket aus Qualität, Service und Wirkung den Preis wert ist.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Premium-Positionierung",
+                "Mehrwertpaket erklären",
+                "Preis-Nutzen-Abwägung"
+              ]
+            },
+            {
+              "response_text": "Wenn nur der Preis der Maßstab ist, findest du im Drogeriemarkt immer etwas Günstigeres. Viele meiner Kunden bleiben trotzdem bei FitLine, weil sie mit der Kombination aus Geschmack, Verträglichkeit und Routine am besten klarkommen – aber das ist sehr individuell.",
+              "tone": "casual_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Preisvergleich einordnen",
+                "Individualität betonen",
+                "Langfristige Nutzung"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Für PM habe ich neben meinem Job überhaupt keine Zeit.",
+          "objection_category": "time",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Ohne freien Zeitrahmen macht es keinen Sinn, darüber weiter nachzudenken. Die meisten starten bei PM mit 5–10 Stunden pro Woche und testen, ob es sich in den Alltag integrieren lässt – alles darüber hinaus kommt erst später, wenn es wirklich trägt.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Zeit als K.O.-Kriterium",
+                "Klein anfangen",
+                "Realistische Erwartung"
+              ]
+            },
+            {
+              "response_text": "Wir brauchen keine Menschen, die sich neben Familie und Job komplett überlasten. Wenn dein Kalender gerade voll ist, können wir das Thema einfach parken, bis es wirklich Raum dafür gibt.",
+              "tone": "empathetic",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Überlastung vermeiden",
+                "Timing respektieren",
+                "Option „später“ offenhalten"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich kenne PM International kaum, da fehlt mir das Vertrauen.",
+          "objection_category": "trust",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Dass du nicht einfach einer Firma vertraust, die du kaum kennst, ist gesund. PM International ist seit den 90ern im Markt, in vielen Ländern aktiv und arbeitet im Direktvertrieb – trotzdem ist es sinnvoll, dass du dir selbst Infos anschaust und Fragen stellst, statt nur meiner Meinung zu glauben.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Misstrauen normal",
+                "Historie & Präsenz erwähnen",
+                "Eigenrecherche empfehlen"
+              ]
+            },
+            {
+              "response_text": "Ich kann dir meine Erfahrungen schildern, aber am Ende zählt dein Bauchgefühl. Wenn du nach ein paar Gesprächen und etwas Recherche immer noch kein Vertrauen hast, wäre es unfair, dich weiter zu überzeugen.",
+              "tone": "calm_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Subjektivität anerkennen",
+                "Bauchgefühl respektieren",
+                "Kein Druck"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich bezweifle, dass die FitLine-Produkte qualitativ besser sind als normale Supplements.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Es gibt gute und schlechte Produkte in jedem Preissegment. PM setzt auf eigene Rezepturen, bestimmte Rohstoffstandards und ein durchgängiges Konzept – aber ob du persönlich einen Unterschied merkst, lässt sich nur durch eine ehrliche Testphase sagen, ohne alles schönzureden.",
+              "tone": "professional_realistic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Vergleich relativieren",
+                "Eigene Rezepturen erwähnen",
+                "Testphase statt Versprechen"
+              ]
+            },
+            {
+              "response_text": "Ich finde es gesund, Supplements grundsätzlich kritisch zu sehen. Wenn du das Gefühl hast, deine Ernährung ist bereits top abgedeckt, brauchst du vielleicht gar nichts Zusätzliches – dann ist auch PM nicht die Lösung.",
+              "tone": "honest_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kritik wertschätzen",
+                "Nicht jedem alles verkaufen",
+                "Selbstverantwortung betonen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Mit PM sind doch schon alle unterwegs, der Markt wirkt gesättigt.",
+          "objection_category": "market_saturation",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Online wirkt es oft so, als wären alle im gleichen Geschäft, weil man den eigenen Filter sieht. In den meisten Städten gibt es aber noch viele Menschen, die PM gar nicht kennen – entscheidend ist, wen du erreichen willst und wie du dich von den „lauten“ Vertreibern abgrenzt.",
+              "tone": "casual_confident",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Filterblase erklären",
+                "Lokale Realität",
+                "Positionierung betonen"
+              ]
+            },
+            {
+              "response_text": "Wenn du das Gefühl hast, du würdest nur in Konkurrenz zu deinen Freunden stehen, ist vielleicht eine andere Branche für dich besser geeignet. Network Marketing funktioniert nur, wenn du Lust hast, dich langfristig zu differenzieren.",
+              "tone": "honest",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Wettbewerb ernst nehmen",
+                "Branchenfit prüfen",
+                "Alternativen offenlassen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Verdient man mit PM International wirklich gutes Geld oder nur die ganz oben?",
+          "objection_category": "income_claims",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Wie in fast allen Network-Firmen haben nur wenige ganz große Strukturen und viele verdienen eher nebenbei. Entscheidend ist, mit welchen Zielen du startest: ein paar Hundert Euro zusätzlich im Monat sind realistischer als das berühmte „Traumleben“, das in manchen Präsentationen versprochen wird.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Einkommenspyramide erklären",
+                "Realistische Zielbilder",
+                "Traumleben-Narrativ relativieren"
+              ]
+            },
+            {
+              "response_text": "Ich sage klar: Es ist Arbeit, kein Zaubertrick. Wenn du bereit bist, langfristig zu lernen, Menschen zu führen und ein Team aufzubauen, kannst du dir etwas Solides aufbauen – wenn nicht, ist es besser, bei einem sicheren Fixgehalt zu bleiben.",
+              "tone": "direct_respectful",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Arbeitsaufwand betonen",
+                "Leadership-Aspekt",
+                "Alternative Festanstellung"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich möchte mich nicht an PM binden oder ständig Qualifikationen halten müssen.",
+          "objection_category": "commitment",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Es ist wichtig, dass du genau weißt, welche Qualifikationen und Mindestumsätze gelten, bevor du startest. Wir können die offiziellen Unterlagen gemeinsam durchgehen – wenn dir das zu viel Druck macht, ist das ein Zeichen, dass es nicht zu deinem Lebensmodell passt.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Transparenz bei Bedingungen",
+                "Gemeinsames Durchgehen",
+                "Druckempfinden ernst nehmen"
+              ]
+            },
+            {
+              "response_text": "Für mich ist ein Geschäft nur sinnvoll, wenn du jederzeit ehrlich sagen kannst: „Das passt (nicht) mehr für mich.“ Du bist weder eingesperrt noch zu irgendetwas gezwungen – du kannst auch wieder aussteigen, wenn sich deine Prioritäten ändern.",
+              "tone": "calm_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Freiwilligkeit hervorheben",
+                "Ausstieg als Option",
+                "Lebensphasen berücksichtigen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich will nicht meine Freunde und Familie ständig mit PM-Produkten konfrontieren.",
+          "objection_category": "friends_family",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Das klassische „Freundesliste abtelefonieren“ funktioniert heute ohnehin immer schlechter. Man kann PM seriös über Empfehlungen, Social Media und Menschen aufbauen, die sich aktiv für Gesundheit interessieren – ohne dass Weihnachten zur Verkaufsveranstaltung wird.",
+              "tone": "casual_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Alte Methoden relativieren",
+                "Moderne Kanäle nutzen",
+                "Familienfrieden wahren"
+              ]
+            },
+            {
+              "response_text": "Du entscheidest, wo du eine Grenze ziehst. Ich arbeite lieber mit Fremden, die sich freiwillig informieren wollen, als mit genervten Verwandten – und genau das kann ich dir auch empfehlen.",
+              "tone": "relaxed",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Grenzen definieren",
+                "Fokus auf Interessenten",
+                "Verwandtschaft nicht belasten"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "PM International hat doch auch keinen unproblematischen Ruf – da gibt es viele Meinungen.",
+          "objection_category": "reputation",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Sobald eine Firma im Network Marketing größer wird, gibt es sowohl Fans als auch Kritiker – das ist normal. Wichtig ist, dass du dir anschaust, wie das Unternehmen heute arbeitet, welche Werte kommuniziert werden und wie der Umgang mit Partnern und Kunden wirklich aussieht.",
+              "tone": "professional_balanced",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Kritik als normal einordnen",
+                "Gegenwart statt Vergangenheit",
+                "Werte und Umgang prüfen"
+              ]
+            },
+            {
+              "response_text": "Wenn dich der Ruf einer Marke dauerhaft stört, wirst du nie mit voller Überzeugung dahinterstehen. Dann ist es besser, du suchst dir ein Produkt oder ein Unternehmen, bei dem du zu 100 % Ja sagen kannst.",
+              "tone": "honest_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Innere Kongruenz wichtig",
+                "Nicht gegen Bauchgefühl arbeiten",
+                "Alternative Wege respektieren"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "company_name": "LR Health & Beauty",
+      "objections": [
+        {
+          "objection_text": "LR ist doch auch nur ein typisches Pyramiden-System.",
+          "objection_category": "mlm_stigma",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "LR ist ein deutsches Direktvertriebsunternehmen, das seit Mitte der 80er Jahre mit Kosmetik und Gesundheitsprodukten arbeitet. Rechtlich entscheidend ist, dass der Umsatz über echte Produkte wie Aloe-Vera-Pflege und Supplements kommt – nicht über teure Einstiegspakete ohne Gegenwert.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Deutsches Unternehmen",
+                "Lange Marktpräsenz",
+                "Produktfokus betonen"
+              ]
+            },
+            {
+              "response_text": "Ich kann nachvollziehen, dass du Network Marketing kritisch siehst. Mir ist wichtig, dass du verstehst: Bei LR verdient niemand Geld fürs Nichtstun, sondern nur, wenn Produkte verkauft werden und Kunden zufrieden sind.",
+              "tone": "casual_confident",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kritik wertschätzen",
+                "Keine Bezahlung fürs Rekrutieren allein",
+                "Kundenzufriedenheit im Zentrum"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Die LR-Produkte wirken auf mich im Vergleich zur Drogerie viel zu teuer.",
+          "objection_category": "price",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "LR positioniert sich klar im Premium-Bereich, zum Beispiel mit hoher Aloe-Vera-Konzentration und „Made in Germany“-Qualität. Entscheidend ist, ob du den Unterschied bei Hautgefühl, Verträglichkeit oder Wirkung spürst – dann wird aus teuer oft „preiswert“.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Premium-Positionierung",
+                "Made in Germany",
+                "Erlebbarer Unterschied"
+              ]
+            },
+            {
+              "response_text": "Es muss nicht jeder bereit sein, diesen Preis zu zahlen. Wenn du sagst: „Ich bin mit meiner aktuellen Pflege zufrieden und will nicht mehr ausgeben“, ist das eine völlig faire Entscheidung.",
+              "tone": "honest_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Kundensicht respektieren",
+                "Kein Schönreden",
+                "Selbstbestimmung beim Budget"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Für ein LR-Business habe ich neben Job und Familie keine Zeit.",
+          "objection_category": "time",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Ohne freien Zeitblock wird es schnell zum Stressprojekt. Viele starten bei LR mit kleinen Schritten: bestehende Kontakte, erste Stammkunden, ein paar Stunden pro Woche – erst wenn das stabil läuft, lohnt sich mehr Engagement.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Klein anfangen",
+                "Stress vermeiden",
+                "Schrittweiser Aufbau"
+              ]
+            },
+            {
+              "response_text": "Wenn du aktuell im Überlebensmodus bist, würde ich dir eher raten, erst deine Basis zu stabilisieren. Ein zusätzliches Projekt macht nur Sinn, wenn du innerlich und zeitlich Kapazität hast.",
+              "tone": "empathetic",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Lebenssituation respektieren",
+                "Gesundheit vor Business",
+                "Timing wichtig"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich kenne LR kaum, dem Unternehmen vertraue ich nicht einfach so.",
+          "objection_category": "trust",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "LR kommt aus Deutschland, ist seit Jahrzehnten im direkten Verkauf aktiv und arbeitet in vielen Ländern mit einem ähnlichen Modell. Trotzdem ist es wichtig, dass du nicht nur auf meine Aussagen vertraust, sondern dir auch offizielle Infos, Testergebnisse und Erfahrungsberichte anschaust.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Deutsche Herkunft & Historie",
+                "Eigenrecherche",
+                "Transparenz"
+              ]
+            },
+            {
+              "response_text": "Vertrauen entsteht nicht in einem Gespräch. Lass uns Schritt für Schritt vorgehen, mit kleinen Bestellungen oder Testprodukten – wenn du dich dabei nicht wohlfühlst, ist das Feedback genauso wertvoll.",
+              "tone": "calm_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Schrittweise Annäherung",
+                "Kleine Tests",
+                "Bauchgefühl ernst nehmen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich glaube nicht, dass die LR-Produkte wirklich besser sind als andere Marken.",
+          "objection_category": "product_quality",
+          "occurs_at_stage": "product_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Es gibt viele gute Marken, und LR beansprucht nicht, die einzige Lösung zu sein. Der Fokus liegt auf bestimmten Stärken wie Aloe-Vera-Kompetenz und geprüfter Qualität – ob das für dich einen Unterschied macht, merkst du nur im Test.",
+              "tone": "professional_realistic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Monopolanspruch vermeiden",
+                "Stärken benennen",
+                "Test statt Theorie"
+              ]
+            },
+            {
+              "response_text": "Wenn du mit deiner aktuellen Routine zufrieden bist und keine Baustelle hast, gibt es keinen Grund, zwanghaft zu wechseln. Sinnvoll ist LR vor allem, wenn du aktiv nach Alternativen suchst.",
+              "tone": "honest_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Zufriedenheit respektieren",
+                "Bedarf als Voraussetzung",
+                "Kein Druck"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Mit LR rennen doch schon alle rum, da ist kein Platz mehr.",
+          "objection_category": "market_saturation",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "In Online-Gruppen wirkt es schnell so, als wäre jeder im gleichen Business. In der realen Nachbarschaft haben viele Menschen LR noch nie bewusst wahrgenommen – entscheidend ist, wie du dich in Stil, Beratung und Zielgruppe abhebst.",
+              "tone": "casual_confident",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Online vs. offline",
+                "Differenzierung",
+                "Bewusste Positionierung"
+              ]
+            },
+            {
+              "response_text": "Wenn sich für dich alles nach Konkurrenz anfühlt, wäre vielleicht eine andere Nische gesünder. Es bringt nichts, in einem Markt zu arbeiten, den du innerlich schon abgeschrieben hast.",
+              "tone": "honest",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Eigenes Empfinden ernst nehmen",
+                "Marktwahl reflektieren",
+                "Alternativen erwägen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Verdient bei LR nicht nur der ganz kleine Prozentsatz richtig Geld?",
+          "objection_category": "income_claims",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "very_common",
+          "recommended_responses": [
+            {
+              "response_text": "Die Verteilung ist im Network Marketing immer ähnlich: Viele machen wenig, wenige machen viel. Sinnvoll ist, LR als langfristiges Vertriebsmodell zu sehen, mit dem man sich erst einmal einen soliden Nebenverdienst aufbaut – statt sofort vom großen Reichtum zu träumen.",
+              "tone": "professional_honest",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Einkommensverteilung erklären",
+                "Nebenverdienst realistisch",
+                "Träume erden"
+              ]
+            },
+            {
+              "response_text": "Ich zeige dir lieber, was durchschnittliche Partner ungefähr verdienen, statt nur Top-Leader zu präsentieren. Dann kannst du selbst entscheiden, ob der Aufwand für das mögliche Ergebnis für dich stimmig ist.",
+              "tone": "transparent_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Durchschnitt statt Ausnahme",
+                "Eigenes Urteil fördern",
+                "Transparenz"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich will mich nicht fest an LR binden oder Qualifikationen hinterherrennen.",
+          "objection_category": "commitment",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Es ist wichtig, dass du die Qualifikations- und Bonusregeln kennst, bevor du startest. Wenn du schon beim Lesen das Gefühl hast „Das ist mir zu stressig“, ist das ein klares Signal, dass dieses Modell nicht zu dir passt.",
+              "tone": "professional_empathetic",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Regeln offenlegen",
+                "Stress als Warnsignal",
+                "Freiwillige Entscheidung"
+              ]
+            },
+            {
+              "response_text": "Du kannst LR auch als reine Kunden- oder Empfehlungsvariante nutzen, ohne Vollgas im Karriereplan zu geben. Nicht jeder muss Führungskraft werden, um Nutzen aus den Produkten zu ziehen.",
+              "tone": "calm_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Leichte Einstiegsvarianten",
+                "Kein Erfolgszwang",
+                "Produktfokus möglich"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "Ich möchte nicht meine Freunde und Familie mit LR volltexten.",
+          "objection_category": "friends_family",
+          "occurs_at_stage": "opportunity_presentation",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Ich sehe das genauso – Beziehungen sind wichtiger als kurzfristiger Umsatz. Man kann mit LR sehr gut über Social Media, Events oder Kooperationen mit Dienstleistern arbeiten, ohne den Familienchat in einen Werbekanal zu verwandeln.",
+              "tone": "relaxed",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Beziehungspriorität",
+                "Alternative Akquisewege",
+                "Privatleben schützen"
+              ]
+            },
+            {
+              "response_text": "Du darfst für dich definieren: „Familie ist tabu-Zone“. Wenn du das klar kommunizierst, bleibt der Druck draußen und du kannst dich auf Menschen konzentrieren, die wirklich interessiert sind.",
+              "tone": "casual_empathetic",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Tabu-Zone erlauben",
+                "Grenzen setzen",
+                "Druck rausnehmen"
+              ]
+            }
+          ]
+        },
+        {
+          "objection_text": "LR hat doch gemischte Bewertungen, der Ruf ist nicht nur positiv.",
+          "objection_category": "reputation",
+          "occurs_at_stage": "initial_contact",
+          "frequency": "common",
+          "recommended_responses": [
+            {
+              "response_text": "Gerade im Network-Bereich sind Meinungen oft extrem – von „beste Firma“ bis „alles Betrug“. Ich empfehle dir, auf harte Fakten, deine eigenen Erfahrungen und den Umgang der Firma mit Partnern und Kunden zu schauen, statt nur Schlagzeilen zu bewerten.",
+              "tone": "professional_balanced",
+              "effectiveness_rating": 8,
+              "key_points": [
+                "Meinungsspektrum erklären",
+                "Fakten & Erfahrung",
+                "Umgangskultur prüfen"
+              ]
+            },
+            {
+              "response_text": "Wenn du den Namen LR hörst und innerlich sofort Widerstand spürst, wirst du nie entspannt darüber sprechen können. Dann ist es ehrlicher, eine andere Möglichkeit zu suchen, mit der du dich wohler fühlst.",
+              "tone": "honest_consultative",
+              "effectiveness_rating": 7,
+              "key_points": [
+                "Innere Reaktion ernst nehmen",
+                "Kongruenz wichtig",
+                "Alternative Suchrichtung"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+
+    /* HINWEIS:
+       Wegen der Token-Länge kann ich dir in einem Schritt nicht alle
+       10 Firmen vollständig mit je 10 Einwänden × 2 Antworten ausspielen.
+       Oben siehst du die fertige Struktur und drei komplett ausgearbeitete Beispiele
+       (Herbalife, PM International, LR).
+
+       Du kannst diese Struktur 1:1 kopieren und für:
+       - Juice Plus
+       - doTerra
+       - Forever Living
+       - Ringana
+       - Amway
+       - Vorwerk
+       - Young Living
+
+       analog füllen – jeweils nur Firmennamen, Produktschwerpunkte und ein paar
+       Formulierungen anpassen. Wenn du willst, kann ich im nächsten Schritt
+       gezielt eine weitere Firma (z.B. doTerra oder Ringana) komplett ausformulieren,
+       oder dir eine „Template-Version“ mit Platzhaltern {company_name}, {product_focus}
+       bauen, die dein System automatisch je Firma befüllt.
+    */
+  ]
+}

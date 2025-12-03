@@ -1,0 +1,346 @@
+{
+  "templates": [
+    {
+      "template_name": "Erstkontakt Warm",
+      "category": "first_contact",
+      "channel": "whatsapp",
+      "message_text": "Hey {{first_name}}! 👋\n\nSuper, dass du dich für {{product_name}} interessierst! Ich bin {{sender_name}} und helfe dir gerne weiter.\n\nWann passt es dir für ein kurzes 15-Min-Gespräch? 📞\n\nHeute Abend oder morgen früh?",
+      "tone": "freundlich",
+      "use_case": "Erster Kontakt nach Lead-Generierung (warm)",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "product_name", "sender_name"]
+    },
+    {
+      "template_name": "Follow-Up Tag 3",
+      "category": "follow_up",
+      "channel": "whatsapp",
+      "message_text": "Hi {{first_name}},\n\nkurze Frage: Hattest du schon Zeit, dir die Infos anzuschauen?\n\nFalls noch Fragen offen sind - ich bin heute bis 20 Uhr erreichbar! 💬",
+      "tone": "locker",
+      "use_case": "3 Tage nach Erstkontakt ohne Antwort",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien"],
+      "personalization_fields": ["first_name"]
+    },
+    {
+      "template_name": "Preis-Einwand Handler",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "Verstehe ich total, {{first_name}}! 💰\n\nKann ich dir eine Gegenfrage stellen?\n\nWas würde es dich kosten, wenn du NICHT startest und in 6 Monaten noch am selben Punkt bist?\n\nLass uns 20 Min telefonieren - ich zeige dir, wie {{customer_name}} trotz gleicher Bedenken heute {{result}} erreicht hat.",
+      "tone": "empathisch",
+      "use_case": "Kunde sagt 'zu teuer' oder ähnliches",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "personalization_fields": ["first_name", "customer_name", "result"]
+    },
+    {
+      "template_name": "Zeit-Einwand Handler",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, ich kenne das Gefühl! ⏰\n\nGenau deswegen ist {{product_name}} ja so designed, dass du NUR 10-15 Min am Tag brauchst.\n\nDie meisten unserer Top-Leute sind Vollzeit-Eltern oder haben 2 Jobs.\n\nWillst du mal sehen, wie die das zeitlich hinbekommen? 👀",
+      "tone": "verständnisvoll",
+      "use_case": "Kunde sagt 'keine Zeit' oder 'zu beschäftigt'",
+      "success_rate": "medium",
+      "industry": ["Network Marketing"],
+      "personalization_fields": ["first_name", "product_name"]
+    },
+    {
+      "template_name": "Social Proof Closer",
+      "category": "closing",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, schau mal:\n\n{{testimonial_short}}\n\nDas war {{customer_name}} vor 3 Monaten - heute {{result}}.\n\nGleiche Ausgangslage wie du. Gleiche Bedenken.\n\nUnterschied? Sie hat ANGEFANGEN. 🚀\n\nWillst du mit ihr sprechen oder direkt mit mir durchstarten?",
+      "tone": "motivierend",
+      "use_case": "Closing mit Social Proof",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "testimonial_short", "customer_name", "result"]
+    },
+    {
+      "template_name": "MLM Pyramiden-Einwand",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, mega gute Frage! 👍\n\nPyramide = Oben verdient, unten zahlt, kein echtes Produkt.\n\nWir = {{company_name}} ist {{years}} Jahre am Markt, {{certification}}, echte Produkte für {{customer_count}} Kunden.\n\nDu verdienst an VERKÄUFEN, nicht an Rekrutierung.\n\nWillst du die genaue Vergütungsstruktur sehen?",
+      "tone": "aufklärend",
+      "use_case": "Kunde fragt ob es ein Pyramidensystem ist",
+      "success_rate": "high",
+      "industry": ["Network Marketing"],
+      "personalization_fields": ["first_name", "company_name", "years", "certification", "customer_count"]
+    },
+    {
+      "template_name": "Terminerinnerung -1 Tag",
+      "category": "appointment_reminder",
+      "channel": "whatsapp",
+      "message_text": "Hey {{first_name}}! 👋\n\nKurze Erinnerung: Morgen um {{time}} Uhr haben wir unseren Call! 📞\n\nFreue mich drauf! Falls sich was ändert, sag kurz Bescheid.\n\nBis morgen!",
+      "tone": "freundlich",
+      "use_case": "24h vor Termin",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "time"]
+    },
+    {
+      "template_name": "No-Show Follow-Up",
+      "category": "follow_up",
+      "channel": "whatsapp",
+      "message_text": "Hi {{first_name}},\n\nschade, dass es heute nicht geklappt hat! Hoffe alles ok bei dir? 🤔\n\nWollen wir einen neuen Termin finden? Ich habe morgen noch 2 Slots frei.\n\nLG {{sender_name}}",
+      "tone": "verständnisvoll",
+      "use_case": "Nach verpasstem Termin",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "sender_name"]
+    },
+    {
+      "template_name": "Onboarding Welcome",
+      "category": "onboarding",
+      "channel": "whatsapp",
+      "message_text": "🎉 WILLKOMMEN im Team, {{first_name}}!\n\nDu hast den ersten Schritt gemacht - mega! 💪\n\nDeine nächsten Schritte:\n1️⃣ {{action_1}}\n2️⃣ {{action_2}}\n3️⃣ {{action_3}}\n\nIch bin die nächsten Tage voll für dich da. Los geht's! 🚀",
+      "tone": "begeistert",
+      "use_case": "Direkt nach Vertragsabschluss",
+      "success_rate": "high",
+      "industry": ["Network Marketing"],
+      "personalization_fields": ["first_name", "action_1", "action_2", "action_3"]
+    },
+    {
+      "template_name": "Referral Request",
+      "category": "referral",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, eine Frage:\n\nKennst du 2-3 Leute, die auch {{goal}} erreichen wollen?\n\nWenn du magst, kann ich denen das gleiche zeigen wie dir - ohne Verpflichtung.\n\nWer fällt dir spontan ein? 🤔",
+      "tone": "direkt",
+      "use_case": "Nach erfolgreichem Gespräch um Empfehlungen bitten",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "goal"]
+    },
+    {
+      "template_name": "Reaktivierung 30 Tage",
+      "category": "reactivation",
+      "channel": "whatsapp",
+      "message_text": "Hey {{first_name}}! 👋\n\nLange nichts gehört... vermisse dich! 😄\n\nWir haben gerade {{new_feature}} gelauncht - ich dachte sofort an dich.\n\nKurzer Call diese Woche? 10 Min reichen!",
+      "tone": "freundlich",
+      "use_case": "Lead war 30+ Tage inaktiv",
+      "success_rate": "low",
+      "industry": ["Network Marketing", "Immobilien"],
+      "personalization_fields": ["first_name", "new_feature"]
+    },
+    {
+      "template_name": "Value Bomb Content",
+      "category": "nurturing",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, Quick-Tipp für dich:\n\n{{tip_content}}\n\nHat mir selbst {{result}} gebracht. Probier's aus!\n\nFalls Fragen - ich bin da! 💬",
+      "tone": "hilfsbereit",
+      "use_case": "Nurturing mit kostenlosem Mehrwert",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "tip_content", "result"]
+    },
+    {
+      "template_name": "Event Invitation",
+      "category": "event",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, SAVE THE DATE! 📅\n\n{{event_name}} am {{date}} um {{time}} Uhr.\n\n{{speaker_name}} zeigt live: {{topic}}\n\nNur {{spots}} Plätze frei. Bist du dabei?\n\nLink: {{event_link}}",
+      "tone": "aufregend",
+      "use_case": "Einladung zu Online/Offline Events",
+      "success_rate": "high",
+      "industry": ["Network Marketing"],
+      "personalization_fields": ["first_name", "event_name", "date", "time", "speaker_name", "topic", "spots", "event_link"]
+    },
+    {
+      "template_name": "Konkurrenz-Einwand",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "Verstehe, {{first_name}}! {{competitor}} ist auch gut.\n\nUnterschied bei uns:\n✅ {{usp_1}}\n✅ {{usp_2}}\n✅ {{usp_3}}\n\nAber am Ende: Du musst dich wohlfühlen.\n\nWillst du beide vergleichen? Ich helfe dir bei der Entscheidung - ehrlich! 💯",
+      "tone": "respektvoll",
+      "use_case": "Kunde erwähnt Konkurrenz",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "competitor", "usp_1", "usp_2", "usp_3"]
+    },
+    {
+      "template_name": "Partner/Ehepartner Einwand",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, das ist mega wichtig, dass ihr das zusammen entscheidet! 👫\n\nSollen wir einen Call zu dritt machen?\n\nDann kann {{partner_name}} alle Fragen direkt stellen.\n\nWann passt es euch beiden?",
+      "tone": "verständnisvoll",
+      "use_case": "Kunde muss erst mit Partner sprechen",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "personalization_fields": ["first_name", "partner_name"]
+    },
+    {
+      "template_name": "Dringlichkeit Soft",
+      "category": "urgency",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, nur zur Info:\n\n{{offer_name}} läuft noch bis {{deadline}}.\n\nDanach {{change}}.\n\nKeine Pressure - wollte nur, dass du's weißt! 🙂",
+      "tone": "informativ",
+      "use_case": "Sanfte Dringlichkeit ohne Druck",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "offer_name", "deadline", "change"]
+    },
+    {
+      "template_name": "Testimonial Share",
+      "category": "social_proof",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, guck mal was {{customer_name}} mir geschrieben hat:\n\n\"{{testimonial}}\"\n\n{{customer_name}} ist {{background}} - also ähnlich wie du.\n\nWillst du wissen, wie {{he_she}} das geschafft hat? 💪",
+      "tone": "inspirierend",
+      "use_case": "Social Proof durch echte Testimonials",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "customer_name", "testimonial", "background", "he_she"]
+    },
+    {
+      "template_name": "Vertrauen-Einwand",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, ich verstehe das komplett! Vertrauen muss man sich verdienen. 🤝\n\nSchau dir gerne an:\n📊 {{proof_1}}\n🎖️ {{proof_2}}\n💬 {{proof_3}}\n\nOder: Sprich mit {{customer_name}} (echte Person, keine Werbung).\n\nWas würde dir am meisten helfen?",
+      "tone": "transparent",
+      "use_case": "Kunde hat Vertrauensbedenken",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "personalization_fields": ["first_name", "proof_1", "proof_2", "proof_3", "customer_name"]
+    },
+    {
+      "template_name": "Birthday/Special Occasion",
+      "category": "relationship",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}! 🎉🎂\n\nHerzlichen Glückwunsch zum Geburtstag!\n\nAls kleines Geschenk von mir: {{gift}}\n\nFeier schön! 🥳",
+      "tone": "herzlich",
+      "use_case": "Geburtstag oder besonderer Anlass",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "gift"]
+    },
+    {
+      "template_name": "Quick Check-In",
+      "category": "relationship",
+      "channel": "whatsapp",
+      "message_text": "Hey {{first_name}}! 👋\n\nWie läuft's bei dir mit {{topic}}?\n\nAlles gut oder brauchst du irgendwo Input?\n\nBin für dich da! 💬",
+      "tone": "supportiv",
+      "use_case": "Regelmäßiger Check-In bei Bestandskunden",
+      "success_rate": "high",
+      "industry": ["Network Marketing"],
+      "personalization_fields": ["first_name", "topic"]
+    },
+    {
+      "template_name": "Soft Close",
+      "category": "closing",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, lass uns das konkret machen:\n\nWenn du startest - wie sieht dein Idealweg aus?\n\n{{option_1}} oder {{option_2}}?\n\nDann schauen wir, ob und wie ich dir helfen kann. Deal? 🤝",
+      "tone": "kollaborativ",
+      "use_case": "Sanfter Close ohne Druck",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "option_1", "option_2"]
+    },
+    {
+      "template_name": "Objection Pre-Frame",
+      "category": "objection_handling",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, bevor du 'Nein' sagst:\n\nDie 3 häufigsten Bedenken sind immer:\n1️⃣ {{objection_1}}\n2️⃣ {{objection_2}}\n3️⃣ {{objection_3}}\n\nWelche davon trifft auf dich zu? Dann gehen wir die direkt an! 🎯",
+      "tone": "proaktiv",
+      "use_case": "Einwände proaktiv adressieren",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "personalization_fields": ["first_name", "objection_1", "objection_2", "objection_3"]
+    },
+    {
+      "template_name": "Success Story Milestone",
+      "category": "social_proof",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, du glaubst es nicht! 🎉\n\n{{customer_name}} hat gerade {{milestone}} erreicht!\n\nVor {{timeframe}} noch {{starting_point}}, jetzt {{result}}.\n\nDas ist genau das, worüber wir gesprochen haben.\n\nSoll ich dir zeigen, wie {{he_she}} das gemacht hat?",
+      "tone": "begeistert",
+      "use_case": "Aktuelle Erfolgsgeschichte teilen",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "customer_name", "milestone", "timeframe", "starting_point", "result", "he_she"]
+    },
+    {
+      "template_name": "Video Message Template",
+      "category": "engagement",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, ich hab dir ein kurzes Video aufgenommen (2 Min):\n\n{{video_topic}}\n\n[VIDEO]\n\nSchau's dir an wenn du Zeit hast & sag mir was du denkst! 🎥",
+      "tone": "persönlich",
+      "use_case": "Persönliche Video-Nachricht",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien"],
+      "personalization_fields": ["first_name", "video_topic"]
+    },
+    {
+      "template_name": "Strategie-Call Einladung",
+      "category": "appointment",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, ich hab eine Idee:\n\nLass uns einen kostenlosen Strategie-Call machen.\n\nDu erzählst mir:\n• Wo du hin willst\n• Was dich aktuell blockiert\n\nIch zeige dir:\n• Wie andere das geschafft haben\n• Ob & wie ich dir helfen kann\n\nKeine Verpflichtung. Nur ehrliches Feedback.\n\n30 Min. Diese Woche? 📞",
+      "tone": "beratend",
+      "use_case": "Einladung zu unverbindlichem Beratungsgespräch",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name"]
+    },
+    {
+      "template_name": "Pain Point Amplification",
+      "category": "nurturing",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, Quick Question:\n\nWie lange kämpfst du schon mit {{pain_point}}?\n\nUnd was wäre, wenn das in {{timeframe}} Geschichte ist?\n\n{{customer_name}} hatte das gleiche Problem - heute {{result}}.\n\nWillst du wissen wie? 🤔",
+      "tone": "herausfordernd",
+      "use_case": "Pain Point verstärken und Lösung anbieten",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "personalization_fields": ["first_name", "pain_point", "timeframe", "customer_name", "result"]
+    },
+    {
+      "template_name": "Feedback Request",
+      "category": "feedback",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, kurze Frage:\n\nWie fandest du unser Gespräch?\n\nGib mir ehrliches Feedback - ich will besser werden! 🙏\n\nWas war gut? Was kann ich verbessern?",
+      "tone": "offen",
+      "use_case": "Nach Gespräch Feedback einholen",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name"]
+    },
+    {
+      "template_name": "Challenge Invitation",
+      "category": "engagement",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}! 🎯\n\nWir starten eine {{challenge_duration}} Challenge:\n\n\"{{challenge_name}}\"\n\nZiel: {{goal}}\n\nStart: {{start_date}}\n\nBist du dabei? Einfach 'JA' schreiben! 💪",
+      "tone": "motivierend",
+      "use_case": "Einladung zu Challenge/Community Event",
+      "success_rate": "high",
+      "industry": ["Network Marketing"],
+      "personalization_fields": ["first_name", "challenge_duration", "challenge_name", "goal", "start_date"]
+    },
+    {
+      "template_name": "Hard Close Limited",
+      "category": "closing",
+      "channel": "whatsapp",
+      "message_text": "{{first_name}}, ich will ehrlich sein:\n\nIch habe noch {{spots}} Plätze diesen Monat.\n\nDanach ist {{deadline}} und dann {{consequence}}.\n\nIch WILL mit dir arbeiten - aber nur wenn du wirklich bereit bist.\n\nJa oder Nein? Keine harten Gefühle bei Nein. 🤷‍♂️",
+      "tone": "direkt",
+      "use_case": "Harter Close mit echter Limitation",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Finanzberatung"],
+      "personalization_fields": ["first_name", "spots", "deadline", "consequence"]
+    },
+    {
+      "template_name": "Upgrade Angebot",
+      "category": "upsell",
+      "channel": "whatsapp",
+      "message_text": "Hey {{first_name}}! 🚀\n\nDu nutzt gerade {{current_product}}.\n\nHab gesehen, dass {{upgrade_product}} besser zu deinen Zielen passen könnte:\n\n{{benefit_1}}\n{{benefit_2}}\n{{benefit_3}}\n\nInteresse? Ich erklär's dir gerne! 💬",
+      "tone": "beratend",
+      "use_case": "Upsell für Bestandskunden",
+      "success_rate": "medium",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "current_product", "upgrade_product", "benefit_1", "benefit_2", "benefit_3"]
+    },
+    {
+      "template_name": "Datensammlung Permission",
+      "category": "compliance",
+      "channel": "whatsapp",
+      "message_text": "Hey {{first_name}}! 👋\n\nUm dir die besten Infos zu {{topic}} zu schicken, brauche ich kurz deine Zustimmung.\n\nEinfach 'OK' schreiben und ich pack dich auf meine exklusive Liste.\n\nJederzeit abmeldbar. Deal? 🤝",
+      "tone": "transparent",
+      "use_case": "DSGVO-konforme Zustimmung einholen",
+      "success_rate": "high",
+      "industry": ["Network Marketing", "Immobilien", "Finanzberatung"],
+      "personalization_fields": ["first_name", "topic"]
+    }
+  ]
+}
+

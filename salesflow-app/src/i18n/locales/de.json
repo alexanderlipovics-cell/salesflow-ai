@@ -1,0 +1,595 @@
+{
+  "common": {
+    "online": "Online",
+    "offline": "Offline",
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "success": "Erfolgreich",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "next": "Weiter",
+    "done": "Fertig",
+    "yes": "Ja",
+    "no": "Nein",
+    "logout": "Logout",
+    "refresh": "Aktualisieren",
+    "updated": "Aktualisiert",
+    "dashboard_reloaded": "Dashboard wurde neu geladen",
+    "could_not_load": "Konnte Daten nicht laden",
+    "search": "Suchen",
+    "all": "Alle",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "overdue": "Überfällig",
+    "later": "Später",
+    "completed": "Erledigt",
+    "open": "Offen",
+    "new": "Neu",
+    "add": "Hinzufügen",
+    "create": "Erstellen",
+    "close": "Schließen",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "send": "Senden",
+    "demo_mode": "Demo-Modus"
+  },
+
+  "greetings": {
+    "morning": "Guten Morgen",
+    "afternoon": "Guten Tag",
+    "evening": "Guten Abend"
+  },
+
+  "dashboard": {
+    "title": "Dashboard",
+    "today": "Heute",
+    "open": "Offen",
+    "leads": "Leads",
+    "conversion": "Quote",
+    "system_status": "🚀 System Status",
+    "backend_connected": "Backend verbunden",
+    "backend_offline": "Backend offline - Demo-Modus aktiv",
+    "quick_actions": "Quick Actions",
+    "admin_tools": "🛠️ Admin Tools",
+    "daily_tip": "💡 Tipp des Tages",
+    "daily_tip_text": "Nutze den AI Chat, um personalisierte Einwand-Behandlungen für deine aktuellen Leads zu generieren.",
+    "try_now": "Jetzt ausprobieren →",
+    "chat_import": "Chat importieren",
+    "chat_import_platforms": "Instagram, WhatsApp, Facebook...",
+    "lead_imported": "✅ Lead importiert",
+    "chat_analyzed": "Chat wurde erfolgreich analysiert und Lead angelegt.",
+    "go_to_leads": "Zu Leads"
+  },
+
+  "actions": {
+    "aura_dashboard": "AURA OS",
+    "aura_dashboard_desc": "Premium Dashboard",
+    "autopilot": "Autopilot",
+    "autopilot_desc": "Auto-Antworten",
+    "ai_chat": "AI Chat",
+    "ai_chat_desc": "Frag CHIEF",
+    "sequences": "Sequences",
+    "sequences_desc": "Auto-Outreach",
+    "email_accounts": "E-Mail Konten",
+    "email_accounts_desc": "SMTP Setup",
+    "outreach": "Outreach",
+    "outreach_desc": "Ghost-Tracker",
+    "ghosts": "Ghosts",
+    "ghosts_desc": "Re-Engagement",
+    "finance": "Finanzen",
+    "finance_desc": "Einnahmen & Ziele",
+    "leads": "Leads",
+    "leads_desc": "Kontakte verwalten",
+    "import": "Import",
+    "import_desc": "CSV/Excel Import",
+    "followups": "Follow-ups",
+    "followups_desc": "Offene Aufgaben",
+    "playbooks": "Playbooks",
+    "playbooks_desc": "Sales-Strategien",
+    "analytics": "Analytics",
+    "analytics_desc": "Team-Performance",
+    "team": "Team",
+    "team_desc": "Top-Performer",
+    "team_leader": "Team Leader",
+    "team_leader_desc": "Team Dashboard",
+    "onboarding": "Onboarding",
+    "onboarding_desc": "Schnellstart",
+    "security": "Security",
+    "security_desc": "Locked Block™",
+    "compliance": "Compliance",
+    "compliance_desc": "Liability Shield",
+    "ab_tests": "A/B Tests",
+    "ab_tests_desc": "Experimente",
+    "ask_chief": "CHIEF fragen",
+    "templates": "Templates",
+    "stats": "Stats"
+  },
+
+  "chat": {
+    "title": "AI Chat",
+    "placeholder": "Nachricht eingeben...",
+    "send": "Senden",
+    "listening": "Zuhören...",
+    "processing": "Verarbeite...",
+    "speaking": "Spreche...",
+    "voice_mode": "Sprachmodus",
+    "auto_read": "Auto-Vorlesen",
+    "templates": "📚 Templates",
+    "copy_message": "Nachricht kopieren",
+    "copied": "Kopiert!",
+    "regenerate": "Neu generieren",
+    "chief_intro": "Hallo! 👋 Ich bin CHIEF, dein AURA OS Agent.\n\n🎯 CHIEF hat deinen Tag vorbereitet und kennt deine Leads!\n\nIch helfe dir bei:\n• Tages-Planung & Prioritäten\n• Einwand-Behandlung\n• Follow-up Strategien\n• Abschluss-Techniken\n\nWas steht heute an?",
+    "error_sending": "Fehler beim Senden der Nachricht",
+    "error_connection": "Verbindungsfehler. Bitte versuche es erneut.",
+    "live_assist": "Live Assist",
+    "live_assist_active": "Live Assist aktiv",
+    "live_assist_inactive": "Live Assist inaktiv",
+    "disc_profile": "DISC-Profil",
+    "compliance_warning": "Compliance-Hinweis",
+    "feedback": {
+      "helpful": "Hilfreich",
+      "not_helpful": "Nicht hilfreich",
+      "thanks": "Danke für dein Feedback!"
+    },
+    "actions": {
+      "call": "Anrufen",
+      "email": "E-Mail",
+      "message": "Nachricht",
+      "meeting": "Meeting",
+      "followup": "Follow-up"
+    }
+  },
+
+  "leads": {
+    "title": "Leads",
+    "search_placeholder": "Lead suchen...",
+    "no_leads": "Noch keine Leads vorhanden",
+    "add_lead": "Lead hinzufügen",
+    "import_leads": "Leads importieren",
+    "status": {
+      "new": "Neu",
+      "contacted": "Kontaktiert",
+      "qualified": "Qualifiziert",
+      "proposal_sent": "Angebot gesendet",
+      "won": "Gewonnen",
+      "lost": "Verloren"
+    },
+    "priority": {
+      "high": "🔥 Hoch",
+      "medium": "⚡ Mittel",
+      "low": "📌 Niedrig"
+    },
+    "fields": {
+      "name": "Name",
+      "company": "Firma",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "notes": "Notizen",
+      "last_contact": "Letzter Kontakt",
+      "score": "Score"
+    },
+    "score_categories": {
+      "hot": "🔥 Heiß",
+      "warm": "🌡️ Warm",
+      "cool": "❄️ Kühl",
+      "cold": "🥶 Kalt"
+    },
+    "bant": {
+      "title": "BANT-Scoring",
+      "budget": "Budget",
+      "authority": "Autorität",
+      "need": "Bedarf",
+      "timeline": "Zeitrahmen"
+    },
+    "actions": {
+      "call": "Anrufen",
+      "email": "E-Mail senden",
+      "message": "Nachricht senden",
+      "schedule_followup": "Follow-up planen",
+      "view_history": "Verlauf anzeigen",
+      "ask_chief": "CHIEF fragen"
+    },
+    "filter": {
+      "all": "Alle",
+      "active": "Aktiv",
+      "hot": "Hot Leads",
+      "new_this_week": "Neu diese Woche"
+    },
+    "empty_state": "Keine Leads gefunden. Importiere Chats oder erstelle manuell einen Lead.",
+    "auto_reminder": "Auto-Reminder aktiv"
+  },
+
+  "followups": {
+    "title": "Follow-ups",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "overdue": "Überfällig",
+    "later": "Später",
+    "completed": "Erledigt",
+    "show_completed": "Erledigte anzeigen",
+    "hide_completed": "Erledigte ausblenden",
+    "no_followups": "Keine offenen Follow-ups",
+    "add_followup": "Follow-up hinzufügen",
+    "mark_complete": "Als erledigt markieren",
+    "mark_incomplete": "Als offen markieren",
+    "get_suggestion": "💡 Vorschlag holen",
+    "suggestion": {
+      "title": "CHIEF Vorschlag",
+      "loading": "Generiere Vorschlag...",
+      "copy": "Kopieren",
+      "use": "Verwenden"
+    },
+    "action_types": {
+      "call": "📞 Anrufen",
+      "email": "📧 E-Mail",
+      "meeting": "🤝 Meeting",
+      "message": "💬 Nachricht",
+      "follow_up": "📋 Follow-up"
+    },
+    "priority": {
+      "high": "🔥 Hoch",
+      "medium": "⚡ Mittel",
+      "low": "📌 Niedrig"
+    },
+    "form": {
+      "lead_name": "Lead-Name",
+      "action": "Aktion",
+      "description": "Beschreibung",
+      "due_date": "Fälligkeitsdatum",
+      "priority": "Priorität"
+    },
+    "stats": {
+      "open": "Offen",
+      "completed_today": "Heute erledigt",
+      "overdue": "Überfällig"
+    }
+  },
+
+  "finance": {
+    "title": "Finanzen",
+    "overview": "Übersicht",
+    "revenue": "Einnahmen",
+    "expenses": "Ausgaben",
+    "profit": "Gewinn",
+    "goals": "Ziele",
+    "this_month": "Diesen Monat",
+    "this_year": "Dieses Jahr",
+    "projections": "Prognosen"
+  },
+
+  "playbooks": {
+    "title": "Playbooks",
+    "subtitle": "Sales-Strategien & Best Practices",
+    "categories": {
+      "prospecting": "Akquise",
+      "qualification": "Qualifizierung",
+      "closing": "Abschluss",
+      "objections": "Einwände"
+    }
+  },
+
+  "settings": {
+    "title": "Einstellungen",
+    "account": "Konto",
+    "notifications": "Benachrichtigungen",
+    "language": "Sprache",
+    "theme": "Design",
+    "about": "Über AURA OS",
+    "version": "Version",
+    "privacy": "Datenschutz",
+    "terms": "Nutzungsbedingungen",
+    "logout": "Abmelden"
+  },
+
+  "editions": {
+    "aura": {
+      "name": "AURA OS",
+      "tagline": "Intelligent Sales Operating System",
+      "subtitle": "Powered by CHIEF AI",
+      "quick_access": "Schnellzugriff",
+      "features": {
+        "messages": "🎯 Personalisierte Nachrichten",
+        "analytics": "📈 Sales Analytics",
+        "ai_support": "🤖 CHIEF KI-Agent",
+        "automation": "⚡ Smart Automatisierung"
+      },
+      "tips": {
+        "tip1": "Lass CHIEF deine Follow-ups vorbereiten",
+        "tip2": "Nutze Live Assist für Echtzeit-Coaching",
+        "tip3": "Analysiere deine besten Pitch-Patterns",
+        "tip4": "Automatisiere mit Autopilot-Mode",
+        "tip5": "Tracke Ghost-Leads für Re-Engagement"
+      }
+    },
+    "default": {
+      "name": "AURA OS",
+      "tagline": "Intelligent Sales Operating System",
+      "quick_access": "Schnellzugriff",
+      "features": {
+        "messages": "🎯 Personalisierte Nachrichten",
+        "analytics": "📈 Sales Analytics",
+        "ai_support": "🤖 CHIEF KI-Agent",
+        "automation": "⚡ Smart Automatisierung"
+      },
+      "tips": {
+        "tip1": "Lass CHIEF deine Follow-ups vorbereiten",
+        "tip2": "Nutze Live Assist für Echtzeit-Coaching",
+        "tip3": "Analysiere deine besten Pitch-Patterns",
+        "tip4": "Automatisiere mit Autopilot-Mode",
+        "tip5": "Tracke Ghost-Leads für Re-Engagement"
+      }
+    },
+    "zinzino": {
+      "name": "Zinzino",
+      "tagline": "Test. Personalize. Balance.",
+      "quick_help": "🚀 Zinzino Schnellhilfe",
+      "features": {
+        "balance_test": "🧪 BalanceTest Ergebnisse erklären",
+        "omega_ratio": "📈 Omega-3/6 Ratio verstehen",
+        "products": "💊 Produktempfehlungen geben",
+        "comp_plan": "🎯 Comp Plan optimieren"
+      },
+      "quick_questions": {
+        "balance_test": "Wie erkläre ich den BalanceTest?",
+        "omega_ratio": "Was bedeutet ein 15:1 Omega-Verhältnis?",
+        "comp_plan": "Erkläre den Zinzino Compensation Plan",
+        "usage": "Wie nehme ich BalanceOil richtig ein?"
+      },
+      "tips": {
+        "tip1": "Erkläre den BalanceTest als \"Bluttest für deine Zellen\"",
+        "tip2": "Fokus auf das 3:1 Omega-Verhältnis als Ziel",
+        "tip3": "BalanceOil+ ist der perfekte Gesprächseinstieg"
+      }
+    },
+    "pm_international": {
+      "name": "PM-International",
+      "tagline": "FitLine - Winning starts from within",
+      "features": {
+        "products": "🏋️ FitLine Produktberatung",
+        "tracking": "📊 Performance-Tracking",
+        "team_building": "🎯 Team-Aufbau Strategie"
+      },
+      "tips": {
+        "tip1": "Das NTC ist dein stärkster Verkaufspunkt",
+        "tip2": "Sportler und Fitness-Begeisterte sind ideale Zielgruppe"
+      }
+    },
+    "lr_health_beauty": {
+      "name": "LR Health & Beauty",
+      "tagline": "More quality for your life",
+      "features": {
+        "beauty": "🌸 Beauty-Beratung",
+        "supplements": "💊 Nahrungsergänzung",
+        "gifts": "🎁 Kundengeschenke"
+      },
+      "tips": {
+        "tip1": "Aloe Vera ist das Herzstück von LR",
+        "tip2": "Kombipakete bieten den besten Einstieg"
+      }
+    },
+    "doterra": {
+      "name": "dōTERRA",
+      "tagline": "Essential Oils for Life",
+      "features": {
+        "oils": "🌿 Ätherische Öle",
+        "wellness": "🧘 Wellness-Beratung",
+        "tips": "💆 Anwendungstipps"
+      },
+      "tips": {
+        "tip1": "Lavendel ist das perfekte Einstiegsöl",
+        "tip2": "Home Essentials Kit für neue Kunden"
+      }
+    },
+    "b2b": {
+      "tagline": "B2B Edition",
+      "features": {
+        "roi": "📊 ROI-Rechner für Enterprise Deals",
+        "value_selling": "💎 Value-Selling Strategien",
+        "enterprise": "🏢 Enterprise-Deal Orchestrierung",
+        "stakeholder": "🎯 Stakeholder-Mapping"
+      },
+      "actions": {
+        "roi_calculator": "ROI berechnen",
+        "stakeholder": "Stakeholder-Map",
+        "pipeline": "Deal-Pipeline"
+      },
+      "tips": {
+        "tip1": "Zeige ROI in 3 Szenarien: Konservativ, Realistisch, Optimistisch",
+        "tip2": "Identifiziere alle Entscheider VOR dem Pitch",
+        "tip3": "Value-Selling: Erkläre WARUM teurer = günstiger ist"
+      }
+    },
+    "network_pro": {
+      "tagline": "Network Pro Edition",
+      "features": {
+        "duplication": "🚀 Team-Duplikation auf Knopfdruck",
+        "rank_tracking": "📈 Echtzeit Rank-Tracking",
+        "team_building": "👥 Partner-Onboarding System",
+        "events": "🎉 Event-Management & Follow-up"
+      },
+      "actions": {
+        "duplication": "Duplizieren",
+        "rank": "Rank-Tracker"
+      },
+      "tips": {
+        "tip1": "Dein Partner antwortet ab Tag 1 wie ein Pro",
+        "tip2": "Automatisiere Onboarding mit vorgefertigten Sequenzen",
+        "tip3": "Track Comp-Plan Fortschritt in Echtzeit"
+      }
+    },
+    "makler": {
+      "tagline": "Makler Edition",
+      "features": {
+        "expose_generator": "📝 Emotionale Exposés in 3 Sekunden",
+        "lead_scoring": "🏆 Käufer-Qualifizierung & Scoring",
+        "object_management": "🏠 Intelligentes Objektmanagement",
+        "acquisition": "📞 Eigentümer-Akquise Automation"
+      },
+      "actions": {
+        "expose": "Exposé erstellen",
+        "objects": "Objekte",
+        "qualify": "Lead qualifizieren"
+      },
+      "tips": {
+        "tip1": "Touristen von echten Käufern trennen - BANT-Scoring",
+        "tip2": "Emotionale Exposés verkaufen 3x schneller",
+        "tip3": "Automatische Follow-ups nach Besichtigungen"
+      }
+    },
+    "coaching": {
+      "tagline": "Coaching Edition",
+      "features": {
+        "high_ticket": "💎 High-Ticket Sales Automation",
+        "discovery": "🎯 Discovery Call Optimierung",
+        "retention": "🔄 Client Retention System",
+        "upselling": "📈 Smart Upselling Engine"
+      },
+      "actions": {
+        "discovery": "Discovery Call",
+        "high_ticket": "High-Ticket"
+      },
+      "tips": {
+        "tip1": "Der perfekte Discovery Call dauert 45-60 Minuten",
+        "tip2": "Transformations-Stories verkaufen besser als Features",
+        "tip3": "Baue MRR mit Retention-Fokus"
+      }
+    },
+    "finance": {
+      "tagline": "Finance Edition",
+      "features": {
+        "consulting": "📊 Strukturierte Bedarfsanalyse",
+        "referral": "🌟 Empfehlungsmarketing System",
+        "compliance": "🛡️ Compliance-sichere Kommunikation",
+        "planning": "📈 Langfristige Finanzplanung"
+      },
+      "actions": {
+        "analysis": "Bedarfsanalyse",
+        "compliance": "Compliance-Check",
+        "referral": "Empfehlung"
+      },
+      "tips": {
+        "tip1": "Vertrauen aufbauen vor dem ersten Produktgespräch",
+        "tip2": "Empfehlungen sind dein wichtigster Kanal",
+        "tip3": "Compliance-Checks automatisch bei jeder Nachricht"
+      }
+    }
+  },
+
+  "branding": {
+    "tip_of_day": "Tipp des Tages",
+    "chief_helps": "CHIEF kann dir helfen mit:",
+    "strict": "🛡️ Strict",
+    "note": "⚠️ Beachte:"
+  },
+
+  "language": {
+    "title": "Sprache",
+    "select": "Sprache wählen",
+    "german": "Deutsch",
+    "english": "English",
+    "spanish": "Español",
+    "chinese": "中文"
+  },
+
+  "navigation": {
+    "home": "Home",
+    "daily_flow": "Daily Flow",
+    "leads": "Leads",
+    "followups": "Follow-ups",
+    "ai_chat": "AI Chat"
+  },
+
+  "autopilot": {
+    "title": "CHIEF Autopilot",
+    "subtitle": "System läuft autonom",
+    "approval_required": "Genehmigung erforderlich",
+    "live_mode": "LIVE MODE",
+    "messages": "Nachrichten",
+    "pending": "Ausstehend",
+    "accuracy": "Genauigkeit",
+    "decisions": "Entscheidungen",
+    "executed": "Ausgeführt",
+    "waiting": "Wartend",
+    "active_agents": "Aktive Agenten:",
+    "active_background": "Autopilot aktiv - arbeitet im Hintergrund",
+    "pending_actions": "{{count}} Aktionen warten auf deine Genehmigung",
+    "modes": {
+      "hunter": "Hunter",
+      "closer": "Closer",
+      "supporter": "Supporter",
+      "passive": "Passiv",
+      "advisory": "Berater",
+      "supervised": "Überwacht",
+      "autonomous": "Autonom",
+      "full_auto": "FULL AUTO"
+    },
+    "mode_desc": {
+      "passive": "Nur beobachten",
+      "advisory": "Vorschläge zeigen",
+      "supervised": "Mit Genehmigung",
+      "autonomous": "Selbstständig handeln",
+      "full_auto": "Komplett autonom"
+    },
+    "settings": {
+      "title": "Autopilot Einstellungen",
+      "autonomy_level": "Autonomie-Level",
+      "autonomy_desc": "Wie viel soll CHIEF selbstständig machen?",
+      "observer": "Observer",
+      "observer_desc": "Ich analysiere und schlage vor - du entscheidest alles",
+      "assistant": "Assistant",
+      "assistant_desc": "Routine automatisch, Wichtiges prüfst du",
+      "autopilot": "Autopilot",
+      "autopilot_desc": "Fast alles automatisch - du machst nur noch Calls",
+      "full_auto": "Full Auto",
+      "full_auto_desc": "Komplette Automatisierung inkl. Closing",
+      "confidence": "Confidence Schwellwert",
+      "confidence_desc": "Ab welcher Sicherheit soll CHIEF automatisch senden?",
+      "more_auto": "Mehr Auto",
+      "safer": "Sicherer",
+      "permissions": "Berechtigungen",
+      "permissions_desc": "Was darf CHIEF automatisch tun?",
+      "answer_info": "Info-Anfragen beantworten",
+      "suggest_meetings": "Termine vorschlagen",
+      "book_meetings": "Termine buchen",
+      "mention_prices": "Preise nennen",
+      "handle_objections": "Einwände behandeln"
+    }
+  },
+
+  "onboarding": {
+    "welcome": "Willkommen bei AURA OS",
+    "setup": "Setup",
+    "complete": "Setup abgeschlossen",
+    "step": "Schritt {{current}} von {{total}}",
+    "continue": "Weiter",
+    "skip": "Überspringen",
+    "finish": "Fertig"
+  },
+
+  "errors": {
+    "network": "Netzwerkfehler. Bitte prüfe deine Verbindung.",
+    "auth": "Authentifizierungsfehler. Bitte melde dich erneut an.",
+    "server": "Serverfehler. Bitte versuche es später erneut.",
+    "unknown": "Ein unbekannter Fehler ist aufgetreten."
+  },
+
+  "notifications": {
+    "new_lead": "Neuer Lead",
+    "followup_due": "Follow-up fällig",
+    "goal_reached": "Ziel erreicht!",
+    "message_received": "Neue Nachricht"
+  },
+
+  "time": {
+    "just_now": "Gerade eben",
+    "minutes_ago": "Vor {{count}} Minuten",
+    "hours_ago": "Vor {{count}} Stunden",
+    "days_ago": "Vor {{count}} Tagen",
+    "yesterday": "Gestern",
+    "today": "Heute",
+    "tomorrow": "Morgen"
+  }
+}

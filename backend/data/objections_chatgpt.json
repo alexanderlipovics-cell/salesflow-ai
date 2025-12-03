@@ -1,0 +1,21 @@
+[
+  {
+    "category": "Preis",
+    "objection_text": "Das ist mir zu teuer",
+    "psychology": "Wert-Kosten-Diskrepanz: Der wahrgenommene Wert ist geringer als der Preis",
+    "industry": ["network_marketing", "real_estate", "finance"],
+    "frequency_score": 95,
+    "severity": 7,
+    "confidence_score": 0.95,
+    "responses": [
+      {
+        "technique": "Value Reframe",
+        "response_script": "Verstehe ich total! 💰 Lass uns kurz schauen: Was kostet es dich, wenn du NICHT startest? Viele sagen mir nach 3 Monaten: 'Hätte ich früher gemacht!'",
+        "success_rate": "high",
+        "tone": "empathisch",
+        "when_to_use": "Bei Erstkontakt, wenn Vertrauen besteht"
+      }
+    ]
+  }
+]
+

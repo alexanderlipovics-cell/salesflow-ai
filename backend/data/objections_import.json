@@ -1,0 +1,444 @@
+{
+  "objections": [
+    {
+      "category": "preis",
+      "objection": "Das ist zu teuer.",
+      "psychology": ["Loss Aversion", "unscharfe Wertwahrnehmung", "Vergleich ohne ROI-Betrachtung"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 95,
+      "severity": 7,
+      "responses": [
+        {
+          "technique": "Clarifying & ROI Reframe",
+          "script": "Ich verstehe, {name}. Damit ich es besser einordnen kann: Im Vergleich wozu wirkt es für dich teuer? \nWenn wir nur auf den Preis schauen, wirkt es natürlich hoch. Spannender ist: Was bringt dir das konkret? Wenn du dadurch nur {x} zusätzliche Abschlüsse im Monat machst, wie viel Umsatz entsteht dann im Jahr?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Teuer vs. Kostspielig",
+          "script": "Total nachvollziehbar. Die eigentliche Frage ist: Ist es wirklich teuer – oder wäre es kostspielig, es nicht zu nutzen? Wenn du alles so lässt wie es ist: Was kostet dich das an verpassten Deals und Zeit in den nächsten 6–12 Monaten?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "preis",
+      "objection": "Wir haben dafür gerade kein Budget.",
+      "psychology": ["Budget-Schutz", "Angst vor interner Kritik", "Bedürfnis nach Legitimation"],
+      "industry": ["real_estate", "finance", "network_marketing"],
+      "frequency_score": 93,
+      "severity": 8,
+      "responses": [
+        {
+          "technique": "Budget Reallocation",
+          "script": "Verstehe ich. Die meisten Kunden hatten am Anfang kein festes Budget dafür. Darf ich fragen: Für was IST aktuell Budget eingeplant, das weniger direkt Umsatz oder Abschlüsse bringt als dieses Tool?",
+          "success_rate": "high",
+          "tone": "consultative"
+        },
+        {
+          "technique": "Pilot Einstieg",
+          "script": "Völlig okay. Genau dafür haben wir eine kleine Pilot-Stufe gebaut. Statt das Jahresbudget zu blocken, starten wir mit {pilot_laufzeit} und {pilot_teamgröße}. Wenn es keinen messbaren Effekt bringt, stoppen wir – fair?",
+          "success_rate": "high",
+          "tone": "confident"
+        }
+      ]
+    },
+    {
+      "category": "zeit",
+      "objection": "Ich habe dafür gerade keine Zeit.",
+      "psychology": ["Overload", "Entscheidungsvermeidung", "Schutz vor Komplexität"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 90,
+      "severity": 6,
+      "responses": [
+        {
+          "technique": "Problemverstärkung & Alignment",
+          "script": "Genau das höre ich oft von den Besten im Vertrieb. Darf ich es so sagen: Wenn du jetzt schon keine Zeit hast, wie soll es ohne System in 6 Monaten aussehen? Unser Ziel ist ja, dir genau diese Zeit zurückzugeben. Wollen wir 15 Minuten investieren, um dir jede Woche 3–5 Stunden zu sparen?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Micro Commitment",
+          "script": "Verstehe ich komplett. Was wäre realistisch für dich: 10 Minuten diese Woche für einen Überblick – oder lieber nächste Woche? Ich passe mich dir an.",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "zeit",
+      "objection": "Melden Sie sich in ein paar Monaten noch einmal.",
+      "psychology": ["Aufschub als höfliche Ablehnung", "Status-quo-Erhalt", "Entscheidungsangst"],
+      "industry": ["real_estate", "finance", "network_marketing"],
+      "frequency_score": 88,
+      "severity": 7,
+      "responses": [
+        {
+          "technique": "Konsequenzspiegel",
+          "script": "Klar, können wir machen. Eine ehrliche Frage: Wenn wir das Thema jetzt parken – was wird sich in den nächsten 3 Monaten realistisch ändern, sodass es dann leichter wird zu entscheiden?",
+          "success_rate": "medium",
+          "tone": "direct"
+        },
+        {
+          "technique": "Future Pace & Verbindlicher Termin",
+          "script": "Verstanden. Lass uns es konkret machen: Ich trage mir {datum_in_8_wochen} ein und wir blocken uns jetzt schon 15 Minuten. Wenn sich bis dahin alles erledigt hat, sagst du einfach kurz ab. Wenn nicht, ist der Slot schon reserviert. Ist das ein Deal?",
+          "success_rate": "high",
+          "tone": "confident"
+        }
+      ]
+    },
+    {
+      "category": "vertrauen",
+      "objection": "Ich muss noch darüber nachdenken.",
+      "psychology": ["Unsicherheit", "fehlende Klarheit", "Wunsch nach Kontrolle und Autonomie"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 94,
+      "severity": 5,
+      "responses": [
+        {
+          "technique": "3F-Methode (Feel–Felt–Found)",
+          "script": "Kann ich gut nachvollziehen, viele Kunden haben sich am Anfang genauso gefühlt. Was sie dann festgestellt haben, war: Nicht mehr Infos, sondern mehr Klarheit in 2–3 Punkten hat die Entscheidung einfach gemacht. Darf ich dir kurz 2 Fragen stellen, damit du leichter entscheiden kannst – egal ob ja oder nein?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Klarheitsfrage",
+          "script": "Total in Ordnung. Worin genau willst du noch Klarheit bekommen? Geht es eher um das Produkt an sich, den Preis oder ob dein Team das wirklich nutzt?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "vertrauen",
+      "objection": "Das klingt zu gut, um wahr zu sein.",
+      "psychology": ["Schutz vor Enttäuschung", "Misstrauen gegenüber Versprechungen", "Negative Erfahrungen"],
+      "industry": ["finance", "real_estate", "network_marketing"],
+      "frequency_score": 90,
+      "severity": 8,
+      "responses": [
+        {
+          "technique": "Transparenz & Limitierung",
+          "script": "Guter Punkt. Wenn es sich zu gut anhört, ist oft irgendwo ein Haken – das sehe ich genauso. Darum lass uns genau hinschauen: Was kann das System realistisch leisten – und was nicht. Danach kannst du selbst entscheiden, ob es für dich Sinn macht.",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Beweisführung & Social Proof",
+          "script": "Verstehe ich. Ähnlich skeptisch war {referenzkunde} auch – bis wir das System 30 Tage live im Alltag getestet haben. Wollen wir auch bei dir mit einem klar definierten Test starten, statt mit großen Versprechungen?",
+          "success_rate": "medium",
+          "tone": "confident"
+        }
+      ]
+    },
+    {
+      "category": "autorität",
+      "objection": "Ich muss das erst mit meinem Partner/Chef absprechen.",
+      "psychology": ["Verantwortungsdiffusion", "Konfliktvermeidung", "Bedürfnis nach Absicherung"],
+      "industry": ["real_estate", "finance", "network_marketing"],
+      "frequency_score": 92,
+      "severity": 6,
+      "responses": [
+        {
+          "technique": "Champion Empowerment",
+          "script": "Absolut, das ist sinnvoll. Damit du intern ein starkes Argument hast: Was sind für deinen Chef/Partner die 2–3 wichtigsten Punkte, die sitzen müssen, damit er oder sie ja sagt?",
+          "success_rate": "high",
+          "tone": "consultative"
+        },
+        {
+          "technique": "Triadentermin",
+          "script": "Macht total Sinn. Wollen wir direkt einen kurzen Call zu dritt planen? Dann muss nicht alles über dich laufen und wir können alle Fragen in einem Rutsch klären.",
+          "success_rate": "high",
+          "tone": "confident"
+        }
+      ]
+    },
+    {
+      "category": "bedarf",
+      "objection": "Wir haben schon einen Anbieter / ein System dafür.",
+      "psychology": ["Status-quo-Bias", "Rechtfertigung bestehender Entscheidung", "Loyalität"],
+      "industry": ["real_estate", "finance", "network_marketing"],
+      "frequency_score": 93,
+      "severity": 7,
+      "responses": [
+        {
+          "technique": "Koexistenz & Vergleich",
+          "script": "Das ist gut – viele arbeiten heute zum Glück nicht mehr ohne System. Was unsere besten Kunden gemacht haben: Sie haben nicht blind gewechselt, sondern beide Lösungen 30 Tage nebeneinander laufen lassen und gemessen, was unterm Strich mehr Abschlüsse und weniger Aufwand bringt. Wäre so ein Vergleich für dich interessant?",
+          "success_rate": "high",
+          "tone": "consultative"
+        },
+        {
+          "technique": "Lücken-Frage",
+          "script": "Verstehe. Wenn du an deinen aktuellen Anbieter denkst – was läuft wirklich gut, und wo wünschst du dir insgeheim schon länger eine Verbesserung?",
+          "success_rate": "medium",
+          "tone": "empathetic"
+        }
+      ]
+    },
+    {
+      "category": "bedarf",
+      "objection": "Ich bin mir nicht sicher, ob das bei uns funktioniert.",
+      "psychology": ["Unsicherheit", "Angst vor falscher Entscheidung", "fehlende Referenzerfahrung"],
+      "industry": ["real_estate", "finance", "network_marketing"],
+      "frequency_score": 90,
+      "severity": 6,
+      "responses": [
+        {
+          "technique": "Fallstudien & Ähnlichkeitsprinzip",
+          "script": "Gute Frage. Genau das haben {ähnliche_kunden} auch gesagt, bevor wir gestartet sind. Entscheidend war: Wir haben das System auf deren Branche und Vertriebsprozess zugeschnitten. Ich zeige dir kurz, wie das konkret für {branche} aussehen würde – einverstanden?",
+          "success_rate": "high",
+          "tone": "confident"
+        },
+        {
+          "technique": "Test Commitment",
+          "script": "Skepsis ist gesund. Lass uns doch keinen Glaubenskrieg draus machen, sondern einen Test: Wir definieren klare Ziele für 30 Tage und messen schwarz auf weiß, was passiert. Wenn es nicht passt, beenden wir es. Klingt das fair?",
+          "success_rate": "high",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "risiko",
+      "objection": "Ich habe Sorge, dass mein Team das nicht annimmt.",
+      "psychology": ["Change-Resistance", "Angst vor interner Ablehnung", "Selbstschutz"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 91,
+      "severity": 7,
+      "responses": [
+        {
+          "technique": "Einbindung der Nutzer",
+          "script": "Sehr guter Punkt – ein Tool, das keiner nutzt, bringt nichts. Darum binden wir von Anfang an 2–3 starke Leute aus deinem Team ein, holen ihr Feedback und bauen das System um deren Alltag herum. Wer wären da die richtigen Personen bei dir?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Quick Wins für das Team",
+          "script": "Dein Team will vor allem eins: Dass ihr Alltag leichter wird. Wenn wir es schaffen, dass sie in der ersten Woche konkrete Zeitersparnis oder zusätzliche Abschlüsse sehen – wie stehen dann die Chancen, dass sie es freiwillig nutzen?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "network_marketing",
+      "objection": "Ist das nicht so eine Art Schneeballsystem?",
+      "psychology": ["Schutz vor sozialer Ablehnung", "Angst vor Betrug", "schlechte MLM-Erfahrungen"],
+      "industry": ["network_marketing"],
+      "frequency_score": 89,
+      "severity": 9,
+      "responses": [
+        {
+          "technique": "Frame-Korrektur",
+          "script": "Gute Frage, und wichtig, dass du sie stellst. Ein Schneeballsystem verdient Geld nur über neue Leute im System – unabhängig vom Produkt. Bei uns kommt der Umsatz aus echten Produkten/Dienstleistungen, die Kunden freiwillig kaufen, weil sie Nutzen sehen. Darf ich dir kurz zeigen, wo genau der Unterschied in unserem Modell liegt?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Werte-Alignment",
+          "script": "Ich mag solche Modelle auch nicht. Deshalb ist mir Transparenz wichtig: Du verdienst nur dann, wenn echte Kunden langfristig zufrieden sind. Wenn du an deine Werte denkst – passt das eher oder weniger zu dir?",
+          "success_rate": "medium",
+          "tone": "direct"
+        }
+      ]
+    },
+    {
+      "category": "network_marketing",
+      "objection": "Ich bin nicht der Typ, der anderen etwas verkaufen kann.",
+      "psychology": ["Selbstbild", "Angst vor Ablehnung", "Verwechslung Verkaufen = Aufdrängen"],
+      "industry": ["network_marketing"],
+      "frequency_score": 90,
+      "severity": 6,
+      "responses": [
+        {
+          "technique": "Identitäts-Reframe",
+          "script": "Das höre ich oft von Menschen, die später sehr erfolgreich werden. Gute Verkäufer sind heute keine 'Drücker' mehr, sondern Berater, die echte Probleme lösen. Wenn du jemandem helfen könntest, gesünder/finanziell freier zu werden – würdest du dich dann immer noch wie ein Verkäufer fühlen oder eher wie ein Berater?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Skill statt Talent",
+          "script": "Nachvollziehbar. Niemand wird als Verkäufer geboren – es ist ein Skill. Die Frage ist eher: Bist du bereit, strukturiert zu lernen, wie man auf eine ehrliche, authentische Art Empfehlungen ausspricht?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "immobilien",
+      "objection": "Der Markt ist gerade schwierig, ich warte lieber ab.",
+      "psychology": ["Risikovermeidung", "Hoffnung auf bessere Bedingungen", "Medienangst"],
+      "industry": ["real_estate"],
+      "frequency_score": 91,
+      "severity": 7,
+      "responses": [
+        {
+          "technique": "Marktzyklus-Reframe",
+          "script": "Stimmt, der Markt ist anspruchsvoll. Genau in solchen Phasen unterscheiden sich allerdings die Makler, die passiv abwarten, von denen, die aktiver und strukturierter arbeiten. Wenn dein Wettbewerb jetzt abwartet und du deine Pipeline smarter aufbaust – wie wirkt sich das in 12 Monaten aus?",
+          "success_rate": "high",
+          "tone": "confident"
+        },
+        {
+          "technique": "Kontroll-Bereich fokussieren",
+          "script": "Auf Zinsen und Medienberichte haben wir keinen Einfluss – auf deine Kontakt- und Abschlussquote schon. Lass uns genau dort ansetzen, wo du Kontrolle hast. Was wäre für dich ein realistisches Ziel für zusätzliche qualifizierte Termine pro Monat?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "immobilien",
+      "objection": "Ich versuche es zuerst alleine, ohne System.",
+      "psychology": ["Autonomiebedürfnis", "Wunsch nach Kontrolle", "Misstrauen gegenüber Tools"],
+      "industry": ["real_estate"],
+      "frequency_score": 88,
+      "severity": 5,
+      "responses": [
+        {
+          "technique": "Koexistenz statt Entweder-Oder",
+          "script": "Kann ich nachvollziehen. Lass uns nicht Tool gegen dich stellen. Das System unterstützt dich bei den wiederkehrenden, nervigen Aufgaben – du bleibst der, der abschließt. Wenn du 20 % deiner Zeit von Verwaltung auf echte Kundentermine verschieben könntest – wäre das interessant?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Vergleich mit Profi-Werkzeug",
+          "script": "Die besten Makler arbeiten heute nicht mehr mit Zettel & Stift, sondern mit Profi-Werkzeugen. So wie ein Handwerker lieber gutes Werkzeug nutzt, um schneller und sauberer zu arbeiten. Warum solltest du dir das im Vertrieb nicht auch gönnen?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "finanzberatung",
+      "objection": "Ich vertraue meiner Bank/meinem bisherigen Berater.",
+      "psychology": ["Loyalität", "Sicherheitsbedürfnis", "Vermeidung von Beziehungskonflikten"],
+      "industry": ["finance"],
+      "frequency_score": 90,
+      "severity": 6,
+      "responses": [
+        {
+          "technique": "Zweitmeinung",
+          "script": "Das ist gut – jeder sollte jemanden haben, dem er vertraut. Viele unserer Kunden nutzen uns nicht statt, sondern zusätzlich als zweite Meinung. Wenn du dir bei einer medizinischen Diagnose unsicher wärst, würdest du dir doch auch eher zwei Meinungen holen, oder?",
+          "success_rate": "high",
+          "tone": "consultative"
+        },
+        {
+          "technique": "Fakten vor Emotion",
+          "script": "Vertrauen ist wichtig, absolut. Gleichzeitig ist es dein Geld und deine Zukunft. Darf ich dir zeigen, wie deine aktuelle Situation im Vergleich zu unseren Modellen aussieht – komplett faktenbasiert, ohne dass du dich zu irgendetwas verpflichtest?",
+          "success_rate": "medium",
+          "tone": "confident"
+        }
+      ]
+    },
+    {
+      "category": "finanzberatung",
+      "objection": "Ich möchte kein Risiko eingehen.",
+      "psychology": ["Verlustangst", "Fokus auf Verluste statt Gewinne"],
+      "industry": ["finance"],
+      "frequency_score": 92,
+      "severity": 7,
+      "responses": [
+        {
+          "technique": "Risiko-Definition",
+          "script": "Das ist absolut verständlich. Lass uns zuerst klären, was 'Risiko' für dich konkret bedeutet: Geht es dir um Schwankungen, um endgültige Verluste oder um das Gefühl, die Kontrolle abzugeben?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Sicherheitsrahmen",
+          "script": "Unser Ziel ist nicht, dich in Risiko zu drücken, sondern einen Rahmen zu finden, in dem du ruhig schlafen kannst. Das kann bedeuten: klare Grenzen, Kapitalaufteilung und Puffer. Darf ich dir zeigen, wie so ein Sicherheitsrahmen für dich aussehen könnte?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "vertrag",
+      "objection": "Ich will mich nicht lange vertraglich binden.",
+      "psychology": ["Autonomiebedürfnis", "Angst vor Fehlbindung", "schlechte Vertragserfahrungen"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 90,
+      "severity": 6,
+      "responses": [
+        {
+          "technique": "Risiko-Reduktion",
+          "script": "Das sehe ich genauso – lange Bindung ohne klaren Nutzen macht keinen Sinn. Darum haben wir bewusst ein Modell gebaut, bei dem du mit {laufzeit} starten kannst. Wenn wir in dieser Zeit keinen klaren Mehrwert schaffen, wäre eine längere Bindung auch nicht sinnvoll – fair?",
+          "success_rate": "high",
+          "tone": "empathetic"
+        },
+        {
+          "technique": "Beweis zuerst, dann Bindung",
+          "script": "Lass uns erst beweisen, dass es funktioniert, bevor du dich länger bindest. Wenn wir in den ersten {test_monate} keine messbaren Ergebnisse bringen, verlängern wir nicht. Bist du mit so einem Ansatz eher fein?",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "daten",
+      "objection": "Was passiert mit meinen Daten?",
+      "psychology": ["Kontrollbedürfnis", "Datenschutzsorgen", "Angst vor Missbrauch"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 93,
+      "severity": 8,
+      "responses": [
+        {
+          "technique": "Transparenz & Struktur",
+          "script": "Wichtige Frage. Kurz und klar: Die Daten gehören dir. Wir nutzen sie nur, um deine Prozesse zu automatisieren, und geben sie nie an Dritte weiter. Wenn du möchtest, gehen wir Punkt für Punkt durch: Speicherung, Zugriff, Löschung. Was ist dir davon am wichtigsten?",
+          "success_rate": "high",
+          "tone": "confident"
+        },
+        {
+          "technique": "Compliance-Referenz",
+          "script": "Wir arbeiten nach {standard_zb_GDPR} und haben klare Prozesse für Zugriff, Verschlüsselung und Löschung. Ich kann dir gern unsere Kurzübersicht zum Datenschutz schicken, damit du es schwarz auf weiß hast.",
+          "success_rate": "medium",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "social_proof",
+      "objection": "Ich kenne niemanden, der das schon nutzt.",
+      "psychology": ["Need for Social Proof", "Angst der Erste zu sein"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 90,
+      "severity": 5,
+      "responses": [
+        {
+          "technique": "Early-Adopter-Reframe",
+          "script": "Genau deshalb sind unsere Kunden ihren Mitbewerbern oft voraus. Die Frage ist: Willst du warten, bis es alle nutzen – oder zu den ersten gehören, die den Vorteil mitnehmen?",
+          "success_rate": "medium",
+          "tone": "confident"
+        },
+        {
+          "technique": "Referenzen anbieten",
+          "script": "Verstehe ich. Daher bieten wir an, dass du direkt mit ein bis zwei Kunden sprichst, die das System bereits nutzen – ohne mich im Gespräch. Dann bekommst du eine ehrliche Einschätzung aus der Praxis. Soll ich dir Kontakte vorschlagen?",
+          "success_rate": "high",
+          "tone": "consultative"
+        }
+      ]
+    },
+    {
+      "category": "vermeidung",
+      "objection": "Schicken Sie mir einfach mal Infos per E-Mail.",
+      "psychology": ["Höfliche Distanzierung", "Entscheidungsvermeidung", "Fluchtwunsch"],
+      "industry": ["network_marketing", "real_estate", "finance"],
+      "frequency_score": 95,
+      "severity": 4,
+      "responses": [
+        {
+          "technique": "Qualifizierungsfrage",
+          "script": "Mache ich gerne. Damit ich dir nicht irgendeinen Standard-Flyer schicke: Was wären die 2–3 Dinge, die du in den Unterlagen unbedingt beantwortet haben willst, damit sich das Lesen für dich lohnt?",
+          "success_rate": "high",
+          "tone": "consultative"
+        },
+        {
+          "technique": "Nachfass-Vereinbarung",
+          "script": "Guter Plan. Ich schicke dir die Infos heute raus. Lass uns direkt einen kurzen Termin in {x} Tagen eintragen, um deine Fragen dazu zu klären. Wenn du bis dahin merkst, es passt gar nicht, kannst du einfach absagen. Welche Uhrzeit ist dir lieber – Vormittag oder Nachmittag?",
+          "success_rate": "high",
+          "tone": "confident"
+        }
+      ]
+    }
+  ]
+}

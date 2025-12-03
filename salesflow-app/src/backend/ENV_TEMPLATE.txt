@@ -1,0 +1,40 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  SALES FLOW AI - ENVIRONMENT VARIABLES                                    ║
+# ║  ⚠️ UMBENENNEN ZU: .env                                                   ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+# ═══════════════════════════════════════════════════════════════════════════
+# APP SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════
+
+APP_NAME="Sales Flow AI"
+APP_VERSION="1.0.0"
+DEBUG=false
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SUPABASE (Bereits konfiguriert)
+# ═══════════════════════════════════════════════════════════════════════════
+
+SUPABASE_URL=https://lncwvbhcafkdorypnpnz.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuY3d2YmhjYWZrZG9yeXBucG56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxOTk5MDAsImV4cCI6MjA3OTc3NTkwMH0.6sXqb76w5DXBRz1O4DREbGNNIOVPPynlv6YoixQcMBY
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 🤖 AI PROVIDER - WICHTIG! Mindestens einen Key setzen
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ⚠️ DEINEN ANTHROPIC API KEY HIER EINTRAGEN:
+ANTHROPIC_API_KEY=sk-ant-api03-DEIN_KEY_HIER
+
+# LLM Settings
+LLM_PROVIDER=anthropic
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=2000
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FEATURES
+# ═══════════════════════════════════════════════════════════════════════════
+
+ENABLE_CHIEF_CONTEXT=true
+MAX_CONVERSATION_HISTORY=10
+MAX_SUGGESTED_LEADS=5
+

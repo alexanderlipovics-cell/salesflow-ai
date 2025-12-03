@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA OS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 350px;
+      min-height: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .header p {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+    
+    .content {
+      padding: 16px;
+    }
+    
+    .status-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .status-card h3 {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    
+    .status-value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .stat-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      margin-top: 8px;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .queue-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .queue-icon {
+      font-size: 20px;
+    }
+    
+    .queue-info {
+      flex: 1;
+    }
+    
+    .queue-title {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .queue-subtitle {
+      font-size: 11px;
+      color: #64748b;
+    }
+    
+    .login-section {
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .login-section input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: white;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    
+    .login-section input::placeholder {
+      color: #64748b;
+    }
+    
+    #status-message {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #22c55e;
+    }
+    
+    .footer {
+      padding: 16px;
+      text-align: center;
+      font-size: 11px;
+      color: #64748b;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>✦ AURA <span style="color: #22d3ee; font-weight: 300;">OS</span></h1>
+    <p>LinkedIn Automation</p>
+  </div>
+  
+  <div id="logged-out" class="login-section" style="display: none;">
+    <h3 style="margin-bottom: 16px;">Verbinde mit AURA OS</h3>
+    <input type="text" id="api-token" placeholder="API Token eingeben" />
+    <button class="btn btn-primary" id="connect-btn">Verbinden</button>
+    <div id="status-message"></div>
+  </div>
+  
+  <div id="logged-in" class="content" style="display: none;">
+    <div class="status-card">
+      <h3>Queue Status</h3>
+      <div class="status-value" id="queue-count">0</div>
+      <p style="font-size: 12px; color: #64748b; margin-top: 4px;">ausstehende Aktionen</p>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value" id="sent-today">0</div>
+        <div class="stat-label">Heute gesendet</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="success-rate">0%</div>
+        <div class="stat-label">Erfolgsrate</div>
+      </div>
+    </div>
+    
+    <button class="btn btn-primary" id="process-btn">
+      ▶️ Nächste Aktion ausführen
+    </button>
+    
+    <button class="btn btn-secondary" id="sync-btn">
+      🔄 Aktionen synchronisieren
+    </button>
+    
+    <button class="btn btn-secondary" id="logout-btn">
+      Abmelden
+    </button>
+    
+    <div id="queue-list" style="margin-top: 16px;"></div>
+  </div>
+  
+  <div class="footer">
+    AURA OS v1.0 • Sichere LinkedIn Automation
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
+

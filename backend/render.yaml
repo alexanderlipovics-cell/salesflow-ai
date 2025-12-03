@@ -1,0 +1,61 @@
+# ============================================================================
+# RENDER.COM DEPLOYMENT CONFIGURATION
+# Sales Flow AI - Backend
+# ============================================================================
+
+services:
+  - type: web
+    name: salesflow-api
+    env: python
+    plan: starter  # Kann auf standard/pro hochgestuft werden
+    region: frankfurt  # Nahe an EU für niedrige Latenz
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true  # Automatisches Deploy bei Git Push
+    envVars:
+      # App Config
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      
+      # Supabase (von Dashboard kopieren)
+      - key: SUPABASE_URL
+        sync: false  # Manuell im Dashboard setzen
+      - key: SUPABASE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      
+      # OpenAI
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4-turbo-preview
+      
+      # CORS
+      - key: ALLOWED_ORIGINS
+        value: https://salesflow.vercel.app,https://app.salesflow.ai,https://www.salesflow.ai
+      
+      # Caching (deaktiviert für Render)
+      - key: CACHE_ENABLED
+        value: false
+      
+      # WhatsApp (optional)
+      - key: WHATSAPP_PROVIDER
+        value: ultramsg
+      - key: ULTRAMSG_INSTANCE_ID
+        sync: false
+      - key: ULTRAMSG_TOKEN
+        sync: false
+      
+      # Email (optional)
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: FROM_EMAIL
+        value: noreply@salesflow.ai
+
+    # Python version
+    pythonVersion: "3.11"
+

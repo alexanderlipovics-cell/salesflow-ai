@@ -1,0 +1,347 @@
+[
+  {
+    "id": 1,
+    "category": "mlm_stigma",
+    "objection": "Das ist doch ein Schneeball- oder Pyramidensystem.",
+    "psychology": "Misstrauen gegenüber MLM, Schutzmechanismus, Angst vor Abzocke",
+    "occurs_at_stage": "initial_contact",
+    "severity": 9,
+    "frequency_score": 95,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Aufklärung & Vergleich",
+        "script": "Gute Frage, und wichtig, dass du das ansprichst. Ein illegales Schneeballsystem lebt davon, dass Geld nur durchs Anwerben neuer Leute fließt. Im Network Marketing geht es um den Verkauf echter Produkte mit echtem Gegenwert. Ohne Produktumsatz gibt es keine Provision.",
+        "tone": "professional_empathetic"
+      },
+      {
+        "technique": "Skepsis validieren",
+        "script": "Dein Eindruck ist absolut nachvollziehbar, weil es leider schwarze Schafe gibt. Deshalb ist mir wichtig, dir transparent zu zeigen, wie genau verdient wird und welche Rolle Kundenumsatz dabei spielt – dann kannst du selbst entscheiden, ob es stimmig ist.",
+        "tone": "calm_consultative"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "category": "price",
+    "objection": "Die Produkte sind viel zu teuer.",
+    "psychology": "Preis-Sensibilität, Vergleich mit Supermarkt/Drogerie, Angst vor Fehlkauf",
+    "occurs_at_stage": "product_presentation",
+    "severity": 8,
+    "frequency_score": 90,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Value Reframing",
+        "script": "Preis ist immer die Frage: Was bekomme ich dafür? Network-Marketing-Produkte sind oft hochwertig positioniert – mit bestimmten Rezepturen, Qualitätsstandards und Beratung dazu. Am Ende zählt, ob der Nutzen für dich den Preis rechtfertigt, sonst macht es keinen Sinn.",
+        "tone": "professional_empathetic"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "category": "time",
+    "objection": "Ich habe keine Zeit für sowas.",
+    "psychology": "Überforderung, Angst vor zusätzlicher Belastung, Selbstschutz",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 8,
+    "frequency_score": 85,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Realitäts-Check",
+        "script": "Wenn du objektiv keine 5–7 Stunden pro Woche frei hast, dann macht ein Start ehrlich gesagt wenig Sinn. Die meisten, die langfristig Erfolg haben, haben sich bewusst ein kleines Zeitfenster geblockt und testen erst, ob es sich in den Alltag integrieren lässt.",
+        "tone": "professional_honest"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "category": "trust",
+    "objection": "Ich vertraue der Firma / Branche nicht.",
+    "psychology": "Vertrauensmangel, Schutz vor Enttäuschung, Einfluss von Negativstories",
+    "occurs_at_stage": "initial_contact",
+    "severity": 9,
+    "frequency_score": 80,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Transparenz",
+        "script": "Es wäre komisch, wenn du einer Branche mit so viel Gegenwind blind vertraust. Ich möchte dir keine Hochglanzstory erzählen, sondern offen erklären, wie das Modell funktioniert – und dir Unterlagen geben, damit du selbst prüfen kannst.",
+        "tone": "professional_empathetic"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "category": "product_quality",
+    "objection": "Bringen die Produkte überhaupt etwas oder ist das nur Marketing?",
+    "psychology": "Skepsis, Wunsch nach Beweisen, Angst vor Placebo/Abzocke",
+    "occurs_at_stage": "product_presentation",
+    "severity": 8,
+    "frequency_score": 85,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Realistische Erwartung",
+        "script": "Kein Produkt der Welt ist ein Wundermittel. Network-Marketing-Produkte können sinnvoll sein, wenn sie in deinen Alltag passen – Ernährung, Routinen, Ziele. Am Ende zählt deine eigene Erfahrung über ein paar Wochen, nicht mein Versprechen.",
+        "tone": "professional_realistic"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "category": "market_saturation",
+    "objection": "Der Markt ist doch komplett übersättigt.",
+    "psychology": "Resignation, Angst vor Konkurrenz, Social-Media-Blase",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 7,
+    "frequency_score": 75,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Blase relativieren",
+        "script": "Online sieht es oft so aus, als wären alle im Network Marketing, weil man ständig dieselben Leute sieht. In der echten Nachbarschaft haben viele noch nie bewusst von der Firma gehört. Entscheidend ist, welche Zielgruppe du ansprichst und wie du dich positionierst.",
+        "tone": "casual_confident"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "category": "income_claims",
+    "objection": "Verdient man damit wirklich Geld? Die meisten verdienen doch nichts.",
+    "psychology": "Angst vor Zeitverschwendung, Wunsch nach Sicherheit, Misstrauen gegenüber Versprechungen",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 9,
+    "frequency_score": 90,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Statistik erklären",
+        "script": "Es stimmt: In den offiziellen Einkommensstatistiken sieht man, dass viele nur wenig oder gar nichts verdienen. Network Marketing ist kein Lottogewinn, sondern ein Provisionsmodell – wer wenig Zeit und Struktur reinsteckt, verdient entsprechend wenig.",
+        "tone": "professional_honest"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "category": "commitment",
+    "objection": "Ich will mich nicht langfristig binden.",
+    "psychology": "Angst vor Kontrolleverlust, Verpflichtungsangst, Wunsch nach Flexibilität",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 7,
+    "frequency_score": 70,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Vertragsklarheit",
+        "script": "Völlig verständlich. Wichtig ist, dass du die Bedingungen kennst: Mindestumsätze, Kündigungsfristen, Rechte als Kunde/Partner. Das schauen wir uns gemeinsam an – und wenn es sich nach zu viel Druck anfühlt, ist das ein klares Nein.",
+        "tone": "professional_empathetic"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "category": "friends_family",
+    "objection": "Ich will nicht meine Freunde und Familie nerven.",
+    "psychology": "Beziehungsangst, Angst vor Ablehnung, schlechte Erfahrungen mit aggressiven Verkäufern",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 8,
+    "frequency_score": 85,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Grenzen respektieren",
+        "script": "Das sehe ich genauso – Beziehungen sind wichtiger als Umsatz. Man kann heute viel über Social Media, Empfehlungen und Menschen aufbauen, die sich aktiv melden, ohne die ganze Familie 'abzuarbeiten'.",
+        "tone": "relaxed"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "category": "reputation",
+    "objection": "Die Firma / Branche hat einen schlechten Ruf.",
+    "psychology": "Sozialer Druck, Angst 'reingezogen' zu werden, Image-Sorgen",
+    "occurs_at_stage": "initial_contact",
+    "severity": 8,
+    "frequency_score": 80,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Kritik anerkennen",
+        "script": "Ja, es gibt viel Kritik und die ist auch teilweise berechtigt. Genau deshalb ist es wichtig, sich anzuschauen, wie die Firma heute arbeitet, welche Regeln gelten und wie ehrlich mit Partnern und Kunden umgegangen wird.",
+        "tone": "professional_balanced"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "category": "price",
+    "objection": "Ich habe dafür gerade kein Budget.",
+    "psychology": "Finanzielle Unsicherheit, Prioritätenkonflikte, Angst vor unnötigen Ausgaben",
+    "occurs_at_stage": "product_presentation",
+    "severity": 7,
+    "frequency_score": 75,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Prioritätenklärung",
+        "script": "Wenn es finanziell gerade eng ist, sollte das Thema Sicherheit Vorrang haben. Wir können gern gemeinsam schauen, ob es eine kleine, sinnvolle Variante gibt – aber nichts, was dich unter Druck setzt.",
+        "tone": "professional_empathetic"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "category": "time",
+    "objection": "Ich schaue mir das später an.",
+    "psychology": "Aufschieben, Unsicherheit, höfliches Nein",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 6,
+    "frequency_score": 70,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Klarheit schaffen",
+        "script": "Völlig okay. Damit ich es richtig einsortiere: Meinst du 'später' eher im Sinne von wirklich Interesse, aber falscher Zeitpunkt – oder eher ein höfliches Nein?",
+        "tone": "casual_direct"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "category": "trust",
+    "objection": "Ich kenne dich kaum, warum sollte ich dir vertrauen?",
+    "psychology": "Beziehungs-Unsicherheit, Schutz vor Manipulation",
+    "occurs_at_stage": "initial_contact",
+    "severity": 7,
+    "frequency_score": 65,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Beziehung aufbauen",
+        "script": "Das ist ein fairer Punkt. Du sollst mir auch nicht blind vertrauen. Lass uns klein starten: ein kurzes Gespräch, ein paar Infos, vielleicht ein Testprodukt – und dann entscheidest du, ob du ein gutes Gefühl hast.",
+        "tone": "professional_empathetic"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "category": "income_claims",
+    "objection": "Ich will kein Risiko eingehen und dann scheitern.",
+    "psychology": "Versagensangst, Selbstwert, Sicherheitsbedürfnis",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 7,
+    "frequency_score": 70,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Risiko real einordnen",
+        "script": "Die größte Investition am Anfang ist Zeit und ein überschaubares Startpaket – kein fünfstelliger Betrag. Wir können klar definieren, was ein fairer Testzeitraum ist und was du als Minimum erwartet, damit es sich für dich lohnt.",
+        "tone": "professional_honest"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "category": "mlm_stigma",
+    "objection": "Ich will nicht als 'die aus dem Schneeballsystem' dastehen.",
+    "psychology": "Angst vor sozialem Urteil, Image-Sorge",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 8,
+    "frequency_score": 80,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Image-Thema adressieren",
+        "script": "Image ist absolut ein Thema in dieser Branche, das stimmt. Deshalb ist mein Ansatz, klar und seriös aufzutreten: ehrliche Infos, kein Druck, kein Spammen. Wenn du dich damit trotzdem unwohl fühlst, ist das ein wichtiges Signal.",
+        "tone": "professional_balanced"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "category": "product_quality",
+    "objection": "Ich will lieber alles über normale Läden/reguläre Marken kaufen.",
+    "psychology": "Vertrauen in etablierte Handelswege, Risiko-Minimierung",
+    "occurs_at_stage": "product_presentation",
+    "severity": 6,
+    "frequency_score": 60,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Entscheidung respektieren",
+        "script": "Wenn du dich mit klassischen Marken und Läden einfach sicherer fühlst, ist das völlig legitim. Network-Marketing-Produkte sind eine Ergänzung, kein Muss.",
+        "tone": "calm_consultative"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "category": "time",
+    "objection": "Mein Partner / meine Familie ist dagegen.",
+    "psychology": "Konfliktvermeidung, Loyalität zur Familie",
+    "occurs_at_stage": "decision_stage",
+    "severity": 8,
+    "frequency_score": 75,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Beziehungspriorität",
+        "script": "Wenn dein direkter Partner klar dagegen ist, ist es schwierig, hier entspannt etwas aufzubauen. Familie hat Priorität – wir können höchstens schauen, ob ein Informationsgespräch hilft, aber nur, wenn du das möchtest.",
+        "tone": "empathetic"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "category": "trust",
+    "objection": "Ich habe schon schlechte Erfahrungen mit sowas gemacht.",
+    "psychology": "Schutz vor Wiederholung, emotionale Verletzung",
+    "occurs_at_stage": "initial_contact",
+    "severity": 8,
+    "frequency_score": 65,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Vergangenheit anerkennen",
+        "script": "Das tut mir ehrlich leid zu hören. Es gibt leider viele Situationen, in denen Menschen unter Druck gesetzt werden. Ich kann dir nur zeigen, wie ich arbeite – ob du dem Modell noch eine Chance gibst, entscheidest du.",
+        "tone": "empathetic"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "category": "income_claims",
+    "objection": "Ich bin kein Verkäufer-Typ.",
+    "psychology": "Selbstbild, Angst vor Ablehnung, Rollen-Konflikt",
+    "occurs_at_stage": "opportunity_presentation",
+    "severity": 7,
+    "frequency_score": 80,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Verkauf neu definieren",
+        "script": "Verkaufen bedeutet hier eher: ehrliche Erfahrungen teilen und Menschen beraten, die sich melden – nicht Leute überreden. Wenn du aber grundsätzlich keine Freude daran hast, mit Menschen zu sprechen, ist es nicht das richtige Modell.",
+        "tone": "professional_empathetic"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "category": "commitment",
+    "objection": "Ich will erst Resultate sehen, bevor ich irgendwas investiere.",
+    "psychology": "Kontrollbedürfnis, Sicherheitsdenken, Risiko-Vermeidung",
+    "occurs_at_stage": "decision_stage",
+    "severity": 7,
+    "frequency_score": 70,
+    "industries": ["network_marketing"],
+    "sample_responses": [
+      {
+        "technique": "Realismus",
+        "script": "Ganz ohne irgendeine Form von Einsatz geht es leider nicht – weder Zeit noch ein kleines Startpaket lassen sich komplett umgehen. Wir können aber den Einsatz so klein halten, dass es sich für dich wie ein fairer Test anfühlt.",
+        "tone": "professional_honest"
+      }
+    ]
+  }
+]

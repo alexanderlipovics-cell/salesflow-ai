@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "AURA OS",
+    "slug": "aura-os",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "scheme": "auraos",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.salesflow.auraos",
+      "buildNumber": "1"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#020617"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.salesflow.auraos",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "name": "AURA OS",
+      "shortName": "AURA",
+      "description": "Intelligent Sales Operating System - Powered by CHIEF AI",
+      "themeColor": "#020617",
+      "backgroundColor": "#020617"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "aura-os"
+      }
+    },
+    "owner": "salesflow"
+  }
+}
