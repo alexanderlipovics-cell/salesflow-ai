@@ -42,3 +42,13 @@ export {
   buildObjectionPrompt
 } from './objection-vertical-prompts';
 
+// Brain Autonomy System
+export {
+  AUTONOMY_LEVELS,
+  BRAIN_DECISION_ENGINE_PROMPT,
+  KNOWLEDGE_BASE_PROMPT,
+  canActAutonomously,
+  buildDecisionContext,
+  processDecision
+} from './brain-autonomy';
+

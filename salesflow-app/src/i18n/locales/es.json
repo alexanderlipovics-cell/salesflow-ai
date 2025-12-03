@@ -65,6 +65,8 @@
   },
 
   "actions": {
+    "aura_dashboard": "AURA OS",
+    "aura_dashboard_desc": "Panel Premium",
     "autopilot": "Piloto automático",
     "autopilot_desc": "Respuestas auto",
     "ai_chat": "Chat IA",
@@ -283,22 +285,41 @@
   },
 
   "editions": {
-    "default": {
-      "name": "Sales Flow",
-      "tagline": "Tu Asistente de Ventas IA",
+    "aura": {
+      "name": "AURA OS",
+      "tagline": "Sistema Operativo de Ventas Inteligente",
+      "subtitle": "Impulsado por CHIEF AI",
       "quick_access": "Acceso Rápido",
       "features": {
         "messages": "🎯 Mensajes Personalizados",
         "analytics": "📈 Analíticas de Ventas",
-        "ai_support": "🤖 Soporte IA",
-        "automation": "⚡ Automatización"
+        "ai_support": "🤖 Agente CHIEF AI",
+        "automation": "⚡ Automatización Inteligente"
       },
       "tips": {
-        "tip1": "Usa Playbooks para seguimientos consistentes",
-        "tip2": "Califica tus leads antes de hacer el pitch",
-        "tip3": "Personaliza tus primeros 3 mensajes",
-        "tip4": "Analiza qué plantillas funcionan mejor",
-        "tip5": "Automatiza tareas recurrentes"
+        "tip1": "Deja que CHIEF prepare tus seguimientos",
+        "tip2": "Usa Live Assist para coaching en tiempo real",
+        "tip3": "Analiza tus mejores patrones de pitch",
+        "tip4": "Automatiza con modo Autopilot",
+        "tip5": "Rastrea leads fantasma para re-engagement"
+      }
+    },
+    "default": {
+      "name": "AURA OS",
+      "tagline": "Sistema Operativo de Ventas Inteligente",
+      "quick_access": "Acceso Rápido",
+      "features": {
+        "messages": "🎯 Mensajes Personalizados",
+        "analytics": "📈 Analíticas de Ventas",
+        "ai_support": "🤖 Agente CHIEF AI",
+        "automation": "⚡ Automatización Inteligente"
+      },
+      "tips": {
+        "tip1": "Deja que CHIEF prepare tus seguimientos",
+        "tip2": "Usa Live Assist para coaching en tiempo real",
+        "tip3": "Analiza tus mejores patrones de pitch",
+        "tip4": "Automatiza con modo Autopilot",
+        "tip5": "Rastrea leads fantasma para re-engagement"
       }
     },
     "zinzino": {
@@ -360,6 +381,99 @@
       "tips": {
         "tip1": "La lavanda es el aceite perfecto para empezar",
         "tip2": "Kit Home Essentials para nuevos clientes"
+      }
+    },
+    "b2b": {
+      "tagline": "Edición B2B",
+      "features": {
+        "roi": "📊 Calculadora ROI para Deals Enterprise",
+        "value_selling": "💎 Estrategias de Venta por Valor",
+        "enterprise": "🏢 Orquestación de Deals Enterprise",
+        "stakeholder": "🎯 Mapeo de Stakeholders"
+      },
+      "actions": {
+        "roi_calculator": "Calcular ROI",
+        "stakeholder": "Mapa de Stakeholders",
+        "pipeline": "Pipeline de Deals"
+      },
+      "tips": {
+        "tip1": "Muestra ROI en 3 escenarios: Conservador, Realista, Optimista",
+        "tip2": "Identifica todos los tomadores de decisiones ANTES del pitch",
+        "tip3": "Value-Selling: Explica POR QUÉ más caro = más barato"
+      }
+    },
+    "network_pro": {
+      "tagline": "Edición Network Pro",
+      "features": {
+        "duplication": "🚀 Duplicación de Equipo con un Click",
+        "rank_tracking": "📈 Seguimiento de Rango en Tiempo Real",
+        "team_building": "👥 Sistema de Onboarding de Partners",
+        "events": "🎉 Gestión de Eventos y Seguimiento"
+      },
+      "actions": {
+        "duplication": "Duplicar",
+        "rank": "Tracker de Rango"
+      },
+      "tips": {
+        "tip1": "Tu partner responde como un pro desde el día 1",
+        "tip2": "Automatiza onboarding con secuencias prediseñadas",
+        "tip3": "Rastrea el progreso del Comp-Plan en tiempo real"
+      }
+    },
+    "makler": {
+      "tagline": "Edición Inmobiliaria",
+      "features": {
+        "expose_generator": "📝 Exposés Emocionales en 3 Segundos",
+        "lead_scoring": "🏆 Calificación y Scoring de Compradores",
+        "object_management": "🏠 Gestión Inteligente de Propiedades",
+        "acquisition": "📞 Automatización de Captación"
+      },
+      "actions": {
+        "expose": "Crear Exposé",
+        "objects": "Propiedades",
+        "qualify": "Calificar Lead"
+      },
+      "tips": {
+        "tip1": "Separa turistas de compradores reales - BANT Scoring",
+        "tip2": "Exposés emocionales venden 3x más rápido",
+        "tip3": "Follow-ups automáticos después de visitas"
+      }
+    },
+    "coaching": {
+      "tagline": "Edición Coaching",
+      "features": {
+        "high_ticket": "💎 Automatización de Ventas High-Ticket",
+        "discovery": "🎯 Optimización de Discovery Calls",
+        "retention": "🔄 Sistema de Retención de Clientes",
+        "upselling": "📈 Motor de Upselling Inteligente"
+      },
+      "actions": {
+        "discovery": "Discovery Call",
+        "high_ticket": "High-Ticket"
+      },
+      "tips": {
+        "tip1": "El Discovery Call perfecto dura 45-60 minutos",
+        "tip2": "Historias de transformación venden mejor que features",
+        "tip3": "Construye MRR con foco en retención"
+      }
+    },
+    "finance": {
+      "tagline": "Edición Finanzas",
+      "features": {
+        "consulting": "📊 Análisis de Necesidades Estructurado",
+        "referral": "🌟 Sistema de Marketing de Referidos",
+        "compliance": "🛡️ Comunicación Segura en Cumplimiento",
+        "planning": "📈 Planificación Financiera a Largo Plazo"
+      },
+      "actions": {
+        "analysis": "Análisis de Necesidades",
+        "compliance": "Check de Cumplimiento",
+        "referral": "Referido"
+      },
+      "tips": {
+        "tip1": "Construye confianza antes del primer pitch de producto",
+        "tip2": "Los referidos son tu canal más importante",
+        "tip3": "Checks de cumplimiento automáticos en cada mensaje"
       }
     }
   },
@@ -477,5 +591,132 @@
     "yesterday": "Ayer",
     "today": "Hoy",
     "tomorrow": "Mañana"
+  },
+
+  "daily_flow": {
+    "title": "Flujo Diario",
+    "subtitle": "Tu plan diario para el máximo éxito",
+    "greeting_morning": "¡Buenos Días! 🌅",
+    "greeting_afternoon": "¡Buenas Tardes! ☀️",
+    "greeting_evening": "¡Buenas Noches! 🌙",
+    "progress": "Progreso",
+    "completed": "Completado",
+    "remaining": "Pendiente",
+    "activities": {
+      "new_contacts": "Nuevos Contactos",
+      "followups": "Seguimientos",
+      "reactivations": "Reactivaciones",
+      "calls": "Llamadas",
+      "meetings": "Reuniones"
+    },
+    "status": {
+      "on_track": "¡En Curso! 🚀",
+      "slightly_behind": "Ligeramente Atrasado",
+      "behind": "Necesita Ponerse al Día",
+      "ahead": "¡Adelantado! 🔥"
+    },
+    "targets": {
+      "daily": "Meta Diaria",
+      "weekly": "Meta Semanal",
+      "monthly": "Meta Mensual"
+    },
+    "motivation": {
+      "great_start": "¡Excelente inicio del día!",
+      "keep_going": "¡Sigue así, tú puedes!",
+      "almost_there": "¡Casi llegas!",
+      "goal_reached": "🎉 ¡Meta diaria alcanzada!",
+      "overachiever": "🏆 ¡Superado!"
+    },
+    "cta": {
+      "start_day": "Iniciar Día",
+      "log_activity": "Registrar Actividad",
+      "view_leads": "Ver Leads",
+      "ask_chief": "Preguntar a CHIEF"
+    },
+    "setup": {
+      "title": "Configurar Flujo Diario",
+      "question": "¿Cuántas actividades por día?",
+      "save": "Guardar"
+    }
+  },
+
+  "phoenix": {
+    "title": "Phoenix",
+    "subtitle": "Reactivación de Leads",
+    "hero_title": "Renacer de las Cenizas",
+    "hero_subtitle": "Reactiva leads perdidos con estrategias impulsadas por IA",
+    "stats": {
+      "cold_leads": "Leads Fríos",
+      "high_potential": "Alto Potencial",
+      "reactivated": "Reactivados",
+      "success_rate": "Tasa de Éxito"
+    },
+    "filters": {
+      "all": "Todos",
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Bajo"
+    },
+    "approach": {
+      "value_reminder": "Recordar Valor",
+      "new_offer": "Nueva Oferta",
+      "gentle_checkin": "Check-in Suave",
+      "direct_question": "Pregunta Directa",
+      "social_proof": "Prueba Social",
+      "event_trigger": "Disparador de Evento"
+    },
+    "actions": {
+      "generate_message": "Generar Mensaje",
+      "reactivate": "Reactivar"
+    },
+    "empty": {
+      "title": "¡Sin Leads Fríos!",
+      "subtitle": "Todos tus leads están activos. ¡Sigue así!"
+    }
+  },
+
+  "brain": {
+    "title": "Cerebro",
+    "subtitle": "Sistema de Autonomía IA",
+    "knowledge_base": "Base de Conocimiento",
+    "upload_document": "Subir Documento",
+    "supported_formats": "PDF, DOCX, TXT",
+    "documents": "Documentos",
+    "decision_engine": "Motor de Decisiones",
+    "autonomy_level": "Nivel de Autonomía",
+    "learning": "Aprendizaje",
+    "patterns": "Patrones Detectados"
+  },
+
+  "voice": {
+    "title": "Ajustes de Voz",
+    "subtitle": "Entrada y Salida de Voz",
+    "speech_input": "Entrada de Voz",
+    "speech_output": "Salida de Voz",
+    "wake_word": "Palabra de Activación",
+    "auto_read": "Lectura Automática",
+    "auto_read_desc": "Leer automáticamente las respuestas de CHIEF",
+    "hey_chief": "\"Oye CHIEF\"",
+    "hey_chief_desc": "Comando de activación por voz",
+    "sound_effects": "Efectos de Sonido",
+    "sound_effects_desc": "Retroalimentación de audio para acciones",
+    "speech_rate": "Velocidad del Habla",
+    "voice_selection": "Voz",
+    "test_voice": "Probar Voz",
+    "test_mic": "Probar Micrófono",
+    "listening": "Escuchando...",
+    "hearing": "Te escucho...",
+    "processing": "Procesando...",
+    "speaking": "Hablando...",
+    "paused": "Pausado",
+    "not_available": "No disponible",
+    "commands": {
+      "title": "Comandos de Voz",
+      "hey_chief": "Oye CHIEF - Activar",
+      "new_lead": "Nuevo Lead - Crear lead",
+      "follow_ups": "Seguimientos - Abrir seguimientos",
+      "daily_flow": "Plan diario - Abrir flujo diario",
+      "stop": "Para - Dejar de escuchar"
+    }
   }
 }

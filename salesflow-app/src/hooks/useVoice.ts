@@ -1,178 +1,348 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════╗
- * ║  useVoice Hook                                                             ║
- * ║  React Hook für Voice Input/Output & Speech                                ║
+ * ║  AURA OS - useVoice Hook                                                   ║
+ * ║  Einfache Voice-Integration für alle Components                            ║
+ * ║                                                                             ║
+ * ║  Features:                                                                  ║
+ * ║  - Speech-to-Text (Spracheingabe)                                          ║
+ * ║  - Text-to-Speech (Vorlesen)                                               ║
+ * ║  - Wake Word Detection ("Hey CHIEF")                                       ║
+ * ║  - Voice Commands                                                           ║
+ * ║  - Auto-Read für AI-Antworten                                              ║
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import { useState, useCallback } from 'react';
-import { 
-  voiceApi, 
-  TranscriptionResult,
-  SpeechSynthesisResult,
-  VoiceNote,
-  VoiceCommand,
-} from '../api/voice';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Platform } from 'react-native';
+import {
+  speakText,
+  stopSpeaking,
+  pauseSpeaking,
+  resumeSpeaking,
+  isSpeaking,
+  startListening,
+  stopListening,
+  isListening,
+  isVoiceSupported,
+  initVoices,
+  handleVoiceCommand,
+  setAutoRead,
+  isAutoReadEnabled,
+  autoReadMessage,
+  SoundEffects,
+  VOICE_CONFIG,
+} from '../services/voiceService';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type VoiceState = 'idle' | 'listening' | 'hearing' | 'processing' | 'speaking' | 'paused' | 'error';
+
+export type ListeningMode = 'normal' | 'continuous' | 'wake-word' | 'command';
+
+export interface VoiceCommand {
+  action: string;
+  phrase: string;
+  transcript: string;
+}
+
+export interface WakeWordResult {
+  detected: boolean;
+  wakeWord?: string;
+  followingText?: string;
+}
+
+export interface UseVoiceOptions {
+  // Auto-Read aktivieren?
+  autoRead?: boolean;
+  // Callback wenn Wake Word erkannt
+  onWakeWord?: (result: WakeWordResult) => void;
+  // Callback für Voice Commands
+  onCommand?: (command: VoiceCommand) => void;
+  // Callback bei Fehlern
+  onError?: (error: string) => void;
+  // Navigation für Commands
+  navigation?: any;
+}
 
 export interface UseVoiceReturn {
   // State
-  transcription: TranscriptionResult | null;
-  synthesizedAudio: SpeechSynthesisResult | null;
-  voiceNotes: VoiceNote[];
-  lastCommand: VoiceCommand | null;
-  loading: boolean;
-  error: string | null;
+  voiceState: VoiceState;
+  isSupported: { tts: boolean; stt: boolean; wakeWord: boolean };
+  partialTranscript: string;
+  autoReadEnabled: boolean;
   
-  // Actions
-  transcribe: (audioFile: File | Blob, options?: { language?: string }) => Promise<TranscriptionResult>;
-  synthesize: (text: string, options?: { voice?: string; language?: string; speed?: number }) => Promise<SpeechSynthesisResult>;
-  saveVoiceNote: (audioFile: File | Blob, options?: { leadId?: string; context?: string }) => Promise<VoiceNote>;
-  loadVoiceNotes: (leadId?: string) => Promise<void>;
-  deleteVoiceNote: (noteId: string) => Promise<void>;
-  processCommand: (audioFile: File | Blob) => Promise<VoiceCommand>;
-  processTextCommand: (text: string) => Promise<VoiceCommand>;
-  clearTranscription: () => void;
+  // STT Functions
+  startRecording: (mode?: ListeningMode) => void;
+  stopRecording: () => void;
+  
+  // TTS Functions
+  speak: (text: string, priority?: 'normal' | 'high') => Promise<void>;
+  stopSpeech: () => void;
+  pauseSpeech: () => void;
+  resumeSpeech: () => void;
+  
+  // Settings
+  toggleAutoRead: () => void;
+  setAutoReadEnabled: (enabled: boolean) => void;
+  
+  // Utilities
+  playSound: (sound: keyof typeof SoundEffects) => void;
 }
 
-export function useVoice(): UseVoiceReturn {
-  const [transcription, setTranscription] = useState<TranscriptionResult | null>(null);
-  const [synthesizedAudio, setSynthesizedAudio] = useState<SpeechSynthesisResult | null>(null);
-  const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
-  const [lastCommand, setLastCommand] = useState<VoiceCommand | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// ═══════════════════════════════════════════════════════════════════════════
+// HOOK IMPLEMENTATION
+// ═══════════════════════════════════════════════════════════════════════════
 
-  // Transcribe
-  const transcribe = useCallback(async (audioFile: File | Blob, options?: { language?: string }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await voiceApi.transcribe(audioFile, options);
-      setTranscription(result);
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transkription fehlgeschlagen');
-      throw err;
-    } finally {
-      setLoading(false);
+export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
+  const {
+    autoRead: initialAutoRead = false,
+    onWakeWord,
+    onCommand,
+    onError,
+    navigation,
+  } = options;
+
+  // State
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [isSupported, setIsSupported] = useState({ tts: false, stt: false, wakeWord: false });
+  const [partialTranscript, setPartialTranscript] = useState('');
+  const [autoReadEnabled, setAutoReadEnabledState] = useState(initialAutoRead);
+  
+  // Refs
+  const transcriptCallbackRef = useRef<((text: string, confidence: number) => void) | null>(null);
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INITIALIZATION
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  useEffect(() => {
+    // Check voice support
+    const support = isVoiceSupported();
+    setIsSupported(support);
+    
+    // Init voices for TTS
+    if (support.tts) {
+      initVoices();
     }
-  }, []);
-
-  // Synthesize
-  const synthesize = useCallback(async (text: string, options?: { voice?: string; language?: string; speed?: number }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await voiceApi.synthesize({
-        text,
-        voice: options?.voice,
-        language: options?.language,
-        speed: options?.speed,
+    
+    // Set initial auto-read state
+    setAutoRead(initialAutoRead);
+    
+    // Cleanup
+    return () => {
+      stopListening();
+      stopSpeaking();
+    };
+  }, [initialAutoRead]);
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // COMMAND HANDLERS
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  const handleCommand = useCallback((command: VoiceCommand) => {
+    // External callback
+    onCommand?.(command);
+    
+    // Built-in navigation commands
+    if (navigation) {
+      handleVoiceCommand(command, {
+        onNewLead: () => navigation.navigate('Leads', { action: 'create' }),
+        onOpenFollowups: () => navigation.navigate('FollowUps'),
+        onObjectionHelp: () => navigation.navigate('Chat', { initialMessage: 'Hilf mir bei einem Einwand' }),
+        onOpenDailyFlow: () => navigation.navigate('DailyFlow'),
+        onStopListening: () => setVoiceState('idle'),
+        onCancel: () => {
+          setPartialTranscript('');
+          setVoiceState('idle');
+        },
       });
-      setSynthesizedAudio(result);
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Synthese fehlgeschlagen');
-      throw err;
-    } finally {
-      setLoading(false);
     }
+  }, [navigation, onCommand]);
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // STT FUNCTIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  const startRecording = useCallback((mode: ListeningMode = 'normal') => {
+    if (!isSupported.stt) {
+      onError?.('Spracherkennung nicht verfügbar');
+      return;
+    }
+    
+    setPartialTranscript('');
+    
+    const success = startListening({
+      mode,
+      onResult: (transcript: string, confidence: number) => {
+        setPartialTranscript('');
+        transcriptCallbackRef.current?.(transcript, confidence);
+      },
+      onPartialResult: (partial: string) => {
+        setPartialTranscript(partial);
+      },
+      onCommand: handleCommand,
+      onWakeWord: (result: WakeWordResult) => {
+        onWakeWord?.(result);
+      },
+      onError: (error: string) => {
+        setVoiceState('error');
+        onError?.(error);
+      },
+      onEnd: () => {
+        if (mode !== 'continuous' && mode !== 'wake-word') {
+          setVoiceState('idle');
+        }
+      },
+      onStateChange: (state: VoiceState) => {
+        setVoiceState(state);
+      },
+    });
+    
+    if (!success) {
+      onError?.('Spracherkennung konnte nicht gestartet werden');
+    }
+  }, [isSupported.stt, handleCommand, onWakeWord, onError]);
+  
+  const stopRecording = useCallback(() => {
+    stopListening();
+    setVoiceState('idle');
+    setPartialTranscript('');
   }, []);
-
-  // Save Voice Note
-  const saveVoiceNote = useCallback(async (audioFile: File | Blob, options?: { leadId?: string; context?: string }) => {
-    setLoading(true);
-    setError(null);
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // TTS FUNCTIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  const speak = useCallback(async (text: string, priority: 'normal' | 'high' = 'normal') => {
+    if (!isSupported.tts) {
+      onError?.('Sprachausgabe nicht verfügbar');
+      return;
+    }
+    
     try {
-      const note = await voiceApi.saveVoiceNote(audioFile, options);
-      setVoiceNotes(prev => [note, ...prev]);
-      return note;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Speichern fehlgeschlagen');
-      throw err;
-    } finally {
-      setLoading(false);
+      await speakText(text, {
+        priority,
+        onStart: () => setVoiceState('speaking'),
+        onEnd: () => setVoiceState('idle'),
+        onPause: () => setVoiceState('paused'),
+        onResume: () => setVoiceState('speaking'),
+        onError: (error: string) => {
+          setVoiceState('error');
+          onError?.(error);
+        },
+      });
+    } catch (error) {
+      console.error('TTS Error:', error);
     }
+  }, [isSupported.tts, onError]);
+  
+  const stopSpeech = useCallback(() => {
+    stopSpeaking();
+    setVoiceState('idle');
   }, []);
-
-  // Load Voice Notes
-  const loadVoiceNotes = useCallback(async (leadId?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const notes = await voiceApi.getVoiceNotes({ leadId });
-      setVoiceNotes(notes);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Laden fehlgeschlagen');
-    } finally {
-      setLoading(false);
-    }
+  
+  const pauseSpeech = useCallback(() => {
+    pauseSpeaking();
+    setVoiceState('paused');
   }, []);
-
-  // Delete Voice Note
-  const deleteVoiceNote = useCallback(async (noteId: string) => {
-    try {
-      await voiceApi.deleteVoiceNote(noteId);
-      setVoiceNotes(prev => prev.filter(n => n.id !== noteId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen');
-    }
+  
+  const resumeSpeech = useCallback(() => {
+    resumeSpeaking();
+    setVoiceState('speaking');
   }, []);
-
-  // Process Command (Audio)
-  const processCommand = useCallback(async (audioFile: File | Blob) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const command = await voiceApi.processCommand(audioFile);
-      setLastCommand(command);
-      return command;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Command fehlgeschlagen');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUTO-READ
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  const toggleAutoRead = useCallback(() => {
+    const newValue = !autoReadEnabled;
+    setAutoReadEnabledState(newValue);
+    setAutoRead(newValue);
+  }, [autoReadEnabled]);
+  
+  const setAutoReadEnabledFunc = useCallback((enabled: boolean) => {
+    setAutoReadEnabledState(enabled);
+    setAutoRead(enabled);
   }, []);
-
-  // Process Text Command
-  const processTextCommand = useCallback(async (text: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const command = await voiceApi.processTextCommand(text);
-      setLastCommand(command);
-      return command;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Command fehlgeschlagen');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // UTILITIES
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  const playSound = useCallback((sound: keyof typeof SoundEffects) => {
+    SoundEffects[sound]?.();
   }, []);
-
-  // Clear Transcription
-  const clearTranscription = useCallback(() => {
-    setTranscription(null);
-  }, []);
-
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RETURN
+  // ─────────────────────────────────────────────────────────────────────────
+  
   return {
-    transcription,
-    synthesizedAudio,
-    voiceNotes,
-    lastCommand,
-    loading,
-    error,
-    transcribe,
-    synthesize,
-    saveVoiceNote,
-    loadVoiceNotes,
-    deleteVoiceNote,
-    processCommand,
-    processTextCommand,
-    clearTranscription,
+    // State
+    voiceState,
+    isSupported,
+    partialTranscript,
+    autoReadEnabled,
+    
+    // STT Functions
+    startRecording,
+    stopRecording,
+    
+    // TTS Functions
+    speak,
+    stopSpeech,
+    pauseSpeech,
+    resumeSpeech,
+    
+    // Settings
+    toggleAutoRead,
+    setAutoReadEnabled: setAutoReadEnabledFunc,
+    
+    // Utilities
+    playSound,
   };
 }
 
-export default useVoice;
+// ═══════════════════════════════════════════════════════════════════════════
+// CONVENIENCE HOOK FOR TRANSCRIPT
+// ═══════════════════════════════════════════════════════════════════════════
 
+export interface UseVoiceInputOptions {
+  onTranscript: (text: string) => void;
+  autoSend?: boolean;
+}
+
+export function useVoiceInput(options: UseVoiceInputOptions) {
+  const { onTranscript, autoSend = false } = options;
+  const voice = useVoice();
+  
+  // Callback für Transkript setzen
+  useEffect(() => {
+    // Direkte Verbindung über Ref - vorerst nicht implementiert
+    // da der voiceService die Callbacks direkt bekommt
+  }, [onTranscript]);
+  
+  const startVoiceInput = useCallback(() => {
+    voice.startRecording('normal');
+  }, [voice]);
+  
+  const stopVoiceInput = useCallback(() => {
+    voice.stopRecording();
+  }, [voice]);
+  
+  return {
+    ...voice,
+    startVoiceInput,
+    stopVoiceInput,
+    isRecording: voice.voiceState === 'listening' || voice.voiceState === 'hearing',
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEFAULT EXPORT
+// ═══════════════════════════════════════════════════════════════════════════
+
+export default useVoice;

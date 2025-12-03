@@ -498,5 +498,166 @@
     "yesterday": "Yesterday",
     "today": "Today",
     "tomorrow": "Tomorrow"
+  },
+
+  "daily_flow": {
+    "title": "Daily Flow",
+    "subtitle": "Your daily plan for maximum success",
+    "greeting_morning": "Good Morning! 🌅",
+    "greeting_afternoon": "Good Afternoon! ☀️",
+    "greeting_evening": "Good Evening! 🌙",
+    "progress": "Progress",
+    "completed": "Completed",
+    "remaining": "Remaining",
+    "activities": {
+      "new_contacts": "New Contacts",
+      "followups": "Follow-ups",
+      "reactivations": "Reactivations",
+      "calls": "Calls",
+      "meetings": "Meetings"
+    },
+    "status": {
+      "on_track": "On Track! 🚀",
+      "slightly_behind": "Slightly Behind",
+      "behind": "Catch Up Needed",
+      "ahead": "Ahead! 🔥"
+    },
+    "targets": {
+      "daily": "Daily Goal",
+      "weekly": "Weekly Goal",
+      "monthly": "Monthly Goal"
+    },
+    "motivation": {
+      "great_start": "Great start to the day!",
+      "keep_going": "Keep going, you got this!",
+      "almost_there": "Almost there!",
+      "goal_reached": "🎉 Daily goal reached!",
+      "overachiever": "🏆 Exceeded!"
+    },
+    "cta": {
+      "start_day": "Start Day",
+      "log_activity": "Log Activity",
+      "view_leads": "View Leads",
+      "ask_chief": "Ask CHIEF"
+    },
+    "setup": {
+      "title": "Setup Daily Flow",
+      "question": "How many activities per day?",
+      "save": "Save"
+    }
+  },
+
+  "phoenix": {
+    "title": "Phoenix",
+    "subtitle": "Lead Reactivation",
+    "hero_title": "Rise from the Ashes",
+    "hero_subtitle": "Reactivate lost leads with AI-powered strategies",
+    "stats": {
+      "cold_leads": "Cold Leads",
+      "high_potential": "High Potential",
+      "reactivated": "Reactivated",
+      "success_rate": "Success Rate"
+    },
+    "filters": {
+      "all": "All",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "approach": {
+      "value_reminder": "Value Reminder",
+      "new_offer": "New Offer",
+      "gentle_checkin": "Gentle Check-in",
+      "direct_question": "Direct Question",
+      "social_proof": "Social Proof",
+      "event_trigger": "Event Trigger"
+    },
+    "actions": {
+      "generate_message": "Generate Message",
+      "reactivate": "Reactivate"
+    },
+    "empty": {
+      "title": "No Cold Leads!",
+      "subtitle": "All your leads are active. Keep it up!"
+    }
+  },
+
+  "brain": {
+    "title": "Brain",
+    "subtitle": "AI Autonomy System",
+    "knowledge_base": "Knowledge Base",
+    "upload_document": "Upload Document",
+    "supported_formats": "PDF, DOCX, TXT",
+    "documents": "Documents",
+    "decision_engine": "Decision Engine",
+    "autonomy_level": "Autonomy Level",
+    "learning": "Learning",
+    "patterns": "Patterns Detected"
+  },
+
+  "pricing": {
+    "title": "Choose Your Plan",
+    "subtitle": "Start with 7 days free • Cancel anytime",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save": "-20%",
+    "current_plan": "Current Plan",
+    "manage": "Manage",
+    "select": "Select",
+    "popular": "POPULAR",
+    "per_month": "/month",
+    "per_year": "/year",
+    "addons": "Add-Ons",
+    "addons_subtitle": "Extend your plan with additional features",
+    "trust_ssl": "SSL encrypted",
+    "trust_stripe": "Secure payment via Stripe",
+    "trust_gdpr": "GDPR compliant",
+    "faq": "Pricing FAQ",
+    "plans": {
+      "solo": {
+        "name": "Solo",
+        "subtitle": "For solo players"
+      },
+      "team": {
+        "name": "Team",
+        "subtitle": "For high-performer teams"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "subtitle": "For organizations"
+      }
+    }
+  },
+
+  "voice": {
+    "title": "Voice Settings",
+    "subtitle": "Speech Input & Output",
+    "speech_input": "Speech Input",
+    "speech_output": "Speech Output",
+    "wake_word": "Wake Word",
+    "auto_read": "Auto-Read",
+    "auto_read_desc": "Automatically read CHIEF responses",
+    "hey_chief": "\"Hey CHIEF\"",
+    "hey_chief_desc": "Voice activation command",
+    "sound_effects": "Sound Effects",
+    "sound_effects_desc": "Audio feedback for actions",
+    "speech_rate": "Speech Rate",
+    "voice_selection": "Voice",
+    "test_voice": "Test Voice",
+    "test_mic": "Test Microphone",
+    "listening": "Listening...",
+    "hearing": "Hearing you...",
+    "processing": "Processing...",
+    "speaking": "Speaking...",
+    "paused": "Paused",
+    "not_available": "Not available",
+    "commands": {
+      "title": "Voice Commands",
+      "hey_chief": "Hey CHIEF - Activate",
+      "new_lead": "New Lead - Create lead",
+      "follow_ups": "Follow ups - Open follow-ups",
+      "daily_flow": "Daily flow - Open daily flow",
+      "stop": "Stop - Stop listening"
+    }
   }
 }

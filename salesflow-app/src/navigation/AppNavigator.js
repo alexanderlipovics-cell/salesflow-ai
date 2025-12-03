@@ -32,6 +32,7 @@ import OutreachScreen from '../screens/main/OutreachScreen';
 import GhostBusterScreen from '../screens/main/GhostBusterScreen';
 import TeamLeaderScreen from '../screens/main/TeamLeaderScreen';
 import DataImportScreen from '../screens/main/DataImportScreen';
+import { PhoenixScreen } from '../screens/main/PhoenixScreen';
 
 // Onboarding Screens (neues erweitertes System)
 import { OnboardingScreen } from '../screens/onboarding';
@@ -64,8 +65,9 @@ import BrainScreen from '../screens/main/BrainScreen';
 // AURA OS Premium Dashboard
 import AuraOsDashboardScreen from '../screens/main/AuraOsDashboardScreen';
 
-// Billing/Pricing Screens
+// Billing/Pricing/Settings Screens
 import PricingScreen from '../screens/settings/PricingScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { TestCheckoutScreen } from '../screens/billing';
 
 const Stack = createNativeStackNavigator();
@@ -257,6 +259,13 @@ function AppStack() {
           presentation: 'modal',
         }}
       />
+      <Stack.Screen 
+        name="Phoenix" 
+        component={PhoenixScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       
       {/* Sequencer Engine */}
       <Stack.Screen 
@@ -383,6 +392,15 @@ function AppStack() {
       <Stack.Screen 
         name="TestCheckout" 
         component={TestCheckoutScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      
+      {/* Settings */}
+      <Stack.Screen 
+        name="Settings" 
+        component={SettingsScreen}
         options={{
           headerShown: false,
         }}

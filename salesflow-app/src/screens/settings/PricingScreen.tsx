@@ -1,713 +1,770 @@
 /**
- * PricingScreen - Zeigt alle Pakete und Add-Ons
+ * ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║  AURA OS - PRICING SCREEN                                                 ║
+ * ║  Premium Stripe Checkout Integration                                       ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
   StyleSheet,
-  Switch,
+  Animated,
+  ActivityIndicator,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  BASIC_PLAN,
-  ALL_ADDONS,
-  BUNDLES,
-  formatPrice,
-  isUnlimited,
-  type PricingTier,
-  type AddOn,
-  type Bundle,
-} from '../../config/pricing';
+import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import { AURA_COLORS, AURA_SHADOWS } from '../../components/aura';
+import { useBilling } from '../../hooks/useBilling';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPONENT
+// PRICING DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-export default function PricingScreen() {
-  const [isYearly, setIsYearly] = useState(false);
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+const PRICING_PLANS = {
+  solo: {
+    name: 'Solo',
+    subtitle: 'Für Einzelkämpfer',
+    icon: '🚀',
+    price: { monthly: 149, yearly: 1190 },
+    priceId: { monthly: 'basic_monthly', yearly: 'basic_yearly' },
+    features: [
+      { text: '100 Leads', included: true },
+      { text: '50 Chat-Imports/Monat', included: true },
+      { text: '100 AI-Analysen/Monat', included: true },
+      { text: 'Unbegrenzte Follow-ups', included: true },
+      { text: 'CHIEF AI Chat', included: true },
+      { text: 'DISG-Profiler', included: true },
+      { text: 'Knowledge Base (1 GB)', included: true },
+      { text: 'Voice-Steuerung', included: true },
+      { text: 'Autopilot', included: false },
+      { text: 'Team-Features', included: false },
+      { text: 'Enterprise API', included: false },
+    ],
+    recommended: false,
+    savings: null,
+  },
+  team: {
+    name: 'Team',
+    subtitle: 'Für High-Performer Teams',
+    icon: '⚡',
+    price: { monthly: 990, yearly: 7920 },
+    priceId: { monthly: 'autopilot_pro_monthly', yearly: 'autopilot_pro_yearly' },
+    features: [
+      { text: 'Unbegrenzte Leads', included: true },
+      { text: 'Unbegrenzte Chat-Imports', included: true },
+      { text: 'Unbegrenzte AI-Analysen', included: true },
+      { text: 'Unbegrenzte Follow-ups', included: true },
+      { text: 'CHIEF AI Chat Pro', included: true },
+      { text: 'DISG-Profiler Advanced', included: true },
+      { text: 'Knowledge Base (10 GB)', included: true },
+      { text: 'Voice + Wake Word', included: true },
+      { text: 'Autopilot Basic', included: true },
+      { text: 'Bis zu 5 Teammitglieder', included: true },
+      { text: 'Team Analytics', included: true },
+      { text: 'Priority Support', included: true },
+      { text: 'Enterprise API', included: false },
+    ],
+    recommended: true,
+    savings: '2 Monate gratis bei jährlicher Zahlung',
+  },
+  enterprise: {
+    name: 'Enterprise',
+    subtitle: 'Für Organisationen',
+    icon: '🏢',
+    price: { monthly: 2400, yearly: 19200 },
+    priceId: { monthly: 'bundle_unlimited_monthly', yearly: 'bundle_unlimited_yearly' },
+    features: [
+      { text: 'Alles aus Team', included: true },
+      { text: 'Unbegrenzte Teammitglieder', included: true },
+      { text: 'Knowledge Base (100 GB)', included: true },
+      { text: 'Autopilot Full', included: true },
+      { text: 'Custom Branding', included: true },
+      { text: 'SSO / SAML', included: true },
+      { text: 'Enterprise API', included: true },
+      { text: 'Dedicated Support', included: true },
+      { text: 'SLA 99.9%', included: true },
+      { text: 'Custom Integrationen', included: true },
+      { text: 'Onboarding & Training', included: true },
+    ],
+    recommended: false,
+    savings: '4 Monate gratis bei jährlicher Zahlung',
+  },
+};
+
+const ADDONS = [
+  {
+    id: 'autopilot_starter',
+    name: 'Autopilot Starter',
+    icon: '🤖',
+    description: '100 Auto-Aktionen/Monat',
+    price: 49,
+    priceId: 'autopilot_starter_monthly',
+  },
+  {
+    id: 'finance_module',
+    name: 'Finance Tracker',
+    icon: '💰',
+    description: 'Provisionen & Steuervorbereitung',
+    price: 29,
+    priceId: 'finance_starter_monthly',
+  },
+  {
+    id: 'leadgen_module',
+    name: 'Lead Generator',
+    icon: '🎯',
+    description: '50 AI Lead-Vorschläge/Monat',
+    price: 39,
+    priceId: 'leadgen_starter_monthly',
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const PlanCard = ({
+  plan,
+  planKey,
+  isYearly,
+  isCurrentPlan,
+  onSelect,
+  loading,
+}: {
+  plan: typeof PRICING_PLANS.solo;
+  planKey: string;
+  isYearly: boolean;
+  isCurrentPlan: boolean;
+  onSelect: () => void;
+  loading: boolean;
+}) => {
+  const price = isYearly ? plan.price.yearly / 12 : plan.price.monthly;
+  const totalPrice = isYearly ? plan.price.yearly : plan.price.monthly;
   
-  const toggleAddon = (tierId: string) => {
-    setSelectedAddons(prev => 
-      prev.includes(tierId)
-        ? prev.filter(id => id !== tierId)
-        : [...prev, tierId]
-    );
+  return (
+    <View style={[styles.planCard, plan.recommended && styles.planCardRecommended]}>
+      {plan.recommended && (
+        <View style={styles.recommendedBadge}>
+          <Text style={styles.recommendedText}>⭐ BELIEBT</Text>
+        </View>
+      )}
+      
+      <View style={styles.planHeader}>
+        <Text style={styles.planIcon}>{plan.icon}</Text>
+        <Text style={styles.planName}>{plan.name}</Text>
+        <Text style={styles.planSubtitle}>{plan.subtitle}</Text>
+      </View>
+      
+      <View style={styles.priceContainer}>
+        <Text style={styles.priceAmount}>€{Math.round(price)}</Text>
+        <Text style={styles.pricePeriod}>/Monat</Text>
+        {isYearly && (
+          <Text style={styles.priceTotal}>€{totalPrice}/Jahr</Text>
+        )}
+      </View>
+      
+      {plan.savings && isYearly && (
+        <View style={styles.savingsBadge}>
+          <Text style={styles.savingsText}>💡 {plan.savings}</Text>
+        </View>
+      )}
+      
+      <View style={styles.featuresContainer}>
+        {plan.features.map((feature, idx) => (
+          <View key={idx} style={styles.featureRow}>
+            <Text style={[styles.featureIcon, !feature.included && styles.featureIconDisabled]}>
+              {feature.included ? '✓' : '✗'}
+            </Text>
+            <Text style={[styles.featureText, !feature.included && styles.featureTextDisabled]}>
+              {feature.text}
+            </Text>
+          </View>
+        ))}
+      </View>
+      
+      <TouchableOpacity
+        style={[
+          styles.selectButton,
+          plan.recommended && styles.selectButtonRecommended,
+          isCurrentPlan && styles.selectButtonCurrent,
+        ]}
+        onPress={onSelect}
+        disabled={isCurrentPlan || loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.selectButtonText}>
+            {isCurrentPlan ? 'Aktueller Plan' : 'Auswählen'}
+          </Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const AddonCard = ({
+  addon,
+  isActive,
+  onToggle,
+  loading,
+}: {
+  addon: typeof ADDONS[0];
+  isActive: boolean;
+  onToggle: () => void;
+  loading: boolean;
+}) => (
+  <TouchableOpacity
+    style={[styles.addonCard, isActive && styles.addonCardActive]}
+    onPress={onToggle}
+    disabled={loading}
+  >
+    <View style={styles.addonHeader}>
+      <Text style={styles.addonIcon}>{addon.icon}</Text>
+      <View style={styles.addonInfo}>
+        <Text style={styles.addonName}>{addon.name}</Text>
+        <Text style={styles.addonDesc}>{addon.description}</Text>
+      </View>
+      <View style={styles.addonPrice}>
+        <Text style={styles.addonPriceAmount}>+€{addon.price}</Text>
+        <Text style={styles.addonPricePeriod}>/Mo</Text>
+      </View>
+    </View>
+    <View style={[styles.addonToggle, isActive && styles.addonToggleActive]}>
+      <Text style={styles.addonToggleText}>{isActive ? '✓' : '+'}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const PricingScreen = () => {
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const billing = useBilling();
+  
+  const [isYearly, setIsYearly] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  
+  const handleSelectPlan = async (planKey: string) => {
+    const plan = PRICING_PLANS[planKey as keyof typeof PRICING_PLANS];
+    if (!plan) return;
+    
+    setLoadingPlan(planKey);
+    try {
+      const priceId = isYearly ? plan.priceId.yearly : plan.priceId.monthly;
+      await billing.upgrade(priceId);
+    } catch (error) {
+      console.error('Checkout error:', error);
+    } finally {
+      setLoadingPlan(null);
+    }
   };
   
-  const calculateTotal = () => {
-    let total = isYearly ? BASIC_PLAN.yearlyPrice / 12 : BASIC_PLAN.price;
+  const handleAddAddon = async (addonId: string) => {
+    const addon = ADDONS.find(a => a.id === addonId);
+    if (!addon) return;
     
-    ALL_ADDONS.forEach(addon => {
-      addon.tiers.forEach(tier => {
-        if (selectedAddons.includes(tier.id)) {
-          total += isYearly ? tier.yearlyPrice / 12 : tier.price;
-        }
-      });
-    });
-    
-    return total;
+    setLoadingPlan(addonId);
+    try {
+      await billing.addAddon(addon.priceId);
+    } catch (error) {
+      console.error('Addon error:', error);
+    } finally {
+      setLoadingPlan(null);
+    }
   };
+  
+  const currentPlan = billing.subscription?.plan || 'free';
   
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <LinearGradient
-        colors={['#3B82F6', '#8B5CF6']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={['#0d0d0f', '#1a1a2e', '#0d0d0f']}
         style={styles.header}
       >
+        <Text style={styles.headerIcon}>💎</Text>
         <Text style={styles.headerTitle}>Wähle deinen Plan</Text>
         <Text style={styles.headerSubtitle}>
-          Starte mit Basic und füge Add-Ons nach Bedarf hinzu
+          Starte mit 7 Tagen kostenlos • Jederzeit kündbar
         </Text>
-        
-        {/* Yearly Toggle */}
-        <View style={styles.yearlyToggle}>
+      </LinearGradient>
+      
+      {/* Billing Toggle */}
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity
+          style={[styles.toggleButton, !isYearly && styles.toggleButtonActive]}
+          onPress={() => setIsYearly(false)}
+        >
           <Text style={[styles.toggleText, !isYearly && styles.toggleTextActive]}>
             Monatlich
           </Text>
-          <Switch
-            value={isYearly}
-            onValueChange={setIsYearly}
-            trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#10B981' }}
-            thumbColor="white"
-          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleButton, isYearly && styles.toggleButtonActive]}
+          onPress={() => setIsYearly(true)}
+        >
           <Text style={[styles.toggleText, isYearly && styles.toggleTextActive]}>
             Jährlich
           </Text>
-          {isYearly && (
-            <View style={styles.savingsBadge}>
-              <Text style={styles.savingsBadgeText}>2 Monate gratis!</Text>
-            </View>
-          )}
-        </View>
-      </LinearGradient>
-      
-      {/* Basic Plan */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📦 Basis-Paket</Text>
-        <PlanCard
-          tier={BASIC_PLAN}
-          isYearly={isYearly}
-          isSelected={true}
-          onSelect={() => {}}
-          isBasic
-        />
+          <View style={styles.toggleSaveBadge}>
+            <Text style={styles.toggleSaveText}>-20%</Text>
+          </View>
+        </TouchableOpacity>
       </View>
       
-      {/* Add-Ons */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>✨ Add-Ons</Text>
-        <Text style={styles.sectionSubtitle}>
-          Erweitere dein Basic-Paket nach Bedarf
-        </Text>
+      {/* Current Plan Info */}
+      {!billing.isFree && (
+        <View style={styles.currentPlanBanner}>
+          <Text style={styles.currentPlanText}>
+            📋 Aktueller Plan: <Text style={styles.currentPlanName}>{currentPlan}</Text>
+          </Text>
+          <TouchableOpacity
+            style={styles.manageButton}
+            onPress={() => billing.openPortal()}
+          >
+            <Text style={styles.manageButtonText}>Verwalten →</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      
+      {/* Plans */}
+      <View style={styles.plansContainer}>
+        {Object.entries(PRICING_PLANS).map(([key, plan]) => (
+          <PlanCard
+            key={key}
+            planKey={key}
+            plan={plan}
+            isYearly={isYearly}
+            isCurrentPlan={currentPlan === key}
+            onSelect={() => handleSelectPlan(key)}
+            loading={loadingPlan === key}
+          />
+        ))}
+      </View>
+      
+      {/* Addons */}
+      <View style={styles.addonsSection}>
+        <Text style={styles.addonsTitle}>🔌 Add-Ons</Text>
+        <Text style={styles.addonsSubtitle}>Erweitere deinen Plan mit zusätzlichen Features</Text>
         
-        {ALL_ADDONS.map((addon) => (
-          <AddonSection
+        {ADDONS.map(addon => (
+          <AddonCard
             key={addon.id}
             addon={addon}
-            isYearly={isYearly}
-            selectedTier={selectedAddons.find(id => 
-              addon.tiers.some(t => t.id === id)
-            )}
-            onSelectTier={toggleAddon}
+            isActive={billing.hasAddon(addon.id)}
+            onToggle={() => handleAddAddon(addon.id)}
+            loading={loadingPlan === addon.id}
           />
         ))}
       </View>
       
-      {/* Bundles */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🎁 Bundles (Spare bis zu 26%)</Text>
-        
-        {BUNDLES.map((bundle) => (
-          <BundleCard
-            key={bundle.id}
-            bundle={bundle}
-            isYearly={isYearly}
-          />
-        ))}
-      </View>
-      
-      {/* Total */}
-      <View style={styles.totalSection}>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Dein Plan:</Text>
-          <Text style={styles.totalPrice}>
-            {formatPrice(calculateTotal())}/Monat
-          </Text>
+      {/* Trust Badges */}
+      <View style={styles.trustSection}>
+        <View style={styles.trustBadge}>
+          <Text style={styles.trustIcon}>🔒</Text>
+          <Text style={styles.trustText}>SSL-verschlüsselt</Text>
         </View>
-        {isYearly && (
-          <Text style={styles.totalYearly}>
-            = {formatPrice(calculateTotal() * 10)}/Jahr (2 Monate gratis)
-          </Text>
-        )}
-        
-        <Pressable style={styles.ctaButton}>
-          <LinearGradient
-            colors={['#10B981', '#059669']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.ctaGradient}
-          >
-            <Text style={styles.ctaText}>Jetzt starten 🚀</Text>
-          </LinearGradient>
-        </Pressable>
+        <View style={styles.trustBadge}>
+          <Text style={styles.trustIcon}>💳</Text>
+          <Text style={styles.trustText}>Sichere Zahlung via Stripe</Text>
+        </View>
+        <View style={styles.trustBadge}>
+          <Text style={styles.trustIcon}>🇪🇺</Text>
+          <Text style={styles.trustText}>DSGVO-konform</Text>
+        </View>
       </View>
+      
+      {/* FAQ Link */}
+      <TouchableOpacity style={styles.faqButton}>
+        <Text style={styles.faqButtonText}>❓ Häufige Fragen zum Pricing</Text>
+      </TouchableOpacity>
       
       {/* Spacer */}
       <View style={{ height: 100 }} />
     </ScrollView>
   );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════
-
-interface PlanCardProps {
-  tier: PricingTier;
-  isYearly: boolean;
-  isSelected: boolean;
-  onSelect: () => void;
-  isBasic?: boolean;
-}
-
-function PlanCard({ tier, isYearly, isSelected, onSelect, isBasic }: PlanCardProps) {
-  const price = isYearly ? tier.yearlyPrice / 12 : tier.price;
-  
-  return (
-    <Pressable
-      style={[
-        styles.planCard,
-        isSelected && styles.planCardSelected,
-        tier.popular && styles.planCardPopular,
-      ]}
-      onPress={onSelect}
-    >
-      {tier.popular && (
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularBadgeText}>⭐ Beliebt</Text>
-        </View>
-      )}
-      
-      <View style={styles.planHeader}>
-        <Text style={styles.planName}>{tier.name}</Text>
-        <View style={styles.priceContainer}>
-          <Text style={styles.price}>{formatPrice(price)}</Text>
-          <Text style={styles.priceUnit}>/Monat</Text>
-        </View>
-      </View>
-      
-      {/* Limits */}
-      {!isBasic && (
-        <View style={styles.limitsContainer}>
-          {Object.entries(tier.limits).map(([key, value]) => (
-            <View key={key} style={styles.limitItem}>
-              <Text style={styles.limitValue}>
-                {isUnlimited(value) ? '∞' : value}
-              </Text>
-              <Text style={styles.limitLabel}>
-                {key.replace(/_/g, ' ')}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-      
-      {/* Features */}
-      <View style={styles.featuresContainer}>
-        {tier.features.map((feature, idx) => (
-          <Text key={idx} style={styles.featureItem}>
-            {feature}
-          </Text>
-        ))}
-      </View>
-      
-      {isBasic && (
-        <View style={styles.includedBadge}>
-          <Text style={styles.includedBadgeText}>✓ Immer enthalten</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
-interface AddonSectionProps {
-  addon: AddOn;
-  isYearly: boolean;
-  selectedTier?: string;
-  onSelectTier: (tierId: string) => void;
-}
-
-function AddonSection({ addon, isYearly, selectedTier, onSelectTier }: AddonSectionProps) {
-  return (
-    <View style={styles.addonSection}>
-      <View style={styles.addonHeader}>
-        <Text style={styles.addonIcon}>{addon.icon}</Text>
-        <View>
-          <Text style={styles.addonName}>{addon.name}</Text>
-          <Text style={styles.addonDescription}>{addon.description}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.tiersContainer}>
-        {addon.tiers.map((tier) => (
-          <Pressable
-            key={tier.id}
-            style={[
-              styles.tierCard,
-              selectedTier === tier.id && styles.tierCardSelected,
-              tier.popular && styles.tierCardPopular,
-            ]}
-            onPress={() => onSelectTier(tier.id)}
-          >
-            {tier.popular && (
-              <View style={styles.tierPopularBadge}>
-                <Text style={styles.tierPopularText}>⭐</Text>
-              </View>
-            )}
-            
-            <Text style={styles.tierName}>{tier.name}</Text>
-            <Text style={styles.tierPrice}>
-              {formatPrice(isYearly ? tier.yearlyPrice / 12 : tier.price)}
-            </Text>
-            <Text style={styles.tierPriceUnit}>/Monat</Text>
-            
-            {/* Quick Features */}
-            <View style={styles.tierFeatures}>
-              {tier.features.slice(0, 2).map((f, i) => (
-                <Text key={i} style={styles.tierFeature} numberOfLines={1}>
-                  {f}
-                </Text>
-              ))}
-            </View>
-            
-            {selectedTier === tier.id && (
-              <View style={styles.tierCheck}>
-                <Text style={styles.tierCheckText}>✓</Text>
-              </View>
-            )}
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-interface BundleCardProps {
-  bundle: Bundle;
-  isYearly: boolean;
-}
-
-function BundleCard({ bundle, isYearly }: BundleCardProps) {
-  const price = isYearly ? bundle.bundlePrice * 10 / 12 : bundle.bundlePrice;
-  const originalPrice = isYearly ? bundle.originalPrice * 10 / 12 : bundle.originalPrice;
-  
-  return (
-    <LinearGradient
-      colors={['#1E293B', '#334155']}
-      style={styles.bundleCard}
-    >
-      <View style={styles.bundleHeader}>
-        <Text style={styles.bundleName}>{bundle.name}</Text>
-        <View style={styles.bundleSavings}>
-          <Text style={styles.bundleSavingsText}>
-            Spare {bundle.savingsPercent}%
-          </Text>
-        </View>
-      </View>
-      
-      <Text style={styles.bundleDescription}>{bundle.description}</Text>
-      
-      <View style={styles.bundlePricing}>
-        <Text style={styles.bundleOriginalPrice}>
-          {formatPrice(originalPrice)}
-        </Text>
-        <Text style={styles.bundlePrice}>
-          {formatPrice(price)}/Monat
-        </Text>
-      </View>
-      
-      <Pressable style={styles.bundleButton}>
-        <Text style={styles.bundleButtonText}>Bundle wählen</Text>
-      </Pressable>
-    </LinearGradient>
-  );
-}
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STYLES
 // ═══════════════════════════════════════════════════════════════════════════
 
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 400;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: AURA_COLORS.bg.primary,
   },
   
   // Header
   header: {
-    padding: 24,
     paddingTop: 60,
-    paddingBottom: 32,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  headerIcon: {
+    fontSize: 48,
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '700',
-    color: 'white',
+    fontWeight: '800',
+    color: AURA_COLORS.text.primary,
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
+    fontSize: 14,
+    color: AURA_COLORS.text.muted,
     marginTop: 8,
+    textAlign: 'center',
   },
-  yearlyToggle: {
+  
+  // Toggle
+  toggleContainer: {
     flexDirection: 'row',
+    backgroundColor: AURA_COLORS.glass.surface,
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginTop: -20,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: AURA_COLORS.glass.border,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 14,
     alignItems: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
-    gap: 12,
+    gap: 8,
+  },
+  toggleButtonActive: {
+    backgroundColor: AURA_COLORS.neon.cyan,
   },
   toggleText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '600',
+    color: AURA_COLORS.text.muted,
   },
   toggleTextActive: {
-    color: 'white',
-    fontWeight: '600',
+    color: '#000',
   },
-  savingsBadge: {
-    backgroundColor: '#10B981',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+  toggleSaveBadge: {
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
-  savingsBadgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  
-  // Sections
-  section: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: 'white',
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 16,
-  },
-  
-  // Plan Card
-  planCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  planCardSelected: {
-    borderColor: '#3B82F6',
-  },
-  planCardPopular: {
-    borderColor: '#F59E0B',
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -10,
-    right: 20,
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  popularBadgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  planName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: 'white',
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  price: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  priceUnit: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginLeft: 4,
-  },
-  limitsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#334155',
-  },
-  limitItem: {
-    alignItems: 'center',
-    minWidth: 70,
-  },
-  limitValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#3B82F6',
-  },
-  limitLabel: {
+  toggleSaveText: {
     fontSize: 10,
-    color: '#94A3B8',
+    fontWeight: '700',
+    color: '#fff',
+  },
+  
+  // Current Plan
+  currentPlanBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: AURA_COLORS.neon.cyan + '15',
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AURA_COLORS.neon.cyan + '30',
+  },
+  currentPlanText: {
+    fontSize: 14,
+    color: AURA_COLORS.text.secondary,
+  },
+  currentPlanName: {
+    fontWeight: '700',
+    color: AURA_COLORS.neon.cyan,
     textTransform: 'capitalize',
   },
-  featuresContainer: {
-    gap: 8,
-  },
-  featureItem: {
-    fontSize: 14,
-    color: '#CBD5E1',
-  },
-  includedBadge: {
-    backgroundColor: '#10B981',
-    alignSelf: 'flex-start',
+  manageButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+    backgroundColor: AURA_COLORS.glass.border,
     borderRadius: 8,
-    marginTop: 16,
   },
-  includedBadgeText: {
-    color: 'white',
+  manageButtonText: {
     fontSize: 12,
+    fontWeight: '600',
+    color: AURA_COLORS.text.primary,
+  },
+  
+  // Plans
+  plansContainer: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+    gap: 16,
+  },
+  planCard: {
+    backgroundColor: AURA_COLORS.glass.surface,
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: AURA_COLORS.glass.border,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  planCardRecommended: {
+    borderColor: AURA_COLORS.neon.cyan,
+    borderWidth: 2,
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: AURA_COLORS.neon.cyan,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderBottomLeftRadius: 12,
+  },
+  recommendedText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#000',
+  },
+  planHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  planIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  planName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: AURA_COLORS.text.primary,
+  },
+  planSubtitle: {
+    fontSize: 13,
+    color: AURA_COLORS.text.muted,
+    marginTop: 4,
+  },
+  
+  // Price
+  priceContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  priceAmount: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: AURA_COLORS.neon.cyan,
+  },
+  pricePeriod: {
+    fontSize: 14,
+    color: AURA_COLORS.text.muted,
+  },
+  priceTotal: {
+    fontSize: 12,
+    color: AURA_COLORS.text.muted,
+    marginTop: 4,
+  },
+  savingsBadge: {
+    backgroundColor: '#22c55e20',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  savingsText: {
+    fontSize: 12,
+    color: '#22c55e',
     fontWeight: '600',
   },
   
-  // Addon Section
-  addonSection: {
+  // Features
+  featuresContainer: {
     marginBottom: 24,
+    gap: 10,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  featureIcon: {
+    fontSize: 14,
+    color: '#22c55e',
+    width: 20,
+    textAlign: 'center',
+  },
+  featureIconDisabled: {
+    color: AURA_COLORS.text.muted,
+  },
+  featureText: {
+    fontSize: 14,
+    color: AURA_COLORS.text.secondary,
+    flex: 1,
+  },
+  featureTextDisabled: {
+    color: AURA_COLORS.text.muted,
+    textDecorationLine: 'line-through',
+  },
+  
+  // Select Button
+  selectButton: {
+    backgroundColor: AURA_COLORS.glass.border,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  selectButtonRecommended: {
+    backgroundColor: AURA_COLORS.neon.cyan,
+  },
+  selectButtonCurrent: {
+    backgroundColor: '#22c55e30',
+    borderWidth: 1,
+    borderColor: '#22c55e',
+  },
+  selectButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  
+  // Addons
+  addonsSection: {
+    paddingHorizontal: 20,
+    marginTop: 40,
+  },
+  addonsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: AURA_COLORS.text.primary,
+    marginBottom: 4,
+  },
+  addonsSubtitle: {
+    fontSize: 13,
+    color: AURA_COLORS.text.muted,
+    marginBottom: 16,
+  },
+  addonCard: {
+    backgroundColor: AURA_COLORS.glass.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: AURA_COLORS.glass.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  addonCardActive: {
+    borderColor: AURA_COLORS.neon.cyan,
+    backgroundColor: AURA_COLORS.neon.cyan + '10',
   },
   addonHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    flex: 1,
   },
   addonIcon: {
-    fontSize: 32,
+    fontSize: 28,
+    marginRight: 12,
+  },
+  addonInfo: {
+    flex: 1,
   },
   addonName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-  },
-  addonDescription: {
-    fontSize: 13,
-    color: '#94A3B8',
-  },
-  tiersContainer: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  tierCard: {
-    flex: 1,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-  },
-  tierCardSelected: {
-    borderColor: '#10B981',
-    backgroundColor: '#10B98115',
-  },
-  tierCardPopular: {
-    borderColor: '#F59E0B',
-  },
-  tierPopularBadge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#F59E0B',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tierPopularText: {
-    fontSize: 12,
-  },
-  tierName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white',
-    marginBottom: 4,
-  },
-  tierPrice: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  tierPriceUnit: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginBottom: 8,
-  },
-  tierFeatures: {
-    width: '100%',
-  },
-  tierFeature: {
-    fontSize: 10,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  tierCheck: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: '#10B981',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tierCheckText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  
-  // Bundle Card
-  bundleCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-  },
-  bundleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bundleName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: 'white',
-  },
-  bundleSavings: {
-    backgroundColor: '#10B981',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  bundleSavingsText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  bundleDescription: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginBottom: 12,
-  },
-  bundlePricing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  bundleOriginalPrice: {
-    fontSize: 16,
-    color: '#64748B',
-    textDecorationLine: 'line-through',
-  },
-  bundlePrice: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  bundleButton: {
-    backgroundColor: '#3B82F6',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  bundleButtonText: {
-    color: 'white',
     fontSize: 15,
     fontWeight: '600',
+    color: AURA_COLORS.text.primary,
+  },
+  addonDesc: {
+    fontSize: 12,
+    color: AURA_COLORS.text.muted,
+    marginTop: 2,
+  },
+  addonPrice: {
+    alignItems: 'flex-end',
+    marginRight: 12,
+  },
+  addonPriceAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: AURA_COLORS.neon.cyan,
+  },
+  addonPricePeriod: {
+    fontSize: 10,
+    color: AURA_COLORS.text.muted,
+  },
+  addonToggle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: AURA_COLORS.glass.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addonToggleActive: {
+    backgroundColor: AURA_COLORS.neon.cyan,
+  },
+  addonToggleText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
   },
   
-  // Total Section
-  totalSection: {
-    backgroundColor: '#1E293B',
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
-  },
-  totalRow: {
+  // Trust
+  trustSection: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 20,
+    marginTop: 40,
+    paddingHorizontal: 20,
+  },
+  trustBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 6,
   },
-  totalLabel: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  totalPrice: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  totalYearly: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'right',
-    marginBottom: 16,
-  },
-  ctaButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  ctaGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  ctaText: {
-    color: 'white',
+  trustIcon: {
     fontSize: 18,
-    fontWeight: '700',
+  },
+  trustText: {
+    fontSize: 12,
+    color: AURA_COLORS.text.muted,
+  },
+  
+  // FAQ
+  faqButton: {
+    alignSelf: 'center',
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: AURA_COLORS.glass.surface,
+    borderWidth: 1,
+    borderColor: AURA_COLORS.glass.border,
+  },
+  faqButtonText: {
+    fontSize: 14,
+    color: AURA_COLORS.text.secondary,
   },
 });
 
+export default PricingScreen;

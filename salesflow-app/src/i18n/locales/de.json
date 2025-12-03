@@ -591,5 +591,166 @@
     "yesterday": "Gestern",
     "today": "Heute",
     "tomorrow": "Morgen"
+  },
+
+  "daily_flow": {
+    "title": "Daily Flow",
+    "subtitle": "Dein Tagesplan für maximalen Erfolg",
+    "greeting_morning": "Guten Morgen! 🌅",
+    "greeting_afternoon": "Guten Tag! ☀️",
+    "greeting_evening": "Guten Abend! 🌙",
+    "progress": "Fortschritt",
+    "completed": "Erledigt",
+    "remaining": "Noch offen",
+    "activities": {
+      "new_contacts": "Neue Kontakte",
+      "followups": "Follow-ups",
+      "reactivations": "Reaktivierungen",
+      "calls": "Anrufe",
+      "meetings": "Meetings"
+    },
+    "status": {
+      "on_track": "Auf Kurs! 🚀",
+      "slightly_behind": "Etwas hinterher",
+      "behind": "Aufholen nötig",
+      "ahead": "Voraus! 🔥"
+    },
+    "targets": {
+      "daily": "Tagesziel",
+      "weekly": "Wochenziel",
+      "monthly": "Monatsziel"
+    },
+    "motivation": {
+      "great_start": "Super Start in den Tag!",
+      "keep_going": "Weiter so, du schaffst das!",
+      "almost_there": "Fast geschafft!",
+      "goal_reached": "🎉 Tagesziel erreicht!",
+      "overachiever": "🏆 Übertroffen!"
+    },
+    "cta": {
+      "start_day": "Tag starten",
+      "log_activity": "Aktivität loggen",
+      "view_leads": "Leads anzeigen",
+      "ask_chief": "CHIEF fragen"
+    },
+    "setup": {
+      "title": "Daily Flow einrichten",
+      "question": "Wie viele Aktivitäten pro Tag?",
+      "save": "Speichern"
+    }
+  },
+
+  "phoenix": {
+    "title": "Phoenix",
+    "subtitle": "Lead-Reaktivierung",
+    "hero_title": "Aus der Asche auferstehen",
+    "hero_subtitle": "Reaktiviere verlorene Leads mit KI-gestützten Strategien",
+    "stats": {
+      "cold_leads": "Kalte Leads",
+      "high_potential": "Hohes Potenzial",
+      "reactivated": "Reaktiviert",
+      "success_rate": "Erfolgsrate"
+    },
+    "filters": {
+      "all": "Alle",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig"
+    },
+    "approach": {
+      "value_reminder": "Wert erinnern",
+      "new_offer": "Neues Angebot",
+      "gentle_checkin": "Sanfter Check-in",
+      "direct_question": "Direkte Frage",
+      "social_proof": "Social Proof",
+      "event_trigger": "Event/Anlass"
+    },
+    "actions": {
+      "generate_message": "Nachricht generieren",
+      "reactivate": "Reaktivieren"
+    },
+    "empty": {
+      "title": "Keine kalten Leads!",
+      "subtitle": "Alle deine Leads sind aktiv. Weiter so!"
+    }
+  },
+
+  "brain": {
+    "title": "Brain",
+    "subtitle": "KI-Autonomie System",
+    "knowledge_base": "Knowledge Base",
+    "upload_document": "Dokument hochladen",
+    "supported_formats": "PDF, DOCX, TXT",
+    "documents": "Dokumente",
+    "decision_engine": "Decision Engine",
+    "autonomy_level": "Autonomie-Level",
+    "learning": "Lernen",
+    "patterns": "Muster erkannt"
+  },
+
+  "pricing": {
+    "title": "Wähle deinen Plan",
+    "subtitle": "Starte mit 7 Tagen kostenlos • Jederzeit kündbar",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "save": "-20%",
+    "current_plan": "Aktueller Plan",
+    "manage": "Verwalten",
+    "select": "Auswählen",
+    "popular": "BELIEBT",
+    "per_month": "/Monat",
+    "per_year": "/Jahr",
+    "addons": "Add-Ons",
+    "addons_subtitle": "Erweitere deinen Plan mit zusätzlichen Features",
+    "trust_ssl": "SSL-verschlüsselt",
+    "trust_stripe": "Sichere Zahlung via Stripe",
+    "trust_gdpr": "DSGVO-konform",
+    "faq": "Häufige Fragen zum Pricing",
+    "plans": {
+      "solo": {
+        "name": "Solo",
+        "subtitle": "Für Einzelkämpfer"
+      },
+      "team": {
+        "name": "Team",
+        "subtitle": "Für High-Performer Teams"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "subtitle": "Für Organisationen"
+      }
+    }
+  },
+
+  "voice": {
+    "title": "Voice-Einstellungen",
+    "subtitle": "Spracheingabe & Sprachausgabe",
+    "speech_input": "Spracheingabe",
+    "speech_output": "Sprachausgabe",
+    "wake_word": "Wake Word",
+    "auto_read": "Auto-Vorlesen",
+    "auto_read_desc": "CHIEF-Antworten automatisch vorlesen",
+    "hey_chief": "\"Hey CHIEF\"",
+    "hey_chief_desc": "Aktivierung per Sprachbefehl",
+    "sound_effects": "Sound-Effekte",
+    "sound_effects_desc": "Audio-Feedback bei Aktionen",
+    "speech_rate": "Sprechgeschwindigkeit",
+    "voice_selection": "Stimme",
+    "test_voice": "Stimme testen",
+    "test_mic": "Mikrofon testen",
+    "listening": "Zuhören...",
+    "hearing": "Höre dich...",
+    "processing": "Verarbeite...",
+    "speaking": "Spreche...",
+    "paused": "Pausiert",
+    "not_available": "Nicht verfügbar",
+    "commands": {
+      "title": "Sprachbefehle",
+      "hey_chief": "Hey CHIEF - Aktivieren",
+      "new_lead": "Neuer Lead - Lead erstellen",
+      "follow_ups": "Follow ups - Follow-ups öffnen",
+      "daily_flow": "Tagesplan - Daily Flow öffnen",
+      "stop": "Stopp - Zuhören beenden"
+    }
   }
 }
