@@ -105,6 +105,10 @@ from .api.routes.integrations import router as integrations_router
 # Phase 4: Data Flywheel & Analytics
 from .api.routes.flywheel import router as flywheel_router
 
+# Phase 5: Reactivation Agent (LangGraph)
+from .api.routes.reactivation import router as reactivation_router
+from .api.routes.review_queue import router as review_queue_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -375,6 +379,10 @@ app.include_router(integrations_router, prefix="/api/v1")
 
 # Phase 4: Data Flywheel & Analytics
 app.include_router(flywheel_router, prefix="/api/v1")
+
+# Phase 5: Reactivation Agent (LangGraph)
+app.include_router(reactivation_router, prefix="/api/v1")
+app.include_router(review_queue_router, prefix="/api/v1")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

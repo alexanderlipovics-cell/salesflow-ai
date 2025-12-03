@@ -64,6 +64,17 @@ sentry-sdk[fastapi]>=1.40.0  # Error Tracking
 redis>=5.0.0  # Redis Client (optional)
 
 # ═══════════════════════════════════════════════════════════════════════════
+# LANGGRAPH & RAG (Reactivation Agent)
+# ═══════════════════════════════════════════════════════════════════════════
+langgraph>=0.2.0
+langgraph-checkpoint>=2.0.0
+langgraph-checkpoint-postgres>=2.0.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+pgvector>=0.3.0
+asyncpg>=0.29.0
+
+# ═══════════════════════════════════════════════════════════════════════════
 # TESTING (Dev only)
 # ═══════════════════════════════════════════════════════════════════════════
 pytest>=7.4.0
