@@ -7,5 +7,8 @@ import { supabase } from "./supabase";
  */
 export const supabaseClient = supabase as SupabaseClient;
 
+// Re-export for modules that import { supabase } directly
+export { supabase };
+
 export type { SupabaseClient };
 
