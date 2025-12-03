@@ -112,6 +112,12 @@ from .api.routes.review_queue import router as review_queue_router
 # Script Library (50+ Network Marketing Scripts)
 from .api.routes.scripts import router as scripts_router
 
+# NetworkerOS v2 API (Mentor, Contacts, DMO, Team)
+from .api.routes.mentor import router as mentor_router
+from .api.routes.contacts import router as contacts_router
+from .api.routes.dmo import router as dmo_router
+from .api.routes.team import router as team_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -389,6 +395,12 @@ app.include_router(review_queue_router, prefix="/api/v1")
 
 # Script Library (50+ Network Marketing Scripts)
 app.include_router(scripts_router, prefix="/api/v2")
+
+# NetworkerOS v2 API
+app.include_router(mentor_router, prefix="/api/v2")
+app.include_router(contacts_router, prefix="/api/v2")
+app.include_router(dmo_router, prefix="/api/v2")
+app.include_router(team_router, prefix="/api/v2")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

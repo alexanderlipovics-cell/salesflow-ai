@@ -40,9 +40,95 @@ import { DISCBadge } from '../../components/live-assist/DISCBadge';
 // 📚 Quick Templates
 import { QuickTemplatesModal } from '../../components/templates';
 
-// API URLs
-const getChiefApiUrl = () => `${API_CONFIG.baseUrl}/ai/chief`;
+// API URLs - MENTOR (ehemals CHIEF)
+const getMentorApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/mentor`;
+const getChiefApiUrl = () => `${API_CONFIG.baseUrl}/ai/chief`; // Legacy fallback
 const getLegacyApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
+
+// =============================================================================
+// ACTION TAG PARSER - Parse [[ACTION:...]] Tags aus MENTOR Responses
+// =============================================================================
+
+const ACTION_TAG_CONFIG = {
+  SCRIPT_SUGGEST: {
+    icon: '📝',
+    label: 'Script anzeigen',
+    color: '#10B981',
+  },
+  SHOW_PROSPECT: {
+    icon: '👤',
+    label: 'Kontakt öffnen',
+    color: '#3B82F6',
+  },
+  START_ROLEPLAY: {
+    icon: '🎭',
+    label: 'Üben',
+    color: '#A855F7',
+  },
+  LOG_ACTIVITY: {
+    icon: '✅',
+    label: 'Aktivität loggen',
+    color: '#F59E0B',
+    autoExecute: true, // Wird automatisch ausgeführt
+  },
+  FOLLOWUP_LEADS: {
+    icon: '📞',
+    label: 'Check-ins öffnen',
+    color: '#8B5CF6',
+  },
+  NEW_CONTACTS: {
+    icon: '➕',
+    label: 'Neue Kontakte',
+    color: '#10B981',
+  },
+  SHOW_DMO: {
+    icon: '📊',
+    label: 'DMO Status',
+    color: '#22D3EE',
+  },
+  OBJECTION_HELP: {
+    icon: '🛡️',
+    label: 'Einwand-Hilfe',
+    color: '#EF4444',
+  },
+};
+
+/**
+ * Extrahiert ACTION Tags aus einer MENTOR Response
+ * Format: [[ACTION:TYPE:params]] oder [[ACTION:TYPE]]
+ */
+const extractActionTags = (responseText) => {
+  const actionRegex = /\[\[ACTION:(\w+)(?::([^\]]+))?\]\]/g;
+  const actions = [];
+  let match;
+  
+  while ((match = actionRegex.exec(responseText)) !== null) {
+    const type = match[1];
+    const params = match[2] ? match[2].split(',').map(p => p.trim()) : [];
+    const config = ACTION_TAG_CONFIG[type];
+    
+    if (config) {
+      actions.push({
+        type,
+        params,
+        icon: config.icon,
+        label: config.label,
+        color: config.color,
+        autoExecute: config.autoExecute || false,
+        raw: match[0],
+      });
+    }
+  }
+  
+  return actions;
+};
+
+/**
+ * Entfernt ACTION Tags aus dem sichtbaren Text
+ */
+const stripActionTags = (text) => {
+  return text.replace(/\[\[ACTION:\w+(?::[^\]]+)?\]\]/g, '').trim();
+};
 
 export default function ChatScreen({ navigation }) {
   const { t } = useTranslation();
@@ -126,42 +212,84 @@ export default function ChatScreen({ navigation }) {
   }, [voiceState]);
   
   // ═══════════════════════════════════════════════════════════════════════
-  // ACTION TAG HANDLER
+  // ACTION TAG HANDLER - Verarbeitet MENTOR Action Tags
   // ═══════════════════════════════════════════════════════════════════════
   
   const handleAction = useCallback((action) => {
     const { type, params } = action;
+    const paramValue = Array.isArray(params) ? params[0] : params;
     
     switch (type) {
+      // 📝 Script anzeigen
+      case 'SCRIPT_SUGGEST':
+        Alert.alert(
+          '📝 Script',
+          paramValue || 'Script wird geladen...',
+          [
+            { text: 'Kopieren', onPress: () => Clipboard.setString(paramValue) },
+            { text: 'OK' },
+          ]
+        );
+        break;
+        
+      // 👤 Kontakt öffnen
+      case 'SHOW_PROSPECT':
+        navigation.navigate('Kontakte', { showLeadId: paramValue });
+        break;
+        
+      // 🎭 Roleplay starten
+      case 'START_ROLEPLAY':
+        const roleplayTopic = paramValue || 'Einwandbehandlung';
+        setInput(`Lass uns "${roleplayTopic}" üben. Du spielst den Kunden.`);
+        setTimeout(() => sendMessage(), 100);
+        break;
+        
+      // ✅ Aktivität loggen (automatisch)
+      case 'LOG_ACTIVITY':
+        const activityType = paramValue || 'contact';
+        logActivityToBackend(activityType);
+        break;
+        
+      // 📞 Check-ins öffnen
       case 'FOLLOWUP_LEADS':
-        // Navigate to Follow-ups with specific leads
         const leadIds = Array.isArray(params) ? params : [params];
         navigation.navigate('FollowUps', { highlightLeads: leadIds });
         break;
         
+      // ➕ Neue Kontakte
       case 'NEW_CONTACTS':
-        // Navigate to Leads for new contacts
-        navigation.navigate('Leads', { mode: 'new_contact', target: parseInt(params) || 3 });
+        navigation.navigate('Kontakte', { mode: 'new_contact', target: parseInt(paramValue) || 3 });
         break;
         
+      // 📊 DMO Status
+      case 'SHOW_DMO':
+        navigation.navigate('DMO');
+        break;
+        
+      // 🛡️ Einwand-Hilfe
+      case 'OBJECTION_HELP':
+        setInput(`Hilf mir bei dem Einwand: "${paramValue || 'zu teuer'}"`);
+        setTimeout(() => sendMessage(), 100);
+        break;
+        
+      // Legacy: Lead anzeigen
       case 'SHOW_LEAD':
-        // Navigate to Lead detail
-        navigation.navigate('Leads', { showLeadId: params });
+        navigation.navigate('Kontakte', { showLeadId: paramValue });
         break;
         
+      // Legacy: Objection
       case 'OPEN_OBJECTION':
-        // Navigate to Objection Brain with topic
-        navigation.navigate('ObjectionBrain', { topic: params });
+        navigation.navigate('ObjectionBrain', { topic: paramValue });
         break;
         
+      // Legacy: Task abschließen
       case 'COMPLETE_TASK':
-        // Show confirmation for task completion
         Alert.alert(
           t('followups.mark_complete') + '?',
-          `${params}`,
+          `${paramValue}`,
           [
             { text: t('common.cancel'), style: 'cancel' },
-            { text: `${t('common.done')} ✓`, onPress: () => completeTask(params) },
+            { text: `${t('common.done')} ✓`, onPress: () => completeTask(paramValue) },
           ]
         );
         break;
@@ -169,7 +297,29 @@ export default function ChatScreen({ navigation }) {
       default:
         console.log('Unknown action:', type, params);
     }
-  }, [navigation]);
+  }, [navigation, t]);
+  
+  // Hilfsfunktion: Aktivität zum Backend loggen
+  const logActivityToBackend = async (activityType) => {
+    try {
+      await fetch(`${getMentorApiUrl()}/log-activity`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': user?.access_token ? `Bearer ${user.access_token}` : '',
+        },
+        body: JSON.stringify({
+          activity_type: activityType,
+          date: new Date().toISOString().split('T')[0],
+        }),
+      });
+      
+      // Bestätigung anzeigen
+      Alert.alert('✅ Aktivität geloggt', `${activityType} wurde erfasst!`);
+    } catch (error) {
+      console.log('Log activity error:', error);
+    }
+  };
   
   const completeTask = async (taskType) => {
     // TODO: Call Daily Flow API to mark task as complete
@@ -484,8 +634,8 @@ export default function ChatScreen({ navigation }) {
           content: m.content
         }));
 
-      // Neuer CHIEF Endpoint mit vollem Kontext
-      const response = await fetch(`${getChiefApiUrl()}/chat`, {
+      // MENTOR API Endpoint (neu) mit vollem Kontext
+      const response = await fetch(`${getMentorApiUrl()}/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -496,6 +646,8 @@ export default function ChatScreen({ navigation }) {
           conversation_history: conversationHistory,
           include_context: true,
           company_id: user?.company_id,
+          include_dmo: true, // DMO Status für Kontext
+          include_suggestions: true, // Lead-Vorschläge
         })
       });
       
@@ -565,21 +717,39 @@ export default function ChatScreen({ navigation }) {
   };
   
   const handleChiefResponse = (data) => {
-    const content = data.reply || data.response || data.message || 'Keine Antwort erhalten.';
+    const rawContent = data.reply || data.response || data.message || 'Keine Antwort erhalten.';
+    
+    // Parse ACTION Tags aus der Response
+    const extractedActions = extractActionTags(rawContent);
+    const cleanContent = stripActionTags(rawContent);
+    
+    // Kombiniere Backend-Actions mit extrahierten Actions
+    const allActions = [...(data.actions || []), ...extractedActions];
+    
     const assistantMessage = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content,
+      content: cleanContent,
       contextUsed: data.context_used || false,
-      actions: data.actions || [],
+      actions: allActions,
+      // MENTOR-spezifische Daten
+      dmoProgress: data.dmo_progress,
+      suggestedLeads: data.suggested_leads,
     };
     
     setMessages(prev => [...prev, assistantMessage]);
     setLoading(false);
     
+    // Auto-Execute Actions (z.B. LOG_ACTIVITY)
+    extractedActions
+      .filter(a => a.autoExecute)
+      .forEach(action => {
+        handleAction(action);
+      });
+    
     // 🔊 Auto-Read wenn aktiviert
     if (autoRead && voiceSupport.tts) {
-      autoReadMessage(content);
+      autoReadMessage(cleanContent);
     }
   };
 
@@ -674,7 +844,34 @@ export default function ChatScreen({ navigation }) {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
-  // Quick Action Buttons
+  // ═══════════════════════════════════════════════════════════════════════
+  // MENTOR Quick Reply Buttons
+  // ═══════════════════════════════════════════════════════════════════════
+  
+  const mentorQuickReplies = [
+    { 
+      label: '💪 Motivation', 
+      prompt: 'Ich brauche Motivation für heute. Push mich!',
+      color: '#10B981',
+    },
+    { 
+      label: '❓ Einwand-Hilfe', 
+      prompt: 'Hilf mir bei einem Einwand. Mein Interessent sagt...',
+      color: '#EF4444',
+    },
+    { 
+      label: '📋 Script für heute', 
+      prompt: 'Gib mir ein passendes Script für meine heutigen Gespräche.',
+      color: '#A855F7',
+    },
+    { 
+      label: '📊 Mein DMO Status', 
+      prompt: 'Wie ist mein DMO Status heute? Was fehlt mir noch?',
+      color: '#22D3EE',
+    },
+  ];
+  
+  // Legacy Quick Actions (für Rückwärtskompatibilität)
   const quickActions = [
     { 
       label: '🟢 Kundengespräch starten', 
@@ -682,26 +879,7 @@ export default function ChatScreen({ navigation }) {
       prompt: 'Bin mit Kunde',
       isLiveAssist: true,
     },
-    { 
-      label: '🛡️ Einwand behandeln', 
-      type: 'objection_help',
-      prompt: 'Hilf mir, den Einwand "Das ist mir zu teuer" zu behandeln.'
-    },
-    { 
-      label: '🎬 Opener vorschlagen', 
-      type: 'opener_suggest',
-      prompt: 'Schlage mir einen guten Cold Call Opener vor für B2B SaaS.'
-    },
-    { 
-      label: '🎯 Closing Tipp', 
-      type: 'closing_tip',
-      prompt: 'Wie bringe ich ein Gespräch zum Abschluss wenn der Kunde noch zögert?'
-    },
-    { 
-      label: '📧 Follow-up Idee', 
-      type: 'followup_suggest',
-      prompt: 'Schreibe mir eine Follow-up Email nach einem Demo-Call.'
-    },
+    ...mentorQuickReplies.map(q => ({ label: q.label, prompt: q.prompt })),
   ];
   
   // 🆕 Live Assist Quick Actions (wenn aktiv)
@@ -732,13 +910,13 @@ export default function ChatScreen({ navigation }) {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerLogoContainer}>
-            <Text style={styles.headerEmoji}>⚡</Text>
+            <Text style={styles.headerEmoji}>🧠</Text>
           </View>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>CHIEF</Text>
+            <Text style={styles.headerTitle}>MENTOR</Text>
             <View style={styles.headerSubtitleRow}>
-              <Text style={styles.headerSubtitle}>by</Text>
-              <Text style={styles.headerAuraText}>AURA OS</Text>
+              <Text style={styles.headerSubtitle}>KI-Coach</Text>
+              <Text style={styles.headerAuraText}>NetworkerOS</Text>
             </View>
           </View>
         </View>
@@ -832,7 +1010,7 @@ export default function ChatScreen({ navigation }) {
               {msg.role === 'assistant' && (
                 <View style={styles.botLabelRow}>
                   <Text style={styles.botLabel}>
-                    {msg.isLiveAssist ? '🎯 LIVE ASSIST' : '🤖 CHIEF'}
+                    {msg.isLiveAssist ? '🎯 LIVE ASSIST' : '🧠 MENTOR'}
                   </Text>
                   {msg.isLiveAssist && msg.objectionType && (
                     <View style={styles.objectionBadge}>
@@ -893,17 +1071,22 @@ export default function ChatScreen({ navigation }) {
                 {msg.content}
               </Text>
               
-              {/* Action Buttons - wenn CHIEF Actions vorschlägt */}
+              {/* Action Buttons - wenn MENTOR Actions vorschlägt */}
               {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
                 <View style={styles.actionButtonsContainer}>
-                  {msg.actions.map((action, actionIndex) => (
+                  {msg.actions
+                    .filter(action => !action.autoExecute) // Keine Auto-Execute Actions zeigen
+                    .map((action, actionIndex) => (
                     <Pressable
                       key={actionIndex}
-                      style={styles.actionButton}
+                      style={[
+                        styles.actionButton,
+                        action.color && { borderColor: action.color }
+                      ]}
                       onPress={() => handleAction(action)}
                     >
                       <Text style={styles.actionButtonText}>
-                        {getActionLabel(action)}
+                        {action.icon || '▶️'} {action.label || getActionLabel(action)}
                       </Text>
                     </Pressable>
                   ))}
@@ -959,12 +1142,39 @@ export default function ChatScreen({ navigation }) {
         
         {loading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color="#3b82f6" />
-            <Text style={styles.loadingText}>CHIEF denkt nach...</Text>
+            <ActivityIndicator color="#22d3ee" />
+            <Text style={styles.loadingText}>MENTOR denkt nach...</Text>
           </View>
         )}
 
-        {/* Quick Actions - nur anzeigen wenn keine echte Konversation */}
+        {/* MENTOR Quick Replies - immer unter dem Chat sichtbar */}
+        {!loading && !liveAssist.isActive && (
+          <View style={styles.mentorQuickRepliesContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.mentorQuickRepliesScroll}
+            >
+              {mentorQuickReplies.map((reply, index) => (
+                <Pressable 
+                  key={index}
+                  style={[
+                    styles.mentorQuickReplyButton,
+                    { borderColor: reply.color + '60' }
+                  ]}
+                  onPress={() => {
+                    setInput(reply.prompt);
+                    setTimeout(() => sendMessage(), 100);
+                  }}
+                >
+                  <Text style={styles.mentorQuickReplyText}>{reply.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Quick Actions - nur beim Start anzeigen */}
         {messages.length === 1 && !loading && !liveAssist.isActive && (
           <View style={styles.quickActionsContainer}>
             <Text style={styles.quickActionsTitle}>⚡ Schnellstart:</Text>
@@ -1040,7 +1250,7 @@ export default function ChatScreen({ navigation }) {
               <Text style={styles.voiceStatusLabel}>
                 {voiceState === 'listening' ? 'Ich höre zu...' : 
                  voiceState === 'hearing' ? 'Sprache erkannt...' :
-                 voiceState === 'speaking' ? 'CHIEF spricht...' :
+                 voiceState === 'speaking' ? 'MENTOR spricht...' :
                  voiceState === 'paused' ? 'Pausiert' :
                  voiceState === 'processing' ? 'Verarbeite...' : 'Voice'}
               </Text>
@@ -1080,7 +1290,7 @@ export default function ChatScreen({ navigation }) {
             onPress={cycleVoiceMode}
             onLongPress={() => Alert.alert(
               '🎤 Voice-Modi',
-              '• Einmal: Hört einmal zu\n• Dauer: Hört dauerhaft\n• Wake: Reagiert auf "Hey CHIEF"'
+              '• Einmal: Hört einmal zu\n• Dauer: Hört dauerhaft\n• Wake: Reagiert auf "Hey MENTOR"'
             )}
           >
             <Text style={styles.voiceModeIcon}>
@@ -1089,7 +1299,7 @@ export default function ChatScreen({ navigation }) {
             </Text>
             <Text style={styles.voiceModeLabel}>
               {voiceMode === 'normal' ? 'Einmal' : 
-               voiceMode === 'continuous' ? 'Dauer' : 'Hey CHIEF'}
+               voiceMode === 'continuous' ? 'Dauer' : 'Hey MENTOR'}
             </Text>
           </Pressable>
           
@@ -1349,16 +1559,21 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: 'rgba(34, 211, 238, 0.15)',
   },
   actionButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: 'rgba(34, 211, 238, 0.1)',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(34, 211, 238, 0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   actionButtonText: {
-    color: 'white',
+    color: '#0891B2',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -1487,6 +1702,36 @@ const styles = StyleSheet.create({
     color: '#15803d',
     fontWeight: '500',
   },
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // MENTOR Quick Replies Styles
+  // ═══════════════════════════════════════════════════════════════════════
+  mentorQuickRepliesContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(34, 211, 238, 0.2)',
+  },
+  mentorQuickRepliesScroll: {
+    paddingHorizontal: 8,
+    gap: 10,
+  },
+  mentorQuickReplyButton: {
+    backgroundColor: 'rgba(34, 211, 238, 0.08)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(34, 211, 238, 0.25)',
+    marginRight: 10,
+  },
+  mentorQuickReplyText: {
+    fontSize: 14,
+    color: '#0891B2',
+    fontWeight: '600',
+  },
+  
   inputContainer: { 
     flexDirection: 'row', 
     padding: 16, 

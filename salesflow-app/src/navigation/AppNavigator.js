@@ -65,6 +65,11 @@ import BrainScreen from '../screens/main/BrainScreen';
 // AURA OS Premium Dashboard
 import AuraOsDashboardScreen from '../screens/main/AuraOsDashboardScreen';
 
+// NetworkerOS Screens
+import DMOTrackerScreen from '../screens/main/DMOTrackerScreen';
+import GuidedDailyFlowScreen from '../screens/main/GuidedDailyFlowScreen';
+import TeamDashboardScreen from '../screens/main/TeamDashboardScreen';
+
 // Billing/Pricing/Settings Screens
 import PricingScreen from '../screens/settings/PricingScreen';
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
@@ -81,7 +86,7 @@ const TabIcon = ({ icon, label, focused }) => (
   </View>
 );
 
-// Main Tab Navigator - 5 Tabs mit i18n
+// Main Tab Navigator - 5 Tabs: Home, DMO, Kontakte, MENTOR, Team
 function MainTabs() {
   const { t } = useTranslation();
   
@@ -101,31 +106,31 @@ function MainTabs() {
         }}
       />
       <Tab.Screen 
-        name="DailyFlow" 
-        component={DailyFlowScreen}
+        name="DMO" 
+        component={DMOTrackerScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="🎯" label={t('navigation.daily_flow')} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="🎯" label={t('navigation.dmo')} focused={focused} />,
         }}
       />
       <Tab.Screen 
-        name="Leads" 
+        name="Kontakte" 
         component={LeadsScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="👥" label={t('navigation.leads')} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="👥" label={t('navigation.kontakte')} focused={focused} />,
         }}
       />
       <Tab.Screen 
-        name="FollowUps" 
-        component={FollowUpsScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="📋" label={t('navigation.followups')} focused={focused} />,
-        }}
-      />
-      <Tab.Screen 
-        name="Chat" 
+        name="MENTOR" 
         component={ChatScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="💬" label={t('navigation.ai_chat')} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="🧠" label={t('navigation.mentor')} focused={focused} />,
+        }}
+      />
+      <Tab.Screen 
+        name="Team" 
+        component={TeamDashboardScreen}
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon icon="👥" label={t('navigation.team')} focused={focused} />,
         }}
       />
     </Tab.Navigator>
@@ -401,6 +406,45 @@ function AppStack() {
       <Stack.Screen 
         name="Settings" 
         component={SettingsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      
+      {/* NetworkerOS Screens */}
+      <Stack.Screen 
+        name="DMOTracker" 
+        component={DMOTrackerScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="GuidedDailyFlow" 
+        component={GuidedDailyFlowScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="TeamDashboard" 
+        component={TeamDashboardScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      
+      {/* Legacy Screens - Hidden from tabs but accessible */}
+      <Stack.Screen 
+        name="FollowUps" 
+        component={FollowUpsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DailyFlow" 
+        component={DailyFlowScreen}
         options={{
           headerShown: false,
         }}

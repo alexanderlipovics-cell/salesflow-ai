@@ -103,7 +103,7 @@
     "compliance_desc": "Liability Shield",
     "ab_tests": "A/B Tests",
     "ab_tests_desc": "Experimente",
-    "ask_chief": "CHIEF fragen",
+    "ask_chief": "MENTOR fragen",
     "templates": "Templates",
     "stats": "Stats"
   },
@@ -121,7 +121,7 @@
     "copy_message": "Nachricht kopieren",
     "copied": "Kopiert!",
     "regenerate": "Neu generieren",
-    "chief_intro": "Hallo! 👋 Ich bin CHIEF, dein AURA OS Agent.\n\n🎯 CHIEF hat deinen Tag vorbereitet und kennt deine Leads!\n\nIch helfe dir bei:\n• Tages-Planung & Prioritäten\n• Einwand-Behandlung\n• Follow-up Strategien\n• Abschluss-Techniken\n\nWas steht heute an?",
+    "chief_intro": "Hallo! 👋 Ich bin MENTOR, dein NetworkerOS KI-Coach.\n\n🎯 MENTOR hat deinen Tag vorbereitet und kennt deine Kontakte!\n\nIch helfe dir bei:\n• DMO & Tages-Prioritäten\n• Einwand-Behandlung\n• Check-in Strategien\n• Abschluss-Techniken\n\nWas steht heute an?",
     "error_sending": "Fehler beim Senden der Nachricht",
     "error_connection": "Verbindungsfehler. Bitte versuche es erneut.",
     "live_assist": "Live Assist",
@@ -144,11 +144,11 @@
   },
 
   "leads": {
-    "title": "Leads",
+    "title": "Kontakte",
     "search_placeholder": "Lead suchen...",
-    "no_leads": "Noch keine Leads vorhanden",
-    "add_lead": "Lead hinzufügen",
-    "import_leads": "Leads importieren",
+    "no_leads": "Noch keine Kontakte vorhanden",
+    "add_lead": "Kontakt hinzufügen",
+    "import_leads": "Kontakte importieren",
     "status": {
       "new": "Neu",
       "contacted": "Kontaktiert",
@@ -203,7 +203,7 @@
   },
 
   "followups": {
-    "title": "Follow-ups",
+    "title": "Check-ins",
     "today": "Heute",
     "tomorrow": "Morgen",
     "overdue": "Überfällig",
@@ -211,8 +211,8 @@
     "completed": "Erledigt",
     "show_completed": "Erledigte anzeigen",
     "hide_completed": "Erledigte ausblenden",
-    "no_followups": "Keine offenen Follow-ups",
-    "add_followup": "Follow-up hinzufügen",
+    "no_followups": "Keine offenen Check-ins",
+    "add_followup": "Check-in hinzufügen",
     "mark_complete": "Als erledigt markieren",
     "mark_incomplete": "Als offen markieren",
     "get_suggestion": "💡 Vorschlag holen",
@@ -496,14 +496,18 @@
 
   "navigation": {
     "home": "Home",
+    "dmo": "DMO",
+    "kontakte": "Kontakte",
+    "mentor": "MENTOR",
+    "team": "Team",
     "daily_flow": "Daily Flow",
     "leads": "Leads",
-    "followups": "Follow-ups",
+    "followups": "Check-ins",
     "ai_chat": "AI Chat"
   },
 
   "autopilot": {
-    "title": "CHIEF Autopilot",
+    "title": "MENTOR Autopilot",
     "subtitle": "System läuft autonom",
     "approval_required": "Genehmigung erforderlich",
     "live_mode": "LIVE MODE",
@@ -543,14 +547,15 @@
       "assistant_desc": "Routine automatisch, Wichtiges prüfst du",
       "autopilot": "Autopilot",
       "autopilot_desc": "Fast alles automatisch - du machst nur noch Calls",
+      "mentor_settings": "MENTOR Einstellungen",
       "full_auto": "Full Auto",
       "full_auto_desc": "Komplette Automatisierung inkl. Closing",
       "confidence": "Confidence Schwellwert",
-      "confidence_desc": "Ab welcher Sicherheit soll CHIEF automatisch senden?",
+      "confidence_desc": "Ab welcher Sicherheit soll MENTOR automatisch senden?",
       "more_auto": "Mehr Auto",
       "safer": "Sicherer",
       "permissions": "Berechtigungen",
-      "permissions_desc": "Was darf CHIEF automatisch tun?",
+      "permissions_desc": "Was darf MENTOR automatisch tun?",
       "answer_info": "Info-Anfragen beantworten",
       "suggest_meetings": "Termine vorschlagen",
       "book_meetings": "Termine buchen",
@@ -594,7 +599,7 @@
   },
 
   "daily_flow": {
-    "title": "Daily Flow",
+    "title": "DMO",
     "subtitle": "Dein Tagesplan für maximalen Erfolg",
     "greeting_morning": "Guten Morgen! 🌅",
     "greeting_afternoon": "Guten Tag! ☀️",
@@ -730,7 +735,7 @@
     "wake_word": "Wake Word",
     "auto_read": "Auto-Vorlesen",
     "auto_read_desc": "CHIEF-Antworten automatisch vorlesen",
-    "hey_chief": "\"Hey CHIEF\"",
+    "hey_chief": "\"Hey MENTOR\"",
     "hey_chief_desc": "Aktivierung per Sprachbefehl",
     "sound_effects": "Sound-Effekte",
     "sound_effects_desc": "Audio-Feedback bei Aktionen",
@@ -746,10 +751,10 @@
     "not_available": "Nicht verfügbar",
     "commands": {
       "title": "Sprachbefehle",
-      "hey_chief": "Hey CHIEF - Aktivieren",
-      "new_lead": "Neuer Lead - Lead erstellen",
-      "follow_ups": "Follow ups - Follow-ups öffnen",
-      "daily_flow": "Tagesplan - Daily Flow öffnen",
+      "hey_chief": "Hey MENTOR - Aktivieren",
+      "new_lead": "Neuer Kontakt - Kontakt erstellen",
+      "follow_ups": "Check-ins - Check-ins öffnen",
+      "daily_flow": "DMO - DMO Tracker öffnen",
       "stop": "Stopp - Zuhören beenden"
     }
   }

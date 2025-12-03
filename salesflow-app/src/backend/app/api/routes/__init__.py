@@ -17,6 +17,12 @@ from . import email_accounts  # Email Accounts
 from . import autonomous  # KI-Autonomie System
 from . import scripts  # Script Library
 
+# NetworkerOS v2 API
+from . import mentor  # MENTOR AI Chat
+from . import contacts  # Kontaktverwaltung
+from . import dmo  # Daily Method of Operation
+from . import team  # Team Management
+
 __all__ = [
     "chat_import",
     "voice",
@@ -33,5 +39,10 @@ __all__ = [
     "email_accounts",  # Email Accounts
     "autonomous",  # KI-Autonomie System
     "scripts",  # Script Library
+    # NetworkerOS v2
+    "mentor",
+    "contacts",
+    "dmo",
+    "team",
 ]
 

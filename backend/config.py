@@ -1,13 +1,15 @@
 # Configuration Management
 import os
-from dotenv import load_dotenv
+from dotenv import import load_dotenv
 from pydantic_settings import BaseSettings
 
 # Load environment variables
-load_dotenv()  # Reload trigger
+load_dotenv()
 
 class Settings(BaseSettings):
     """Application configuration"""
+    model_config = {"extra": "ignore", "env_file": ".env"}
+    
     OPENAI_API_KEY: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
@@ -18,40 +20,17 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # OpenAI Settings
-    OPENAI_TEAM_CHIEF_MODEL: str = "gpt-4o-mini"  # FIXED: was "gpt-4.1-mini"
+    OPENAI_TEAM_CHIEF_MODEL: str = "gpt-4o-mini"
     OPENAI_MAX_RETRIES: int = 3
-    OPENAI_TIMEOUT: int = 30  # seconds
+    OPENAI_TIMEOUT: int = 30
     
     # Caching
-    TEAM_CHIEF_CACHE_TTL: int = 3600  # 1 hour in seconds
+    TEAM_CHIEF_CACHE_TTL: int = 3600
     
     # Rate Limiting
-    TEAM_CHIEF_RATE_LIMIT: int = 10  # requests per hour per user
+    TEAM_CHIEF_RATE_LIMIT: int = 10
     
     # Cost Tracking
     TRACK_LLM_COSTS: bool = True
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-        extra = "ignore"  # Ignore extra fields from .env
-
-    @property
-    def environment(self) -> str:
-        """Returns environment name"""
-        return self.ENVIRONMENT
 
 settings = Settings()
-
-# Legacy config object for backward compatibility
-class Config:
-    """Legacy Application configuration"""
-    OPENAI_API_KEY = settings.OPENAI_API_KEY
-    SUPABASE_URL = settings.SUPABASE_URL
-    SUPABASE_KEY = settings.SUPABASE_KEY or settings.SUPABASE_SERVICE_KEY
-    DATABASE_URL = settings.DATABASE_URL
-    BACKEND_PORT = settings.BACKEND_PORT
-    DEBUG = settings.DEBUG
-
-config = Config()
-

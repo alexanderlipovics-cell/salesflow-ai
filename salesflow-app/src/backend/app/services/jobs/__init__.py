@@ -24,6 +24,8 @@ Usage:
 from .job_service import JobService, JobType, JobStatus
 from .job_worker import JobWorker
 from .job_handlers import register_job_handlers, JOB_HANDLERS
+from .redis_queue import RedisQueue, get_redis_queue, QueuePriority, enqueue_job
+from .followup_reminder import FollowUpReminderService
 
 __all__ = [
     "JobService",
@@ -32,5 +34,12 @@ __all__ = [
     "JobWorker",
     "register_job_handlers",
     "JOB_HANDLERS",
+    # Redis Queue
+    "RedisQueue",
+    "get_redis_queue",
+    "QueuePriority",
+    "enqueue_job",
+    # Follow-Up Reminder
+    "FollowUpReminderService",
 ]
 

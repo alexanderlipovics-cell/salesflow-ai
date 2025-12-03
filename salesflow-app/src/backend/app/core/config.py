@@ -15,7 +15,7 @@ Usage:
 """
 
 from typing import Optional, Literal, List
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 from functools import lru_cache
 import os
@@ -216,11 +216,13 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY muss in Production gesetzt werden!")
         return v
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "ignore"  # Ignoriere unbekannte Env Vars
+    # Pydantic v2 model_config (ersetzt alte Config Klasse)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,  # Erlaube lowercase env vars
+        extra="ignore",  # Ignoriere unbekannte Env Vars aus .env
+    )
 
 
 @lru_cache()

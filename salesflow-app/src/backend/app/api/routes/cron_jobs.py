@@ -18,6 +18,7 @@ from ...services.cron import (
     archive_stale_ab_tests,
     run_all_jobs_manually,
 )
+from ...services.jobs import FollowUpReminderService, get_redis_queue
 
 router = APIRouter(prefix="/cron", tags=["Cron Jobs"])
 
@@ -123,6 +124,70 @@ async def trigger_all_jobs(
     return {
         "message": "All jobs executed",
         "results": result,
+    }
+
+
+# =============================================================================
+# FOLLOW-UP REMINDER JOBS (NetworkerOS)
+# =============================================================================
+
+@router.post("/followup/daily-check")
+async def trigger_followup_daily_check(
+    db: Client = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Triggert den täglichen Follow-Up Check für alle User.
+    
+    Prüft alle Kontakte auf überfällige Follow-ups und:
+    - Erstellt Pending Actions
+    - Sendet Push Notifications
+    
+    Normalerweise läuft dieser Job täglich um 08:00 Uhr.
+    """
+    service = FollowUpReminderService(db)
+    result = await service.run_daily_check()
+    
+    return {
+        "success": True,
+        "result": result,
+    }
+
+
+@router.post("/followup/check-user/{user_id}")
+async def trigger_followup_check_user(
+    user_id: str,
+    send_push: bool = Query(True),
+    db: Client = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Triggert Follow-Up Check für einen einzelnen User.
+    """
+    service = FollowUpReminderService(db)
+    result = await service.check_and_create_reminders(
+        user_id=user_id,
+        send_push=send_push,
+    )
+    
+    return {
+        "success": True,
+        "result": result,
+    }
+
+
+@router.get("/queue/stats")
+async def get_queue_stats(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Gibt Redis Queue Statistiken zurück.
+    """
+    queue = get_redis_queue()
+    stats = await queue.get_stats()
+    
+    return {
+        "queue_stats": stats,
     }
 
 
