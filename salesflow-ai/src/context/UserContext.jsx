@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { getBootstrapUser } from "../lib/user";
 
-const UserContext = createContext(null);
+export const UserContext = createContext(null);
 
 export const UserProvider = ({ children, initialUser = null }) => {
   const user = useMemo(

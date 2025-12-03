@@ -50,6 +50,65 @@ const getLegacyApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
 // =============================================================================
 
 const ACTION_TAG_CONFIG = {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Backend-Actions (aus /api/v2/mentor/chat Response)
+  // ═══════════════════════════════════════════════════════════════════════════
+  FOLLOWUP_LEADS: {
+    icon: '📞',
+    label: 'Check-ins öffnen',
+    color: '#8B5CF6',
+  },
+  NEW_CONTACT_LIST: {
+    icon: '➕',
+    label: 'Neue Kontakte',
+    color: '#10B981',
+  },
+  COMPOSE_MESSAGE: {
+    icon: '✉️',
+    label: 'Nachricht schreiben',
+    color: '#06B6D4',
+  },
+  LOG_ACTIVITY: {
+    icon: '✅',
+    label: 'Aktivität loggen',
+    color: '#F59E0B',
+    autoExecute: true, // Wird automatisch ausgeführt + Bestätigung
+  },
+  OBJECTION_HELP: {
+    icon: '🛡️',
+    label: 'Einwand-Hilfe',
+    color: '#EF4444',
+  },
+  SHOW_LEAD: {
+    icon: '👤',
+    label: 'Kontakt öffnen',
+    color: '#3B82F6',
+  },
+  COMPLETE_TASK: {
+    icon: '✓',
+    label: 'Erledigt markieren',
+    color: '#22C55E',
+  },
+  OPEN_SCRIPT: {
+    icon: '📝',
+    label: 'Script öffnen',
+    color: '#A855F7',
+  },
+  START_DMO: {
+    icon: '📊',
+    label: 'DMO starten',
+    color: '#22D3EE',
+  },
+  CELEBRATE: {
+    icon: '🎉',
+    label: 'Feiern!',
+    color: '#F59E0B',
+    autoExecute: true,
+  },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Frontend-spezifische Actions (User-Request)
+  // ═══════════════════════════════════════════════════════════════════════════
   SCRIPT_SUGGEST: {
     icon: '📝',
     label: 'Script anzeigen',
@@ -64,32 +123,6 @@ const ACTION_TAG_CONFIG = {
     icon: '🎭',
     label: 'Üben',
     color: '#A855F7',
-  },
-  LOG_ACTIVITY: {
-    icon: '✅',
-    label: 'Aktivität loggen',
-    color: '#F59E0B',
-    autoExecute: true, // Wird automatisch ausgeführt
-  },
-  FOLLOWUP_LEADS: {
-    icon: '📞',
-    label: 'Check-ins öffnen',
-    color: '#8B5CF6',
-  },
-  NEW_CONTACTS: {
-    icon: '➕',
-    label: 'Neue Kontakte',
-    color: '#10B981',
-  },
-  SHOW_DMO: {
-    icon: '📊',
-    label: 'DMO Status',
-    color: '#22D3EE',
-  },
-  OBJECTION_HELP: {
-    icon: '🛡️',
-    label: 'Einwand-Hilfe',
-    color: '#EF4444',
   },
 };
 
@@ -262,14 +295,45 @@ export default function ChatScreen({ navigation }) {
         break;
         
       // 📊 DMO Status
-      case 'SHOW_DMO':
+      case 'START_DMO':
         navigation.navigate('DMO');
+        break;
+        
+      // ✉️ Nachricht schreiben
+      case 'COMPOSE_MESSAGE':
+        navigation.navigate('Kontakte', { 
+          showLeadId: paramValue,
+          openComposer: true 
+        });
+        break;
+        
+      // 📝 Script öffnen
+      case 'OPEN_SCRIPT':
+        Alert.alert(
+          '📝 Script',
+          paramValue || 'Welches Script möchtest du?',
+          [
+            { text: 'Opener', onPress: () => setInput('Gib mir einen Opener Script') },
+            { text: 'Follow-up', onPress: () => setInput('Gib mir einen Follow-up Script') },
+            { text: 'Abbrechen', style: 'cancel' },
+          ]
+        );
+        break;
+        
+      // 🎉 Erfolg feiern
+      case 'CELEBRATE':
+        Alert.alert('🎉 Super gemacht!', paramValue || 'Weiter so!');
         break;
         
       // 🛡️ Einwand-Hilfe
       case 'OBJECTION_HELP':
         setInput(`Hilf mir bei dem Einwand: "${paramValue || 'zu teuer'}"`);
         setTimeout(() => sendMessage(), 100);
+        break;
+        
+      // ➕ Neue Kontaktliste
+      case 'NEW_CONTACT_LIST':
+        navigation.navigate('Kontakte', { mode: 'new_contact' });
         break;
         
       // Legacy: Lead anzeigen
