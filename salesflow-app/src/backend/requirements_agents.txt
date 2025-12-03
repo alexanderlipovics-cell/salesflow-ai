@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# REACTIVATION AGENT - Additional Dependencies
+# ═══════════════════════════════════════════════════════════════════════════
+
+# LangGraph (State Machine)
+langgraph>=0.2.0
+langgraph-checkpoint>=2.0.0
+langgraph-checkpoint-postgres>=2.0.0
+
+# LangChain (Tools & Utilities)
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-anthropic>=0.2.0
+
+# OpenAI (Embeddings & Chat)
+openai>=1.50.0
+
+# Vector Database (pgvector)
+pgvector>=0.3.0
+
+# Async PostgreSQL
+asyncpg>=0.29.0
+
+# News/Signal APIs (optional)
+newsapi-python>=0.2.7
+google-api-python-client>=2.150.0
+
+# Rate Limiting
+aiolimiter>=1.1.0
+

@@ -91,6 +91,20 @@ from .api.routes.messaging import router as messaging_router
 # Billing (Stripe Subscriptions)
 from .api.routes.billing import router as billing_router
 
+# Phase 1: Foundation & Architecture
+from .api.routes.jobs import router as jobs_router
+from .api.routes.features import router as features_router
+
+# Phase 2: Skill Orchestrator
+from .api.routes.skills import router as skills_router
+
+# Phase 3: Vertical Engine & Integrations
+from .api.routes.verticals import router as verticals_router
+from .api.routes.integrations import router as integrations_router
+
+# Phase 4: Data Flywheel & Analytics
+from .api.routes.flywheel import router as flywheel_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -347,6 +361,20 @@ app.include_router(autonomous_router, prefix="/api/v1")
 
 # Billing (Stripe Subscriptions)
 app.include_router(billing_router, prefix="/api/v1")
+
+# Phase 1: Foundation & Architecture
+app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(features_router, prefix="/api/v1")
+
+# Phase 2: Skill Orchestrator
+app.include_router(skills_router, prefix="/api/v1")
+
+# Phase 3: Vertical Engine & Integrations
+app.include_router(verticals_router, prefix="/api/v1")
+app.include_router(integrations_router, prefix="/api/v1")
+
+# Phase 4: Data Flywheel & Analytics
+app.include_router(flywheel_router, prefix="/api/v1")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

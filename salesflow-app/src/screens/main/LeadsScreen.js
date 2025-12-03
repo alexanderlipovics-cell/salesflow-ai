@@ -738,6 +738,32 @@ export default function LeadsScreen({ navigation }) {
           <View style={[styles.statusBadge, { backgroundColor: status.bgColor }]}>
             <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
           </View>
+          
+          {/* USP: Neuro-Profiler DISG Badge */}
+          {lead.disg_type && DISG_CONFIG[lead.disg_type.toLowerCase()] && (
+            <View style={[
+              styles.disgBadgeMini,
+              { backgroundColor: DISG_CONFIG[lead.disg_type.toLowerCase()].bgColor || '#1e293b' }
+            ]}>
+              <Text style={styles.disgBadgeMiniEmoji}>
+                {DISG_CONFIG[lead.disg_type.toLowerCase()].emoji || '🧠'}
+              </Text>
+              <Text style={[
+                styles.disgBadgeMiniText,
+                { color: DISG_CONFIG[lead.disg_type.toLowerCase()].color || '#8b5cf6' }
+              ]}>
+                {lead.disg_type.toUpperCase()}
+              </Text>
+            </View>
+          )}
+          
+          {/* USP: Compliance Badge */}
+          {lead.compliance_checked && (
+            <View style={styles.complianceBadgeMini}>
+              <Text style={styles.complianceBadgeMiniText}>🛡️</Text>
+            </View>
+          )}
+          
           <Text style={styles.lastContact}>📅 {formatDate(lead.last_contact)}</Text>
         </View>
         
@@ -1229,9 +1255,30 @@ const styles = StyleSheet.create({
   leadName: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
   leadCompany: { fontSize: 14, color: '#64748b', marginTop: 2 },
   
-  // DISG Badge
+  // DISG Badge (Neuro-Profiler USP)
   disgBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
   disgBadgeText: { fontSize: 12 },
+  disgBadgeMini: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 4, 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 8 
+  },
+  disgBadgeMiniEmoji: { fontSize: 12 },
+  disgBadgeMiniText: { fontSize: 11, fontWeight: '700' },
+  
+  // Compliance Badge (Locked Block™ USP)
+  complianceBadgeMini: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#dcfce7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  complianceBadgeMiniText: { fontSize: 12 },
   
   // Score Badge
   scoreBadge: { 

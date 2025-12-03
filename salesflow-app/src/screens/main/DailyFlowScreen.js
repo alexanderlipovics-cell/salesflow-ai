@@ -5,7 +5,7 @@
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
 import { useDailyFlow } from '../../hooks/useDailyFlow';
 import { useFollowUps } from '../../hooks/useFollowUps';
 import { useTodaysContactPlans } from '../../hooks/useContactPlans';
+import { useGhostBuster } from '../../hooks/useGhostBuster';
 import {
   getActionTypeConfig,
   getChannelConfig,
@@ -31,6 +32,136 @@ import {
   DAILY_FLOW_STATES,
 } from '../../types/dailyFlow';
 import { QuickLogWidget } from '../../components/outreach';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// USP BADGES - Locked Block™, Neuro-Profiler DISG, Compliance
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DISG_CONFIG = {
+  D: { label: 'Dominant', color: '#ef4444', icon: '🔴', desc: 'Direkt, entscheidungsfreudig' },
+  I: { label: 'Initiativ', color: '#f59e0b', icon: '🟡', desc: 'Optimistisch, enthusiastisch' },
+  S: { label: 'Stetig', color: '#22c55e', icon: '🟢', desc: 'Geduldig, teamorientiert' },
+  G: { label: 'Gewissenhaft', color: '#3b82f6', icon: '🔵', desc: 'Analytisch, präzise' },
+};
+
+const DISGBadge = ({ type, mini = false }) => {
+  if (!type || !DISG_CONFIG[type]) return null;
+  const config = DISG_CONFIG[type];
+  
+  if (mini) {
+    return (
+      <View style={[uspStyles.disgBadgeMini, { backgroundColor: config.color + '20' }]}>
+        <Text style={uspStyles.disgBadgeMiniText}>{config.icon}</Text>
+      </View>
+    );
+  }
+  
+  return (
+    <View style={[uspStyles.disgBadge, { borderColor: config.color }]}>
+      <Text style={uspStyles.disgIcon}>{config.icon}</Text>
+      <View>
+        <Text style={[uspStyles.disgLabel, { color: config.color }]}>{config.label}</Text>
+        <Text style={uspStyles.disgDesc}>{config.desc}</Text>
+      </View>
+    </View>
+  );
+};
+
+const ComplianceBadge = ({ checked = false }) => (
+  <View style={[uspStyles.complianceBadge, checked && uspStyles.complianceBadgeChecked]}>
+    <Text style={uspStyles.complianceIcon}>{checked ? '🛡️' : '⚠️'}</Text>
+    <Text style={[uspStyles.complianceText, checked && uspStyles.complianceTextChecked]}>
+      {checked ? 'Compliance ✓' : 'Nicht geprüft'}
+    </Text>
+  </View>
+);
+
+const LiabilityShieldBadge = ({ blocked = 0 }) => {
+  if (blocked === 0) return null;
+  return (
+    <View style={uspStyles.liabilityBadge}>
+      <Text style={uspStyles.liabilityIcon}>⚖️</Text>
+      <Text style={uspStyles.liabilityText}>
+        {blocked} rechtlich kritische Formulierung{blocked > 1 ? 'en' : ''} gefiltert
+      </Text>
+    </View>
+  );
+};
+
+const uspStyles = StyleSheet.create({
+  disgBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: '#1e293b',
+  },
+  disgBadgeMini: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  disgBadgeMiniText: {
+    fontSize: 10,
+  },
+  disgIcon: {
+    fontSize: 16,
+  },
+  disgLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  disgDesc: {
+    fontSize: 10,
+    color: '#94a3b8',
+  },
+  complianceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#fef3c7',
+  },
+  complianceBadgeChecked: {
+    backgroundColor: '#dcfce7',
+  },
+  complianceIcon: {
+    fontSize: 12,
+  },
+  complianceText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#92400e',
+  },
+  complianceTextChecked: {
+    color: '#166534',
+  },
+  liabilityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#fef3c720',
+    borderWidth: 1,
+    borderColor: '#f59e0b40',
+  },
+  liabilityIcon: {
+    fontSize: 14,
+  },
+  liabilityText: {
+    fontSize: 11,
+    color: '#f59e0b',
+  },
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROGRESS BAR COMPONENT
@@ -368,11 +499,25 @@ export default function DailyFlowScreen({ navigation }) {
     getActionTypeLabel,
     getActionTypeColor,
   } = useTodaysContactPlans();
+  
+  // GhostBuster Integration - USP Feature
+  const {
+    ghosts,
+    softGhosts,
+    hardGhosts,
+    totalGhosts,
+    loading: ghostsLoading,
+    loadGhosts,
+    generateMessage: generateGhostMessage,
+    markSent: markGhostSent,
+    skipGhost,
+  } = useGhostBuster();
 
   const [refreshing, setRefreshing] = useState(false);
   const [skipModalVisible, setSkipModalVisible] = useState(false);
   const [selectedActionId, setSelectedActionId] = useState(null);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showGhostBuster, setShowGhostBuster] = useState(true);
   
   // Kombinierte Stats für Header
   const combinedStats = useMemo(() => {
@@ -380,22 +525,24 @@ export default function DailyFlowScreen({ navigation }) {
     const followUpsCount = (followUpGroups?.today?.length || 0) + (followUpGroups?.overdue?.length || 0);
     const contactPlansCount = contactPlans?.length || 0;
     const paymentChecks = contactPlanStats?.checkPayment || 0;
+    const ghostCount = totalGhosts || 0;
     return {
-      totalTasks: dailyActionsCount + followUpsCount + contactPlansCount,
+      totalTasks: dailyActionsCount + followUpsCount + contactPlansCount + ghostCount,
       dailyActions: dailyActionsCount,
       followUps: followUpsCount,
       overdueFollowUps: followUpGroups?.overdue?.length || 0,
       contactPlans: contactPlansCount,
       paymentChecks: paymentChecks,
+      ghosts: ghostCount,
     };
-  }, [pendingActions, followUpGroups, contactPlans, contactPlanStats]);
+  }, [pendingActions, followUpGroups, contactPlans, contactPlanStats, totalGhosts]);
 
   // Refresh Handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchFollowUps(), refetchContactPlans()]);
+    await Promise.all([refetch(), refetchFollowUps(), refetchContactPlans(), loadGhosts()]);
     setRefreshing(false);
-  }, [refetch, refetchFollowUps, refetchContactPlans]);
+  }, [refetch, refetchFollowUps, refetchContactPlans, loadGhosts]);
 
   // Action Handlers
   const handleComplete = useCallback(async (actionId) => {
@@ -709,6 +856,79 @@ export default function DailyFlowScreen({ navigation }) {
                 )}
               </Pressable>
             ))}
+          </View>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            GHOST BUSTER SECTION - USP Feature: Reaktivierbare Leads
+        ═══════════════════════════════════════════════════════════════════ */}
+        {totalGhosts > 0 && showGhostBuster && (
+          <View style={styles.ghostBusterSection}>
+            <Pressable 
+              style={styles.ghostBusterHeader}
+              onPress={() => navigation.navigate('GhostBuster')}
+            >
+              <View style={styles.ghostBusterHeaderLeft}>
+                <Text style={styles.ghostBusterIcon}>👻</Text>
+                <View>
+                  <Text style={styles.ghostBusterTitle}>GhostBuster</Text>
+                  <Text style={styles.ghostBusterSubtitle}>
+                    {totalGhosts} Lead{totalGhosts > 1 ? 's' : ''} ohne Antwort reaktivieren
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.ghostBusterBadge}>
+                <Text style={styles.ghostBusterBadgeText}>{totalGhosts}</Text>
+              </View>
+            </Pressable>
+            
+            {/* Ghost Preview Cards */}
+            {ghosts.slice(0, 3).map((ghost) => (
+              <Pressable
+                key={ghost.id}
+                style={[
+                  styles.ghostCard,
+                  ghost.ghost_type === 'hard' && styles.ghostCardHard,
+                  ghost.ghost_type === 'deep' && styles.ghostCardDeep,
+                ]}
+                onPress={() => navigation.navigate('GhostBuster', { ghostId: ghost.id })}
+              >
+                <View style={styles.ghostCardContent}>
+                  <View style={styles.ghostCardLeft}>
+                    <View style={styles.ghostTypeIndicator}>
+                      <Text style={styles.ghostTypeEmoji}>
+                        {ghost.ghost_type === 'soft' ? '🌙' : ghost.ghost_type === 'hard' ? '💀' : '⚰️'}
+                      </Text>
+                    </View>
+                    <View style={styles.ghostCardInfo}>
+                      <View style={styles.ghostCardNameRow}>
+                        <Text style={styles.ghostCardName}>{ghost.lead_name || 'Unbekannt'}</Text>
+                        {/* DISG Badge - Neuro-Profiler USP */}
+                        {ghost.disg_type && <DISGBadge type={ghost.disg_type} mini />}
+                      </View>
+                      <Text style={styles.ghostCardDays}>
+                        {ghost.days_ghosted || Math.floor((ghost.hours_ghosted || 0) / 24)} Tage ohne Antwort
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.ghostCardRight}>
+                    <Text style={styles.ghostCardArrow}>→</Text>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+            
+            {/* Mehr anzeigen Link */}
+            {totalGhosts > 3 && (
+              <Pressable
+                style={styles.viewAllGhosts}
+                onPress={() => navigation.navigate('GhostBuster')}
+              >
+                <Text style={styles.viewAllGhostsText}>
+                  Alle {totalGhosts} Ghosts anzeigen →
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -1560,6 +1780,127 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontStyle: 'italic',
     lineHeight: 18,
+  },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GHOST BUSTER STYLES - USP Feature
+  // ═══════════════════════════════════════════════════════════════════════════
+  ghostBusterSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#0f172a',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#8b5cf6',
+  },
+  ghostBusterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ghostBusterHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ghostBusterIcon: {
+    fontSize: 28,
+  },
+  ghostBusterTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+  },
+  ghostBusterSubtitle: {
+    fontSize: 12,
+    color: '#8b5cf6',
+    marginTop: 2,
+  },
+  ghostBusterBadge: {
+    backgroundColor: '#8b5cf6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  ghostBusterBadgeText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  ghostCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#8b5cf640',
+  },
+  ghostCardHard: {
+    borderColor: '#f59e0b',
+    backgroundColor: '#f59e0b10',
+  },
+  ghostCardDeep: {
+    borderColor: '#ef4444',
+    backgroundColor: '#ef444410',
+  },
+  ghostCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ghostCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  ghostTypeIndicator: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2C2C2E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  ghostTypeEmoji: {
+    fontSize: 18,
+  },
+  ghostCardInfo: {
+    flex: 1,
+  },
+  ghostCardNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ghostCardName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#f1f5f9',
+  },
+  ghostCardDays: {
+    fontSize: 12,
+    color: '#8b5cf6',
+    marginTop: 2,
+  },
+  ghostCardRight: {
+    paddingLeft: 12,
+  },
+  ghostCardArrow: {
+    fontSize: 18,
+    color: '#64748b',
+  },
+  viewAllGhosts: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  viewAllGhostsText: {
+    fontSize: 14,
+    color: '#8b5cf6',
+    fontWeight: '500',
   },
   
   quickLogWidget: {
