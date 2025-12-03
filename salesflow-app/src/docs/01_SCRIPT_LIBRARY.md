@@ -1,5 +1,17 @@
 # 📜 Script Library - Sales Flow AI
 
+> **⚠️ HINWEIS: Diese Dokumentation ist veraltet!**
+> 
+> **Bitte nutze die neue [SCRIPT_LIBRARY_V2.md](./SCRIPT_LIBRARY_V2.md)**
+> 
+> Die neue Version enthält:
+> - 52 professionelle Scripts (statt weniger)
+> - Dynamische DISG-Anpassung
+> - Performance-Tracking
+> - API unter `/api/v2/scripts`
+
+---
+
 > **Referenzdokumentation für AI-Agenten & Entwickler**  
 > Verkaufs-Scripts, Einwandbehandlung & Nachrichtenvorlagen
 

@@ -15,6 +15,7 @@ from . import sales_intelligence  # v3.0
 from . import sequences  # Sequencer Engine
 from . import email_accounts  # Email Accounts
 from . import autonomous  # KI-Autonomie System
+from . import scripts  # Script Library
 
 __all__ = [
     "chat_import",
@@ -31,5 +32,6 @@ __all__ = [
     "sequences",  # Sequencer Engine
     "email_accounts",  # Email Accounts
     "autonomous",  # KI-Autonomie System
+    "scripts",  # Script Library
 ]
 

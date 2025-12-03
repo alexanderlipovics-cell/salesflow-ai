@@ -109,6 +109,9 @@ from .api.routes.flywheel import router as flywheel_router
 from .api.routes.reactivation import router as reactivation_router
 from .api.routes.review_queue import router as review_queue_router
 
+# Script Library (50+ Network Marketing Scripts)
+from .api.routes.scripts import router as scripts_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -383,6 +386,9 @@ app.include_router(flywheel_router, prefix="/api/v1")
 # Phase 5: Reactivation Agent (LangGraph)
 app.include_router(reactivation_router, prefix="/api/v1")
 app.include_router(review_queue_router, prefix="/api/v1")
+
+# Script Library (50+ Network Marketing Scripts)
+app.include_router(scripts_router, prefix="/api/v2")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
