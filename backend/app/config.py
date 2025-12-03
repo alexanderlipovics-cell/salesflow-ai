@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
-    DATABASE_URL: str
+    DATABASE_URL: str = ""  # Optional - for SQLAlchemy ORM
 
     # API
     API_V1_PREFIX: str = "/api/v1"

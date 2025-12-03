@@ -184,7 +184,7 @@ try:
         tags=["integrations"]
     )
     logger.info("Video Conferencing routes loaded successfully")
-except ImportError as e:
+except Exception as e:
     logger.warning(f"Video Conferencing routers not available: {e}")
 
 # Follow-up Engine (Automatic Follow-ups)

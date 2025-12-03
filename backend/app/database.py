@@ -78,14 +78,16 @@ try:
         finally:
             db_session.close()
 
-except ImportError:
-    # SQLAlchemy not installed - provide stubs
+except Exception as e:
+    # SQLAlchemy not available or error during setup - provide stubs
+    import logging
+    logging.warning(f"SQLAlchemy setup failed: {e}")
     Base = None
     engine = None
     SessionLocal = None
     
     def get_sqlalchemy_db():
-        raise RuntimeError("SQLAlchemy not installed")
+        raise RuntimeError(f"SQLAlchemy not available: {e}")
 
 
 # =============================================================================
