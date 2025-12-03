@@ -97,7 +97,7 @@ export const getAvailableLanguages = () => {
 if (__DEV__ && typeof window !== 'undefined') {
   (window as any).i18n = i18n;
   (window as any).setLanguage = changeLanguage;
-  console.log('🌍 i18n loaded! Test with: setLanguage("en") or setLanguage("es") or setLanguage("de")');
+  console.log('🌍 i18n loaded! Test with: setLanguage("en") or setLanguage("es") or setLanguage("de") or setLanguage("zh")');
 }
 
 export default i18n;

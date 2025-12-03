@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "@tanstack/react-query": "^5.90.11",
+    "@types/papaparse": "^5.5.0",
+    "expo-haptics": "~15.0.7",
+    "expo-linking": "~8.0.9",
+    "expo-secure-store": "^15.0.7",
+    "papaparse": "^5.5.3",
+    "react-dom": "^19.1.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}

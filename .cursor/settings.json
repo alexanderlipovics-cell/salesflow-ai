@@ -1,0 +1,50 @@
+{
+  "$schema": "https://cursor.sh/schemas/settings.json",
+  
+  "cursor.agent.mode": "efficient",
+  "cursor.agent.checkStatusFirst": true,
+  "cursor.agent.avoidDuplicates": true,
+  "cursor.agent.incrementalBuild": true,
+  "cursor.agent.askWhenUnclear": true,
+  "cursor.agent.maxSuggestions": 2,
+  "cursor.agent.respectRunningWork": true,
+  
+  "cursor.beforeAction": {
+    "checkFileExists": true,
+    "checkGitStatus": true,
+    "checkRunningProcesses": true,
+    "verifyNoConflicts": true,
+    "checkFoundationReady": true
+  },
+  
+  "cursor.antiPatterns": {
+    "preventDuplicateWork": true,
+    "preventFileOverwrite": true,
+    "preventInterruption": true,
+    "preventPrematureOptimization": true,
+    "preventDuplicateFeatures": true
+  },
+  
+  "cursor.responseStyle": {
+    "concise": true,
+    "actionable": true,
+    "prioritized": true,
+    "statusCheckFirst": true,
+    "maxOptionsPerResponse": 2
+  },
+  
+  "cursor.workflow": {
+    "incrementalMode": "foundation-first",
+    "conflictResolution": "ask-user",
+    "uncertaintyHandling": "clarify-before-action",
+    "optimizationTiming": "after-stability"
+  },
+  
+  "cursor.salesflow": {
+    "checkImplementationStatus": true,
+    "verifyExistingFiles": true,
+    "respectRunningServers": true,
+    "avoidsUnnecessaryCreation": true
+  }
+}
+

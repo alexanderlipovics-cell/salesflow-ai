@@ -1,0 +1,10 @@
+cd "C:\Users\Akquise WinStage\Desktop\SALESFLOW\salesflow-ai\backend"
+notepad .env
+```
+
+Dann öffnet sich Notepad. Füge dort ein:
+```
+SUPABASE_URL=https://lncwvbhcafkdorypnpnz.supabase.co
+SUPABASE_SERVICE_KEY=sb_secret_sb_secret_Cq5aa35BjKt6OhPE6H9ppQ_cq0r8nl0
+SUPABASE_ANON_KEY=sb_publishable_jCF8JiCuSj-cYmCF16CDYw_qZJb1mFu
+OPENAI_API_KEY=dein_openai_key
