@@ -17,7 +17,8 @@ import {
   Modal,
   TextInput,
   Alert,
-  Animated
+  Animated,
+  Linking
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
@@ -652,6 +653,49 @@ export default function LeadsScreen({ navigation }) {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // WHATSAPP INTEGRATION
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const handleWhatsAppSend = async (lead) => {
+    if (!lead.phone) {
+      Alert.alert('Keine Telefonnummer', 'Dieser Lead hat keine Telefonnummer.');
+      return;
+    }
+
+    try {
+      // Generiere WhatsApp-Link via API
+      const response = await fetch(`${getApiUrl()}/api/v2/whatsapp/generate-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: lead.phone,
+          message: `Hallo ${lead.name?.split(' ')[0] || ''}! 👋`, // Standard-Nachricht mit Vorname
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Generieren des WhatsApp-Links');
+      }
+
+      const data = await response.json();
+      const whatsappLink = data.link;
+
+      // Öffne WhatsApp-Link
+      const canOpen = await Linking.canOpenURL(whatsappLink);
+      if (canOpen) {
+        await Linking.openURL(whatsappLink);
+      } else {
+        Alert.alert('Fehler', 'WhatsApp konnte nicht geöffnet werden.');
+      }
+    } catch (error) {
+      console.error('WhatsApp Error:', error);
+      Alert.alert('Fehler', 'WhatsApp-Link konnte nicht generiert werden.');
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1039,6 +1083,16 @@ export default function LeadsScreen({ navigation }) {
                   <Text style={styles.actionButtonText}>💬 Nächster Schritt</Text>
                 </Pressable>
               </View>
+              
+              {/* WhatsApp Button */}
+              {selectedLead.phone && (
+                <Pressable 
+                  style={[styles.actionButton, styles.whatsappButton, { backgroundColor: '#25D366' }]}
+                  onPress={() => handleWhatsAppSend(selectedLead)}
+                >
+                  <Text style={styles.actionButtonText}>💬 Via WhatsApp senden</Text>
+                </Pressable>
+              )}
             </View>
           </View>
         )}
@@ -1420,6 +1474,11 @@ const styles = StyleSheet.create({
   // Actions
   actionRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
   actionButton: { flex: 1, borderRadius: 12, padding: 16, alignItems: 'center' },
+  whatsappButton: { 
+    marginTop: 12,
+    width: '100%',
+    flex: 0,
+  },
   actionButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
   
   // Input

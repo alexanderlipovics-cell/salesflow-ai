@@ -3,4 +3,5 @@
  */
 
 export { ReferralReminder } from './ReferralReminder';
+export { QuickLogButtons } from './QuickLogButtons';
 
