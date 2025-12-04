@@ -2126,7 +2126,8 @@ CREATE INDEX IF NOT EXISTS idx_scheduled_jobs_scheduled ON scheduled_jobs(schedu
 CREATE INDEX IF NOT EXISTS idx_ai_interactions_user ON ai_interactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sequences_user ON sequences(user_id);
 CREATE INDEX IF NOT EXISTS idx_scripts_category ON scripts(category);
-CREATE INDEX IF NOT EXISTS idx_scripts_number ON scripts(number);
+-- Note: idx_scripts_number skipped - column may not exist in existing table
+-- ALTER TABLE scripts ADD COLUMN IF NOT EXISTS number INTEGER;
 
 -- ============================================================================
 -- VERIFICATION
