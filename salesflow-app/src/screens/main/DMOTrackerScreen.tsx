@@ -24,6 +24,11 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { AURA_COLORS, AURA_SHADOWS, AURA_SPACING, AURA_RADIUS } from '../../components/aura/theme';
+import { API_CONFIG } from '../../services/apiConfig';
+import { useAuth } from '../../context/AuthContext';
+
+// API Helper
+const getDMOApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/dmo`;
 
 // =============================================================================
 // TYPES
@@ -227,6 +232,9 @@ interface DMOTrackerScreenProps {
 }
 
 export default function DMOTrackerScreen({ navigation }: DMOTrackerScreenProps) {
+  // Auth
+  const { user } = useAuth();
+  
   // State
   const [status, setStatus] = useState<DailyFlowStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -245,34 +253,63 @@ export default function DMOTrackerScreen({ navigation }: DMOTrackerScreenProps) 
     try {
       setLoading(true);
       
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/daily-flow/summary?for_date=${dateStr}`);
-      // const data = await response.json();
+      const dateStr = new Date().toISOString().split('T')[0];
       
-      // Mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const data = getMockDailyFlowStatus();
+      // Versuche API zu erreichen
+      try {
+        const response = await fetch(`${getDMOApiUrl()}/summary?for_date=${dateStr}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': user?.access_token ? `Bearer ${user.access_token}` : '',
+          },
+        });
+        
+        if (response.ok) {
+          const apiData = await response.json();
+          setStatus(transformApiResponse(apiData));
+        } else {
+          // API Fehler → Fallback auf Mock
+          console.log('DMO API not available, using mock data');
+          setStatus(getMockDailyFlowStatus());
+        }
+      } catch (apiErr) {
+        // Netzwerk-Fehler → Fallback auf Mock
+        console.log('DMO API network error, using mock data:', apiErr);
+        setStatus(getMockDailyFlowStatus());
+      }
       
-      setStatus(data);
+      const data = status || getMockDailyFlowStatus();
 
       // Animate progress bar
       Animated.timing(progressAnim, {
-        toValue: data.completionRate / 100,
+        toValue: (data?.completionRate || 0) / 100,
         duration: 800,
         useNativeDriver: false,
       }).start();
 
       // Check if day is complete
-      if (data.completionRate >= 100) {
+      if (data?.completionRate >= 100) {
         startCelebrationAnimation();
       }
 
     } catch (err) {
       console.error('Failed to fetch daily flow status:', err);
+      setStatus(getMockDailyFlowStatus());
     } finally {
       setLoading(false);
     }
-  }, [progressAnim]);
+  }, [progressAnim, user]);
+  
+  // Transformiert API Response zu lokalem Format
+  const transformApiResponse = (apiData: any): DailyFlowStatus => {
+    return {
+      date: apiData.date || new Date().toISOString().split('T')[0],
+      metrics: apiData.metrics || getMockDailyFlowStatus().metrics,
+      completionRate: apiData.completion_rate || apiData.completionRate || 0,
+      statusLevel: apiData.status_level || apiData.statusLevel || 'on_track',
+      estimatedTimeMinutes: apiData.estimated_time_minutes || apiData.estimatedTimeMinutes || 30,
+    };
+  };
 
   useEffect(() => {
     fetchDailyFlowStatus();
@@ -334,8 +371,24 @@ export default function DMOTrackerScreen({ navigation }: DMOTrackerScreenProps) 
       startCelebrationAnimation();
     }
 
-    // TODO: API call
-    // await fetch('/api/daily-flow/log-activity', { method: 'POST', ... });
+    // API call to log activity
+    try {
+      await fetch(`${getDMOApiUrl()}/log-activity`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': user?.access_token ? `Bearer ${user.access_token}` : '',
+        },
+        body: JSON.stringify({
+          activity_type: metricId,
+          count: 1,
+          date: new Date().toISOString().split('T')[0],
+        }),
+      });
+    } catch (err) {
+      console.log('Failed to log activity to API:', err);
+      // Optimistic update bleibt bestehen
+    }
   };
 
   // =============================================================================

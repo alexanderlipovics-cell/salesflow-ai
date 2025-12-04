@@ -97,13 +97,18 @@ export const getApiBaseUrl = () => {
   }
   
   // 5. Development Fallback
+  // Port 8001 für lokales Backend
+  const DEV_PORT = 8001;
+  
   const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
   
   if (isAndroid) {
-    return 'http://10.0.2.2:8000/api/v1';
+    // Android Emulator: 10.0.2.2 zeigt auf Host-Maschine
+    return `http://10.0.2.2:${DEV_PORT}/api/v1`;
   }
   
-  return 'http://localhost:8000/api/v1';
+  // iOS Simulator & Web: localhost
+  return `http://localhost:${DEV_PORT}/api/v1`;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

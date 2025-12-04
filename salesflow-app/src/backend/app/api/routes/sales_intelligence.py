@@ -9,6 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from datetime import datetime, timedelta
 import uuid
+from supabase import Client
+
+from ...db.deps import get_db, get_current_user, CurrentUser
 
 from ..schemas.sales_intelligence import (
     # Language
@@ -632,22 +635,38 @@ async def handle_competitor_mention(request: CompetitorMentionRequest):
 
 
 # =============================================================================
-# A/B TESTING ENDPOINTS
+# A/B TESTING ENDPOINTS (Database-backed)
 # =============================================================================
 
-# In-memory storage for demo (in production: database)
-_ab_tests = {}
-_ab_test_results = {}
+def _determine_winner(test: dict) -> Optional[str]:
+    """Bestimmt den Gewinner eines A/B Tests"""
+    a_count = test.get("variant_a_count", 0) or 0
+    b_count = test.get("variant_b_count", 0) or 0
+    
+    if a_count < 30 or b_count < 30:
+        return None  # Not enough data
+    
+    rate_a = (test.get("variant_a_conversions", 0) or 0) / a_count
+    rate_b = (test.get("variant_b_conversions", 0) or 0) / b_count
+    
+    if abs(rate_a - rate_b) < 0.05:
+        return None  # Too close
+    
+    return "a" if rate_a > rate_b else "b"
 
 
 @router.post("/ab-tests", response_model=ABTestResponse)
-async def create_ab_test(request: ABTestCreateRequest):
-    """Erstellt einen neuen A/B Test"""
-    test_id = str(uuid.uuid4())
+async def create_ab_test(
+    request: ABTestCreateRequest,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Erstellt einen neuen A/B Test (DB-basiert)"""
     now = datetime.now()
     
-    test = {
-        "id": test_id,
+    test_data = {
+        "user_id": current_user.id,
+        "company_id": getattr(current_user, "company_id", None),
         "name": request.name,
         "description": request.description,
         "test_type": request.test_type,
@@ -656,23 +675,23 @@ async def create_ab_test(request: ABTestCreateRequest):
         "target_metric": request.target_metric,
         "target_industry": request.target_industry,
         "target_buyer_type": request.target_buyer_type,
-        "variant_a_count": 0,
-        "variant_b_count": 0,
-        "variant_a_conversions": 0,
-        "variant_b_conversions": 0,
         "status": "running",
-        "created_at": now,
-        "updated_at": now,
+        "started_at": now.isoformat(),
     }
     
-    _ab_tests[test_id] = test
+    result = db.table("ab_tests").insert(test_data).execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Could not create A/B test")
+    
+    test = result.data[0]
     
     return ABTestResponse(
-        id=test_id,
-        name=request.name,
-        test_type=request.test_type,
-        variant_a=request.variant_a,
-        variant_b=request.variant_b,
+        id=test["id"],
+        name=test["name"],
+        test_type=test["test_type"],
+        variant_a=test["variant_a"],
+        variant_b=test["variant_b"],
         variant_a_count=0,
         variant_b_count=0,
         variant_a_conversions=0,
@@ -688,131 +707,270 @@ async def create_ab_test(request: ABTestCreateRequest):
 
 
 @router.get("/ab-tests", response_model=List[ABTestResponse])
-async def get_all_ab_tests():
-    """Liste aller A/B Tests"""
-    return [
-        ABTestResponse(
+async def get_all_ab_tests(
+    status: Optional[str] = Query(None),
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Liste aller A/B Tests (DB-basiert)"""
+    query = db.table("ab_tests").select("*").eq("user_id", current_user.id)
+    
+    if status:
+        query = query.eq("status", status)
+    
+    result = query.order("created_at", desc=True).execute()
+    
+    tests = []
+    for t in result.data or []:
+        a_count = t.get("variant_a_count", 0) or 0
+        b_count = t.get("variant_b_count", 0) or 0
+        a_conv = t.get("variant_a_conversions", 0) or 0
+        b_conv = t.get("variant_b_conversions", 0) or 0
+        
+        tests.append(ABTestResponse(
             id=t["id"],
             name=t["name"],
             test_type=t["test_type"],
             variant_a=t["variant_a"],
             variant_b=t["variant_b"],
-            variant_a_count=t["variant_a_count"],
-            variant_b_count=t["variant_b_count"],
-            variant_a_conversions=t["variant_a_conversions"],
-            variant_b_conversions=t["variant_b_conversions"],
-            variant_a_rate=t["variant_a_conversions"] / max(t["variant_a_count"], 1),
-            variant_b_rate=t["variant_b_conversions"] / max(t["variant_b_count"], 1),
+            variant_a_count=a_count,
+            variant_b_count=b_count,
+            variant_a_conversions=a_conv,
+            variant_b_conversions=b_conv,
+            variant_a_rate=a_conv / max(a_count, 1),
+            variant_b_rate=b_conv / max(b_count, 1),
             winner=_determine_winner(t),
-            statistical_significance=0.0,  # Would be calculated properly
+            statistical_significance=t.get("statistical_significance", 0) or 0,
             status=t["status"],
             created_at=t["created_at"],
             updated_at=t["updated_at"],
-        )
-        for t in _ab_tests.values()
-    ]
+        ))
+    
+    return tests
+
+
+@router.get("/ab-tests/{test_id}", response_model=ABTestResponse)
+async def get_ab_test(
+    test_id: str,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Holt einen einzelnen A/B Test"""
+    result = db.table("ab_tests").select("*").eq("id", test_id).eq(
+        "user_id", current_user.id
+    ).single().execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    t = result.data
+    a_count = t.get("variant_a_count", 0) or 0
+    b_count = t.get("variant_b_count", 0) or 0
+    a_conv = t.get("variant_a_conversions", 0) or 0
+    b_conv = t.get("variant_b_conversions", 0) or 0
+    
+    return ABTestResponse(
+        id=t["id"],
+        name=t["name"],
+        test_type=t["test_type"],
+        variant_a=t["variant_a"],
+        variant_b=t["variant_b"],
+        variant_a_count=a_count,
+        variant_b_count=b_count,
+        variant_a_conversions=a_conv,
+        variant_b_conversions=b_conv,
+        variant_a_rate=a_conv / max(a_count, 1),
+        variant_b_rate=b_conv / max(b_count, 1),
+        winner=_determine_winner(t),
+        statistical_significance=t.get("statistical_significance", 0) or 0,
+        status=t["status"],
+        created_at=t["created_at"],
+        updated_at=t["updated_at"],
+    )
 
 
 @router.post("/ab-tests/{test_id}/result")
-async def log_ab_test_result(test_id: str, request: ABTestResultRequest):
-    """Loggt ein Ergebnis für einen A/B Test"""
-    if test_id not in _ab_tests:
+async def log_ab_test_result(
+    test_id: str,
+    request: ABTestResultRequest,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Loggt ein Ergebnis für einen A/B Test (DB-basiert)"""
+    # Prüfen ob Test existiert
+    test_result = db.table("ab_tests").select("id").eq("id", test_id).eq(
+        "user_id", current_user.id
+    ).single().execute()
+    
+    if not test_result.data:
         raise HTTPException(status_code=404, detail="Test not found")
     
-    test = _ab_tests[test_id]
+    # Result einfügen
+    result_data = {
+        "test_id": test_id,
+        "variant": request.variant,
+        "converted": request.converted,
+        "lead_id": getattr(request, "lead_id", None),
+        "user_id": current_user.id,
+    }
     
+    db.table("ab_test_results").insert(result_data).execute()
+    
+    # Counter atomar updaten
     if request.variant == "a":
-        test["variant_a_count"] += 1
-        if request.converted:
-            test["variant_a_conversions"] += 1
+        db.rpc("increment_ab_test_counter", {
+            "p_test_id": test_id,
+            "p_variant": "a",
+            "p_converted": request.converted
+        }).execute()
     else:
-        test["variant_b_count"] += 1
-        if request.converted:
-            test["variant_b_conversions"] += 1
-    
-    test["updated_at"] = datetime.now()
+        db.rpc("increment_ab_test_counter", {
+            "p_test_id": test_id,
+            "p_variant": "b",
+            "p_converted": request.converted
+        }).execute()
     
     return {"status": "logged", "test_id": test_id}
 
 
-def _determine_winner(test: dict) -> Optional[str]:
-    """Bestimmt den Gewinner eines A/B Tests"""
-    if test["variant_a_count"] < 30 or test["variant_b_count"] < 30:
-        return None  # Not enough data
+@router.patch("/ab-tests/{test_id}/status")
+async def update_ab_test_status(
+    test_id: str,
+    status: str = Query(..., pattern="^(running|paused|completed|archived)$"),
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Aktualisiert den Status eines A/B Tests"""
+    update_data = {
+        "status": status,
+        "updated_at": datetime.now().isoformat(),
+    }
     
-    rate_a = test["variant_a_conversions"] / test["variant_a_count"]
-    rate_b = test["variant_b_conversions"] / test["variant_b_count"]
+    if status == "completed":
+        update_data["completed_at"] = datetime.now().isoformat()
     
-    if abs(rate_a - rate_b) < 0.05:
-        return None  # Too close
+    result = db.table("ab_tests").update(update_data).eq("id", test_id).eq(
+        "user_id", current_user.id
+    ).execute()
     
-    return "a" if rate_a > rate_b else "b"
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    return {"status": "updated", "new_status": status}
 
 
 # =============================================================================
-# ANALYTICS ENDPOINTS
+# ANALYTICS ENDPOINTS (Database-backed)
 # =============================================================================
+
+FRAMEWORK_NAMES = {
+    "spin": "SPIN Selling",
+    "challenger": "Challenger Sale",
+    "solution": "Solution Selling",
+    "gap": "GAP Selling",
+    "sandler": "Sandler",
+    "meddic": "MEDDIC",
+    "bant": "BANT",
+    "value": "Value Selling",
+}
 
 @router.get("/analytics/framework-effectiveness", response_model=FrameworkEffectivenessResponse)
 async def get_framework_effectiveness(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
-    """Analysiert die Effectiveness aller Frameworks"""
+    """Analysiert die Effectiveness aller Frameworks (DB-basiert)"""
     now = datetime.now()
     start = start_date or (now - timedelta(days=30))
     end = end_date or now
     
-    # Demo data (in production: real database query)
-    frameworks = [
-        FrameworkEffectivenessItem(
-            framework_id="spin",
-            framework_name="SPIN Selling",
-            total_uses=45,
-            conversions=18,
-            conversion_rate=0.40,
-            avg_deal_value=8500,
-            avg_time_to_close_days=21,
-            best_for_buyer_types=["analytical", "amiable"],
-            best_for_industries=["b2b_saas", "b2b_services"],
-        ),
-        FrameworkEffectivenessItem(
-            framework_id="challenger",
-            framework_name="Challenger Sale",
-            total_uses=32,
-            conversions=14,
-            conversion_rate=0.44,
-            avg_deal_value=12000,
-            avg_time_to_close_days=28,
-            best_for_buyer_types=["driver", "analytical"],
-            best_for_industries=["b2b_saas", "coaching"],
-        ),
-        FrameworkEffectivenessItem(
-            framework_id="gap",
-            framework_name="GAP Selling",
-            total_uses=28,
-            conversions=11,
-            conversion_rate=0.39,
-            avg_deal_value=6500,
-            avg_time_to_close_days=14,
-            best_for_buyer_types=["driver", "expressive"],
-            best_for_industries=["b2b_saas"],
-        ),
-        FrameworkEffectivenessItem(
-            framework_id="sandler",
-            framework_name="Sandler",
-            total_uses=20,
-            conversions=9,
-            conversion_rate=0.45,
-            avg_deal_value=7200,
-            avg_time_to_close_days=18,
-            best_for_buyer_types=["analytical"],
-            best_for_industries=["insurance", "finance"],
-        ),
-    ]
+    # Daten aus DB holen
+    result = db.table("framework_usage_stats").select("*").eq(
+        "user_id", current_user.id
+    ).gte("date", start.date().isoformat()).lte(
+        "date", end.date().isoformat()
+    ).execute()
+    
+    # Aggregieren nach Framework
+    framework_data = {}
+    for row in result.data or []:
+        fw_id = row["framework_id"]
+        if fw_id not in framework_data:
+            framework_data[fw_id] = {
+                "total_uses": 0,
+                "conversions": 0,
+                "deals_closed": 0,
+                "total_deal_value": 0,
+                "time_to_close": [],
+                "buyer_types": {},
+                "industries": {},
+            }
+        
+        fd = framework_data[fw_id]
+        fd["total_uses"] += row.get("total_uses", 0) or 0
+        fd["conversions"] += row.get("conversions", 0) or 0
+        fd["deals_closed"] += row.get("deals_closed", 0) or 0
+        fd["total_deal_value"] += float(row.get("total_deal_value", 0) or 0)
+        
+        if row.get("avg_time_to_close_days"):
+            fd["time_to_close"].append(row["avg_time_to_close_days"])
+        
+        # Merge buyer type / industry stats
+        for bt, count in (row.get("by_buyer_type") or {}).items():
+            fd["buyer_types"][bt] = fd["buyer_types"].get(bt, 0) + count
+        for ind, count in (row.get("by_industry") or {}).items():
+            fd["industries"][ind] = fd["industries"].get(ind, 0) + count
+    
+    # Frameworks bauen
+    frameworks = []
+    for fw_id, data in framework_data.items():
+        total = data["total_uses"]
+        conv = data["conversions"]
+        
+        # Best buyer types
+        best_bt = sorted(data["buyer_types"].items(), key=lambda x: x[1], reverse=True)[:2]
+        best_ind = sorted(data["industries"].items(), key=lambda x: x[1], reverse=True)[:2]
+        
+        frameworks.append(FrameworkEffectivenessItem(
+            framework_id=fw_id,
+            framework_name=FRAMEWORK_NAMES.get(fw_id, fw_id.title()),
+            total_uses=total,
+            conversions=conv,
+            conversion_rate=conv / max(total, 1),
+            avg_deal_value=data["total_deal_value"] / max(data["deals_closed"], 1),
+            avg_time_to_close_days=sum(data["time_to_close"]) // max(len(data["time_to_close"]), 1) if data["time_to_close"] else None,
+            best_for_buyer_types=[bt for bt, _ in best_bt],
+            best_for_industries=[ind for ind, _ in best_ind],
+        ))
+    
+    # Fallback: Demo-Daten wenn keine DB-Einträge
+    if not frameworks:
+        frameworks = [
+            FrameworkEffectivenessItem(
+                framework_id="spin", framework_name="SPIN Selling",
+                total_uses=0, conversions=0, conversion_rate=0.0,
+                avg_deal_value=0, avg_time_to_close_days=0,
+                best_for_buyer_types=[], best_for_industries=[],
+            ),
+        ]
     
     # Sort by conversion rate
     frameworks.sort(key=lambda x: x.conversion_rate, reverse=True)
+    
+    # Insights generieren
+    insights = []
+    if frameworks and frameworks[0].total_uses > 0:
+        insights.append(f"🏆 Top Framework: {frameworks[0].framework_name} mit {frameworks[0].conversion_rate*100:.0f}% Conversion")
+        best_value = max(frameworks, key=lambda x: x.avg_deal_value or 0)
+        if best_value.avg_deal_value:
+            insights.append(f"💰 Höchster Deal Value: {best_value.framework_name}")
+        fastest = min((f for f in frameworks if f.avg_time_to_close_days), key=lambda x: x.avg_time_to_close_days, default=None)
+        if fastest:
+            insights.append(f"⚡ Schnellster Close: {fastest.framework_name}")
+    else:
+        insights.append("📊 Noch keine Framework-Daten. Nutze Frameworks um Statistiken zu sammeln!")
     
     return FrameworkEffectivenessResponse(
         period_start=start,
@@ -820,114 +978,187 @@ async def get_framework_effectiveness(
         total_deals=sum(f.total_uses for f in frameworks),
         frameworks=frameworks,
         top_framework=frameworks[0].framework_id if frameworks else "spin",
-        insights=[
-            f"🏆 Top Framework: {frameworks[0].framework_name} mit {frameworks[0].conversion_rate*100:.0f}% Conversion",
-            f"💰 Höchster Deal Value: {max(frameworks, key=lambda x: x.avg_deal_value or 0).framework_name}",
-            f"⚡ Schnellster Close: {min(frameworks, key=lambda x: x.avg_time_to_close_days or 999).framework_name}",
-        ],
+        insights=insights,
     )
 
 
 @router.get("/analytics/buyer-type-effectiveness", response_model=BuyerTypeEffectivenessResponse)
-async def get_buyer_type_effectiveness():
-    """Analysiert die Effectiveness nach Buyer Type"""
+async def get_buyer_type_effectiveness(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Analysiert die Effectiveness nach Buyer Type (DB-basiert)"""
     now = datetime.now()
+    start = start_date or (now - timedelta(days=30))
+    end = end_date or now
     
-    # Demo data
-    buyer_types = [
-        BuyerTypeEffectivenessItem(
-            buyer_type=BuyerType.DRIVER,
-            total_leads=42,
-            conversions=21,
-            conversion_rate=0.50,
-            best_framework="gap",
-            avg_touchpoints=3.2,
-        ),
-        BuyerTypeEffectivenessItem(
-            buyer_type=BuyerType.ANALYTICAL,
-            total_leads=38,
-            conversions=15,
-            conversion_rate=0.39,
-            best_framework="spin",
-            avg_touchpoints=5.8,
-        ),
-        BuyerTypeEffectivenessItem(
-            buyer_type=BuyerType.EXPRESSIVE,
-            total_leads=35,
-            conversions=16,
-            conversion_rate=0.46,
-            best_framework="challenger",
-            avg_touchpoints=4.1,
-        ),
-        BuyerTypeEffectivenessItem(
-            buyer_type=BuyerType.AMIABLE,
-            total_leads=30,
-            conversions=10,
-            conversion_rate=0.33,
-            best_framework="solution",
-            avg_touchpoints=6.5,
-        ),
-    ]
+    # Daten aus DB holen
+    result = db.table("buyer_type_stats").select("*").eq(
+        "user_id", current_user.id
+    ).gte("date", start.date().isoformat()).lte(
+        "date", end.date().isoformat()
+    ).execute()
+    
+    # Aggregieren nach Buyer Type
+    bt_data = {}
+    for row in result.data or []:
+        bt = row["buyer_type"]
+        if bt not in bt_data:
+            bt_data[bt] = {
+                "total_leads": 0,
+                "conversions": 0,
+                "total_touchpoints": 0,
+                "best_framework": None,
+            }
+        
+        bd = bt_data[bt]
+        bd["total_leads"] += row.get("total_leads", 0) or 0
+        bd["conversions"] += row.get("conversions", 0) or 0
+        bd["total_touchpoints"] += row.get("total_touchpoints", 0) or 0
+        if row.get("best_framework"):
+            bd["best_framework"] = row["best_framework"]
+    
+    # Buyer Types bauen
+    buyer_types = []
+    for bt, data in bt_data.items():
+        total = data["total_leads"]
+        conv = data["conversions"]
+        
+        try:
+            bt_enum = BuyerType(bt)
+        except ValueError:
+            continue
+        
+        buyer_types.append(BuyerTypeEffectivenessItem(
+            buyer_type=bt_enum,
+            total_leads=total,
+            conversions=conv,
+            conversion_rate=conv / max(total, 1),
+            best_framework=data["best_framework"],
+            avg_touchpoints=data["total_touchpoints"] / max(total, 1),
+        ))
+    
+    # Fallback wenn keine Daten
+    if not buyer_types:
+        buyer_types = [
+            BuyerTypeEffectivenessItem(
+                buyer_type=BuyerType.DRIVER, total_leads=0, conversions=0,
+                conversion_rate=0.0, best_framework=None, avg_touchpoints=0,
+            ),
+        ]
+    
+    # Sort by conversion rate
+    buyer_types.sort(key=lambda x: x.conversion_rate, reverse=True)
+    
+    # Insights generieren
+    insights = []
+    if buyer_types and buyer_types[0].total_leads > 0:
+        best = buyer_types[0]
+        insights.append(f"🎯 {best.buyer_type.value.title()} konvertieren am besten ({best.conversion_rate*100:.0f}%)")
+        most_touches = max(buyer_types, key=lambda x: x.avg_touchpoints)
+        insights.append(f"🧮 {most_touches.buyer_type.value.title()} brauchen mehr Touchpoints ({most_touches.avg_touchpoints:.1f})")
+    else:
+        insights.append("📊 Noch keine Buyer-Type-Daten. Analysiere Leads um Statistiken zu sammeln!")
     
     return BuyerTypeEffectivenessResponse(
-        period_start=now - timedelta(days=30),
-        period_end=now,
+        period_start=start,
+        period_end=end,
         buyer_types=buyer_types,
-        insights=[
-            "🎯 Driver konvertieren am besten (50%) - schnelle Entscheider!",
-            "🧮 Analytiker brauchen mehr Touchpoints (5.8) - Geduld zahlt sich aus",
-            "🤝 Amiable haben niedrigste Rate - Mehr Beziehungsaufbau nötig",
-        ],
+        insights=insights,
     )
 
 
 @router.get("/analytics/industry-effectiveness", response_model=IndustryEffectivenessResponse)
-async def get_industry_effectiveness():
-    """Analysiert die Effectiveness nach Industry"""
+async def get_industry_effectiveness(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Analysiert die Effectiveness nach Industry (DB-basiert)"""
     now = datetime.now()
+    start = start_date or (now - timedelta(days=30))
+    end = end_date or now
     
-    # Demo data
-    industries = [
-        IndustryEffectivenessItem(
-            industry_id="b2b_saas",
-            industry_name="B2B SaaS",
-            total_deals=52,
-            conversions=23,
-            conversion_rate=0.44,
-            best_framework="gap",
-            best_buyer_approach="driver",
-            avg_deal_size=8500,
-        ),
-        IndustryEffectivenessItem(
-            industry_id="network_marketing",
-            industry_name="Network Marketing",
-            total_deals=48,
-            conversions=19,
-            conversion_rate=0.40,
-            best_framework="solution",
-            best_buyer_approach="expressive",
-            avg_deal_size=350,
-        ),
-        IndustryEffectivenessItem(
-            industry_id="coaching",
-            industry_name="Coaching",
-            total_deals=28,
-            conversions=12,
-            conversion_rate=0.43,
-            best_framework="challenger",
-            best_buyer_approach="expressive",
-            avg_deal_size=2500,
-        ),
-    ]
+    # Daten aus DB holen
+    result = db.table("industry_stats").select("*").eq(
+        "user_id", current_user.id
+    ).gte("date", start.date().isoformat()).lte(
+        "date", end.date().isoformat()
+    ).execute()
+    
+    # Aggregieren nach Industry
+    ind_data = {}
+    for row in result.data or []:
+        ind_id = row["industry_id"]
+        if ind_id not in ind_data:
+            ind_data[ind_id] = {
+                "industry_name": row.get("industry_name") or ind_id.replace("_", " ").title(),
+                "total_deals": 0,
+                "conversions": 0,
+                "total_deal_value": 0,
+                "best_framework": None,
+                "best_buyer_approach": None,
+            }
+        
+        data = ind_data[ind_id]
+        data["total_deals"] += row.get("total_deals", 0) or 0
+        data["conversions"] += row.get("conversions", 0) or 0
+        data["total_deal_value"] += float(row.get("total_deal_value", 0) or 0)
+        if row.get("best_framework"):
+            data["best_framework"] = row["best_framework"]
+        if row.get("best_buyer_approach"):
+            data["best_buyer_approach"] = row["best_buyer_approach"]
+    
+    # Industries bauen
+    industries = []
+    for ind_id, data in ind_data.items():
+        total = data["total_deals"]
+        conv = data["conversions"]
+        
+        industries.append(IndustryEffectivenessItem(
+            industry_id=ind_id,
+            industry_name=data["industry_name"],
+            total_deals=total,
+            conversions=conv,
+            conversion_rate=conv / max(total, 1),
+            best_framework=data["best_framework"],
+            best_buyer_approach=data["best_buyer_approach"],
+            avg_deal_size=data["total_deal_value"] / max(conv, 1),
+        ))
+    
+    # Fallback wenn keine Daten
+    if not industries:
+        industries = [
+            IndustryEffectivenessItem(
+                industry_id="default", industry_name="Keine Daten",
+                total_deals=0, conversions=0, conversion_rate=0.0,
+                best_framework=None, best_buyer_approach=None, avg_deal_size=0,
+            ),
+        ]
+    
+    # Sort by conversion rate
+    industries.sort(key=lambda x: x.conversion_rate, reverse=True)
+    
+    # Insights generieren
+    insights = []
+    if industries and industries[0].total_deals > 0:
+        best = industries[0]
+        insights.append(f"🚀 {best.industry_name} führt mit {best.conversion_rate*100:.0f}% Conversion")
+        best_value = max(industries, key=lambda x: x.avg_deal_size or 0)
+        if best_value.avg_deal_size:
+            insights.append(f"💰 Höchster Deal Size: {best_value.industry_name} ({best_value.avg_deal_size:,.0f}€)")
+        if best.best_framework:
+            insights.append(f"📈 {best.best_framework.upper()} funktioniert besonders gut")
+    else:
+        insights.append("📊 Noch keine Branchen-Daten. Tagge Leads mit Branchen um Statistiken zu sammeln!")
     
     return IndustryEffectivenessResponse(
-        period_start=now - timedelta(days=30),
-        period_end=now,
+        period_start=start,
+        period_end=end,
         industries=industries,
-        insights=[
-            "🚀 B2B SaaS führt mit 44% Conversion und höchstem Deal Size",
-            "📈 GAP Selling funktioniert besonders gut für Tech-Deals",
-            "💡 Expressive Buyer Types dominieren in Coaching & Network Marketing",
-        ],
+        insights=insights,
     )
 
