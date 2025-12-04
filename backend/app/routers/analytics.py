@@ -20,7 +20,7 @@ from supabase import create_client
 # Alias for compatibility
 class config:
     SUPABASE_URL = settings.SUPABASE_URL
-    SUPABASE_KEY = settings.SUPABASE_ANON_KEY
+    SUPABASE_KEY = settings.SUPABASE_KEY or settings.SUPABASE_ANON_KEY
 
 logger = logging.getLogger(__name__)
 

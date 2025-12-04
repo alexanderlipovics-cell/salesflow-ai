@@ -36,9 +36,15 @@
       "themeColor": "#020617",
       "backgroundColor": "#020617"
     },
+    "experiments": {
+      "typedRoutes": false
+    },
     "extra": {
       "eas": {
         "projectId": "aura-os"
+      },
+      "router": {
+        "origin": false
       }
     },
     "owner": "salesflow"

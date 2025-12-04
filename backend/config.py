@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
+    SUPABASE_ANON_KEY: str = ""  # Alias for SUPABASE_KEY
     SUPABASE_SERVICE_KEY: str = ""
     DATABASE_URL: str = ""
     BACKEND_PORT: int = 8000

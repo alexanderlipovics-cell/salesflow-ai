@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
+    SUPABASE_ANON_KEY: str = ""  # Alias for compatibility
+    SUPABASE_SERVICE_KEY: str = ""
     DATABASE_URL: str = ""  # Optional - for SQLAlchemy ORM
 
     # API
