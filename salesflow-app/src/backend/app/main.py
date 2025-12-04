@@ -193,27 +193,9 @@ async def lifespan(app: FastAPI):
 # ═══════════════════════════════════════════════════════════════════════════
 
 app = FastAPI(
-    title=settings.APP_NAME,
-    description="""
-    ✦ **AURA OS** - Autonomous Enterprise System
-    
-    ## Features
-    
-    - **Goal Calculation**: Vertriebsagnostische Zielberechnung
-    - **Daily Flow**: Tägliche Aktivitäts-Targets
-    - **Multi-Vertical**: MLM, Immobilien, Coaching, Finance, etc.
-    - **Autonomous Brain**: KI-gestützte automatische Entscheidungen
-    - **Multi-Agent System**: Spezialisierte KI-Agenten
-    
-    ## Verticals
-    
-    - `network_marketing` - Network Marketing / MLM
-    - `real_estate` - Immobilien / Makler
-    - `coaching` - Coaching & Beratung
-    - `finance` - Finanzvertrieb
-    - `insurance` - Versicherungen
-    """,
-    version=settings.APP_VERSION,
+    title="SalesFlow AI API",
+    description="AI-powered CRM for Network Marketing",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
@@ -443,7 +425,9 @@ async def root():
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT,
         "status": "running",
-        "docs": "/docs" if settings.is_development else "disabled",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "openapi": "/openapi.json",
     }
 
 
