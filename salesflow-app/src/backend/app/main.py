@@ -118,7 +118,7 @@ from .api.routes.mentor import router as mentor_router
 from .api.routes.contacts import router as contacts_router
 from .api.routes.dmo import router as dmo_router
 from .api.routes.team import router as team_router
-from .api.routes.alerts import router as alerts_router
+from .api.routes import alerts
 
 # Sales Intelligence v3.0
 from .api.routes.sales_intelligence import router as sales_intelligence_router
@@ -206,9 +206,9 @@ app = FastAPI(
     - `insurance` - Versicherungen
     """,
     version=settings.APP_VERSION,
-    docs_url="/docs" if settings.is_development else None,  # Docs nur in Dev
-    redoc_url="/redoc" if settings.is_development else None,
-    openapi_url="/openapi.json" if settings.is_development else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
     lifespan=lifespan,
 )
 
@@ -407,7 +407,7 @@ app.include_router(mentor_router, prefix="/api/v2")
 app.include_router(contacts_router, prefix="/api/v2")
 app.include_router(dmo_router, prefix="/api/v2")
 app.include_router(team_router, prefix="/api/v2")
-app.include_router(alerts_router, prefix="/api/v2")
+app.include_router(alerts.router, prefix="/api/v2")
 
 # Sales Intelligence v3.0
 app.include_router(sales_intelligence_router, prefix="/api/v1")
