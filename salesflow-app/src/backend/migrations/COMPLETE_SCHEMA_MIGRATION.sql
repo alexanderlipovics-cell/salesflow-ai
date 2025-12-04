@@ -2047,15 +2047,12 @@ CREATE TABLE IF NOT EXISTS field_visits (
 );
 
 -- ============================================================================
--- 32. users VIEW (compatibility)
+-- 32. users VIEW (compatibility) - SKIP if users table already exists
 -- ============================================================================
 
-CREATE OR REPLACE VIEW users AS
-SELECT 
-    id,
-    email,
-    created_at
-FROM auth.users;
+-- Note: Skipping users view creation as 'users' table may already exist
+-- If you need a users view, run this manually:
+-- CREATE OR REPLACE VIEW public.users_view AS SELECT id, email, created_at FROM auth.users;
 
 -- ============================================================================
 -- RLS POLICIES (Basic)
