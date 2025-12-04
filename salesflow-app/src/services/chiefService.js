@@ -15,6 +15,7 @@
  */
 
 import { supabase } from './supabase';
+import { API_CONFIG, apiPost } from './apiConfig';
 import {
   CHIEF_SYSTEM_PROMPT,
   buildChiefSystemMessages,
@@ -23,6 +24,11 @@ import {
   stripActionTags,
   shouldIncludeExamples,
 } from '../prompts/chief-prompt';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// API MODE - Lokales Backend oder Supabase Edge Function
+// ═══════════════════════════════════════════════════════════════════════════
+const USE_LOCAL_BACKEND = true; // true = Lokales Backend, false = Supabase Edge Function
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -113,29 +119,62 @@ export async function sendMessageToChief(options) {
       { role: 'user', content: message },
     ];
 
-    // 4. AI Call via Supabase Edge Function
+    // 4. AI Call - Lokales Backend oder Supabase Edge Function
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
 
-    if (!accessToken) {
-      throw new Error('Nicht eingeloggt');
+    let rawContent = '';
+
+    if (USE_LOCAL_BACKEND) {
+      // ═══════════════════════════════════════════════════════════════════
+      // LOKALES BACKEND (Port 8001)
+      // ═══════════════════════════════════════════════════════════════════
+      try {
+        const response = await apiPost(
+          '/ai/chief/chat',
+          {
+            message: message,
+            include_context: !!context.dailyFlow || !!context.vertical,
+            conversation_history: recentHistory,
+          },
+          accessToken
+        );
+        
+        rawContent = response?.reply || response?.content || '';
+      } catch (apiError) {
+        // Fallback auf Demo-Endpoint wenn Auth fehlschlägt
+        console.log('Auth-Fehler, nutze Demo-Endpoint:', apiError.message);
+        const demoResponse = await apiPost('/ai/chief/chat/demo', {
+          message: message,
+          include_context: false,
+          conversation_history: recentHistory,
+        });
+        rawContent = demoResponse?.reply || demoResponse?.content || '';
+      }
+    } else {
+      // ═══════════════════════════════════════════════════════════════════
+      // SUPABASE EDGE FUNCTION
+      // ═══════════════════════════════════════════════════════════════════
+      if (!accessToken) {
+        throw new Error('Nicht eingeloggt');
+      }
+
+      const response = await supabase.functions.invoke('ai-chat', {
+        body: {
+          messages, // Kompletter Message Array für Chat
+          model: CHIEF_CONFIG.model,
+          temperature: CHIEF_CONFIG.temperature,
+          max_tokens: CHIEF_CONFIG.maxTokens,
+          mode: 'chief-chat', // Spezial-Mode für Edge Function
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'AI Request failed');
+      }
+
+      rawContent = response.data?.content || '';
     }
-
-    const response = await supabase.functions.invoke('ai-chat', {
-      body: {
-        messages, // Kompletter Message Array für Chat
-        model: CHIEF_CONFIG.model,
-        temperature: CHIEF_CONFIG.temperature,
-        max_tokens: CHIEF_CONFIG.maxTokens,
-        mode: 'chief-chat', // Spezial-Mode für Edge Function
-      },
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message || 'AI Request failed');
-    }
-
-    const rawContent = response.data?.content || '';
     
     // 5. Action Tags extrahieren
     const actions = extractActionTags(rawContent);
@@ -210,41 +249,68 @@ export async function streamMessageToChief(options) {
       throw new Error('Nicht eingeloggt');
     }
 
-    // Streaming Request
-    const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 
-                        process.env.EXPO_PUBLIC_SUPABASE_URL;
+    // Streaming Request - Lokales Backend oder Supabase
+    let response;
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/ai-chat-stream`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages,
-        model: CHIEF_CONFIG.model,
-        temperature: CHIEF_CONFIG.temperature,
-        max_tokens: CHIEF_CONFIG.maxTokens,
-        stream: true,
-      }),
-    });
+    if (USE_LOCAL_BACKEND) {
+      // Lokales Backend (ohne Streaming, da nicht unterstützt)
+      response = await fetch(`${API_CONFIG.baseUrl}/ai/chief/chat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: message,
+          include_context: !!context.dailyFlow || !!context.vertical,
+          conversation_history: recentHistory,
+        }),
+      });
+    } else {
+      // Supabase Edge Function mit Streaming
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 
+                          process.env.EXPO_PUBLIC_SUPABASE_URL;
+      
+      response = await fetch(`${supabaseUrl}/functions/v1/ai-chat-stream`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages,
+          model: CHIEF_CONFIG.model,
+          temperature: CHIEF_CONFIG.temperature,
+          max_tokens: CHIEF_CONFIG.maxTokens,
+          stream: true,
+        }),
+      });
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    // Stream lesen
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
     let fullContent = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    if (USE_LOCAL_BACKEND) {
+      // Lokales Backend: JSON Response (kein Streaming)
+      const data = await response.json();
+      fullContent = data?.reply || data?.content || '';
+      onChunk(fullContent); // Gesamte Antwort auf einmal
+    } else {
+      // Supabase: Stream lesen
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-      const chunk = decoder.decode(value);
-      fullContent += chunk;
-      onChunk(chunk);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        fullContent += chunk;
+        onChunk(chunk);
+      }
     }
 
     // Final Response
