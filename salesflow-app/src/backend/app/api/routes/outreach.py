@@ -248,7 +248,7 @@ async def get_ghost_summary(
     """
     Zusammenfassung der Ghost-Situation für Dashboard
     """
-    from ...config import settings
+    from ...core.config import settings
     detector = GhostDetector(supabase, anthropic_key=settings.ANTHROPIC_API_KEY if hasattr(settings, 'ANTHROPIC_API_KEY') else None)
     
     summary = await detector.get_ghost_summary(str(current_user.id))
@@ -331,7 +331,7 @@ async def generate_followup_message(
     """
     Generiere eine personalisierte Follow-up Nachricht für einen Ghost
     """
-    from ...config import settings
+    from ...core.config import settings
     
     service = OutreachService(supabase)
     detector = GhostDetector(supabase, anthropic_key=settings.ANTHROPIC_API_KEY if hasattr(settings, 'ANTHROPIC_API_KEY') else None)
@@ -370,7 +370,7 @@ async def bulk_generate_followups(
     """
     Generiere Follow-up Vorschläge für mehrere Ghosts auf einmal
     """
-    from ...config import settings
+    from ...core.config import settings
     
     detector = GhostDetector(supabase, anthropic_key=settings.ANTHROPIC_API_KEY if hasattr(settings, 'ANTHROPIC_API_KEY') else None)
     
@@ -474,7 +474,7 @@ async def run_ghost_detection(
     
     Findet neue Ghosts und erstellt Follow-up Queue Einträge
     """
-    from ...config import settings
+    from ...core.config import settings
     
     detector = GhostDetector(supabase, anthropic_key=settings.ANTHROPIC_API_KEY if hasattr(settings, 'ANTHROPIC_API_KEY') else None)
     
