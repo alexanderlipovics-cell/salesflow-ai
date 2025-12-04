@@ -56,6 +56,7 @@ from ...services.scripts.network_marketing_scripts import (
     ALL_NETWORK_MARKETING_SCRIPTS,
     get_scripts_by_category,
 )
+from ...services.scripts.mlm_script_service import MLMScriptService
 
 
 router = APIRouter(prefix="/scripts", tags=["scripts"])
@@ -596,5 +597,247 @@ async def get_closing_scripts(
         "style": style,
         "disg_adapted": disg_type is not None,
         "scripts": [ScriptResponse(**s) for s in scripts],
+    }
+
+
+# =============================================================================
+# MLM-SPEZIFISCHE SCRIPTS
+# =============================================================================
+
+mlm_script_service = MLMScriptService()
+
+
+@router.get("/mlm/{mlm_company}")
+async def get_mlm_scripts(
+    mlm_company: str,
+    category: Optional[str] = Query(None, description="Kategorie (pitches, einwand_handling, etc.)"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Holt alle Scripts für ein MLM-Unternehmen.
+    
+    Beispiele:
+    - GET /api/v2/scripts/mlm/zinzino
+    - GET /api/v2/scripts/mlm/zinzino?category=pitches
+    """
+    scripts = mlm_script_service.get_scripts_for_company(
+        company=mlm_company,
+        category=category
+    )
+    
+    if not scripts:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Keine Scripts gefunden für '{mlm_company}'" + 
+                   (f" in Kategorie '{category}'" if category else "")
+        )
+    
+    return {
+        "company": mlm_company,
+        "category": category,
+        "scripts": scripts,
+        "total": len(scripts) if isinstance(scripts, dict) else 0
+    }
+
+
+@router.get("/mlm/{mlm_company}/{category}")
+async def get_mlm_scripts_by_category(
+    mlm_company: str,
+    category: str,
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Holt Scripts einer spezifischen Kategorie für ein MLM-Unternehmen.
+    
+    Beispiel: GET /api/v2/scripts/mlm/zinzino/pitches
+    """
+    scripts = mlm_script_service.get_scripts_for_company(
+        company=mlm_company,
+        category=category
+    )
+    
+    if not scripts:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Keine Scripts gefunden für '{mlm_company}' in Kategorie '{category}'"
+        )
+    
+    return {
+        "company": mlm_company,
+        "category": category,
+        "scripts": scripts,
+        "total": len(scripts)
+    }
+
+
+@router.get("/mlm/{mlm_company}/{category}/{script_id}")
+async def get_mlm_script_by_id(
+    mlm_company: str,
+    category: str,
+    script_id: str,
+    variables: Optional[str] = Query(None, description="JSON-String mit Variablen (z.B. {\"Name\": \"Max\"})"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Holt ein einzelnes Script per ID.
+    
+    Beispiel: GET /api/v2/scripts/mlm/zinzino/pitches/testen_statt_raten?variables={"Name":"Max"}
+    """
+    import json
+    
+    script = mlm_script_service.get_script_by_id(
+        company=mlm_company,
+        category=category,
+        script_id=script_id
+    )
+    
+    if not script:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Script '{script_id}' nicht gefunden in '{mlm_company}/{category}'"
+        )
+    
+    # Variablen ersetzen, falls angegeben
+    if variables:
+        try:
+            vars_dict = json.loads(variables)
+            script_text = script.get("text", "")
+            script["text"] = mlm_script_service.replace_variables(script_text, vars_dict)
+        except json.JSONDecodeError:
+            pass  # Ignoriere ungültiges JSON
+    
+    return {
+        "company": mlm_company,
+        "category": category,
+        "script_id": script_id,
+        **script
+    }
+
+
+@router.post("/mlm/{mlm_company}/suggest")
+async def suggest_mlm_script(
+    mlm_company: str,
+    context: str = Query(..., description="Beschreibung der Situation"),
+    channel: Optional[str] = Query(None, description="Kanal (whatsapp, instagram, linkedin)"),
+    situation_type: Optional[str] = Query(None, description="Typ (cold, warm)"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Schlägt ein passendes Script basierend auf Kontext vor.
+    
+    Beispiel: POST /api/v2/scripts/mlm/zinzino/suggest?context=einwand_zu_teuer&channel=whatsapp
+    """
+    script = mlm_script_service.suggest_script(
+        company=mlm_company,
+        context=context,
+        channel=channel,
+        situation_type=situation_type
+    )
+    
+    if not script:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Kein passendes Script gefunden für Kontext: '{context}'"
+        )
+    
+    return {
+        "company": mlm_company,
+        "context": context,
+        "suggested_script": script
+    }
+
+
+@router.get("/mlm/{mlm_company}/situation/{situation}")
+async def get_scripts_by_situation(
+    mlm_company: str,
+    situation: str,
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Findet passende Scripts basierend auf einer Situation.
+    
+    Beispiel: GET /api/v2/scripts/mlm/zinzino/situation/einwand_zu_teuer
+    """
+    scripts = mlm_script_service.get_script_by_situation(
+        company=mlm_company,
+        situation=situation
+    )
+    
+    if not scripts:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Keine Scripts gefunden für Situation: '{situation}'"
+        )
+    
+    return {
+        "company": mlm_company,
+        "situation": situation,
+        "scripts": scripts,
+        "total": len(scripts)
+    }
+
+
+@router.post("/mlm/{mlm_company}/compliance/check")
+async def check_mlm_compliance(
+    mlm_company: str,
+    text: str = Query(..., description="Zu prüfender Text"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Prüft einen Text auf MLM-spezifische Compliance-Verstöße.
+    
+    Beispiel: POST /api/v2/scripts/mlm/zinzino/compliance/check?text=Dieses Produkt heilt Krebs
+    """
+    result = mlm_script_service.check_compliance(
+        company=mlm_company,
+        text=text
+    )
+    
+    return {
+        "company": mlm_company,
+        "text": text,
+        **result
+    }
+
+
+@router.get("/mlm/companies")
+async def get_available_mlm_companies(
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Gibt alle verfügbaren MLM-Unternehmen zurück.
+    
+    Beispiel: GET /api/v2/scripts/mlm/companies
+    """
+    companies = mlm_script_service.get_available_companies()
+    
+    return {
+        "companies": companies,
+        "total": len(companies)
+    }
+
+
+@router.get("/mlm/{mlm_company}/categories")
+async def get_mlm_categories(
+    mlm_company: str,
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Gibt alle Kategorien für ein MLM-Unternehmen zurück.
+    
+    Beispiel: GET /api/v2/scripts/mlm/zinzino/categories
+    """
+    categories = mlm_script_service.get_categories_for_company(mlm_company)
+    
+    if not categories:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Keine Kategorien gefunden für '{mlm_company}'"
+        )
+    
+    return {
+        "company": mlm_company,
+        "categories": categories,
+        "total": len(categories)
     }
 

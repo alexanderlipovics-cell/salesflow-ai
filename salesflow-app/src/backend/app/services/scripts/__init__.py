@@ -22,6 +22,7 @@ from .models import (
 )
 from .service import ScriptLibraryService
 from .disg_adapter import DISGScriptAdapter
+from .mlm_script_service import MLMScriptService
 
 __all__ = [
     # Models
@@ -35,5 +36,6 @@ __all__ = [
     # Services
     "ScriptLibraryService",
     "DISGScriptAdapter",
+    "MLMScriptService",
 ]
 

@@ -35,6 +35,932 @@ CHIEF_MODE_CONFIG = {
 }
 
 # =============================================================================
+# CHIEF SCRIPTS - 50+ strukturierte Sales-Skripte
+# =============================================================================
+
+CHIEF_SCRIPTS = {
+    "pitches": {
+        "zeit_gegen_geld": {
+            "name": "Der Zeit gegen Geld Pitch",
+            "channel": ["linkedin", "instagram"],
+            "type": "cold",
+            "text": """Hallo [Name], mir ist dein professioneller Auftritt bei [MLM Firma] aufgefallen.
+
+Eine Frage: Was ist dir wichtiger - mehr Zeit oder mehr Geld?
+
+Ich kenne viele, die 60+ Stunden die Woche arbeiten und trotzdem nicht das erreichen, was sie wollen.
+
+Dabei geht es nicht darum, härter zu arbeiten - sondern intelligenter.
+
+Hast du 15 Minuten für einen kurzen Austausch, wie du mit Systemen und Automatisierung mehr erreichen kannst?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "MLM Firma"]
+        },
+        
+        "autonomer_mitarbeiter": {
+            "name": "Autonomer Mitarbeiter Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+Stell dir vor, du hättest einen Mitarbeiter, der:
+- 24/7 für dich arbeitet
+- Nie müde wird
+- Immer die richtige Nachricht zur richtigen Zeit sendet
+- Und dabei 100% konsistent ist
+
+Das ist keine Zukunftsmusik - das ist bereits Realität.
+
+Ich zeige dir, wie du mit KI-basierten Systemen dein Sales-Game auf das nächste Level bringst.
+
+Lust auf einen 15-Minuten-Call?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "compliance_angst": {
+            "name": "Compliance-Angst Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+eine Sorge, die ich oft höre: "Ich habe Angst, etwas Falsches zu sagen und Compliance-Probleme zu bekommen."
+
+Das ist verständlich - besonders in unserem Bereich.
+
+Aber: Angst lähmt. Systeme schützen.
+
+Ich zeige dir, wie du mit automatisierten Compliance-Checks sicher kommunizierst - ohne ständig zweifeln zu müssen.
+
+Lust, darüber zu sprechen?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "lead_verlust": {
+            "name": "Lead-Verlust Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+Wusstest du, dass 79% der Leads nie kontaktiert werden - nicht weil sie schlecht sind, sondern weil die Zeit fehlt?
+
+Das bedeutet: Du lässt täglich Geld auf dem Tisch liegen.
+
+Stell dir vor, du hättest ein System, das:
+- Jeden Lead automatisch qualifiziert
+- Die besten sofort priorisiert
+- Und dir die nächsten Schritte zeigt
+
+Das spart dir nicht nur Zeit - es bringt dir mehr Umsatz.
+
+Interessiert?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "mlm_spezialist": {
+            "name": "MLM-Spezialist Pitch",
+            "channel": ["linkedin", "instagram"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+ich sehe, du bist bei [MLM Firma] aktiv.
+
+Die meisten Sales-Tools sind für klassisches B2B gemacht - nicht für Network Marketing.
+
+Deshalb habe ich etwas entwickelt, das speziell für unsere Branche ist:
+- MLM-spezifische Templates
+- Compensation-Plan-Integration
+- Team-Management-Tools
+- Compliance für DACH
+
+Interessiert dich, wie das funktioniert?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "MLM Firma"]
+        },
+        
+        "predictive_insight": {
+            "name": "Predictive Insight Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "warm",
+            "text": """Hallo [Name],
+
+Was, wenn du vorhersehen könntest, welcher Lead sich zu einem Kunden entwickelt?
+
+Nicht durch Raten - sondern durch Datenanalyse und KI.
+
+Das ist möglich. Und ich zeige dir, wie.
+
+Hast du 15 Minuten?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "ghostbuster_pitch": {
+            "name": "Ghostbuster Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+Geister zu jagen macht keinen Sinn - aber geghostete Leads zurückzuholen schon.
+
+Ich habe ein System entwickelt, das:
+- Erkennt, wann jemand "ghostet"
+- Automatisch die richtige Follow-up-Strategie anwendet
+- Und so 30% mehr Leads reaktiviert
+
+Klingt interessant? Lass uns kurz sprechen.
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "anti_spam": {
+            "name": "Anti-Spam Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+Niemand mag Spam - deshalb arbeiten wir mit einem völlig anderen Ansatz:
+
+Statt 1000x die gleiche Nachricht:
+- Personalisierte Messages basierend auf Profilanalyse
+- Value-First-Ansatz (erst geben, dann nehmen)
+- Timing-Optimierung für maximale Response-Rate
+
+Das Ergebnis: 5x bessere Antwortrate.
+
+Lust, mehr zu erfahren?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "skeptiker": {
+            "name": "Skeptiker Pitch",
+            "channel": ["linkedin", "email"],
+            "type": "cold",
+            "text": """Hallo [Name],
+
+ich verstehe deine Skepsis - besonders wenn du schon schlechte Erfahrungen mit "Wunder-Tools" gemacht hast.
+
+Deshalb mein Ansatz:
+- 30 Tage kostenlos testen
+- Keine langfristige Bindung
+- Nur zahlen, wenn du Ergebnisse siehst
+
+Fair?
+
+Dann lass uns kurz sprechen.
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "kurze_frage": {
+            "name": "Kurze Frage Pitch",
+            "channel": ["linkedin", "instagram"],
+            "type": "cold",
+            "text": """Hey [Name]! 👋
+
+Kurze Frage: Was würdest du tun, wenn du jeden Tag 3 Stunden mehr Zeit hättest?
+
+[Dein Name]""",
+            "variables": ["Name"]
+        }
+    },
+    
+    "wert_fragen": {
+        "zeitwert": {
+            "name": "Zeitwert-Frage",
+            "channel": ["linkedin", "email", "whatsapp"],
+            "type": "discovery",
+            "text": """Was ist dir eine Stunde deiner Zeit wert?
+
+Und was wäre, wenn du diese Stunde jeden Tag zurückbekommst?
+
+Dann hättest du 365 Stunden mehr im Jahr - für Familie, Hobbys, Wachstum.
+
+Das ist möglich. Lass uns darüber sprechen.""",
+            "variables": []
+        },
+        
+        "verlorener_umsatz": {
+            "name": "Verlorener Umsatz-Frage",
+            "channel": ["linkedin", "email"],
+            "type": "discovery",
+            "text": """Wie viele Leads gehen dir durch die Lappen, weil du nicht die Zeit hast, sie alle zu kontaktieren?
+
+Jeder unkontaktierte Lead ist verlorener Umsatz.
+
+Was wäre, wenn du jeden Lead automatisch priorisieren und kontaktieren könntest?
+
+Das könnte dein Geschäft verändern.""",
+            "variables": []
+        },
+        
+        "compliance_kosten": {
+            "name": "Compliance-Kosten-Frage",
+            "channel": ["linkedin", "email"],
+            "type": "discovery",
+            "text": """Was würde es dich kosten, wenn du eine Compliance-Verletzung hättest?
+
+Nicht nur finanziell - sondern auch an Reputation und Vertrauen.
+
+Was wäre dir ein System wert, das das automatisch verhindert?""",
+            "variables": []
+        },
+        
+        "rang_sicherung": {
+            "name": "Rang-Sicherung-Frage",
+            "channel": ["linkedin", "email", "whatsapp"],
+            "type": "discovery",
+            "text": """Wie viel ist dir dein aktueller Rang in deinem MLM wert?
+
+Und was kostet es dich, wenn du diesen Rang verlierst, weil du nicht genug verkaufst oder rekrutierst?
+
+Stell dir vor, du hättest ein System, das dir hilft, deinen Rang automatisch zu sichern.""",
+            "variables": []
+        },
+        
+        "stress_reduktion": {
+            "name": "Stress-Reduktion-Frage",
+            "channel": ["linkedin", "email"],
+            "type": "discovery",
+            "text": """Wie viel ist dir ein stressfreierer Arbeitstag wert?
+
+Statt ständig zu denken "Habe ich alle kontaktiert? Habe ich nichts vergessen?" - einfach wissen, dass alles automatisch läuft.
+
+Was wäre dir das wert?""",
+            "variables": []
+        }
+    },
+    
+    "einwand_handling": {
+        "zu_teuer_zeitwert": {
+            "name": "Zu teuer - Zeitwert-Argument",
+            "channel": ["linkedin", "email", "whatsapp"],
+            "type": "objection",
+            "text": """Ich verstehe - €[Preis] wirkt erstmal viel.
+
+Aber lass uns das umrechnen:
+
+Du gewinnst [X] Stunden pro Woche zurück. Bei einem Stundensatz von €[Stundensatz] sind das €[Wert]/Woche.
+
+Das bedeutet: Die Investition hat sich in [Y] Wochen amortisiert.
+
+Und danach? Reiner Gewinn.
+
+Was ist dir deine Zeit wert?""",
+            "variables": ["Preis", "X", "Stundensatz", "Wert", "Y"]
+        },
+        
+        "zu_teuer_risiko": {
+            "name": "Zu teuer - Risiko-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Ich verstehe deine Bedenken.
+
+Aber schauen wir uns an, was es kostet, wenn du NICHT handelst:
+
+- Verlorene Leads: €[Verlorener_Umsatz]/Monat
+- Ineffiziente Prozesse: [X] Stunden/Woche verschwendet
+- Verpasste Chancen: [Y]% weniger Growth
+
+Das ist deutlich teurer als €[Preis]/Monat.
+
+Plus: Du kannst jederzeit kündigen - kein Risiko für dich.""",
+            "variables": ["Verlorener_Umsatz", "X", "Y", "Preis"]
+        },
+        
+        "nutze_excel": {
+            "name": "Nutze Excel - Upgrade-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Excel ist super - ich nutze es auch noch für viele Dinge!
+
+Aber schauen wir uns an, was Excel NICHT kann:
+- Automatische Lead-Qualifizierung
+- KI-generierte personalisierte Nachrichten
+- Compliance-Checks in Echtzeit
+- Multi-Channel-Automatisierung
+
+Excel ist ein Hammer - aber manchmal braucht man eine Nagelpistole.
+
+Was, wenn wir dir zeigen, wie du beides kombinierst?""",
+            "variables": []
+        },
+        
+        "mag_keine_ki": {
+            "name": "Mag keine KI - Kontrolle-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Das kann ich verstehen - KI kann beängstigend wirken.
+
+Aber hier ist der Unterschied: Du behältst die Kontrolle.
+
+- Du bestimmst, was gesendet wird
+- Du kannst jeden Schritt überprüfen
+- Du kannst jederzeit stoppen oder anpassen
+
+KI ist hier nur dein Assistent - nicht dein Chef.
+
+Du entscheidest. Die KI macht nur die langweilige Arbeit.
+
+Lust, dir das mal anzusehen?""",
+            "variables": []
+        },
+        
+        "schlechte_tools": {
+            "name": "Schlechte Tools - Vertrauen-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Ich verstehe - schlechte Erfahrungen mit Tools sind frustrierend.
+
+Deshalb mache ich es anders:
+- 30 Tage kostenlos testen
+- Keine Kreditkarte nötig
+- Du siehst sofort Ergebnisse - oder nicht
+- Einfache Kündigung
+
+Keine Versprechen. Nur Ergebnisse.
+
+Lust, es auszuprobieren?""",
+            "variables": []
+        },
+        
+        "keine_zeit": {
+            "name": "Keine Zeit - Zeit-Spar-Argument",
+            "channel": ["linkedin", "email", "whatsapp"],
+            "type": "objection",
+            "text": """Genau deshalb brauchst du es!
+
+Wenn du keine Zeit hast, ist das der beste Grund, etwas zu automatisieren.
+
+10 Minuten Setup - dann läuft es automatisch.
+
+Du gewinnst [X] Stunden pro Woche zurück.
+
+Was würdest du mit dieser Zeit machen?""",
+            "variables": ["X"]
+        },
+        
+        "nicht_technikaffin": {
+            "name": "Nicht technikaffin - Einfachheit-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Keine Sorge - das ist auch ohne technisches Wissen möglich!
+
+Das System ist so einfach wie WhatsApp benutzen.
+
+- Klicken, nicht programmieren
+- Vorlagen, keine Formeln
+- Support, wenn du Hilfe brauchst
+
+Wenn du eine Nachricht schreiben kannst, kannst du das auch nutzen.
+
+Lust, dir zeigen zu lassen, wie einfach es ist?""",
+            "variables": []
+        },
+        
+        "mache_selbst": {
+            "name": "Mache selbst - Effizienz-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Respekt - es selbst zu machen zeigt Eigeninitiative!
+
+Aber schauen wir uns die Zahlen an:
+
+Wenn du [X] Stunden/Woche für [Tätigkeit] brauchst und diese automatisieren könntest:
+- Was könntest du in dieser Zeit stattdessen machen?
+- Wie viel mehr Umsatz könntest du generieren?
+- Wie viel weniger Stress hättest du?
+
+Manchmal ist "selber machen" nicht die beste Strategie - besonders wenn die Zeit besser investiert werden kann.""",
+            "variables": ["X", "Tätigkeit"]
+        },
+        
+        "warte_ab": {
+            "name": "Warte ab - Opportunitätskosten-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Ich verstehe - manchmal ist warten sinnvoll.
+
+Aber schauen wir uns an, was Warten kostet:
+
+Jeden Tag, den du wartest:
+- Verlierst du [X] Leads
+- Verbringst du [Y] Stunden mit manueller Arbeit
+- Verpasst du [Z]€ potenziellen Umsatz
+
+Was, wenn du es 30 Tage kostenlos testest? Dann wartest du mit garantierten Ergebnissen.""",
+            "variables": ["X", "Y", "Z"]
+        },
+        
+        "traue_ki_nicht": {
+            "name": "Traue KI nicht - Sicherheit-Argument",
+            "channel": ["linkedin", "email"],
+            "type": "objection",
+            "text": """Das ist eine sehr verantwortungsvolle Einstellung - Respekt!
+
+Deshalb:
+- Du behältst volle Kontrolle
+- Jede Nachricht kann vorher überprüft werden
+- Compliance-Checks schützen dich zusätzlich
+- Du bestimmst die Regeln
+
+KI ist hier nur ein Werkzeug - wie ein Auto. Du bestimmst, wohin die Fahrt geht.
+
+Lust, dir zu zeigen, wie sicher das ist?""",
+            "variables": []
+        }
+    },
+    
+    "follow_up": {
+        "nach_demo": {
+            "name": "Nach Demo Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+vielen Dank für deine Zeit heute bei der Demo!
+
+Wie versprochen, hier nochmal die wichtigsten Punkte:
+- [Punkt 1]
+- [Punkt 2]
+- [Punkt 3]
+
+Was denkst du - passt das zu deinen Zielen?
+
+Falls ja, können wir gerne den nächsten Schritt besprechen.
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Punkt 1", "Punkt 2", "Punkt 3"]
+        },
+        
+        "24h_später": {
+            "name": "24h später Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hey [Name]! 👋
+
+Gestern haben wir über [Thema] gesprochen.
+
+Hast du noch Fragen? Oder gibt es etwas, das dich noch beschäftigt?
+
+Ich bin hier, um zu helfen.
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "wert_addieren": {
+            "name": "Wert-addierender Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+ich dachte an unser Gespräch und wollte dir noch einen Tipp geben:
+
+[Tipp/Value Content]
+
+Das könnte auch für dich relevant sein.
+
+Falls du Fragen hast oder mehr wissen willst, sag einfach Bescheid!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Tipp/Value Content"]
+        },
+        
+        "nächster_schritt": {
+            "name": "Nächster Schritt Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+um weiterzumachen, wäre der nächste Schritt:
+
+[Nächster Schritt]
+
+Passt dir [Terminvorschlag] dafür? Oder hast du einen anderen Termin?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Nächster Schritt", "Terminvorschlag"]
+        },
+        
+        "social_proof": {
+            "name": "Social Proof Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+kurze Info: [Ähnliches_Unternehmen/Person] hat gerade [Erfolg] erreicht - mit unserer Lösung.
+
+Vielleicht interessiert dich, wie?
+
+Falls ja, können wir gerne kurz sprechen.
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Ähnliches_Unternehmen/Person", "Erfolg"]
+        },
+        
+        "credits_fast_leer": {
+            "name": "Credits fast leer Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+ich sehe, dass deine Test-Credits fast aufgebraucht sind.
+
+Das ist eigentlich ein gutes Zeichen - es bedeutet, dass du das System aktiv nutzt!
+
+Möchtest du upgraden, um weiterzumachen? Oder hast du noch Fragen?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "urgency": {
+            "name": "Urgency Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+kurze Info: [Angebot/Deadline] ist nur noch bis [Datum] verfügbar.
+
+Da du Interesse hattest, dachte ich, ich melde mich kurz.
+
+Sollen wir nochmal kurz sprechen?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Angebot/Deadline", "Datum"]
+        },
+        
+        "sanfter_stupser": {
+            "name": "Sanfter Stupser Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hey [Name]! 👋
+
+Nur kurz: Wie läuft es mit [Thema]?
+
+Falls du Fragen hast oder Hilfe brauchst, sag einfach Bescheid!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "roi": {
+            "name": "ROI Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+ich habe eine kleine ROI-Berechnung für dich gemacht:
+
+[ROI-Berechnung]
+
+Das könnte sich für dich lohnen. Was denkst du?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "ROI-Berechnung"]
+        },
+        
+        "finaler_checkin": {
+            "name": "Finaler Check-in Follow-up",
+            "channel": ["linkedin", "email"],
+            "type": "follow_up",
+            "text": """Hallo [Name],
+
+letzter Check-in: Ist [Thema] für dich noch relevant?
+
+Falls ja, lass uns den nächsten Schritt gehen.
+Falls nein, auch okay - dann melde ich mich nicht mehr.
+
+Was denkst du?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        }
+    },
+    
+    "ghostbuster": {
+        "gelesen_nicht_geantwortet": {
+            "name": "Gelesen, nicht geantwortet",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hey [Name]! 👋
+
+Ich sehe, du hast meine Nachricht gelesen, aber noch nicht geantwortet.
+
+Kein Problem - vielleicht hattest du einfach keine Zeit.
+
+Kurze Frage: Ist [Thema] für dich noch interessant?
+
+Falls ja: Lass uns kurz sprechen.
+Falls nein: Sag einfach Bescheid - dann melde ich mich nicht mehr.
+
+Alles gut! 😊
+
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "meta_ghostbuster": {
+            "name": "Meta Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hey [Name]! 😄
+
+Okay, ich sehe es - du ghostest mich! 😂
+
+Kleiner Spaß. Aber mal ehrlich: Passiert mir auch ständig - zu viele Nachrichten, zu wenig Zeit.
+
+Vielleicht ist [Thema] einfach nicht der richtige Zeitpunkt für dich?
+
+Falls doch: Sag einfach Bescheid!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "multiple_choice": {
+            "name": "Multiple Choice Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hey [Name]! 👋
+
+Schnelle Frage - einfach A, B oder C antworten:
+
+A) Interessiert mich, aber gerade keine Zeit
+B) Nicht relevant für mich
+C) Lass uns sprechen!
+
+So einfach. 😊
+
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "prioritäten_check": {
+            "name": "Prioritäten-Check Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hallo [Name],
+
+ich vermute, [Thema] ist gerade einfach nicht deine Priorität.
+
+Das ist völlig okay!
+
+Falls sich das ändert oder du Fragen hast, melde dich einfach.
+
+Ich bin da, wenn du bereit bist.
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "einfacher_ausweg": {
+            "name": "Einfacher Ausweg Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hey [Name]! 👋
+
+Ich will dir nicht auf die Nerven gehen.
+
+Falls du kein Interesse hast, antworte einfach "Nein danke" - dann melde ich mich nicht mehr.
+
+Falls doch: Lass uns kurz sprechen!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name"]
+        },
+        
+        "pattern_interrupt": {
+            "name": "Pattern Interrupt Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hey [Name]! 🤔
+
+Komische Frage, aber: Was war das letzte Mal, als du etwas getan hast, das dein Business wirklich vorangebracht hat?
+
+[Thought-provoking Content]
+
+Falls du Lust auf einen Austausch hast, sag Bescheid!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thought-provoking Content"]
+        },
+        
+        "value_bump": {
+            "name": "Value Bump Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hallo [Name],
+
+ohne Verkaufsdruck - hier ist ein Tipp, den ich gerade teile:
+
+[Value Content/Tipp]
+
+Vielleicht hilft dir das weiter.
+
+Falls du mehr wissen willst, sag Bescheid!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Value Content/Tipp"]
+        },
+        
+        "empathisch": {
+            "name": "Empathischer Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hallo [Name],
+
+ich weiß, wie es ist - zu viele Nachrichten, zu wenig Zeit.
+
+Deshalb kurz und schmerzlos: Ist [Thema] für dich noch interessant?
+
+Falls ja: Lass uns einen Termin finden.
+Falls nein: Alles gut - dann melde ich mich nicht mehr.
+
+Was denkst du?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "archivieren": {
+            "name": "Archivieren Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hallo [Name],
+
+ich vermute, jetzt ist einfach nicht der richtige Zeitpunkt.
+
+Deshalb: Ich werde dich erstmal in Ruhe lassen.
+
+Falls du in Zukunft Interesse an [Thema] hast, melde dich einfach.
+
+Die Tür bleibt offen.
+
+Alles Gute!
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        },
+        
+        "breakup": {
+            "name": "Breakup Ghostbuster",
+            "channel": ["linkedin", "email"],
+            "type": "ghostbuster",
+            "text": """Hallo [Name],
+
+ich habe gemerkt, dass du wahrscheinlich gerade andere Prioritäten hast.
+
+Das ist völlig okay - ich verstehe das voll und ganz.
+
+Falls du in Zukunft doch Interesse an [Thema] hast, melde dich einfach.
+
+Die Tür bleibt offen.
+
+Wünsche dir alles Gute!
+[Dein Name]""",
+            "variables": ["Name", "Thema"]
+        }
+    },
+    
+    "closing": {
+        "optionen_close": {
+            "name": "Optionen Close",
+            "channel": ["linkedin", "email", "whatsapp"],
+            "type": "closing",
+            "text": """Hallo [Name],
+
+super, dass du Interesse hast!
+
+Wir haben zwei Optionen:
+
+Option A: [Option A mit Preis/Vorteilen]
+Option B: [Option B mit Preis/Vorteilen]
+
+Welche passt besser zu dir? Oder soll ich dir beide nochmal genauer erklären?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Option A mit Preis/Vorteilen", "Option B mit Preis/Vorteilen"]
+        },
+        
+        "ltd_dringlichkeit": {
+            "name": "LTD Dringlichkeit Close",
+            "channel": ["linkedin", "email"],
+            "type": "closing",
+            "text": """Hallo [Name],
+
+kurze Info: Wir haben noch [Anzahl] Plätze für unser [Angebot] frei - nur noch bis [Datum].
+
+Da du Interesse hattest, wollte ich dir die Chance geben, dabei zu sein.
+
+Sollen wir das jetzt machen, bevor es zu spät ist?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Anzahl", "Angebot", "Datum"]
+        },
+        
+        "kosten_des_wartens": {
+            "name": "Kosten des Wartens Close",
+            "channel": ["linkedin", "email"],
+            "type": "closing",
+            "text": """Hallo [Name],
+
+lass uns kurz rechnen:
+
+Jeden Monat, den du wartest, kostet dich das:
+- [Verlorener_Umsatz]€ an Umsatz
+- [X] Stunden an verschwendeter Zeit
+- [Y] verlorene Leads
+
+Das sind [Gesamtkosten]€, die du "verlierst", während du wartest.
+
+Was, wenn wir heute starten?
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Verlorener_Umsatz", "X", "Y", "Gesamtkosten"]
+        },
+        
+        "choice_close": {
+            "name": "Choice Close",
+            "channel": ["linkedin", "email", "whatsapp"],
+            "type": "closing",
+            "text": """Hey [Name]! 👋
+
+Okay, du bist dabei - super!
+
+Nur noch eine Frage: Willst du mit [Option 1] oder [Option 2] starten?
+
+Welche passt besser?
+
+[Dein Name]""",
+            "variables": ["Name", "Option 1", "Option 2"]
+        },
+        
+        "onboarding_close": {
+            "name": "Onboarding Close",
+            "channel": ["linkedin", "email"],
+            "type": "closing",
+            "text": """Hallo [Name],
+
+perfekt! Willkommen an Bord! 🎉
+
+Als Nächstes:
+1. [Schritt 1]
+2. [Schritt 2]
+3. [Schritt 3]
+
+Ich helfe dir bei jedem Schritt. Falls du Fragen hast, melde dich einfach!
+
+Freue mich auf die Zusammenarbeit!
+
+Grüße
+[Dein Name]""",
+            "variables": ["Name", "Schritt 1", "Schritt 2", "Schritt 3"]
+        }
+    }
+}
+
+# =============================================================================
 # CHIEF OUTREACH SCRIPTS - 50+ Skripte für verschiedene Branchen
 # =============================================================================
 
@@ -1144,4 +2070,57 @@ def get_investor_brief_template(variables: Dict[str, Any]) -> str:
         return template.format(**variables)
     except KeyError:
         return template
+
+def get_chief_script(category: str, script_key: str, variables: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
+    """
+    Gibt ein CHIEF Script zurück.
+    
+    Args:
+        category: Kategorie (pitches, wert_fragen, einwand_handling, follow_up, ghostbuster, closing)
+        script_key: Key des spezifischen Skripts
+        variables: Optional dict mit Variablen zum Ersetzen (z.B. {"Name": "Max", "Thema": "Sales"})
+        
+    Returns:
+        Script-Dictionary mit name, channel, type, text (formatiert) oder None
+    """
+    variables = variables or {}
+    
+    category_dict = CHIEF_SCRIPTS.get(category)
+    if not category_dict:
+        return None
+    
+    script = category_dict.get(script_key)
+    if not script:
+        return None
+    
+    # Format text with variables
+    formatted_text = script.get("text", "")
+    try:
+        # Replace [Variable] format
+        for key, value in variables.items():
+            formatted_text = formatted_text.replace(f"[{key}]", str(value))
+    except Exception:
+        pass
+    
+    return {
+        "name": script.get("name"),
+        "channel": script.get("channel", []),
+        "type": script.get("type"),
+        "text": formatted_text,
+        "variables": script.get("variables", []),
+    }
+
+def get_all_chief_scripts(category: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Gibt alle CHIEF Scripts zurück, optional gefiltert nach Kategorie.
+    
+    Args:
+        category: Optional - wenn angegeben, nur diese Kategorie zurückgeben
+        
+    Returns:
+        Dictionary mit allen Scripts oder nur die gewählte Kategorie
+    """
+    if category:
+        return CHIEF_SCRIPTS.get(category, {})
+    return CHIEF_SCRIPTS
 

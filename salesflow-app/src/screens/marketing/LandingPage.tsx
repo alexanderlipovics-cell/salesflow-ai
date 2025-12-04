@@ -134,6 +134,54 @@ const USPS = [
   },
 ];
 
+const FELLO_FEATURES = [
+  {
+    id: 'mentor',
+    icon: '🤖',
+    title: 'MENTOR - KI-Vertriebscoach',
+    description: 'Formuliert Antworten, Follow-ups, Einwand-Behandlung',
+    details: 'Im Tonfall von dir/deinem Team',
+    highlight: 'Deine Leute müssen nicht mehr fragen...',
+    color: COLORS.accent,
+  },
+  {
+    id: 'compliance',
+    icon: '🛡️',
+    title: 'Compliance-Schutz (HWG/DSGVO)',
+    description: 'Problematische Aussagen markiert',
+    details: 'Saubere Alternativen vorgeschlagen',
+    highlight: 'Massive Risikominimierung',
+    color: COLORS.primary,
+  },
+  {
+    id: 'mlm',
+    icon: '🔗',
+    title: 'MLM- & Network-Funktionen',
+    description: 'Zinzino, doTERRA, Herbalife Parser',
+    details: 'Campaign Templates & Duplizierung der besten Formulierungen',
+    highlight: 'Skalierbare Team-Performance',
+    color: COLORS.discYellow,
+  },
+  {
+    id: 'ghostbuster',
+    icon: '👻',
+    title: 'Ghostbuster Re-Engagement',
+    description: 'Schlafende Kontakte reaktivieren',
+    details: 'Automatische Vorschläge',
+    highlight: 'Aus "die melden sich eh nicht mehr" wird...',
+    color: COLORS.discBlue,
+  },
+  {
+    id: 'automation',
+    icon: '📊',
+    title: 'Automatisierung & Finance',
+    description: 'Auto-Sequenzen & Alerts',
+    details: 'CFO-Dashboard',
+    highlight: 'Vollständige Transparenz & Kontrolle',
+    color: COLORS.discGreen,
+  },
+];
+
 const VERTICALS = [
   {
     id: 'network',
@@ -244,6 +292,36 @@ const PRICING = [
     ],
     cta: 'Enterprise anfragen',
     popular: false,
+  },
+];
+
+const TARGET_AUDIENCE = [
+  { emoji: '🔹', text: 'Networker & MLM-Leader' },
+  { emoji: '🔹', text: 'Makler & Makler-Büros' },
+  { emoji: '🔹', text: 'Coaches, Trainer & Dienstleister' },
+  { emoji: '🔹', text: 'Alle mit ungenutzter Kontaktliste' },
+];
+
+const FAQ_ITEMS = [
+  {
+    question: 'Warum nicht einfach ChatGPT?',
+    answer: 'ChatGPT ist wie ein Rohbau – FELLO ist das fertige Haus. Wir haben Compliance, Knowledge Base, Einwandbehandlung und Branding bereits integriert. Du musst nicht mehr programmieren, prompten oder Risiken eingehen.',
+  },
+  {
+    question: 'Lohnt sich das für mich als Einzelperson?',
+    answer: 'Wenn du 1-2 Stunden sparst oder 1 Deal mehr machst, hat sich FELLO bereits bezahlt gemacht. Die meisten Nutzer sehen ROI in der ersten Woche.',
+  },
+  {
+    question: 'Ist FELLO kompliziert?',
+    answer: 'Nein. Wenn du WhatsApp bedienen kannst, kannst du FELLO nutzen. Unser Setup dauert 10 Minuten, danach läuft alles automatisch.',
+  },
+  {
+    question: 'Was nach 14 Tagen?',
+    answer: 'FREE bleiben oder kündigen. Kein Risiko. Keine Kreditkarte nötig. Du entscheidest, ob FELLO für dich funktioniert.',
+  },
+  {
+    question: 'Wie sicher sind meine Daten?',
+    answer: 'Moderne, sichere Infrastruktur mit DSGVO-Konformität, EU-Servern und Enterprise-Security. Deine Kontakte und Gespräche bleiben privat und geschützt.',
   },
 ];
 
@@ -396,6 +474,91 @@ const FeatureCard = ({ item, index }: { item: typeof USPS[0]; index: number }) =
   );
 };
 
+// FELLO Feature Block (Alternating Layout)
+const FelloFeatureBlock = ({ item, index }: { item: typeof FELLO_FEATURES[0]; index: number }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(index % 2 === 0 ? -50 : 50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        delay: index * 150,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 7,
+        delay: index * 150,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        delay: index * 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+  
+  const isEven = index % 2 === 0;
+  
+  return (
+    <Animated.View 
+      style={[
+        styles.felloFeatureContainer,
+        {
+          opacity: fadeAnim,
+          transform: [
+            { translateX: slideAnim },
+            { scale: scaleAnim },
+          ],
+        }
+      ]}
+    >
+      <View style={[
+        styles.felloFeatureBlock,
+        isEven ? styles.felloFeatureLeft : styles.felloFeatureRight,
+        { borderColor: item.color + '40' },
+      ]}>
+        {/* Icon Section */}
+        <View style={[
+          styles.felloIconSection,
+          { backgroundColor: item.color + '15' },
+        ]}>
+          <Text style={styles.felloIcon}>{item.icon}</Text>
+          <View style={[styles.felloIconGlow, { backgroundColor: item.color + '30' }]} />
+        </View>
+        
+        {/* Content Section */}
+        <View style={styles.felloContentSection}>
+          <Text style={[styles.felloFeatureTitle, { color: item.color }]}>
+            {item.title}
+          </Text>
+          <Text style={styles.felloFeatureDescription}>
+            {item.description}
+          </Text>
+          <Text style={styles.felloFeatureDetails}>
+            {item.details}
+          </Text>
+          <View style={[styles.felloHighlightBox, { backgroundColor: item.color + '20', borderColor: item.color + '40' }]}>
+            <Text style={[styles.felloHighlightText, { color: item.color }]}>
+              "{item.highlight}"
+            </Text>
+          </View>
+        </View>
+        
+        {/* Decorative Accent */}
+        <View style={[styles.felloAccentLine, { backgroundColor: item.color }]} />
+      </View>
+    </Animated.View>
+  );
+};
+
 // Vertical Tab
 const VerticalTab = ({ 
   item, 
@@ -461,6 +624,81 @@ const PricingCard = ({ item }: { item: typeof PRICING[0] }) => (
     />
   </View>
 );
+
+// FAQ Accordion Item
+const FAQItem = ({ 
+  item, 
+  index 
+}: { 
+  item: typeof FAQ_ITEMS[0]; 
+  index: number;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const heightAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(rotateAnim, {
+        toValue: isOpen ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(heightAnim, {
+        toValue: isOpen ? 1 : 0,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: isOpen ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isOpen]);
+  
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+  
+  const maxHeight = heightAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 300],
+  });
+  
+  return (
+    <View style={styles.faqItem}>
+      <TouchableOpacity
+        onPress={() => setIsOpen(!isOpen)}
+        style={styles.faqQuestionRow}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.faqQuestion}>{item.question}</Text>
+        <Animated.View style={{ transform: [{ rotate }] }}>
+          <Ionicons 
+            name="chevron-down" 
+            size={20} 
+            color={COLORS.primary} 
+          />
+        </Animated.View>
+      </TouchableOpacity>
+      <Animated.View 
+        style={[
+          styles.faqAnswerContainer,
+          {
+            opacity: opacityAnim,
+            maxHeight: maxHeight,
+            overflow: 'hidden',
+          }
+        ]}
+      >
+        <Text style={styles.faqAnswer}>{item.answer}</Text>
+      </Animated.View>
+    </View>
+  );
+};
 
 // =============================================================================
 // MAIN COMPONENT
@@ -629,6 +867,23 @@ export default function LandingPage() {
       </View>
       
       {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* FELLO FEATURES SECTION */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>FELLO FEATURES</Text>
+        <Text style={styles.sectionHeadline}>
+          Was deine Sales-KI FELLO{'\n'}
+          <Text style={{ color: COLORS.primary }}>für dich übernimmt</Text>
+        </Text>
+        
+        <View style={styles.felloFeaturesContainer}>
+          {FELLO_FEATURES.map((feature, i) => (
+            <FelloFeatureBlock key={feature.id} item={feature} index={i} />
+          ))}
+        </View>
+      </View>
+      
+      {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* VERTICALS SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <View style={styles.section}>
@@ -703,32 +958,133 @@ export default function LandingPage() {
       </View>
       
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* CTA SECTION */}
+      {/* FÜR WEN SECTION */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <View style={styles.section}>
+        <Text style={styles.sectionHeadline}>
+          Wer profitiert am meisten von FELLO?
+        </Text>
+        
+        <View style={styles.targetAudienceList}>
+          {TARGET_AUDIENCE.map((item, i) => (
+            <View key={i} style={styles.targetAudienceItem}>
+              <Text style={styles.targetAudienceEmoji}>{item.emoji}</Text>
+              <Text style={styles.targetAudienceText}>{item.text}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+      
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* FAQ SECTION */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <View style={[styles.section, { backgroundColor: COLORS.bgCard }]}>
+        <Text style={styles.sectionLabel}>FAQ</Text>
+        <Text style={styles.sectionHeadline}>
+          Häufige Fragen
+        </Text>
+        
+        <View style={styles.faqContainer}>
+          {FAQ_ITEMS.map((item, i) => (
+            <FAQItem key={i} item={item} index={i} />
+          ))}
+        </View>
+      </View>
+      
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* FINAL CTA SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <LinearGradient
-        colors={[COLORS.primary + '20', COLORS.bgDark]}
-        style={styles.ctaSection}
+        colors={[COLORS.primary + '30', COLORS.primaryDark + '20', COLORS.bgDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.finalCtaSection}
       >
-        <Text style={styles.ctaHeadline}>
-          Bereit, dein Vertriebsteam{'\n'}zu transformieren?
+        <Text style={styles.finalCtaHeadline}>
+          Deine Kontaktliste ist schon Gold – FELLO holt es nur raus.
         </Text>
-        <Text style={styles.ctaSubheadline}>
-          30 Minuten Demo. Keine Verpflichtung. Echte Insights.
+        <Text style={styles.finalCtaText}>
+          Du brauchst keine neuen Wunder-Strategien. Du brauchst nur ein System, das deine bestehenden Kontakte automatisch aktiviert und pflegt.
         </Text>
         <GlowButton 
-          title="Jetzt Demo buchen"
-          onPress={handleCTA}
+          title="Jetzt FREE-Account erstellen"
+          onPress={handleSignUp}
           variant="primary"
           icon="rocket-outline"
           size="large"
         />
+        <Text style={styles.finalCtaTrust}>
+          14 Tage testen. Keine Kreditkarte.
+        </Text>
       </LinearGradient>
       
-      {/* Footer */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* FOOTER */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
       <View style={styles.footer}>
-        <Text style={styles.footerLogo}>AURA OS</Text>
-        <Text style={styles.footerText}>
-          © 2024 AURA OS • Made with 💚 in Germany
+        <Text style={styles.footerLogo}>FELLO</Text>
+        
+        <View style={styles.footerLinks}>
+          <View style={styles.footerLinkColumn}>
+            <Text style={styles.footerLinkTitle}>Features</Text>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Live Assist</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Einwand-Brain</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Knowledge Base</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.footerLinkColumn}>
+            <Text style={styles.footerLinkTitle}>Unternehmen</Text>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Pricing</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>FAQ</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Blog</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Kontakt</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.footerLinkColumn}>
+            <Text style={styles.footerLinkTitle}>Legal</Text>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Impressum</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>Datenschutz</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.footerLink}>AGB</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        <View style={styles.footerSocial}>
+          <TouchableOpacity 
+            onPress={() => Linking.openURL('https://linkedin.com/company/fello')}
+            style={styles.footerSocialIcon}
+          >
+            <Ionicons name="logo-linkedin" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => Linking.openURL('https://instagram.com/fello')}
+            style={styles.footerSocialIcon}
+          >
+            <Ionicons name="logo-instagram" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+        
+        <Text style={styles.footerCopyright}>
+          © 2024 FELLO
         </Text>
       </View>
     </ScrollView>
@@ -1090,43 +1446,143 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   
-  // CTA
-  ctaSection: {
+  // Target Audience
+  targetAudienceList: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    gap: 16,
+  },
+  targetAudienceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  targetAudienceEmoji: {
+    fontSize: 20,
+  },
+  targetAudienceText: {
+    fontSize: 18,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  
+  // FAQ
+  faqContainer: {
+    maxWidth: 800,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  faqItem: {
+    backgroundColor: COLORS.bgDark,
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.textMuted + '20',
+    overflow: 'hidden',
+  },
+  faqQuestionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+  },
+  faqQuestion: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    flex: 1,
+    marginRight: 16,
+  },
+  faqAnswerContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  faqAnswer: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    lineHeight: 24,
+  },
+  
+  // Final CTA
+  finalCtaSection: {
     paddingVertical: 100,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
-  ctaHeadline: {
+  finalCtaHeadline: {
     fontSize: isWeb ? 42 : 28,
     fontWeight: '800',
     color: COLORS.textPrimary,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    lineHeight: isWeb ? 52 : 36,
   },
-  ctaSubheadline: {
+  finalCtaText: {
     fontSize: 18,
     color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 28,
+    maxWidth: 700,
     marginBottom: 40,
+  },
+  finalCtaTrust: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: 20,
   },
   
   // Footer
   footer: {
-    paddingVertical: 40,
+    paddingVertical: 60,
     paddingHorizontal: 24,
-    alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: COLORS.textMuted + '20',
+    backgroundColor: COLORS.bgCard,
   },
   footerLogo: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.primary,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  footerLinks: {
+    flexDirection: isWeb ? 'row' : 'column',
+    justifyContent: 'center',
+    gap: isWeb ? 60 : 32,
+    marginBottom: 40,
+    flexWrap: 'wrap',
+  },
+  footerLinkColumn: {
+    alignItems: isWeb ? 'flex-start' : 'center',
+    minWidth: 150,
+  },
+  footerLinkTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  footerLink: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
     marginBottom: 8,
   },
-  footerText: {
+  footerSocial: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 32,
+  },
+  footerSocialIcon: {
+    padding: 8,
+  },
+  footerCopyright: {
     fontSize: 14,
     color: COLORS.textMuted,
+    textAlign: 'center',
   },
   
   // Buttons
@@ -1157,6 +1613,95 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '800',
     color: COLORS.primary,
+  },
+  
+  // FELLO Features
+  felloFeaturesContainer: {
+    maxWidth: 1000,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  felloFeatureContainer: {
+    marginBottom: 48,
+  },
+  felloFeatureBlock: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 24,
+    padding: isWeb ? 32 : 24,
+    borderWidth: 1,
+    position: 'relative',
+    overflow: 'hidden',
+    flexDirection: isWeb ? 'row' : 'column',
+    alignItems: isWeb ? 'center' : 'flex-start',
+    gap: 32,
+    minHeight: isWeb ? 200 : 'auto',
+  },
+  felloFeatureLeft: {
+    flexDirection: isWeb ? 'row' : 'column',
+  },
+  felloFeatureRight: {
+    flexDirection: isWeb ? 'row-reverse' : 'column',
+  },
+  felloIconSection: {
+    width: isWeb ? 120 : 100,
+    height: isWeb ? 120 : 100,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    flexShrink: 0,
+    alignSelf: isWeb ? 'auto' : 'center',
+  },
+  felloIcon: {
+    fontSize: 56,
+    zIndex: 2,
+  },
+  felloIconGlow: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    opacity: 0.5,
+  },
+  felloContentSection: {
+    flex: 1,
+    gap: 12,
+    width: isWeb ? 'auto' : '100%',
+  },
+  felloFeatureTitle: {
+    fontSize: isWeb ? 28 : 22,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  felloFeatureDescription: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
+    lineHeight: 24,
+  },
+  felloFeatureDetails: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
+  },
+  felloHighlightBox: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  felloHighlightText: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontStyle: 'italic',
+    lineHeight: 22,
+  },
+  felloAccentLine: {
+    position: 'absolute',
+    width: 4,
+    height: '100%',
+    left: 0,
+    top: 0,
   },
 });
 
