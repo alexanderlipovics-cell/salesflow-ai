@@ -18,6 +18,7 @@ interface QuickAction {
 interface QuickActionsProps {
   onActionPress: (actionId: string) => void;
   contactId?: string | null; // Wenn gesetzt, werden kontakt-spezifische Actions angezeigt
+  isChief?: boolean; // CHIEF Mode aktiviert?
 }
 
 // Alle verfügbaren Quick Actions
@@ -80,21 +81,56 @@ const ALL_QUICK_ACTIONS: QuickAction[] = [
   },
 ];
 
-export const QuickActions: React.FC<QuickActionsProps> = ({ onActionPress, contactId }) => {
+// CHIEF Mode Extra Actions (nur für Founder)
+const CHIEF_QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: 'lead_hunter',
+    label: 'Lead-Hunter',
+    icon: '🎯',
+    context: 'general',
+  },
+  {
+    id: 'deal_analyze',
+    label: 'Deal analysieren',
+    icon: '💰',
+    context: 'contact',
+  },
+  {
+    id: 'cfo_check',
+    label: 'CFO Check',
+    icon: '📊',
+    context: 'general',
+  },
+  {
+    id: 'investor_brief',
+    label: 'Investor Brief',
+    icon: '🤝',
+    context: 'general',
+  },
+];
+
+export const QuickActions: React.FC<QuickActionsProps> = ({ onActionPress, contactId, isChief = false }) => {
   // Filtere Actions basierend auf Kontext
   const visibleActions = useMemo(() => {
+    let actions = [...ALL_QUICK_ACTIONS];
+    
+    // CHIEF Actions hinzufügen wenn aktiviert
+    if (isChief) {
+      actions = [...actions, ...CHIEF_QUICK_ACTIONS];
+    }
+    
     if (contactId) {
       // Wenn Contact ausgewählt: zeige 'both' und 'contact' Actions
-      return ALL_QUICK_ACTIONS.filter(
+      return actions.filter(
         (action) => action.context === 'both' || action.context === 'contact'
       );
     } else {
       // Ohne Contact: zeige 'both' und 'general' Actions
-      return ALL_QUICK_ACTIONS.filter(
+      return actions.filter(
         (action) => action.context === 'both' || action.context === 'general'
       );
     }
-  }, [contactId]);
+  }, [contactId, isChief]);
 
   return (
     <View style={styles.container}>

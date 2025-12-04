@@ -8,6 +8,33 @@
 from typing import Dict, List, Any, Optional
 
 # =============================================================================
+# CHIEF MODE CONFIGURATION
+# =============================================================================
+
+CHIEF_MODE_CONFIG = {
+    "enabled_users": [
+        "alexander.lipovics@gmail.com",
+    ],
+    "feature_flags": {
+        "all_outreach_scripts": True,
+        "advanced_objection_handling": True,
+        "deal_medic": True,
+        "ceo_module": True,
+        "investor_briefs": True,
+        "unlimited_api_calls": True,
+        "extended_system_prompts": True,
+        "bant_analysis": True,
+        "pipeline_review": True,
+        "cfo_check": True,
+    },
+    "limits": {
+        "api_calls_per_day": None,  # Kein Limit
+        "tokens_per_request": None,  # Kein Limit
+        "max_context_length": None,  # Kein Limit
+    },
+}
+
+# =============================================================================
 # CHIEF OUTREACH SCRIPTS - 50+ Skripte für verschiedene Branchen
 # =============================================================================
 
@@ -217,6 +244,191 @@ Grüße
 # =============================================================================
 # EINWANDBEHANDLUNG FÜR SALESFLOW AI
 # =============================================================================
+
+# Einwandbehandlung speziell für SalesFlow AI
+EINWAND_HANDLING_SALESFLOW = {
+    "zu_teuer": {
+        "framework": "ROI-Argument",
+        "responses": [
+            """Ich verstehe - €{price} wirkt erstmal viel.
+
+Aber schauen wir uns an, was du dafür bekommst:
+
+✅ Automatische Lead-Qualifizierung → Spart dir {time_saved} Stunden/Woche
+✅ KI-generierte Follow-ups → {response_rate}% bessere Antwortrate
+✅ Pipeline-Optimierung → {conversion_boost}% mehr Deals
+
+Das bedeutet: Du generierst zusätzliche €{additional_revenue} pro Monat.
+
+ROI: {roi_percentage}% - deine Investition ist in {payback_months} Monaten zurück.""",
+
+            """Was kostet dich das aktuell, wenn du MANUELL arbeitest?
+
+Stunden pro Woche für Lead-Qualifizierung: {current_hours}
+Dein Stundensatz: €{hourly_rate}
+Kosten pro Monat: €{current_cost}
+
+SalesFlow AI kostet €{price}/Monat - aber du sparst €{savings}/Monat und generierst zusätzlich €{additional_revenue}.
+
+Netto-Gewinn: €{net_benefit}/Monat""",
+
+            """Was, wenn wir es so strukturieren:
+
+✅ Start mit Basis-Paket: €{starter_price}/Monat
+✅ Du siehst die ersten Ergebnisse
+✅ Dann upgraden wir schrittweise
+
+Oder: Jährliche Zahlung mit 20% Rabatt = €{yearly_price}/Jahr""",
+        ],
+        "closing_questions": [
+            "Wenn der Preis kein Hindernis wäre, würdest du sofort starten?",
+            "Was müsste passieren, damit sich €{price}/Monat für dich lohnt?",
+            "Was kostet es dich, wenn du noch 3 Monate MANUELL arbeitest?",
+        ],
+    },
+
+    "hab_schon_chatgpt": {
+        "framework": "Spezialisierung",
+        "responses": [
+            """Super, dass du ChatGPT nutzt! Das zeigt, dass du technikaffin bist.
+
+Aber ChatGPT ist ein GENERALIST - SalesFlow AI ist ein SPEZIALIST für Sales:
+
+✅ ChatGPT: Allgemeine Antworten
+✅ SalesFlow AI: Branchen-spezifische Sales-Skripte, BANT-Analyse, Pipeline-Optimierung
+
+Es ist wie der Unterschied zwischen einem Hausarzt und einem Kardiologen - beide sind Ärzte, aber der Spezialist hat tieferes Wissen.""",
+
+            """ChatGPT ist fantastisch für viele Dinge - ich nutze es selbst!
+
+Aber für SALES brauchst du:
+
+✅ CRM-Integration (automatische Lead-Qualifizierung)
+✅ Compliance-Checks (DACH-Regularien)
+✅ Branchen-spezifische Templates (MLM, Immobilien, etc.)
+✅ Automatische Follow-up-Sequenzen
+
+Das kann ChatGPT nicht - SalesFlow AI schon.""",
+
+            """Was, wenn du beides nutzt?
+
+ChatGPT für: Allgemeine Fragen, Content-Erstellung
+SalesFlow AI für: Sales-spezifische Aufgaben, CRM-Integration, Automatisierung
+
+So hast du das Beste aus beiden Welten!""",
+        ],
+        "closing_questions": [
+            "Was fehlt dir bei ChatGPT für deine Sales-Arbeit?",
+            "Was würde dich überzeugen, SalesFlow AI zusätzlich zu nutzen?",
+            "Können wir einen kurzen Vergleich machen?",
+        ],
+    },
+
+    "keine_zeit": {
+        "framework": "Zeit-Spar-Argument",
+        "responses": [
+            """Wenn du keine Zeit hast, ist das GENAU der Grund, warum du SalesFlow AI brauchst!
+
+Aktuell verbringst du {current_hours} Stunden/Woche mit:
+- Lead-Qualifizierung
+- Follow-up-Schreiben
+- CRM-Pflege
+
+Mit SalesFlow AI: {new_hours} Stunden/Woche
+
+Du gewinnst {time_saved} Stunden/Woche zurück - das sind {hours_per_month} Stunden/Monat mehr Zeit für das, was wirklich zählt.""",
+
+            """10 Minuten Setup, dann läuft es automatisch:
+
+✅ Automatische Lead-Qualifizierung
+✅ KI-generierte Follow-ups
+✅ Pipeline-Updates
+
+Du musst nur noch das WICHTIGE machen - der Rest läuft automatisch.""",
+
+            """Was, wenn ich dir zeige, wie du in 10 Minuten/Woche mehr erreichst als jetzt in {current_hours} Stunden?
+
+SalesFlow AI macht die Routine-Arbeit, du fokussierst dich auf Closing.""",
+        ],
+        "closing_questions": [
+            "Was würdest du mit {time_saved} extra Stunden/Woche machen?",
+            "Was wäre, wenn du dich nur noch auf das Wichtige konzentrieren könntest?",
+            "Wie viel ist dir 1 Stunde/Tag mehr Zeit wert?",
+        ],
+    },
+
+    "muss_ueberlegen": {
+        "framework": "Konkretisieren",
+        "responses": [
+            """Super, dass du dir Zeit nehmen willst - das ist verantwortungsvoll.
+
+Aber lass uns konkretisieren: Was genau möchtest du überdenken?
+
+- Den Preis?
+- Die Funktionalität?
+- Die Integration?
+- Etwas anderes?
+
+Lass uns das jetzt klären, dann kannst du eine fundierte Entscheidung treffen.""",
+
+            """Ich verstehe - große Entscheidungen brauchen Bedenkzeit.
+
+Aber schauen wir uns an: Was passiert, wenn du noch 2 Wochen wartest?
+
+- Du verlierst {leads_lost} Leads, die inaktiv werden
+- Du verbringst weiterhin {current_hours} Stunden/Woche mit Routine
+- Deine Konkurrenz holt auf
+
+Vielleicht können wir erstmal einen kleinen Test machen? 30 Tage, ohne Risiko.""",
+
+            """Perfekt! Lass uns gemeinsam durchgehen, was dich beschäftigt.
+
+Dann kann ich dir genau die Informationen geben, die du brauchst, um eine fundierte Entscheidung zu treffen.""",
+        ],
+        "closing_questions": [
+            "Was genau lässt dich noch zweifeln?",
+            "Was müsste passieren, damit du dir sicher bist?",
+            "Was wäre, wenn wir das jetzt klären würden?",
+        ],
+    },
+
+    "haben_schon_crm": {
+        "framework": "Ergänzung, nicht Ersatz",
+        "responses": [
+            """Perfekt - welches CRM nutzt ihr?
+
+SalesFlow AI ist KEIN Ersatz für euer CRM - es ERGÄNZT es:
+
+✅ Euer CRM: Daten speichern
+✅ SalesFlow AI: Daten intelligenter nutzen (KI-Qualifizierung, Automatisierung)
+
+SalesFlow AI integriert sich mit:
+- HubSpot
+- Salesforce
+- Pipedrive
+- Und vielen mehr
+
+So macht euer bestehendes CRM noch mehr Sinn!""",
+
+            """SalesFlow AI ist wie ein TURBO für euer bestehendes CRM:
+
+✅ Automatische Lead-Qualifizierung → Bessere Daten im CRM
+✅ KI-generierte Follow-ups → Höhere Response-Rate
+✅ Pipeline-Optimierung → Mehr Deals aus demselben CRM
+
+Ihr behaltet euer CRM, macht es nur intelligenter.""",
+
+            """Was, wenn ich dir zeige, wie SalesFlow AI mit eurem CRM zusammenarbeitet?
+
+5 Minuten Demo - dann siehst du, wie es euer bestehendes System verbessert.""",
+        ],
+        "closing_questions": [
+            "Welches CRM nutzt ihr aktuell?",
+            "Was würdest du an eurem CRM verbessern wollen?",
+            "Sollen wir eine kurze Integration-Demo machen?",
+        ],
+    },
+}
 
 CHIEF_OBJECTION_HANDLING = {
     "price_too_high": {
@@ -501,6 +713,282 @@ Alles Gute
 }
 
 # =============================================================================
+# BANT-ANALYSE TEMPLATE
+# =============================================================================
+
+CHIEF_BANT_ANALYSIS = {
+    "template": """BANT-Analyse für: {contact_name} ({company_name})
+
+═══════════════════════════════════════════════════════════════════
+BUDGET (B)
+═══════════════════════════════════════════════════════════════════
+• Verfügbares Budget: {budget}
+• Budget-Freigabe: {budget_approval}
+• Finanzielle Situation: {financial_situation}
+• Alternative Investitionen: {alternative_investments}
+
+SCORE: {budget_score}/25
+
+
+═══════════════════════════════════════════════════════════════════
+AUTHORITY (A)
+═══════════════════════════════════════════════════════════════════
+• Entscheidungsbefugnis: {authority_level}
+• Entscheidungsprozess: {decision_process}
+• Entscheider: {decision_maker}
+• Influencer: {influencers}
+
+SCORE: {authority_score}/25
+
+
+═══════════════════════════════════════════════════════════════════
+NEED (N)
+═══════════════════════════════════════════════════════════════════
+• Hauptschmerzpunkt: {main_pain_point}
+• Aktuelle Lösung: {current_solution}
+• Schmerz-Intensität: {pain_intensity}/10
+• Business Impact: {business_impact}
+
+SCORE: {need_score}/25
+
+
+═══════════════════════════════════════════════════════════════════
+TIMELINE (T)
+═══════════════════════════════════════════════════════════════════
+• Entscheidungstermin: {decision_date}
+• Start-Termin: {start_date}
+• Dringlichkeit: {urgency_level}
+• Trigger-Events: {trigger_events}
+
+SCORE: {timeline_score}/25
+
+
+═══════════════════════════════════════════════════════════════════
+GESAMT-SCORE: {total_score}/100
+═══════════════════════════════════════════════════════════════════
+
+PRIORITÄT: {priority_level}
+NÄCHSTER SCHRITT: {next_step}
+RISIKEN: {risks}
+""",
+
+    "questions": {
+        "budget": [
+            "Welches Budget steht für diese Lösung zur Verfügung?",
+            "Wie läuft der Budget-Freigabeprozess?",
+            "Gibt es alternative Budget-Quellen?",
+            "Welche Investitionen wurden in letzter Zeit gemacht?",
+        ],
+        "authority": [
+            "Wer trifft die finale Entscheidung?",
+            "Wie läuft der Entscheidungsprozess?",
+            "Wer ist noch involviert?",
+            "Wer kann die Entscheidung blockieren?",
+        ],
+        "need": [
+            "Was ist der Hauptschmerzpunkt?",
+            "Welche Lösung nutzt ihr aktuell?",
+            "Wie groß ist das Problem? (1-10)",
+            "Was passiert, wenn nichts geändert wird?",
+        ],
+        "timeline": [
+            "Wann soll die Lösung implementiert werden?",
+            "Was ist der letzte Termin?",
+            "Was macht es dringend?",
+            "Gibt es Events, die den Termin beeinflussen?",
+        ],
+    },
+}
+
+# =============================================================================
+# PIPELINE-REVIEW PROMPTS
+# =============================================================================
+
+CHIEF_PIPELINE_REVIEW = {
+    "questions": [
+        "Welche Deals sind in den letzten 7 Tagen ins Stocken geraten?",
+        "Welche Deals haben die höchste Priorität, aber keinen Fortschritt?",
+        "Welche Deals sind überfällig (kein Kontakt seit X Tagen)?",
+        "Welche Deals haben ein Budget, aber keine Timeline?",
+        "Welche Deals haben eine Timeline, aber keine Autorität?",
+        "Welche Deals sind zu groß (Requirement Creep)?",
+        "Welche Deals sind zu klein (nicht wertvoll genug)?",
+    ],
+
+    "analysis_template": """PIPELINE-REVIEW: {date}
+
+═══════════════════════════════════════════════════════════════════
+ÜBERSICHT
+═══════════════════════════════════════════════════════════════════
+• Gesamt-Pipeline: €{total_pipeline_value}
+• Anzahl Deals: {total_deals}
+• Durchschnitt Deal-Size: €{avg_deal_size}
+• Win-Rate: {win_rate}%
+
+STADIUM-VERTEILUNG:
+• Prospecting: {prospecting_count} (€{prospecting_value})
+• Qualification: {qualification_count} (€{qualification_value})
+• Proposal: {proposal_count} (€{proposal_value})
+• Negotiation: {negotiation_count} (€{negotiation_value})
+
+
+═══════════════════════════════════════════════════════════════════
+KRITISCHE DEALS (Handlungsbedarf)
+═══════════════════════════════════════════════════════════════════
+{critical_deals_list}
+
+
+═══════════════════════════════════════════════════════════════════
+BOTTLENECKS
+═══════════════════════════════════════════════════════════════════
+• Längste Verweildauer: {longest_stage}
+• Meiste Deals stecken in: {bottleneck_stage}
+• Durchschnitt Stage-Dauer: {avg_stage_duration} Tage
+
+
+═══════════════════════════════════════════════════════════════════
+EMPFEHLUNGEN
+═══════════════════════════════════════════════════════════════════
+{recommendations}
+""",
+
+    "action_items": {
+        "stalled_deals": "Deal-Medic anwenden",
+        "missing_bant": "BANT-Analyse durchführen",
+        "no_timeline": "Urgency erzeugen",
+        "no_authority": "Entscheider identifizieren",
+        "no_budget": "Budget-Quellen finden",
+    },
+}
+
+# =============================================================================
+# NACHFASS-STRATEGIE GENERATOR
+# =============================================================================
+
+CHIEF_FOLLOWUP_STRATEGY = {
+    "day_1": {
+        "type": "thank_you",
+        "template": """Hallo {name},
+
+vielen Dank für unser Gespräch heute!
+
+Ich fasse kurz zusammen, was wir besprochen haben:
+{summary}
+
+Als Nächstes: {next_step}
+
+Falls du Fragen hast, melde dich einfach!
+
+Beste Grüße
+{your_name}""",
+    },
+
+    "day_3": {
+        "type": "value_add",
+        "template": """Hallo {name},
+
+ich dachte an unser Gespräch und wollte dir noch einen Tipp geben:
+
+{value_tip}
+
+Falls dich die vollständige Lösung interessiert, können wir gerne nochmal sprechen.
+
+Grüße
+{your_name}""",
+    },
+
+    "day_7": {
+        "type": "social_proof",
+        "template": """Hallo {name},
+
+kurze Info: {similar_company} hat gerade {achievement} erreicht - mit unserer Lösung.
+
+Vielleicht interessiert dich, wie?
+
+Grüße
+{your_name}""",
+    },
+
+    "day_14": {
+        "type": "soft_ask",
+        "template": """Hallo {name},
+
+ich hoffe, alles läuft gut bei {company}!
+
+Da wir uns vor zwei Wochen ausgetauscht haben, wollte ich kurz nachfragen:
+
+Wie steht es mit {topic}?
+
+Falls du Lust auf einen kurzen Call hast, sag einfach Bescheid!
+
+Grüße
+{your_name}""",
+    },
+
+    "day_30": {
+        "type": "breakup",
+        "template": """Hallo {name},
+
+ich habe gemerkt, dass du wahrscheinlich gerade andere Prioritäten hast.
+
+Das ist völlig okay.
+
+Falls du in Zukunft doch Interesse hast, melde dich einfach.
+
+Die Tür bleibt offen.
+
+Beste Grüße
+{your_name}""",
+    },
+}
+
+# =============================================================================
+# INVESTOR BRIEF TEMPLATE
+# =============================================================================
+
+CHIEF_INVESTOR_BRIEF = {
+    "template": """INVESTOR BRIEF - {company_name}
+{date}
+
+═══════════════════════════════════════════════════════════════════
+EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════════════════
+{executive_summary}
+
+
+═══════════════════════════════════════════════════════════════════
+KEY METRICS
+═══════════════════════════════════════════════════════════════════
+• Monthly Recurring Revenue (MRR): €{mrr}
+• Annual Recurring Revenue (ARR): €{arr}
+• Customer Acquisition Cost (CAC): €{cac}
+• Lifetime Value (LTV): €{ltv}
+• LTV:CAC Ratio: {ltv_cac_ratio}:1
+• Monthly Growth Rate: {growth_rate}%
+• Churn Rate: {churn_rate}%
+• Active Customers: {active_customers}
+
+
+═══════════════════════════════════════════════════════════════════
+TRAKTION
+═══════════════════════════════════════════════════════════════════
+{trend_analysis}
+
+
+═══════════════════════════════════════════════════════════════════
+WACHSTUMS-PLAN
+═══════════════════════════════════════════════════════════════════
+{growth_plan}
+
+
+═══════════════════════════════════════════════════════════════════
+FINANZIELLE PROGNOSE
+═══════════════════════════════════════════════════════════════════
+{financial_forecast}
+""",
+}
+
+# =============================================================================
 # CEO MODULE - Executive-Level Insights
 # =============================================================================
 
@@ -631,4 +1119,29 @@ def get_ceo_insight(insight_type: str) -> Any:
     """Gibt CEO Module Insight zurück."""
     module = CHIEF_CEO_MODULE.get(insight_type)
     return module
+
+def get_bant_analysis_template(variables: Dict[str, Any]) -> str:
+    """Gibt BANT-Analyse Template formatiert zurück."""
+    template = CHIEF_BANT_ANALYSIS.get("template", "")
+    try:
+        return template.format(**variables)
+    except KeyError:
+        return template
+
+def get_pipeline_review_questions() -> List[str]:
+    """Gibt Pipeline-Review Fragen zurück."""
+    return CHIEF_PIPELINE_REVIEW.get("questions", [])
+
+def get_followup_strategy(day: int) -> Dict[str, Any]:
+    """Gibt Nachfass-Strategie für bestimmten Tag zurück."""
+    day_key = f"day_{day}"
+    return CHIEF_FOLLOWUP_STRATEGY.get(day_key, {})
+
+def get_investor_brief_template(variables: Dict[str, Any]) -> str:
+    """Gibt Investor Brief Template formatiert zurück."""
+    template = CHIEF_INVESTOR_BRIEF.get("template", "")
+    try:
+        return template.format(**variables)
+    except KeyError:
+        return template
 

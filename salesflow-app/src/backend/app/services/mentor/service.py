@@ -23,6 +23,7 @@ from ...config.knowledge.mentor_knowledge import (
     build_mentor_system_prompt_addition,
     get_company_context,
 )
+from ...services.mentor.chief_service import is_chief_user, check_chief_access
 
 # Neue Prompt-Struktur
 import sys
@@ -130,6 +131,20 @@ class MentorService:
         start_time = time.time()
         interaction_id = str(uuid.uuid4())
         
+        # CHIEF Mode Check
+        is_chief = False
+        try:
+            # Versuche User Email zu holen
+            user_result = self.db.table("profiles").select("email").eq("id", user_id).single().execute()
+            if user_result.data:
+                user_email = user_result.data.get("email")
+                if user_email:
+                    is_chief = is_chief_user(user_email)
+        except Exception as e:
+            logger.warning(f"Could not check CHIEF access: {e}")
+            # Fallback: Prüfe über check_chief_access
+            is_chief = await check_chief_access(self.db, user_id)
+        
         # Context aufbauen
         context = None
         context_text = None
@@ -163,6 +178,7 @@ class MentorService:
             skill_level=skill_level,
             enabled_modules=enabled_modules,
             company_id=company_id,
+            is_chief=is_chief,
         )
         
         # LLM aufrufen
@@ -289,12 +305,16 @@ class MentorService:
         skill_level: Optional[str] = None,
         enabled_modules: Optional[List[str]] = None,
         company_id: Optional[str] = None,
+        is_chief: bool = False,
     ) -> List[Dict[str, str]]:
         """Baut die Messages für den LLM Call."""
         messages = []
         
         # MENTOR System Prompt mit Knowledge
-        system_prompt = self._build_mentor_system_prompt(company_id=company_id)
+        system_prompt = self._build_mentor_system_prompt(
+            company_id=company_id,
+            is_chief=is_chief,
+        )
         
         # Neue Prompt-Struktur verwenden wenn Vertical bekannt
         if vertical:
@@ -376,12 +396,17 @@ class MentorService:
         
         return messages
     
-    def _build_mentor_system_prompt(self, company_id: Optional[str] = None) -> str:
+    def _build_mentor_system_prompt(
+        self,
+        company_id: Optional[str] = None,
+        is_chief: bool = False,
+    ) -> str:
         """
         Baut den MENTOR System Prompt mit Knowledge Integration.
         
         Args:
             company_id: Company ID für company-spezifische Knowledge
+            is_chief: Ist der User ein CHIEF User (Founder)?
             
         Returns:
             Vollständiger System Prompt
@@ -415,6 +440,26 @@ Bei Compliance-Fragen: Prüfe auf HWG (Heilversprechen) und DSGVO.
 NIEMALS Heilversprechen machen oder Krankheitsnamen nennen.
 NUR: Wellness, Lifestyle, Wohlbefinden, kosmetische Claims.
 """
+        
+        # CHIEF Mode - Erweiterte Prompts und alle Skripte
+        if is_chief:
+            chief_addition = """
+═══════════════════════════════════════════════════════════════
+👑 CHIEF MODE AKTIVIERT
+═══════════════════════════════════════════════════════════════
+
+Du hast Zugang zu ALLEN Power-Features:
+
+✅ 50+ Outreach Skripte (Zinzino, B2B, Immobilien, Hotels)
+✅ Erweiterte Einwandbehandlung (SalesFlow-spezifisch)
+✅ Deal-Medic Prompts (BANT-Analyse, Pipeline-Review)
+✅ CEO Module (Strategische Frameworks)
+✅ Investor Brief Generation
+✅ Keine API Limits
+
+Nutze alle verfügbaren Ressourcen für beste Ergebnisse!
+"""
+            base_prompt += "\n\n" + chief_addition
         
         # Company-spezifische Knowledge hinzufügen
         if company_id:

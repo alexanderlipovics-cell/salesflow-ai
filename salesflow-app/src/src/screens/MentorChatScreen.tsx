@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { API_CONFIG } from '../services/apiConfig';
 import { MessageBubble, QuickActions } from '../components/mentor';
+import { ChiefBadge } from '../components/chief';
 
 interface Message {
   id: string;
@@ -39,7 +40,7 @@ interface Message {
 const getMentorApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/mentor`;
 
 export default function MentorChatScreen({ navigation, route }: any) {
-  const { user } = useAuth();
+  const { user, isFounder } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -137,6 +138,13 @@ export default function MentorChatScreen({ navigation, route }: any) {
         ? `Analysiere diesen Kontakt für mich (ID: ${contactId})`
         : 'Analysiere einen Kontakt für mich',
       linkedin_post: 'Erstelle einen LinkedIn Post für mich',
+      // CHIEF Mode Actions
+      lead_hunter: 'Zeige mir Lead-Hunting Strategien',
+      deal_analyze: contactId 
+        ? `Analysiere diesen Deal mit BANT (Kontakt-ID: ${contactId})`
+        : 'Analysiere einen Deal mit BANT-Analyse',
+      cfo_check: 'Erstelle einen CFO Check für meine Metriken',
+      investor_brief: 'Generiere einen Investor Brief mit aktuellen Metriken',
     };
 
     const message = actionMessages[actionId] || '';
@@ -149,7 +157,11 @@ export default function MentorChatScreen({ navigation, route }: any) {
         'ghostbuster', 
         'analyze_contact', 
         'outreach', 
-        'linkedin_post'
+        'linkedin_post',
+        'lead_hunter',
+        'deal_analyze',
+        'cfo_check',
+        'investor_brief',
       ];
       if (autoSendActions.includes(actionId)) {
         sendMessage(message);
@@ -174,7 +186,15 @@ export default function MentorChatScreen({ navigation, route }: any) {
           <View style={styles.headerContent}>
             <Text style={styles.headerIcon}>🤖</Text>
             <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>MENTOR</Text>
+              <View style={styles.headerTitleRow}>
+                <Text style={styles.headerTitle}>MENTOR</Text>
+                {isFounder && (
+                  <ChiefBadge compact onPress={() => {
+                    // Navigate to CHIEF Actions or show CHIEF features
+                    navigation.navigate('CampaignScreen');
+                  }} />
+                )}
+              </View>
               <Text style={styles.headerSubtitle}>KI-Vertriebscoach</Text>
             </View>
           </View>
@@ -211,6 +231,7 @@ export default function MentorChatScreen({ navigation, route }: any) {
         <QuickActions 
           onActionPress={handleQuickAction} 
           contactId={contactId}
+          isChief={isFounder}
         />
 
         {/* Input Area */}
@@ -266,6 +287,11 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     flex: 1,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerTitle: {
     fontSize: 24,
