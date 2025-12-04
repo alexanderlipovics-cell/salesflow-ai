@@ -36,11 +36,6 @@ export default {
       favicon: "./assets/favicon.png"
     },
     extra: {
-      // EAS Build
-      eas: {
-        projectId: "aura-os-app"
-      },
-      
       // ═══════════════════════════════════════════════════════════════════════
       // API Configuration
       // ═══════════════════════════════════════════════════════════════════════
