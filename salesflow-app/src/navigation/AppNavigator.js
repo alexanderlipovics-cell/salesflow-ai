@@ -65,6 +65,7 @@ import SequenceAnalyticsScreen from '../screens/main/SequenceAnalyticsScreen';
 
 // Marketing Screens
 import LandingPage from '../screens/marketing/LandingPage';
+import FelloLandingPage from '../web/pages/FelloLandingPage';
 
 // Legal Screens
 import ImpressumScreen from '../screens/legal/ImpressumScreen';
@@ -172,8 +173,9 @@ function AuthStack() {
   return (
     <Stack.Navigator 
       screenOptions={{ headerShown: false }}
-      initialRouteName="Landing"
+      initialRouteName="FelloLanding"
     >
+      <Stack.Screen name="FelloLanding" component={FelloLandingPage} />
       <Stack.Screen name="Landing" component={LandingPage} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
