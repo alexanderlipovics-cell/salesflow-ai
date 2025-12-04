@@ -10,7 +10,10 @@ import json
 
 from ..core.auth import get_current_user
 from ..core.supabase import get_supabase_client
-from ..core.llm import get_openai_client
+# Note: OpenAI client is optional for import/export
+def get_openai_client():
+    """Stub for OpenAI client - AI mapping is optional."""
+    return None
 from ..services.import_export_service import ImportExportService
 
 

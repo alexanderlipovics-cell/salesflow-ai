@@ -6,9 +6,9 @@ from typing import Any, Dict, Optional
 import sys
 import os
 
-# Add parent directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import settings
+# Use proper app config
+from app.config import get_settings
+settings = get_settings()
 
 # TODO: Import actual OpenAI/Claude client when implemented
 # from openai import OpenAI

@@ -11,10 +11,16 @@ import logging
 import sys
 import os
 
-# Add parent directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import config
+# Use proper app config
+from app.config import get_settings
+
+settings = get_settings()
 from supabase import create_client
+
+# Alias for compatibility
+class config:
+    SUPABASE_URL = settings.SUPABASE_URL
+    SUPABASE_KEY = settings.SUPABASE_ANON_KEY
 
 logger = logging.getLogger(__name__)
 
