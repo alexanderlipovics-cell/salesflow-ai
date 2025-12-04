@@ -216,7 +216,163 @@ async def get_playbooks(supabase_client: Client = Depends(get_supabase)):
         logger.error(f"Error fetching playbooks: {repr(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- ADDITIONAL ROUTERS ---
+
+# Playbooks
+try:
+    from routers.playbooks import router as playbooks_router
+    app.include_router(playbooks_router, prefix="/api/playbooks", tags=["Playbooks"])
+    logger.info("✅ Playbooks Router loaded")
+except ImportError as e:
+    logger.warning(f"⚠️ Playbooks Router not available: {e}")
+
+# --- DEMO ENDPOINTS FOR FRONTEND ---
+
+@app.get("/api/leads/needs-action")
+async def get_leads_needs_action():
+    """Get leads needing immediate action."""
+    return {
+        "leads": [
+            {"id": "1", "name": "Max Mustermann", "status": "hot", "score": 85, "action": "Follow-up heute"},
+            {"id": "2", "name": "Anna Schmidt", "status": "warm", "score": 70, "action": "Präsentation vereinbaren"},
+            {"id": "3", "name": "Peter Müller", "status": "warm", "score": 65, "action": "Angebot senden"},
+        ],
+        "count": 3
+    }
+
+@app.get("/api/leads/daily-command")
+async def get_daily_command():
+    """Get daily command tasks."""
+    return {
+        "leads": [
+            {"id": "1", "name": "Max Mustermann", "task": "Follow-up anrufen", "priority": "high"},
+            {"id": "2", "name": "Anna Schmidt", "task": "WhatsApp nachfassen", "priority": "medium"},
+            {"id": "3", "name": "Lisa Weber", "task": "Email senden", "priority": "low"},
+        ],
+        "tasks": [
+            {"id": "t1", "description": "5 neue Kontakte ansprechen", "done": False},
+            {"id": "t2", "description": "10 Follow-ups senden", "done": False},
+            {"id": "t3", "description": "2 Präsentationen", "done": False},
+        ],
+        "count": 3
+    }
+
+@app.post("/api/import/customers")
+async def import_customers(data: dict):
+    """Import customers endpoint."""
+    return {
+        "success": True,
+        "imported": len(data.get("customers", [])),
+        "message": "Import erfolgreich"
+    }
+
+@app.post("/api/delay/generate")
+async def generate_delay(data: dict):
+    """Generate follow-up delay."""
+    import random
+    return {
+        "delay_minutes": random.randint(15, 120),
+        "delay_text": "ca. 1 Stunde",
+        "suggested_message": f"Hey {data.get('lead_name', 'du')}! 👋 Wie sieht's aus?",
+        "reasoning": "Optimale Zeit basierend auf Lead-Temperatur",
+        "alternatives": [
+            "Hi! Wollte nochmal nachhaken...",
+            "Hey, kurze Frage noch...",
+        ]
+    }
+
+@app.post("/api/gtm-copy/generate")
+async def generate_gtm_copy(data: dict):
+    """Generate GTM copy."""
+    return {
+        "content": f"""# Demo GTM Copy
+
+**Task:** {data.get('task', 'Landingpage')}
+
+## Hero Section
+
+**Mehr Abschlüsse mit denselben Leads – ohne mehr Chaos, ohne mehr Tools.**
+
+Sales Flow AI ist der KI-Vertriebs-Copilot für dein Team.
+
+→ [Demo anfragen]
+
+---
+
+*💡 Hinweis: Demo-Modus. Für echte KI-Texte OpenAI API Key konfigurieren.*
+"""
+    }
+
+@app.post("/api/objection-brain/generate")
+async def generate_objection_response(data: dict):
+    """Generate objection response."""
+    objection = data.get("objection", "Das ist zu teuer")
+    return {
+        "responses": [
+            {
+                "type": "logical",
+                "text": f"Ich verstehe. Wenn wir aber mal rechnen: Bei 3 zusätzlichen Abschlüssen pro Monat durch bessere Follow-ups, wie viel wäre das wert?"
+            },
+            {
+                "type": "emotional", 
+                "text": "Das verstehe ich total. Die meisten unserer erfolgreichsten Kunden haben am Anfang genauso gedacht..."
+            },
+            {
+                "type": "question",
+                "text": "Was wäre es dir wert, wenn du nie wieder einen heißen Lead vergisst?"
+            }
+        ],
+        "objection": objection,
+        "category": "price"
+    }
+
+@app.post("/api/objection-brain/log")
+async def log_objection(data: dict):
+    """Log objection handling."""
+    return {"success": True, "logged": True}
+
+@app.post("/api/next-best-actions/suggest")
+async def suggest_next_actions(data: dict):
+    """Suggest next best actions."""
+    return {
+        "actions": [
+            {"priority": 1, "action": "Follow-up mit Max Mustermann", "type": "call", "reason": "Hot Lead, 3 Tage ohne Kontakt"},
+            {"priority": 2, "action": "WhatsApp an Anna Schmidt", "type": "message", "reason": "Interesse gezeigt, nachfassen"},
+            {"priority": 3, "action": "Email an Peter Müller", "type": "email", "reason": "Angebot nachfassen"},
+        ],
+        "summary": "3 dringende Aktionen für heute"
+    }
+
+@app.get("/api/analytics/dashboard/complete")
+async def get_dashboard_complete(workspace_id: str = None, range: str = "30d"):
+    """Get complete dashboard analytics."""
+    return {
+        "period": range,
+        "summary": {
+            "total_leads": 1250,
+            "active_leads": 380,
+            "conversion_rate": 0.28,
+            "revenue_this_period": 125000.00
+        },
+        "pipeline": {
+            "new": 125, "contacted": 234, "qualified": 145,
+            "proposal": 67, "won": 45, "lost": 23
+        }
+    }
+
+@app.get("/api/followups/analytics")
+async def get_followup_analytics(days: int = 30):
+    """Get follow-up analytics."""
+    return {
+        "period_days": days,
+        "total_followups": 567,
+        "completed": 456,
+        "pending": 89,
+        "overdue": 22,
+        "completion_rate": 0.80
+    }
+
 # --- ENTRY POINT ---
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

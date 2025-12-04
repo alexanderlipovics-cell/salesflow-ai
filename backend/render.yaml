@@ -7,55 +7,43 @@ services:
   - type: web
     name: salesflow-api
     env: python
-    plan: starter  # Kann auf standard/pro hochgestuft werden
-    region: frankfurt  # Nahe an EU für niedrige Latenz
+    plan: starter
+    region: frankfurt
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
-    autoDeploy: true  # Automatisches Deploy bei Git Push
+    autoDeploy: true
     envVars:
       # App Config
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
-        value: false
+        value: "false"
       
-      # Supabase (von Dashboard kopieren)
+      # Supabase
       - key: SUPABASE_URL
-        sync: false  # Manuell im Dashboard setzen
+        sync: false
       - key: SUPABASE_KEY
         sync: false
       - key: DATABASE_URL
         sync: false
       
-      # OpenAI
+      # OpenAI/Anthropic
       - key: OPENAI_API_KEY
         sync: false
-      - key: OPENAI_MODEL
-        value: gpt-4-turbo-preview
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: anthropic
       
-      # CORS
+      # CORS - Add Vercel URL
       - key: ALLOWED_ORIGINS
-        value: https://salesflow.vercel.app,https://app.salesflow.ai,https://www.salesflow.ai
+        value: https://aura-os-topaz.vercel.app,https://salesflow.vercel.app,https://app.salesflow.ai,http://localhost:5173,http://localhost:3000
       
-      # Caching (deaktiviert für Render)
+      # Caching
       - key: CACHE_ENABLED
-        value: false
-      
-      # WhatsApp (optional)
-      - key: WHATSAPP_PROVIDER
-        value: ultramsg
-      - key: ULTRAMSG_INSTANCE_ID
-        sync: false
-      - key: ULTRAMSG_TOKEN
-        sync: false
-      
-      # Email (optional)
-      - key: SENDGRID_API_KEY
-        sync: false
-      - key: FROM_EMAIL
-        value: noreply@salesflow.ai
+        value: "false"
 
-    # Python version
-    pythonVersion: "3.11"
+    pythonVersion: "3.11.0"
 
