@@ -1,0 +1,203 @@
+{
+  "lead_scoring_system": {
+    "version": "1.0",
+    "description": "Network Marketing Lead Scoring - Adler (Top-Leader) vs. Ente (Zeitverschwendung) Detection",
+    "max_score": 100,
+    "scoring_tiers": {
+      "hot_lead": { "min": 70, "max": 100, "label": "Adler - Top Priority", "action": "Sofort kontaktieren, 3-Way Call anbieten" },
+      "warm_lead": { "min": 40, "max": 69, "label": "Potenzial vorhanden", "action": "Normal follow-up, beobachten" },
+      "cold_lead": { "min": 20, "max": 39, "label": "Wenig Potenzial", "action": "Low-touch nurturing" },
+      "disqualified": { "min": 0, "max": 19, "label": "Ente - Nicht investieren", "action": "Aus aktiver Pipeline entfernen" }
+    },
+    "rules": [
+      {
+        "name": "Networker Erfahrung",
+        "type": "demographic",
+        "condition": {
+          "field": "has_mlm_experience",
+          "operator": "equals",
+          "value": true
+        },
+        "points": 20,
+        "reason": "Kennt die Branche, muss nicht überzeugt werden - versteht Provisionsmodell bereits"
+      },
+      {
+        "name": "Unzufriedenheit im Job",
+        "type": "behavioral",
+        "condition": {
+          "field": "pain_point",
+          "operator": "contains",
+          "value": "hate_job"
+        },
+        "points": 15,
+        "reason": "Hoher 'Schmerz' ist der beste Motivator für Veränderung - WHY ist stark"
+      },
+      {
+        "name": "Social Media Reichweite",
+        "type": "demographic",
+        "condition": {
+          "field": "instagram_followers",
+          "operator": "greater_than",
+          "value": 2000
+        },
+        "points": 10,
+        "reason": "Hat bereits ein Publikum (Warm Market) - kann schnell starten"
+      },
+      {
+        "name": "Unternehmerisches Denken",
+        "type": "demographic",
+        "condition": {
+          "field": "job_type",
+          "operator": "in",
+          "value": ["self_employed", "freelancer", "sales"]
+        },
+        "points": 10,
+        "reason": "Versteht Provisions-Modelle - keine Angestellten-Mentalität"
+      },
+      {
+        "name": "Schnelle Reaktion",
+        "type": "timing",
+        "condition": {
+          "field": "response_time_minutes",
+          "operator": "less_than",
+          "value": 60
+        },
+        "points": 5,
+        "reason": "Hunger / Begeisterung (Excitement Level) - ist engagiert"
+      },
+      {
+        "name": "Große Kontaktliste",
+        "type": "demographic",
+        "condition": {
+          "field": "network_size_est",
+          "operator": "greater_than",
+          "value": 500
+        },
+        "points": 10,
+        "reason": "Warm Market vorhanden - kann schnell rekrutieren"
+      },
+      {
+        "name": "Offenheit für Business",
+        "type": "behavioral",
+        "condition": {
+          "field": "mlm_interest_type",
+          "operator": "in",
+          "value": ["business", "both"]
+        },
+        "points": 15,
+        "reason": "Interesse an Business Opportunity - nicht nur Produkt"
+      },
+      {
+        "name": "Coachability hoch",
+        "type": "behavioral",
+        "condition": {
+          "field": "coachability_score",
+          "operator": "greater_than_or_equal",
+          "value": 7
+        },
+        "points": 10,
+        "reason": "Kann trainiert werden - nimmt Feedback an"
+      },
+      {
+        "name": "Warmes Netzwerk Status",
+        "type": "demographic",
+        "condition": {
+          "field": "current_network_status",
+          "operator": "equals",
+          "value": "looking"
+        },
+        "points": 15,
+        "reason": "Aktiv auf der Suche nach Veränderung - timing ist perfekt"
+      },
+      {
+        "name": "Video nicht gesehen",
+        "type": "negative",
+        "condition": {
+          "field": "watched_video",
+          "operator": "equals",
+          "value": false
+        },
+        "points": -10,
+        "reason": "Fehlendes Commitment - hat sich nicht die Zeit genommen"
+      },
+      {
+        "name": "Geld-Einwand sofort",
+        "type": "negative",
+        "condition": {
+          "field": "first_objection",
+          "operator": "contains",
+          "value": "no_money"
+        },
+        "points": -5,
+        "reason": "Schwieriger Start, Investitionshürde - wird wahrscheinlich nicht starten"
+      },
+      {
+        "name": "Anti-MLM Einstellung",
+        "type": "negative",
+        "condition": {
+          "field": "current_network_status",
+          "operator": "equals",
+          "value": "anti_mlm"
+        },
+        "points": -20,
+        "reason": "Fundamentale Opposition - Zeitverschwendung"
+      },
+      {
+        "name": "Keine Zeit Excuse",
+        "type": "negative",
+        "condition": {
+          "field": "first_objection",
+          "operator": "contains",
+          "value": "no_time"
+        },
+        "points": -5,
+        "reason": "Prioritätenproblem - wird nichts umsetzen"
+      },
+      {
+        "name": "Ghosting nach 3+ Nachrichten",
+        "type": "negative",
+        "condition": {
+          "field": "messages_sent_no_response",
+          "operator": "greater_than",
+          "value": 3
+        },
+        "points": -15,
+        "reason": "Kein echtes Interesse - Lead ist tot"
+      },
+      {
+        "name": "Event No-Show",
+        "type": "negative",
+        "condition": {
+          "field": "registered_but_no_show",
+          "operator": "equals",
+          "value": true
+        },
+        "points": -10,
+        "reason": "Commitment-Problem - unzuverlässig"
+      }
+    ]
+  },
+  "automation_triggers": {
+    "hot_lead_actions": [
+      "Sofort Notification an User senden",
+      "3-Way Call mit Upline vorschlagen",
+      "VIP-Tag hinzufügen",
+      "Tägliches Follow-up aktivieren"
+    ],
+    "warm_lead_actions": [
+      "Standard Follow-up Sequence starten",
+      "Event-Einladungen senden",
+      "Testimonials teilen"
+    ],
+    "cold_lead_actions": [
+      "Low-touch Nurturing Campaign",
+      "Nur bei Events reaktivieren",
+      "Monatlicher Newsletter"
+    ],
+    "disqualified_actions": [
+      "Aus aktiver Pipeline entfernen",
+      "In 'Parking Lot' verschieben",
+      "Nur noch bei Major Events kontaktieren"
+    ]
+  }
+}
