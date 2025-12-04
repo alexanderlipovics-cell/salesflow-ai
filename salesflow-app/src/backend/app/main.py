@@ -91,6 +91,7 @@ from .api.routes.messaging import router as messaging_router
 
 # Billing (Stripe Subscriptions)
 from .api.routes.billing import router as billing_router
+from .api.routes.payment import router as payment_router
 
 # Phase 1: Foundation & Architecture
 from .api.routes.jobs import router as jobs_router
@@ -377,6 +378,7 @@ app.include_router(autonomous_router, prefix="/api/v1")
 
 # Billing (Stripe Subscriptions)
 app.include_router(billing_router, prefix="/api/v1")
+app.include_router(payment_router, prefix="/api/v2")
 
 # Phase 1: Foundation & Architecture
 app.include_router(jobs_router, prefix="/api/v1")

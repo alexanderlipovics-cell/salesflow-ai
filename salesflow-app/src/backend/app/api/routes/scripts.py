@@ -800,6 +800,106 @@ async def check_mlm_compliance(
     }
 
 
+@router.post("/compliance-check")
+async def check_compliance_general(
+    mlm_company: str = Query(..., description="MLM-Unternehmen"),
+    text: str = Query(..., description="Zu prüfender Text"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Allgemeine Compliance-Prüfung (Alternative Route).
+    
+    Beispiel: POST /api/v2/scripts/compliance-check?mlm_company=zinzino&text=...
+    """
+    result = mlm_script_service.check_mlm_compliance(
+        mlm=mlm_company,
+        text=text
+    )
+    
+    return {
+        "company": mlm_company,
+        "text": text,
+        **result
+    }
+
+
+@router.post("/suggest")
+async def suggest_script_general(
+    mlm_company: str = Query(..., description="MLM-Unternehmen"),
+    situation: str = Query(..., description="Beschreibung der Situation"),
+    contact_name: Optional[str] = Query(None, description="Kontakt-Name"),
+    contact_disg: Optional[str] = Query(None, description="DISG-Typ"),
+    channel: Optional[str] = Query(None, description="Kanal"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Allgemeine Script-Vorschlags-Route.
+    
+    Beispiel: POST /api/v2/scripts/suggest?mlm_company=zinzino&situation=einwand_zu_teuer
+    """
+    contact = {}
+    if contact_name:
+        contact["name"] = contact_name
+    if contact_disg:
+        contact["disg"] = contact_disg
+    if channel:
+        contact["channel"] = channel
+    
+    script = mlm_script_service.suggest_script(
+        mlm=mlm_company,
+        situation=situation,
+        contact=contact if contact else None
+    )
+    
+    if not script:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Kein passendes Script gefunden für Situation: '{situation}'"
+        )
+    
+    # Variablen ersetzen
+    if contact_name and "text" in script:
+        script["text"] = mlm_script_service.replace_variables(
+            script["text"],
+            {"Name": contact_name}
+        )
+    
+    return {
+        "company": mlm_company,
+        "situation": situation,
+        "suggested_script": script
+    }
+
+
+@router.get("/mlm/{mlm_company}/einwand/{einwand}")
+async def get_einwand_response(
+    mlm_company: str,
+    einwand: str,
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Holt eine passende Antwort auf einen Einwand.
+    
+    Beispiel: GET /api/v2/scripts/mlm/zinzino/einwand/zu_teuer
+    """
+    response = mlm_script_service.get_einwand_response(
+        mlm=mlm_company,
+        einwand=einwand
+    )
+    
+    if not response:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Keine Antwort gefunden für Einwand: '{einwand}'"
+        )
+    
+    return {
+        "company": mlm_company,
+        "einwand": einwand,
+        "response": response
+    }
+
+
 @router.get("/mlm/companies")
 async def get_available_mlm_companies(
     current_user: CurrentUser = Depends(get_current_user),

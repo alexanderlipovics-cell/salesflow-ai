@@ -10,13 +10,14 @@ Verwaltet MLM-unternehmensspezifische Scripts (z.B. Zinzino, doTERRA, etc.)
 from typing import Dict, List, Optional, Any
 import re
 
-from ...config.knowledge.zinzino_scripts import (
+from ...config.knowledge.mlm_scripts import (
+    BASE_SCRIPTS,
     ZINZINO_SCRIPTS,
     ZINZINO_COMPLIANCE,
-    get_scripts_for_category,
-    get_script,
-    get_all_categories,
-    check_compliance as zinzino_check_compliance,
+    HERBALIFE_SCRIPTS,
+    HERBALIFE_COMPLIANCE,
+    get_compliance_rules,
+    check_compliance,
 )
 
 
@@ -37,12 +38,15 @@ class MLMScriptService:
     
     # Mapping von Company-Slugs zu Script-Libraries
     COMPANY_SCRIPTS = {
+        "base": BASE_SCRIPTS,
         "zinzino": ZINZINO_SCRIPTS,
+        "herbalife": HERBALIFE_SCRIPTS,
         # Weitere MLM-Unternehmen können hier hinzugefügt werden
     }
     
     COMPANY_COMPLIANCE = {
         "zinzino": ZINZINO_COMPLIANCE,
+        "herbalife": HERBALIFE_COMPLIANCE,
         # Weitere Compliance-Regeln können hier hinzugefügt werden
     }
     
@@ -80,6 +84,35 @@ class MLMScriptService:
             return scripts.get(category, {})
         
         return scripts
+    
+    def get_einwand_response(
+        self,
+        mlm: str,
+        einwand: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Findet eine passende Antwort auf einen Einwand.
+        
+        Args:
+            mlm: MLM-Unternehmen (z.B. "zinzino")
+            einwand: Der Einwand (z.B. "zu teuer")
+            
+        Returns:
+            Script-Dictionary mit Antwort oder None
+        """
+        scripts = self.get_scripts_for_company(mlm, category="einwand_handling")
+        einwand_lower = einwand.lower()
+        
+        for script_id, script_data in scripts.items():
+            script_einwand = script_data.get("einwand", "").lower()
+            if einwand_lower in script_einwand or script_einwand in einwand_lower:
+                return {
+                    "category": "einwand_handling",
+                    "script_id": script_id,
+                    **script_data
+                }
+        
+        return None
     
     def get_script_by_situation(
         self,
@@ -176,44 +209,36 @@ class MLMScriptService:
                 "risk_score": float (0-100)
             }
         """
-        company_lower = company.lower()
-        
-        if company_lower not in self.COMPANY_COMPLIANCE:
-            # Fallback: Generische Prüfung
-            return {
-                "is_compliant": True,
-                "violations": [],
-                "suggestions": [],
-                "risk_score": 0.0,
-                "message": "Keine spezifischen Compliance-Regeln für diese Company"
-            }
-        
-        # Company-spezifische Prüfung
-        if company_lower == "zinzino":
-            result = zinzino_check_compliance(text)
-            risk_score = len(result["violations"]) * 30.0  # Jeder Verstoß = 30 Punkte
-            risk_score = min(risk_score, 100.0)
-            
-            return {
-                "is_compliant": result["is_compliant"],
-                "violations": result["violations"],
-                "suggestions": result["suggestions"],
-                "risk_score": risk_score
-            }
-        
-        # Weitere Companies können hier hinzugefügt werden
-        return {
-            "is_compliant": True,
-            "violations": [],
-            "suggestions": [],
-            "risk_score": 0.0
-        }
+        return check_compliance(company, text)
     
     # =========================================================================
     # SCRIPT SUGGESTION
     # =========================================================================
     
     def suggest_script(
+        self,
+        mlm: str,
+        situation: str,
+        contact: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Schlägt ein passendes Script basierend auf Situation und Kontakt vor.
+        
+        Args:
+            mlm: MLM-Unternehmen
+            situation: Beschreibung der Situation
+            contact: Optional - Kontakt-Informationen (DISG, Beziehung, etc.)
+            
+        Returns:
+            Passendes Script oder None
+        """
+        # Nutze bestehende Methode mit Mapping
+        channel = contact.get("channel") if contact else None
+        situation_type = contact.get("type") if contact else None
+        
+        return self._suggest_script_internal(mlm, situation, channel, situation_type)
+    
+    def _suggest_script_internal(
         self,
         company: str,
         context: str,
@@ -302,6 +327,67 @@ class MLMScriptService:
             }
         
         return None
+    
+    def get_scripts(
+        self,
+        mlm_company: str
+    ) -> Dict[str, Any]:
+        """
+        Gibt alle Scripts für ein MLM-Unternehmen zurück.
+        
+        Args:
+            mlm_company: Company-Slug
+            
+        Returns:
+            Dictionary mit allen Scripts
+        """
+        return self.get_scripts_for_company(mlm_company)
+    
+    def get_script_by_category(
+        self,
+        mlm: str,
+        category: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Holt Scripts einer spezifischen Kategorie.
+        
+        Args:
+            mlm: MLM-Unternehmen
+            category: Kategorie (pitches, einwand_handling, etc.)
+            
+        Returns:
+            Liste von Scripts
+        """
+        scripts = self.get_scripts_for_company(mlm, category=category)
+        
+        if isinstance(scripts, dict):
+            result = []
+            for script_id, script_data in scripts.items():
+                result.append({
+                    "category": category,
+                    "script_id": script_id,
+                    **script_data
+                })
+            return result
+        
+        return []
+    
+    def check_mlm_compliance(
+        self,
+        mlm: str,
+        text: str
+    ) -> Dict[str, Any]:
+        """
+        Prüft einen Text auf MLM-spezifische Compliance.
+        
+        Args:
+            mlm: MLM-Unternehmen
+            text: Zu prüfender Text
+            
+        Returns:
+            Compliance-Ergebnis
+        """
+        return self.check_compliance(mlm, text)
     
     # =========================================================================
     # HELPER METHODS

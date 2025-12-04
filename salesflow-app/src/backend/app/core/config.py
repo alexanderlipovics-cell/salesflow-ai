@@ -55,8 +55,13 @@ class Settings(BaseSettings):
         "http://localhost:8082,http://localhost:8081,http://127.0.0.1:8082,"
         "http://127.0.0.1:8081,http://10.0.0.24:8082,http://10.0.0.24:8081,"
         "https://salesflow-app.onrender.com,https://salesflow-app.vercel.app,"
-        "https://salesflow-app.netlify.app,exp://localhost:8081,exp://192.168.*"
+        "https://salesflow-app.netlify.app,https://fello.app,https://www.fello.app,"
+        "https://api.fello.app,exp://localhost:8081,exp://192.168.*"
     )
+    
+    # Production URLs
+    API_URL: str = "https://api.fello.app"
+    FRONTEND_URL: str = "https://fello.app"
     
     # Secret Key für JWT und Sessions (MUSS in Production gesetzt werden!)
     SECRET_KEY: str = "change-me-in-production-use-openssl-rand-base64-32"
@@ -120,6 +125,14 @@ class Settings(BaseSettings):
     TTS_PROVIDER: Literal["elevenlabs", "openai"] = "openai"
     
     # ═══════════════════════════════════════════════════════════════════════
+    # PAYMENT (STRIPE)
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    STRIPE_PUBLISHABLE_KEY: Optional[str] = None
+    
+    # ═══════════════════════════════════════════════════════════════════════
     # STORAGE
     # ═══════════════════════════════════════════════════════════════════════
     
@@ -158,6 +171,14 @@ class Settings(BaseSettings):
     
     REDIS_URL: Optional[str] = None  # z.B. redis://localhost:6379/0
     CACHE_TTL_SECONDS: int = 3600
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # STRIPE PAYMENT
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_PUBLISHABLE_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
     
     # ═══════════════════════════════════════════════════════════════════════
     # COMPUTED PROPERTIES

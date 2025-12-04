@@ -12,6 +12,8 @@ import { isFeatureEnabled } from '../config/feature_flags';
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 
 // Main Screens
 import DashboardScreen from '../screens/main/DashboardScreen';
@@ -64,6 +66,11 @@ import SequenceAnalyticsScreen from '../screens/main/SequenceAnalyticsScreen';
 // Marketing Screens
 import LandingPage from '../screens/marketing/LandingPage';
 
+// Legal Screens
+import ImpressumScreen from '../screens/legal/ImpressumScreen';
+import DatenschutzScreen from '../screens/legal/DatenschutzScreen';
+import AGBScreen from '../screens/legal/AGBScreen';
+
 // Admin Screens
 import SecurityDashboard from '../screens/admin/SecurityDashboard';
 import ComplianceReport from '../screens/admin/ComplianceReport';
@@ -94,6 +101,9 @@ import CampaignScreen from '../screens/CampaignScreen';
 import PricingScreen from '../screens/settings/PricingScreen';
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { TestCheckoutScreen } from '../screens/billing';
+
+// Profile Screen
+import ProfileScreen from '../screens/profile/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -167,6 +177,42 @@ function AuthStack() {
       <Stack.Screen name="Landing" component={LandingPage} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen 
+        name="Impressum" 
+        component={ImpressumScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Impressum',
+          headerBackTitle: 'Zurück',
+          headerStyle: { backgroundColor: '#0A0F1A' },
+          headerTintColor: '#F9FAFB',
+          headerTitleStyle: { fontWeight: 'bold' },
+        }}
+      />
+      <Stack.Screen 
+        name="Datenschutz" 
+        component={DatenschutzScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Datenschutz',
+          headerBackTitle: 'Zurück',
+          headerStyle: { backgroundColor: '#0A0F1A' },
+          headerTintColor: '#F9FAFB',
+          headerTitleStyle: { fontWeight: 'bold' },
+        }}
+      />
+      <Stack.Screen 
+        name="AGB" 
+        component={AGBScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'AGB',
+          headerBackTitle: 'Zurück',
+          headerStyle: { backgroundColor: '#0A0F1A' },
+          headerTintColor: '#F9FAFB',
+          headerTitleStyle: { fontWeight: 'bold' },
+        }}
+      />
     </Stack.Navigator>
   );
 }
@@ -526,6 +572,15 @@ function AppStack() {
       <Stack.Screen 
         name="Settings" 
         component={SettingsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      
+      {/* Profile */}
+      <Stack.Screen 
+        name="Profile" 
+        component={ProfileScreen}
         options={{
           headerShown: false,
         }}

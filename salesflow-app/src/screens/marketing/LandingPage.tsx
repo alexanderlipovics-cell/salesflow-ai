@@ -1056,13 +1056,13 @@ export default function LandingPage() {
           
           <View style={styles.footerLinkColumn}>
             <Text style={styles.footerLinkTitle}>Legal</Text>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => navigation.navigate('Impressum')}>
               <Text style={styles.footerLink}>Impressum</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => navigation.navigate('Datenschutz')}>
               <Text style={styles.footerLink}>Datenschutz</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => navigation.navigate('AGB')}>
               <Text style={styles.footerLink}>AGB</Text>
             </TouchableOpacity>
           </View>
