@@ -6,6 +6,7 @@
  */
 
 import { supabase } from './supabase';
+import { API_CONFIG, apiPost } from './apiConfig';
 import {
   DISC_ANALYZER_SYSTEM_PROMPT,
   buildDiscAnalyzerPrompt,
@@ -26,6 +27,11 @@ export {
   isChiefAvailable,
   getSuggestedPrompts,
 } from './chiefService';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// API MODE - Lokales Backend oder Supabase Edge Function
+// ═══════════════════════════════════════════════════════════════════════════
+const USE_LOCAL_BACKEND = true; // true = Lokales Backend, false = Supabase Edge Function
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -68,27 +74,52 @@ async function callAI(options) {
   const { systemPrompt, userPrompt, jsonMode = true } = options;
 
   try {
-    // Versuche zuerst Supabase Edge Function
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
 
-    if (accessToken) {
-      const response = await supabase.functions.invoke('ai-chat', {
-        body: {
+    if (USE_LOCAL_BACKEND) {
+      // ═══════════════════════════════════════════════════════════════════
+      // LOKALES BACKEND (Port 8001)
+      // ═══════════════════════════════════════════════════════════════════
+      const response = await apiPost(
+        '/ai/analyze',
+        {
           system_prompt: systemPrompt,
           user_prompt: userPrompt,
           json_mode: jsonMode,
           model: AI_CONFIG.model,
         },
-      });
-
-      if (response.data) {
-        return jsonMode ? JSON.parse(response.data.content) : response.data.content;
+        accessToken
+      );
+      
+      if (response?.content) {
+        return jsonMode ? JSON.parse(response.content) : response.content;
       }
-    }
+      if (response?.reply) {
+        return jsonMode ? JSON.parse(response.reply) : response.reply;
+      }
+      return response;
+    } else {
+      // ═══════════════════════════════════════════════════════════════════
+      // SUPABASE EDGE FUNCTION
+      // ═══════════════════════════════════════════════════════════════════
+      if (accessToken) {
+        const response = await supabase.functions.invoke('ai-chat', {
+          body: {
+            system_prompt: systemPrompt,
+            user_prompt: userPrompt,
+            json_mode: jsonMode,
+            model: AI_CONFIG.model,
+          },
+        });
 
-    // Fallback: Direkte OpenAI/Anthropic API (benötigt API Key)
-    throw new Error('Supabase Edge Function nicht verfügbar');
+        if (response.data) {
+          return jsonMode ? JSON.parse(response.data.content) : response.data.content;
+        }
+      }
+
+      throw new Error('Supabase Edge Function nicht verfügbar');
+    }
   } catch (error) {
     console.warn('AI call failed:', error.message);
     throw error;

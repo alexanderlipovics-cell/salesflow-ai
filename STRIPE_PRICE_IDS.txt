@@ -1,0 +1,21 @@
+# ========================================
+# STRIPE PRICE IDS - Für Vercel Environment Variables
+# ========================================
+# Kopiere diese in Vercel → Settings → Environment Variables
+# ========================================
+
+# MAIN PLANS
+VITE_STRIPE_PRICE_STARTER_MONTH=price_1SaR6dD8kL9AtRhnFryuZhol
+VITE_STRIPE_PRICE_PRO_MONTH=price_1SaR7dD8kL9AtRhn0yPS06gI
+VITE_STRIPE_PRICE_ENTERPRISE_MONTH=price_1SaR88D8kL9AtRhnWwqs9C7o
+
+# FINANZ AUTOPILOT ADD-ONS
+VITE_STRIPE_PRICE_FINANZ_BASIC=price_1SaR8YD8kL9AtRhn0eAg7FqL
+VITE_STRIPE_PRICE_FINANZ_PRO=price_1SaR90D8kL9AtRhnYd2mSjqC
+VITE_STRIPE_PRICE_FINANZ_ULTIMATE=price_1SaR9HD8kL9AtRhnfgDH1h4G
+
+# LEAD GENERATOR ADD-ONS
+VITE_STRIPE_PRICE_LEADGEN_BASIC=price_1SaR9lD8kL9AtRhnZ5hAsrKw
+VITE_STRIPE_PRICE_LEADGEN_PRO=price_1SaRAAD8kL9AtRhnRCRtsHVQ
+VITE_STRIPE_PRICE_LEADGEN_ULTIMATE=price_1SaRATD8kL9AtRhnfaflwC3M
+
