@@ -1,6 +1,6 @@
 # Configuration Management
 import os
-from dotenv import import load_dotenv
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
 # Load environment variables
