@@ -1,7 +1,8 @@
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Bot, Loader2, Paperclip, Send, Sparkles, Upload, User } from "lucide-react";
+import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Sparkles, Upload, User, Volume2, VolumeX } from "lucide-react";
+import { useVoice } from "../hooks/useVoice";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -113,6 +114,25 @@ const ChatPage = () => {
   const [importStatus, setImportStatus] = useState(null);
   const [contextPanel, setContextPanel] = useState("lead");
   const [isEditingLeadContext, setIsEditingLeadContext] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+
+  // Voice Hook für Spracheingabe & -ausgabe
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    toggleListening,
+    isSupported: voiceSupported,
+    isSpeaking,
+    speak,
+    stopSpeaking,
+    isTTSSupported,
+  } = useVoice({
+    language: 'de-DE',
+    onResult: (text) => {
+      setInput((prev) => prev + (prev ? ' ' : '') + text);
+    },
+  });
 
   // Ref für Auto-Scroll
   const messagesEndRef = useRef(null);
@@ -233,6 +253,11 @@ const ChatPage = () => {
           content: reply,
         },
       ]);
+      
+      // Auto-Speak AI response if enabled
+      if (autoSpeak && isTTSSupported) {
+        speak(reply);
+      }
     } catch (error) {
       console.error("Fehler beim Abrufen der AI-Antwort", error);
       setMessages((prev) => [
@@ -399,11 +424,53 @@ const ChatPage = () => {
                 className="w-full resize-none rounded-2xl bg-transparent px-4 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 disabled:opacity-50"
               />
               <div className="flex items-center justify-between border-t border-slate-800 px-4 py-3">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-500/40 hover:text-slate-50">
-                  <Paperclip className="h-4 w-4" />
-                  <span>Anhang</span>
-                  <input type="file" className="hidden" />
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-500/40 hover:text-slate-50">
+                    <Paperclip className="h-4 w-4" />
+                    <span>Anhang</span>
+                    <input type="file" className="hidden" />
+                  </label>
+                  
+                  {/* Voice Input Button */}
+                  {voiceSupported && (
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      className={clsx(
+                        "inline-flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200",
+                        isListening
+                          ? "bg-red-500 text-white animate-pulse glow-cyan"
+                          : "border border-slate-800 text-slate-400 hover:border-cyan-500/50 hover:text-cyan-400"
+                      )}
+                      title={isListening ? "Aufnahme stoppen" : "Spracheingabe starten"}
+                    >
+                      {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </button>
+                  )}
+                  
+                  {/* Auto-Speak Toggle */}
+                  {isTTSSupported && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isSpeaking) {
+                          stopSpeaking();
+                        }
+                        setAutoSpeak(!autoSpeak);
+                      }}
+                      className={clsx(
+                        "inline-flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200",
+                        autoSpeak
+                          ? "bg-cyan-500/20 border border-cyan-500/50 text-cyan-400"
+                          : "border border-slate-800 text-slate-400 hover:border-cyan-500/50 hover:text-cyan-400"
+                      )}
+                      title={autoSpeak ? "Sprachausgabe deaktivieren" : "Sprachausgabe aktivieren"}
+                    >
+                      {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                    </button>
+                  )}
+                </div>
+                
                 <button
                   type="submit"
                   disabled={isLoading || !input.trim()}
@@ -413,6 +480,18 @@ const ChatPage = () => {
                   <Send className="h-4 w-4" />
                 </button>
               </div>
+              
+              {/* Voice Status Indicator */}
+              {(isListening || interimTranscript) && (
+                <div className="px-4 py-2 border-t border-slate-800">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-red-400">
+                      {interimTranscript || "Höre zu..."}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             <p className="text-xs text-slate-500">
               Tipp: Enter zum Senden, Shift+Enter für neue Zeile
