@@ -94,11 +94,9 @@ export const getApiBaseUrl = () => {
     // expo-constants nicht verfügbar
   }
   
-  // 4. Production URL aus Window Location
-  if (isProduction() && typeof window !== 'undefined') {
-    const origin = window.location.origin;
-    // Wenn auf gleicher Domain wie API
-    return `${origin}/api/v1`;
+  // 4. Production URL - Render.com Deployment
+  if (isProduction()) {
+    return 'https://salesflow-ai.onrender.com/api/v1';
   }
   
   // 5. Development Fallback

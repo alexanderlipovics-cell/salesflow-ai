@@ -36,8 +36,12 @@ import TeamLeaderScreen from '../screens/main/TeamLeaderScreen';
 import DataImportScreen from '../screens/main/DataImportScreen';
 import { PhoenixScreen } from '../screens/main/PhoenixScreen';
 
-// MLM Import Screen
+// MLM Import Screens
 import ImportContactsScreen from '../screens/import/ImportContactsScreen';
+import ImportStartScreen from '../screens/import/ImportStartScreen';
+import ImportPreviewScreen from '../screens/import/ImportPreviewScreen';
+import ImportProgressScreen from '../screens/import/ImportProgressScreen';
+import ImportHelpScreen from '../screens/import/ImportHelpScreen';
 
 // Onboarding Screens (neues erweitertes System)
 import { OnboardingScreen } from '../screens/onboarding';
@@ -78,6 +82,10 @@ import AuraOsDashboardScreen from '../screens/main/AuraOsDashboardScreen';
 import DMOTrackerScreen from '../screens/main/DMOTrackerScreen';
 import GuidedDailyFlowScreen from '../screens/main/GuidedDailyFlowScreen';
 import TeamDashboardScreen from '../screens/main/TeamDashboardScreen';
+
+// Alerts Screen
+import AlertsListScreen from '../screens/AlertsListScreen';
+import MentorChatScreen from '../screens/MentorChatScreen';
 
 // Billing/Pricing/Settings Screens
 import PricingScreen from '../screens/settings/PricingScreen';
@@ -130,9 +138,9 @@ function MainTabs() {
       />
       <Tab.Screen 
         name="MENTOR" 
-        component={ChatScreen}
+        component={MentorChatScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="🧠" label={t('navigation.mentor')} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="🤖" label={t('navigation.mentor')} focused={focused} />,
         }}
       />
       <Tab.Screen 
@@ -252,6 +260,13 @@ function AppStack() {
           headerShown: false,
         }}
       />
+      <Stack.Screen 
+        name="AlertsList" 
+        component={AlertsListScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       
       {/* CHIEF v3.0 Screens */}
       <Stack.Screen 
@@ -276,9 +291,43 @@ function AppStack() {
           presentation: 'modal',
         }}
       />
+      {/* Legacy Import Screen (kept for backwards compatibility) */}
       <Stack.Screen 
         name="ImportContacts" 
         component={ImportContactsScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      {/* New MLM Import Flow */}
+      <Stack.Screen 
+        name="ImportStart" 
+        component={ImportStartScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen 
+        name="ImportPreview" 
+        component={ImportPreviewScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen 
+        name="ImportProgress" 
+        component={ImportProgressScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen 
+        name="ImportHelp" 
+        component={ImportHelpScreen}
         options={{
           headerShown: false,
           presentation: 'modal',
@@ -402,6 +451,16 @@ function AppStack() {
         component={ABTestDashboard}
         options={{
           headerShown: false,
+        }}
+      />
+      
+      {/* MENTOR Chat Screen */}
+      <Stack.Screen 
+        name="MentorChat" 
+        component={MentorChatScreen}
+        options={{
+          headerShown: false,
+          presentation: 'card',
         }}
       />
       

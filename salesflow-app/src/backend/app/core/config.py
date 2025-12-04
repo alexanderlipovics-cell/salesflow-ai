@@ -48,7 +48,15 @@ class Settings(BaseSettings):
     # ═══════════════════════════════════════════════════════════════════════
     
     # CORS - Comma-separated list of allowed origins
-    CORS_ORIGINS: str = "http://localhost:19006,http://localhost:19008,http://localhost:3000,http://localhost:8082,http://localhost:8081,http://127.0.0.1:8082,http://127.0.0.1:8081,http://10.0.0.24:8082,http://10.0.0.24:8081"
+    # Development URLs
+    # Production URLs (Expo Web, React Native, Web App)
+    CORS_ORIGINS: str = (
+        "http://localhost:19006,http://localhost:19008,http://localhost:3000,"
+        "http://localhost:8082,http://localhost:8081,http://127.0.0.1:8082,"
+        "http://127.0.0.1:8081,http://10.0.0.24:8082,http://10.0.0.24:8081,"
+        "https://salesflow-app.onrender.com,https://salesflow-app.vercel.app,"
+        "https://salesflow-app.netlify.app,exp://localhost:8081,exp://192.168.*"
+    )
     
     # Secret Key für JWT und Sessions (MUSS in Production gesetzt werden!)
     SECRET_KEY: str = "change-me-in-production-use-openssl-rand-base64-32"
@@ -170,7 +178,7 @@ class Settings(BaseSettings):
         """Parsed CORS Origins als Liste"""
         if self.ENVIRONMENT == "development":
             # In Development: Alle localhost-Ports erlauben
-            return [
+            origins = [
                 "http://localhost:19006",
                 "http://localhost:19007",
                 "http://localhost:19008",
@@ -191,6 +199,7 @@ class Settings(BaseSettings):
                 "http://localhost:19024",
                 "http://localhost:19025",
                 "http://localhost:8081",
+                "http://localhost:8082",
                 "http://localhost:3000",
                 "http://127.0.0.1:19006",
                 "http://127.0.0.1:19008",
@@ -198,8 +207,17 @@ class Settings(BaseSettings):
                 "http://127.0.0.1:19011",
                 "http://127.0.0.1:19015",
                 "http://127.0.0.1:19020",
-                "http://127.0.0.1:19020",
+                "http://127.0.0.1:8081",
+                "http://127.0.0.1:8082",
             ]
+            # Füge auch Production URLs hinzu für Testing
+            origins.extend([
+                "https://salesflow-app.onrender.com",
+                "https://salesflow-app.vercel.app",
+                "https://salesflow-app.netlify.app",
+            ])
+            return origins
+        # Production: Nur explizit erlaubte Origins
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
     
     @property

@@ -58,7 +58,9 @@ interface Category {
 // API
 // ============================================================================
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_CONFIG } from '../../services/apiConfig';
+
+const API_BASE = API_CONFIG.baseUrl;
 
 async function fetchTemplates(token: string, category?: string): Promise<TemplateSummary[]> {
   const url = category

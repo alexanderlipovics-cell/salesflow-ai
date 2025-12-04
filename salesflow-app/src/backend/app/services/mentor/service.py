@@ -18,7 +18,11 @@ from .prompts import MENTOR_SYSTEM_PROMPT, MENTOR_CONTEXT_TEMPLATE, DISC_ADAPTAT
 from .action_parser import ActionParser, ActionTag, extract_action_tags, strip_action_tags
 from .context_builder import MentorContextBuilder, MentorContext
 from ...core.config import settings
-from ...services.compliance import check_message, ComplianceResult
+from ...services.compliance import check_message, ComplianceResult, ComplianceSentinel
+from ...config.knowledge.mentor_knowledge import (
+    build_mentor_system_prompt_addition,
+    get_company_context,
+)
 
 # Neue Prompt-Struktur
 import sys
@@ -158,6 +162,7 @@ class MentorService:
             vertical=vertical,
             skill_level=skill_level,
             enabled_modules=enabled_modules,
+            company_id=company_id,
         )
         
         # LLM aufrufen
@@ -174,27 +179,32 @@ class MentorService:
         # Response parsen
         parse_result = self.action_parser.parse(raw_response)
         
-        # Compliance-Check für generierte Nachricht
-        compliance_warning = None
+        # Compliance-Check für User-Nachricht (Input)
+        input_compliance_result = None
         company_name = None
         if company_id:
             # Konvertiere company_id zu company_name für Compliance Sentinel
-            # Falls company_id direkt der Name ist
             company_name = company_id.lower()
         
-        compliance_result = check_message(parse_result.clean_text, company=company_name)
+        # Prüfe User-Nachricht auf Compliance
+        if company_name:
+            input_compliance_result = check_message(message, company=company_name)
         
-        # Wenn Verstöße gefunden wurden, füge Warning hinzu
-        if not compliance_result.is_compliant and compliance_result.violations:
+        # Compliance-Check für generierte Nachricht (Response)
+        compliance_warning = None
+        response_compliance_result = check_message(parse_result.clean_text, company=company_name)
+        
+        # Wenn Verstöße in Response gefunden wurden, füge Warning hinzu
+        if not response_compliance_result.is_compliant and response_compliance_result.violations:
             # Erstelle Warning-Objekt
-            critical_violations = [v for v in compliance_result.violations if v.severity == "critical"]
-            error_violations = [v for v in compliance_result.violations if v.severity == "error"]
+            critical_violations = [v for v in response_compliance_result.violations if v.severity == "critical"]
+            error_violations = [v for v in response_compliance_result.violations if v.severity == "error"]
             
             if critical_violations or error_violations:
                 compliance_warning = {
                     "has_violations": True,
-                    "risk_score": compliance_result.risk_score,
-                    "violation_count": len(compliance_result.violations),
+                    "risk_score": response_compliance_result.risk_score,
+                    "violation_count": len(response_compliance_result.violations),
                     "critical_count": len(critical_violations),
                     "error_count": len(error_violations),
                     "violations": [
@@ -205,17 +215,32 @@ class MentorService:
                             "explanation": v.explanation,
                             "suggestion": v.suggestion,
                         }
-                        for v in compliance_result.violations[:5]  # Max 5 für Response
+                        for v in response_compliance_result.violations[:5]  # Max 5 für Response
                     ],
                     "message": (
-                        f"⚠️ Compliance-Warnung: {len(compliance_result.violations)} Verstoß(e) gefunden. "
+                        f"⚠️ Compliance-Warnung: {len(response_compliance_result.violations)} Verstoß(e) in der Antwort gefunden. "
                         f"Bitte überprüfe die Nachricht vor dem Versenden."
                     ),
                 }
                 logger.warning(
                     f"Compliance-Verstoß in MENTOR Response für User {user_id}: "
-                    f"{len(compliance_result.violations)} Verstöße, Risk Score: {compliance_result.risk_score}"
+                    f"{len(response_compliance_result.violations)} Verstöße, Risk Score: {response_compliance_result.risk_score}"
                 )
+        
+        # Warnung auch bei Input-Verstößen (wenn kritisch)
+        if input_compliance_result and not input_compliance_result.is_compliant:
+            critical_input = [v for v in input_compliance_result.violations if v.severity == "critical"]
+            if critical_input and not compliance_warning:
+                compliance_warning = {
+                    "has_violations": True,
+                    "risk_score": input_compliance_result.risk_score,
+                    "violation_count": len(input_compliance_result.violations),
+                    "critical_count": len(critical_input),
+                    "message": (
+                        f"⚠️ Deine Nachricht enthält mögliche Compliance-Verstöße. "
+                        f"Bitte formuliere deine Frage um."
+                    ),
+                }
         
         # Latenz berechnen
         latency_ms = int((time.time() - start_time) * 1000)
@@ -263,9 +288,13 @@ class MentorService:
         vertical: Optional[str] = None,
         skill_level: Optional[str] = None,
         enabled_modules: Optional[List[str]] = None,
+        company_id: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         """Baut die Messages für den LLM Call."""
         messages = []
+        
+        # MENTOR System Prompt mit Knowledge
+        system_prompt = self._build_mentor_system_prompt(company_id=company_id)
         
         # Neue Prompt-Struktur verwenden wenn Vertical bekannt
         if vertical:
@@ -298,11 +327,21 @@ class MentorService:
                 enabled_modules=enabled_modules or [],
                 context_text=context_text,
             )
+            
+            # MENTOR System Prompt am Anfang einfügen
+            if messages and messages[0].get("role") == "system":
+                # Erweitere ersten System Prompt mit MENTOR Knowledge
+                messages[0]["content"] = system_prompt + "\n\n" + messages[0]["content"]
+            else:
+                messages.insert(0, {
+                    "role": "system",
+                    "content": system_prompt,
+                })
         else:
-            # Fallback: Alte Prompts
+            # Fallback: Alte Prompts mit MENTOR Knowledge
             messages.append({
                 "role": "system",
-                "content": MENTOR_SYSTEM_PROMPT,
+                "content": system_prompt,
             })
             
             # Context hinzufügen
@@ -336,6 +375,58 @@ class MentorService:
         })
         
         return messages
+    
+    def _build_mentor_system_prompt(self, company_id: Optional[str] = None) -> str:
+        """
+        Baut den MENTOR System Prompt mit Knowledge Integration.
+        
+        Args:
+            company_id: Company ID für company-spezifische Knowledge
+            
+        Returns:
+            Vollständiger System Prompt
+        """
+        # Basis System Prompt
+        base_prompt = """Du bist MENTOR, der KI-Vertriebscoach für Network Marketing.
+
+═══════════════════════════════════════════════════════════════
+DEINE EXPERTISE
+═══════════════════════════════════════════════════════════════
+
+• Follow-up Strategien
+• Einwandbehandlung (zu teuer, keine Zeit, muss überlegen)
+• HWG/DSGVO-konforme Kommunikation
+• Gesprächseinstiege und Abschluss-Techniken
+
+═══════════════════════════════════════════════════════════════
+DEIN STIL
+═══════════════════════════════════════════════════════════════
+
+• Freundlich aber direkt
+• Praxisorientiert mit konkreten Formulierungen
+• Kurze, actionable Antworten
+• Deutsch
+
+═══════════════════════════════════════════════════════════════
+COMPLIANCE
+═══════════════════════════════════════════════════════════════
+
+Bei Compliance-Fragen: Prüfe auf HWG (Heilversprechen) und DSGVO.
+NIEMALS Heilversprechen machen oder Krankheitsnamen nennen.
+NUR: Wellness, Lifestyle, Wohlbefinden, kosmetische Claims.
+"""
+        
+        # Company-spezifische Knowledge hinzufügen
+        if company_id:
+            try:
+                company_name = company_id.lower()
+                knowledge_addition = build_mentor_system_prompt_addition(company_name)
+                if knowledge_addition:
+                    base_prompt += "\n\n" + knowledge_addition
+            except Exception as e:
+                logger.warning(f"Could not load company knowledge for {company_id}: {e}")
+        
+        return base_prompt
     
     async def _log_interaction(
         self,

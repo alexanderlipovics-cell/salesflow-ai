@@ -69,7 +69,9 @@ const INITIAL_FORM: AccountFormData = {
 // API
 // ============================================================================
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_CONFIG } from '../../services/apiConfig';
+
+const API_BASE = API_CONFIG.baseUrl;
 
 async function fetchAccounts(token: string): Promise<EmailAccount[]> {
   const res = await fetch(`${API_BASE}/email-accounts`, {

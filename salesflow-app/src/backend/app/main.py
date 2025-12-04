@@ -120,6 +120,9 @@ from .api.routes.dmo import router as dmo_router
 from .api.routes.team import router as team_router
 from .api.routes import alerts
 
+# Ghostbuster v2 API
+from .api.routes.ghostbuster import router as ghostbuster_v2_router
+
 # Sales Intelligence v3.0
 from .api.routes.sales_intelligence import router as sales_intelligence_router
 
@@ -408,6 +411,9 @@ app.include_router(contacts_router, prefix="/api/v2")
 app.include_router(dmo_router, prefix="/api/v2")
 app.include_router(team_router, prefix="/api/v2")
 app.include_router(alerts.router, prefix="/api/v2")
+
+# Ghostbuster v2 API
+app.include_router(ghostbuster_v2_router, prefix="/api/v2")
 
 # Sales Intelligence v3.0
 app.include_router(sales_intelligence_router, prefix="/api/v1")

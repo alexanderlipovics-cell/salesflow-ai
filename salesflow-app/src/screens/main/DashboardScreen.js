@@ -29,6 +29,7 @@ import { CompanyBanner, ZinzinoQuickInfo } from '../../components/branding';
 import { AutopilotWidget } from '../../components/autopilot';
 import { BrainWidget } from '../../components/autonomous';
 import { UpgradeBanner } from '../../components/billing';
+import { AlertsWidget } from '../../components/dashboard';
 import { useToast, LanguageSwitcher } from '../../components/ui';
 import { SkeletonStatsCard } from '../../components/ui/Skeleton';
 import { 
@@ -318,6 +319,11 @@ export default function DashboardScreen({ navigation }) {
             trend={5}
           />
         </View>
+
+        {/* ═══════════════════════════════════════════════════════════════════════════
+            ALERTS WIDGET - HANDLUNGSBEDARF
+            ═══════════════════════════════════════════════════════════════════════════ */}
+        <AlertsWidget limit={3} />
 
         {/* ═══════════════════════════════════════════════════════════════════════════
             SYSTEM STATUS - GLASS CARD
