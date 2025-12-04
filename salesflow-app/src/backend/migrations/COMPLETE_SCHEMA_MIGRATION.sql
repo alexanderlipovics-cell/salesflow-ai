@@ -2079,23 +2079,40 @@ ALTER TABLE autopilot_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
--- Basic own-data policies
-CREATE POLICY IF NOT EXISTS "Users see own profiles" ON profiles FOR ALL USING (auth.uid() = id);
-CREATE POLICY IF NOT EXISTS "Users see own leads" ON leads FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own contacts" ON contacts FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own activities" ON activities FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own follow_ups" ON follow_ups FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own follow_up_tasks" ON follow_up_tasks FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own dmo_entries" ON dmo_entries FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own goals" ON goals FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own scheduled_jobs" ON scheduled_jobs FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own ai_interactions" ON ai_interactions FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own autopilot_settings" ON autopilot_settings FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own user_settings" ON user_settings FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Users see own notifications" ON notifications FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY IF NOT EXISTS "Scripts are public" ON scripts FOR SELECT TO authenticated USING (true);
-CREATE POLICY IF NOT EXISTS "Team members by leader" ON team_members FOR ALL USING (auth.uid() = leader_id OR auth.uid() = member_id);
-CREATE POLICY IF NOT EXISTS "Sequences by owner" ON sequences FOR ALL USING (auth.uid() = user_id);
+-- Basic own-data policies (DROP first to avoid errors)
+DROP POLICY IF EXISTS "Users see own profiles" ON profiles;
+DROP POLICY IF EXISTS "Users see own leads" ON leads;
+DROP POLICY IF EXISTS "Users see own contacts" ON contacts;
+DROP POLICY IF EXISTS "Users see own activities" ON activities;
+DROP POLICY IF EXISTS "Users see own follow_ups" ON follow_ups;
+DROP POLICY IF EXISTS "Users see own follow_up_tasks" ON follow_up_tasks;
+DROP POLICY IF EXISTS "Users see own dmo_entries" ON dmo_entries;
+DROP POLICY IF EXISTS "Users see own goals" ON goals;
+DROP POLICY IF EXISTS "Users see own scheduled_jobs" ON scheduled_jobs;
+DROP POLICY IF EXISTS "Users see own ai_interactions" ON ai_interactions;
+DROP POLICY IF EXISTS "Users see own autopilot_settings" ON autopilot_settings;
+DROP POLICY IF EXISTS "Users see own user_settings" ON user_settings;
+DROP POLICY IF EXISTS "Users see own notifications" ON notifications;
+DROP POLICY IF EXISTS "Scripts are public" ON scripts;
+DROP POLICY IF EXISTS "Team members by leader" ON team_members;
+DROP POLICY IF EXISTS "Sequences by owner" ON sequences;
+
+CREATE POLICY "Users see own profiles" ON profiles FOR ALL USING (auth.uid() = id);
+CREATE POLICY "Users see own leads" ON leads FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own contacts" ON contacts FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own activities" ON activities FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own follow_ups" ON follow_ups FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own follow_up_tasks" ON follow_up_tasks FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own dmo_entries" ON dmo_entries FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own goals" ON goals FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own scheduled_jobs" ON scheduled_jobs FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own ai_interactions" ON ai_interactions FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own autopilot_settings" ON autopilot_settings FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own user_settings" ON user_settings FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users see own notifications" ON notifications FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Scripts are public" ON scripts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Team members by leader" ON team_members FOR ALL USING (auth.uid() = leader_id OR auth.uid() = member_id);
+CREATE POLICY "Sequences by owner" ON sequences FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================================================
 -- INDEXES

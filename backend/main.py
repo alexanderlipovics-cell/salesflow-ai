@@ -372,6 +372,51 @@ async def get_followup_analytics(days: int = 30):
         "completion_rate": 0.80
     }
 
+
+# --- PHOENIX/PHÖNIX ENDPOINTS ---
+
+@app.get("/api/phoenix/spots")
+async def get_phoenix_spots(location: str = None, radius: int = 5000):
+    """Get spots near location for Phönix feature."""
+    return {
+        "spots": [
+            {"id": "1", "name": "Café Central", "type": "cafe", "distance": 250, "rating": 4.5},
+            {"id": "2", "name": "Starbucks Wien", "type": "cafe", "distance": 400, "rating": 4.0},
+            {"id": "3", "name": "WeWork Coworking", "type": "coworking", "distance": 800, "rating": 4.3},
+            {"id": "4", "name": "Stadtpark", "type": "park", "distance": 1200, "rating": 4.8},
+        ],
+        "location": location or "Wien, 3. Bezirk",
+        "radius": radius
+    }
+
+
+@app.post("/api/phoenix/spots")
+async def save_phoenix_spot(data: dict):
+    """Save a favorite spot."""
+    return {
+        "success": True,
+        "spot": {
+            "id": "new_spot_1",
+            "name": data.get("name", "Neuer Spot"),
+            "type": data.get("type", "cafe"),
+            "saved": True
+        }
+    }
+
+
+@app.get("/api/phoenix/suggestions")
+async def get_phoenix_suggestions(location: str = None, time_minutes: int = 30):
+    """Get activity suggestions based on available time."""
+    return {
+        "suggestions": [
+            {"activity": "Kaffee trinken und Leads nachfassen", "duration": 20, "type": "productive"},
+            {"activity": "LinkedIn-Posts checken", "duration": 15, "type": "networking"},
+            {"activity": "Kurzer Spaziergang zur Entspannung", "duration": 10, "type": "wellness"},
+        ],
+        "available_time": time_minutes
+    }
+
+
 # --- ENTRY POINT ---
 if __name__ == "__main__":
     import uvicorn

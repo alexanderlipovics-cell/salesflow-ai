@@ -504,6 +504,92 @@ try:
 except ImportError as e:
     logger.warning(f"Squad router not available: {e}")
 
+# ═══════════════════════════════════════════════════════════════════════════
+# PHOENIX/PHÖNIX - FIELD SERVICE ASSISTANT
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Phoenix - Außendienst-Assistent
+try:
+    from app.routers import phoenix
+    app.include_router(phoenix.router, tags=["phoenix", "field-service"])
+    logger.info("Phoenix/Phönix loaded 🦅✅")
+except ImportError as e:
+    logger.warning(f"Phoenix router not available: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FALLBACK DEMO ENDPOINTS (wenn Router nicht verfügbar)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/leads/needs-action")
+async def fallback_leads_needs_action():
+    """Fallback: Leads die Aktion brauchen."""
+    return {
+        "leads": [
+            {"id": "1", "name": "Max Mustermann", "status": "hot", "score": 85, "action": "Follow-up heute"},
+            {"id": "2", "name": "Anna Schmidt", "status": "warm", "score": 70, "action": "Präsentation"},
+        ],
+        "count": 2
+    }
+
+@app.get("/api/leads/daily-command")
+async def fallback_daily_command():
+    """Fallback: Daily Command Daten."""
+    return {
+        "leads": [
+            {"id": "1", "name": "Max Mustermann", "task": "Anrufen", "priority": "high"},
+            {"id": "2", "name": "Anna Schmidt", "task": "WhatsApp", "priority": "medium"},
+        ],
+        "tasks_completed": 5,
+        "tasks_total": 15
+    }
+
+@app.post("/api/objection-brain/generate")
+async def fallback_objection_generate(data: dict):
+    """Fallback: Einwand-Antworten generieren."""
+    return {
+        "responses": [
+            {"type": "logical", "text": "Wenn wir die Zahlen anschauen..."},
+            {"type": "emotional", "text": "Ich verstehe das total..."},
+            {"type": "question", "text": "Was wäre es dir wert wenn...?"},
+        ],
+        "objection": data.get("objection", ""),
+        "category": "general"
+    }
+
+@app.post("/api/objection-brain/log")
+async def fallback_objection_log(data: dict):
+    """Fallback: Einwand loggen."""
+    return {"success": True}
+
+@app.post("/api/next-best-actions/suggest")
+async def fallback_next_actions(data: dict):
+    """Fallback: Nächste beste Aktionen."""
+    return {
+        "actions": [
+            {"priority": 1, "action": "Follow-up Max", "type": "call"},
+            {"priority": 2, "action": "WhatsApp Anna", "type": "message"},
+        ]
+    }
+
+@app.get("/api/analytics/dashboard/complete")
+async def fallback_dashboard_complete(workspace_id: str = None, range: str = "30d"):
+    """Fallback: Dashboard Analytics."""
+    return {
+        "period": range,
+        "summary": {"total_leads": 1250, "conversion_rate": 0.28},
+        "pipeline": {"new": 125, "contacted": 234, "won": 45}
+    }
+
+@app.get("/api/followups/analytics")
+async def fallback_followup_analytics(days: int = 30):
+    """Fallback: Follow-up Analytics."""
+    return {
+        "period_days": days,
+        "total_followups": 567,
+        "completed": 456,
+        "completion_rate": 0.80
+    }
+
 logger.info("="*60)
 logger.info("🚀 SALES FLOW AI - ALL SYSTEMS ACTIVE 🚀")
 logger.info("="*60)
