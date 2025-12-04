@@ -294,3 +294,74 @@ async def delete_lead(lead_id: str):
     global _demo_leads
     _demo_leads = [l for l in _demo_leads if l["id"] != lead_id]
     return {"success": True, "message": "Lead gelöscht (Demo-Modus)"}
+
+
+# --- ADDITIONAL ENDPOINTS FOR FRONTEND ---
+
+@router.get("/needs-action")
+async def get_leads_needs_action(
+    user_id: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """
+    Get leads that need immediate action.
+    Prioritized by score, days since last contact, etc.
+    """
+    if supabase:
+        try:
+            result = supabase.table('leads').select('*').order('lead_score', desc=True).limit(limit).execute()
+            return {"leads": result.data, "count": len(result.data)}
+        except Exception as e:
+            logger.warning(f"Supabase query failed: {e}")
+    
+    # Demo data - return highest scored leads
+    sorted_leads = sorted(_demo_leads, key=lambda x: x.get("score", 0), reverse=True)
+    return {
+        "leads": sorted_leads[:limit],
+        "count": len(sorted_leads[:limit])
+    }
+
+
+@router.get("/daily-command")
+async def get_daily_command_leads(
+    user_id: Optional[str] = Query(None),
+    limit: int = Query(15, ge=1, le=50)
+):
+    """
+    Get leads for Daily Command - prioritized task list for today.
+    """
+    if supabase:
+        try:
+            # Get leads with pending follow-ups
+            result = supabase.table('leads').select('*, lead_tasks(*)').order('lead_score', desc=True).limit(limit).execute()
+            return {"leads": result.data, "count": len(result.data)}
+        except Exception as e:
+            logger.warning(f"Supabase query failed: {e}")
+    
+    # Demo data
+    return {
+        "leads": _demo_leads[:limit],
+        "count": len(_demo_leads[:limit]),
+        "tasks": [
+            {"id": "task_1", "lead_id": "lead_001", "action": "follow_up", "priority": "high", "description": "Follow-up nach Präsentation"},
+            {"id": "task_2", "lead_id": "lead_002", "action": "call", "priority": "medium", "description": "Rückruf vereinbaren"},
+            {"id": "task_3", "lead_id": "lead_003", "action": "email", "priority": "low", "description": "Info-Material senden"},
+        ]
+    }
+
+
+@router.post("/from-hunter")
+async def create_lead_from_hunter(lead_data: dict):
+    """
+    Create a new lead from Lead Hunter AI.
+    """
+    lead = LeadModel(
+        name=lead_data.get("name", "Unbekannt"),
+        email=lead_data.get("email"),
+        phone=lead_data.get("phone"),
+        status="new",
+        source="Lead Hunter AI",
+        notes=lead_data.get("notes", ""),
+        score=lead_data.get("score", 50)
+    )
+    return await create_lead(lead)

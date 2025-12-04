@@ -313,3 +313,102 @@ async def get_team_leaderboard(
     except Exception as e:
         logger.error(f"Error fetching leaderboard: {repr(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch leaderboard")
+
+
+# ─────────────────────────────────────────────────────────────────
+# ADDITIONAL ANALYTICS ENDPOINTS FOR DASHBOARD
+# ─────────────────────────────────────────────────────────────────
+
+@router.get("/dashboard/complete")
+async def get_complete_dashboard(
+    workspace_id: Optional[str] = None,
+    range: str = Query(default="30d", pattern="^(7d|30d|90d|365d)$")
+):
+    """
+    Get complete dashboard analytics - all metrics in one call.
+    """
+    days = {"7d": 7, "30d": 30, "90d": 90, "365d": 365}.get(range, 30)
+    
+    return {
+        "period": range,
+        "summary": {
+            "total_leads": 1250,
+            "active_leads": 380,
+            "conversion_rate": 0.28,
+            "avg_deal_size": 2850.00,
+            "revenue_this_period": 125000.00
+        },
+        "performance": {
+            "calls_made": 456,
+            "messages_sent": 1234,
+            "meetings_held": 89,
+            "follow_ups_completed": 567
+        },
+        "pipeline": {
+            "new": 125,
+            "contacted": 234,
+            "qualified": 145,
+            "proposal": 67,
+            "negotiation": 34,
+            "won": 45,
+            "lost": 23
+        },
+        "trends": {
+            "leads": [
+                {"date": "2025-11-01", "value": 45},
+                {"date": "2025-11-08", "value": 52},
+                {"date": "2025-11-15", "value": 48},
+                {"date": "2025-11-22", "value": 55},
+                {"date": "2025-11-29", "value": 60}
+            ],
+            "conversions": [
+                {"date": "2025-11-01", "value": 12},
+                {"date": "2025-11-08", "value": 15},
+                {"date": "2025-11-15", "value": 11},
+                {"date": "2025-11-22", "value": 18},
+                {"date": "2025-11-29", "value": 14}
+            ]
+        },
+        "top_sources": [
+            {"source": "WhatsApp", "leads": 456, "conversion_rate": 0.32},
+            {"source": "Instagram", "leads": 234, "conversion_rate": 0.25},
+            {"source": "Referral", "leads": 189, "conversion_rate": 0.41},
+            {"source": "Website", "leads": 156, "conversion_rate": 0.18}
+        ]
+    }
+
+
+@router.get("/followups/analytics")
+async def get_followup_analytics(
+    days: int = Query(default=30, ge=1, le=365)
+):
+    """
+    Get follow-up specific analytics.
+    """
+    return {
+        "period_days": days,
+        "total_followups": 567,
+        "completed": 456,
+        "pending": 89,
+        "overdue": 22,
+        "completion_rate": 0.80,
+        "avg_response_time_hours": 4.5,
+        "by_channel": {
+            "whatsapp": 234,
+            "email": 156,
+            "phone": 89,
+            "instagram": 67,
+            "other": 21
+        },
+        "by_outcome": {
+            "positive": 234,
+            "neutral": 156,
+            "negative": 66,
+            "no_response": 111
+        },
+        "best_times": [
+            {"hour": 10, "success_rate": 0.38},
+            {"hour": 14, "success_rate": 0.35},
+            {"hour": 18, "success_rate": 0.32}
+        ]
+    }

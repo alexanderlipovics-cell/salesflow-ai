@@ -448,6 +448,62 @@ try:
 except ImportError as e:
     logger.warning(f"Billing router not available: {e}")
 
+# ═══════════════════════════════════════════════════════════════════════════
+# GTM COPY ASSISTANT
+# ═══════════════════════════════════════════════════════════════════════════
+
+# GTM Copy - Go-to-Market Content Generation
+try:
+    from app.routers import gtm_copy
+    app.include_router(gtm_copy.router, prefix="/api/gtm-copy", tags=["gtm-copy", "ai"])
+    logger.info("GTM Copy Assistant loaded 📝✅")
+except ImportError as e:
+    logger.warning(f"GTM Copy router not available: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DELAY MASTER
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Delay Master - Follow-up Delay Generator
+try:
+    from app.routers import delay_master
+    app.include_router(delay_master.router, prefix="/api/delay", tags=["delay-master", "ai"])
+    logger.info("Delay Master loaded ⏰✅")
+except ImportError as e:
+    logger.warning(f"Delay Master router not available: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# IMPORT SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Import/Export - Data Import System (Full)
+try:
+    from app.routers import import_export
+    app.include_router(import_export.router, tags=["import", "data"])
+    logger.info("Import/Export System loaded 📥✅")
+except Exception as e:
+    logger.warning(f"Import/Export router not available: {e}")
+
+# Simple Import - Customer Import (Demo-friendly)
+try:
+    from app.routers import simple_import
+    app.include_router(simple_import.router, prefix="/api/import", tags=["import", "simple"])
+    logger.info("Simple Import loaded 📥✅")
+except Exception as e:
+    logger.warning(f"Simple Import router not available: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SQUAD SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Squad - Team Challenges
+try:
+    from app.routers import squad
+    app.include_router(squad.router, prefix="/api/squad", tags=["squad", "team"])
+    logger.info("Squad System loaded 👥✅")
+except ImportError as e:
+    logger.warning(f"Squad router not available: {e}")
+
 logger.info("="*60)
 logger.info("🚀 SALES FLOW AI - ALL SYSTEMS ACTIVE 🚀")
 logger.info("="*60)
