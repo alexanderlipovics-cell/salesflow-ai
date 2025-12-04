@@ -18,7 +18,42 @@
     "search": "Suchen",
     "filter": "Filtern",
     "sort": "Sortieren",
-    "confirm": "Bestätigen"
+    "confirm": "Bestätigen",
+    "upgrade": "Upgrade",
+    "currentPlan": "Aktueller Plan",
+    "loggedInAs": "Eingeloggt als"
+  },
+  "pricing": {
+    "title": "Wähle deinen Wachstumsplan",
+    "subtitle": "Alle Pläne enthalten unbegrenzte Pipeline-Speicherung, DSGVO-konforme Datenverarbeitung und Premium-Support.",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich -20%",
+    "yearlyHelper": "20% günstiger · Abrechnung jährlich",
+    "monthlyHelper": "Flexibel kündbar",
+    "popular": "Beliebteste Wahl",
+    "upgradeNow": "Jetzt upgraden",
+    "contactSales": "Vertrieb kontaktieren",
+    "perMonth": "/Monat",
+    "perYear": "/Jahr",
+    "addons": "Power Add-Ons",
+    "addonsSubtitle": "Verstärke deinen Vertrieb mit diesen Add-Ons",
+    "finanzTitle": "Finanz Autopilot",
+    "leadgenTitle": "Lead Generator",
+    "addToPlan": "Hinzufügen",
+    "discoverUpgrade": "Upgrade entdecken"
+  },
+  "sidebar": {
+    "today": "HEUTE",
+    "tools": "TOOLS",
+    "analytics": "ANALYTICS",
+    "settings": "EINSTELLUNGEN",
+    "contacts": "KONTAKTE",
+    "knowledge": "WISSEN",
+    "leads": "Leads",
+    "customers": "Kunden",
+    "partners": "Partner",
+    "playbooks": "Playbooks / Knowledge Base",
+    "allTools": "Alle Tools"
   },
   "nav": {
     "dailyCommand": "Daily Command",

@@ -18,7 +18,42 @@
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "upgrade": "Upgrade",
+    "currentPlan": "Current Plan",
+    "loggedInAs": "Logged in as"
+  },
+  "pricing": {
+    "title": "Choose Your Growth Plan",
+    "subtitle": "All plans include unlimited pipeline storage, GDPR-compliant data processing, and premium support.",
+    "monthly": "Monthly",
+    "yearly": "Yearly -20%",
+    "yearlyHelper": "20% cheaper · Billed annually",
+    "monthlyHelper": "Cancel anytime",
+    "popular": "Most Popular",
+    "upgradeNow": "Upgrade Now",
+    "contactSales": "Contact Sales",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "addons": "Power Add-Ons",
+    "addonsSubtitle": "Supercharge your sales with these add-ons",
+    "finanzTitle": "Finance Autopilot",
+    "leadgenTitle": "Lead Generator",
+    "addToPlan": "Add to plan",
+    "discoverUpgrade": "Discover Upgrade"
+  },
+  "sidebar": {
+    "today": "TODAY",
+    "tools": "TOOLS",
+    "analytics": "ANALYTICS",
+    "settings": "SETTINGS",
+    "contacts": "CONTACTS",
+    "knowledge": "KNOWLEDGE",
+    "leads": "Leads",
+    "customers": "Customers",
+    "partners": "Partners",
+    "playbooks": "Playbooks / Knowledge Base",
+    "allTools": "All Tools"
   },
   "nav": {
     "dailyCommand": "Daily Command",
