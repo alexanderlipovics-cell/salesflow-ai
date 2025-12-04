@@ -27,6 +27,7 @@ import {
 import { useUser } from "../context/UserContext";
 import { useSubscription } from "../hooks/useSubscription";
 import { usePricingModal } from "../context/PricingModalContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 const navGroups = [
   {
@@ -144,6 +145,11 @@ const AppShell = () => {
             <p className="mt-2 text-sm font-semibold text-slate-100">{user.name}</p>
             <p className="text-xs text-slate-500">{user.email}</p>
           </div>
+
+          {/* Language Switcher */}
+          <div className="flex justify-center">
+            <LanguageSwitcher />
+          </div>
         </div>
       </aside>
 
@@ -158,9 +164,12 @@ const AppShell = () => {
                 Network Marketing Pro
               </p>
             </div>
-            <span className="rounded-full border border-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
-              {planLabel}
-            </span>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher variant="minimal" />
+              <span className="rounded-full border border-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+                {planLabel}
+              </span>
+            </div>
           </div>
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
             {mobileNavItems.map((item) => (
