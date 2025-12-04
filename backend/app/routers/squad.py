@@ -400,8 +400,8 @@ async def update_challenge(
         if request.start_date is not None or request.end_date is not None:
             if check_challenge_overlap(
                 supabase_client, squad_id, start_date, end_date, exclude_id=challenge_id
-        ):
-            raise HTTPException(
+            ):
+                raise HTTPException(
                     status_code=400,
                     detail="Updated dates overlap with an existing active challenge"
                 )
