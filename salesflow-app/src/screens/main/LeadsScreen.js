@@ -567,6 +567,23 @@ export default function LeadsScreen({ navigation }) {
       l.id === leadId ? { ...l, status: newStatus } : l
     ));
 
+    // 🆕 MENTOR LEARNING: Track Lead Status Change
+    if (newStatus === 'won' && lead) {
+      const { MentorLearning } = await import('../../services/mentorLearning');
+      await MentorLearning.trackInteraction({
+        actionType: 'lead_converted',
+        contactId: lead.id,
+        outcome: 'positive',
+      });
+    } else if (newStatus === 'lost' && lead) {
+      const { MentorLearning } = await import('../../services/mentorLearning');
+      await MentorLearning.trackInteraction({
+        actionType: 'lead_rejected',
+        contactId: lead.id,
+        outcome: 'negative',
+      });
+    }
+
     if (hasAutoReminder(newStatus) && lead) {
       const result = await createAutoReminder({
         leadId: lead.id,

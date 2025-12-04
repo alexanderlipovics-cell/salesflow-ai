@@ -253,11 +253,34 @@ export default function ChatScreen({ navigation }) {
     switch (type) {
       // 📝 Script anzeigen
       case 'SCRIPT_SUGGEST':
+        // 🆕 MENTOR LEARNING: Track Script angezeigt
+        (async () => {
+          const { MentorLearning } = await import('../../services/mentorLearning');
+          // Extract script ID from paramValue if possible, or use a hash
+          const scriptId = paramValue ? paramValue.substring(0, 50) : 'unknown';
+          await MentorLearning.trackInteraction({ 
+            actionType: 'script_shown', 
+            scriptId: scriptId 
+          });
+        })();
+        
         Alert.alert(
           '📝 Script',
           paramValue || 'Script wird geladen...',
           [
-            { text: 'Kopieren', onPress: () => Clipboard.setString(paramValue) },
+            { 
+              text: 'Kopieren', 
+              onPress: async () => {
+                await Clipboard.setString(paramValue);
+                // 🆕 MENTOR LEARNING: Track Script kopiert
+                const { MentorLearning } = await import('../../services/mentorLearning');
+                const scriptId = paramValue ? paramValue.substring(0, 50) : 'unknown';
+                await MentorLearning.trackInteraction({ 
+                  actionType: 'script_copied', 
+                  scriptId: scriptId 
+                });
+              }
+            },
             { text: 'OK' },
           ]
         );

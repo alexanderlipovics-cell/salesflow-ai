@@ -90,9 +90,14 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({ vertical }) => {
   const { user, profile, refreshProfile } = useAuth();
   const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showAllModules, setShowAllModules] = useState(false);
 
   const verticalConfig = getVerticalConfig(vertical);
   const availableModules = getAvailableModules(vertical);
+  
+  // Alle Module für Beta-Tester
+  const allModules: ModuleId[] = Object.keys(MODULE_INFO) as ModuleId[];
+  const isBetaTester = profile?.is_beta_tester || false;
 
   useEffect(() => {
     // Lade aktuelle Module aus Profil
@@ -105,7 +110,8 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({ vertical }) => {
   }, [profile, availableModules]);
 
   const toggleModule = async (moduleId: ModuleId) => {
-    if (!availableModules.includes(moduleId)) {
+    // Prüfe ob Modul verfügbar ist (außer im Beta-Modus)
+    if (!showAllModules && !availableModules.includes(moduleId)) {
       return; // Modul nicht für dieses Vertical verfügbar
     }
 
@@ -135,24 +141,56 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({ vertical }) => {
     }
   };
 
+  // Module-Liste: Verfügbare Module + optional alle Module für Beta-Tester
+  const modulesToShow = showAllModules && isBetaTester 
+    ? allModules 
+    : availableModules;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Aktivierte Module</Text>
-      <Text style={styles.subtitle}>
-        Wähle die Module, die für dein Vertical verfügbar sein sollen
-      </Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Aktivierte Module</Text>
+          <Text style={styles.subtitle}>
+            {showAllModules && isBetaTester 
+              ? 'Alle Module (Beta-Modus)'
+              : `Module für ${verticalConfig.name}`}
+          </Text>
+        </View>
+        {isBetaTester && (
+          <TouchableOpacity
+            style={styles.betaToggle}
+            onPress={() => setShowAllModules(!showAllModules)}
+          >
+            <Text style={styles.betaToggleText}>
+              {showAllModules ? '🔒 Standard' : '🚀 Alle Module'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <ScrollView style={styles.scrollView}>
-        {availableModules.map((moduleId) => {
+        {modulesToShow.map((moduleId) => {
           const moduleInfo = MODULE_INFO[moduleId];
           const isEnabled = enabledModules.includes(moduleId);
 
+          const isAvailableForVertical = availableModules.includes(moduleId);
+          const isBetaModule = !isAvailableForVertical && showAllModules;
+
           return (
-            <View key={moduleId} style={styles.moduleItem}>
+            <View key={moduleId} style={[
+              styles.moduleItem,
+              isBetaModule && styles.moduleItemBeta
+            ]}>
               <View style={styles.moduleContent}>
                 <Text style={styles.moduleIcon}>{moduleInfo.icon}</Text>
                 <View style={styles.moduleText}>
-                  <Text style={styles.moduleName}>{moduleInfo.name}</Text>
+                  <View style={styles.moduleNameRow}>
+                    <Text style={styles.moduleName}>{moduleInfo.name}</Text>
+                    {isBetaModule && (
+                      <Text style={styles.betaBadge}>BETA</Text>
+                    )}
+                  </View>
                   <Text style={styles.moduleDescription}>
                     {moduleInfo.description}
                   </Text>
@@ -176,8 +214,8 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({ vertical }) => {
           );
         })}
 
-        {/* Nicht verfügbare Module (Info) */}
-        {Object.keys(MODULE_INFO)
+        {/* Nicht verfügbare Module (Info) - nur wenn nicht im Beta-Modus */}
+        {!showAllModules && Object.keys(MODULE_INFO)
           .filter((m) => !availableModules.includes(m as ModuleId))
           .map((moduleId) => {
             const moduleInfo = MODULE_INFO[moduleId as ModuleId];
@@ -213,6 +251,12 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     ...AURA_SHADOWS.sm,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
   title: {
     fontSize: 18,
     fontWeight: '700',
@@ -222,7 +266,19 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 12,
     color: AURA_COLORS.text.secondary,
-    marginBottom: 16,
+  },
+  betaToggle: {
+    backgroundColor: AURA_COLORS.accent.primary + '20',
+    borderWidth: 1,
+    borderColor: AURA_COLORS.accent.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  betaToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: AURA_COLORS.accent.primary,
   },
   scrollView: {
     maxHeight: 400,
@@ -238,6 +294,26 @@ const styles = StyleSheet.create({
   },
   moduleItemDisabled: {
     opacity: 0.5,
+  },
+  moduleItemBeta: {
+    borderWidth: 1,
+    borderColor: AURA_COLORS.accent.primary + '40',
+    backgroundColor: AURA_COLORS.accent.primary + '10',
+  },
+  moduleNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  betaBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: AURA_COLORS.accent.primary,
+    backgroundColor: AURA_COLORS.accent.primary + '20',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    textTransform: 'uppercase',
   },
   moduleContent: {
     flexDirection: 'row',

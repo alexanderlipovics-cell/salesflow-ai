@@ -102,8 +102,8 @@ export const getApiBaseUrl = () => {
   }
   
   // 5. Development Fallback
-  // Port 8001 für lokales Backend
-  const DEV_PORT = 8001;
+  // Port 8000 für lokales Backend (uvicorn default)
+  const DEV_PORT = 8000;
   
   // Web-Browser: Immer localhost verwenden
   if (typeof window !== 'undefined') {

@@ -62,6 +62,31 @@ export const AURA_COLORS = {
     subtle: '#64748b',       // Slate 500 - Disabled
   },
 
+  // Surface Colors (für Cards, Modals, etc.)
+  surface: {
+    primary: '#1e293b',      // Slate 800 - Haupt-Surface
+    secondary: '#334155',    // Slate 700 - Sekundär-Surface
+    tertiary: '#475569',     // Slate 600 - Tertiär-Surface
+    elevated: '#64748b',     // Slate 500 - Erhöhte Surfaces
+  },
+
+  // Accent Colors (für Buttons, Highlights, etc.)
+  accent: {
+    primary: '#3b82f6',      // Blue 500 - Haupt-Accent
+    secondary: '#8b5cf6',    // Purple 500 - Sekundär-Accent
+    success: '#10b981',      // Green 500 - Success
+    warning: '#f59e0b',      // Amber 500 - Warning
+    error: '#ef4444',        // Red 500 - Error
+  },
+
+  // Border Colors
+  border: {
+    primary: 'rgba(255, 255, 255, 0.1)',    // Haupt-Border
+    secondary: 'rgba(255, 255, 255, 0.08)', // Sekundär-Border
+    subtle: 'rgba(255, 255, 255, 0.05)',    // Subtiler Border
+    accent: 'rgba(59, 130, 246, 0.3)',      // Accent-Border
+  },
+
   // Status Colors
   status: {
     success: '#10b981',
@@ -96,6 +121,36 @@ export const AURA_RADIUS = {
 // SHADOWS & GLOWS
 // ═══════════════════════════════════════════════════════════════════════════
 export const AURA_SHADOWS = {
+  // Size-based shadows
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  xl: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  // Special shadows
   glass: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

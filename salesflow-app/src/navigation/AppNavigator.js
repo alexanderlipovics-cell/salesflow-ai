@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { AURA_COLORS, AURA_SHADOWS } from '../components/aura';
+import { MentorLearning } from '../services/mentorLearning';
+import { isFeatureEnabled } from '../config/feature_flags';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -34,12 +36,19 @@ import TeamLeaderScreen from '../screens/main/TeamLeaderScreen';
 import DataImportScreen from '../screens/main/DataImportScreen';
 import { PhoenixScreen } from '../screens/main/PhoenixScreen';
 
+// MLM Import Screen
+import ImportContactsScreen from '../screens/import/ImportContactsScreen';
+
 // Onboarding Screens (neues erweitertes System)
 import { OnboardingScreen } from '../screens/onboarding';
 
 // Autopilot Screens
 import AutopilotSettingsScreen from '../screens/main/AutopilotSettingsScreen';
 import AutopilotDraftsScreen from '../screens/main/AutopilotDraftsScreen';
+
+// Reactivation Agent Screens
+import ReactivationScreen from '../screens/main/ReactivationScreen';
+import ReviewQueueScreen from '../screens/main/ReviewQueueScreen';
 
 // Sequencer Engine
 import SequencesListScreen from '../screens/main/SequencesListScreen';
@@ -82,7 +91,7 @@ const Tab = createBottomTabNavigator();
 const TabIcon = ({ icon, label, focused }) => (
   <View style={styles.tabIconContainer}>
     <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{icon}</Text>
-    <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
+    {label && <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>}
   </View>
 );
 
@@ -268,49 +277,64 @@ function AppStack() {
         }}
       />
       <Stack.Screen 
-        name="Phoenix" 
-        component={PhoenixScreen}
+        name="ImportContacts" 
+        component={ImportContactsScreen}
         options={{
           headerShown: false,
+          presentation: 'modal',
         }}
       />
+      {/* Phoenix - Deactivated */}
+      {isFeatureEnabled('phoenix') && (
+        <Stack.Screen 
+          name="Phoenix" 
+          component={PhoenixScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+      )}
       
-      {/* Sequencer Engine */}
-      <Stack.Screen 
-        name="Sequences" 
-        component={SequencesListScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="SequenceBuilder" 
-        component={SequenceBuilderScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="EmailAccounts" 
-        component={EmailAccountsScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="SequenceTemplates" 
-        component={SequenceTemplatesScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="SequenceAnalytics" 
-        component={SequenceAnalyticsScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
+      {/* Sequencer Engine - Deactivated */}
+      {isFeatureEnabled('sequencer') && (
+        <>
+          <Stack.Screen 
+            name="Sequences" 
+            component={SequencesListScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="SequenceBuilder" 
+            component={SequenceBuilderScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="EmailAccounts" 
+            component={EmailAccountsScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="SequenceTemplates" 
+            component={SequenceTemplatesScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="SequenceAnalytics" 
+            component={SequenceAnalyticsScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+        </>
+      )}
       
       {/* Marketing Screens */}
       <Stack.Screen 
@@ -337,6 +361,26 @@ function AppStack() {
           headerShown: false,
         }}
       />
+      
+      {/* Reactivation Agent Screens - Deactivated */}
+      {isFeatureEnabled('reactivation_agent') && (
+        <>
+          <Stack.Screen 
+            name="Reactivation" 
+            component={ReactivationScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="ReviewQueue" 
+            component={ReviewQueueScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+        </>
+      )}
       
       {/* Admin Screens */}
       <Stack.Screen 
@@ -371,23 +415,27 @@ function AppStack() {
         }}
       />
       
-      {/* KI-Autonomie System */}
-      <Stack.Screen 
-        name="Brain" 
-        component={BrainScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
+      {/* KI-Autonomie System - Deactivated */}
+      {isFeatureEnabled('brain_dashboard') && (
+        <Stack.Screen 
+          name="Brain" 
+          component={BrainScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+      )}
       
-      {/* AURA OS Premium Dashboard */}
-      <Stack.Screen 
-        name="AuraOsDashboard" 
-        component={AuraOsDashboardScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
+      {/* AURA OS Premium Dashboard - Deactivated */}
+      {isFeatureEnabled('aura_os') && (
+        <Stack.Screen 
+          name="AuraOsDashboard" 
+          component={AuraOsDashboardScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+      )}
       
       {/* Billing/Pricing */}
       <Stack.Screen 
@@ -467,6 +515,13 @@ function OnboardingStack() {
 
 export default function AppNavigator() {
   const { user, loading, needsOnboarding } = useAuth();
+
+  // 🆕 MENTOR LEARNING: Daily Profile Update (einmal pro Tag)
+  useEffect(() => {
+    if (user) {
+      MentorLearning.updateProfileIfNeeded();
+    }
+  }, [user]);
 
   if (loading) {
     return (

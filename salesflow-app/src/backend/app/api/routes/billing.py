@@ -235,15 +235,32 @@ async def get_subscription(
 ) -> Dict[str, Any]:
     """
     Holt die aktuelle Subscription des Users.
+    Beta-Tester bekommen automatisch Free-Plan mit erweiterten Limits.
     """
+    # Prüfe ob User Beta-Tester ist
+    profile_result = db.table("profiles").select("is_beta_tester").eq(
+        "id", current_user.id
+    ).single().execute()
+    
+    is_beta_tester = profile_result.data and profile_result.data.get("is_beta_tester", False)
+    
     result = db.table("subscriptions").select(
         "*, subscription_items(*)"
     ).eq("user_id", current_user.id).eq("status", "active").single().execute()
     
     if not result.data:
+        # Beta-Tester bekommen erweiterte Free-Limits
+        if is_beta_tester:
+            return {
+                "has_subscription": False,
+                "plan": "free",
+                "is_beta_tester": True,
+                "limits": get_beta_tester_limits(),
+            }
         return {
             "has_subscription": False,
             "plan": "free",
+            "is_beta_tester": False,
             "limits": get_free_limits(),
         }
     
@@ -291,13 +308,21 @@ async def get_usage(
         "plan, subscription_items(*)"
     ).eq("user_id", current_user.id).eq("status", "active").single().execute()
     
+    # Prüfe ob User Beta-Tester ist
+    profile_result = db.table("profiles").select("is_beta_tester").eq(
+        "id", current_user.id
+    ).single().execute()
+    
+    is_beta_tester = profile_result.data and profile_result.data.get("is_beta_tester", False)
+    
     if sub_result.data:
         limits = get_plan_limits(
             sub_result.data["plan"],
             sub_result.data.get("subscription_items", [])
         )
     else:
-        limits = get_free_limits()
+        # Beta-Tester bekommen erweiterte Free-Limits
+        limits = get_beta_tester_limits() if is_beta_tester else get_free_limits()
     
     return {
         "period_start": period_start.isoformat(),
@@ -534,6 +559,22 @@ def get_free_limits() -> dict:
         "ghost_reengages": 0,
         "transactions": 0,
         "lead_suggestions": 0,
+    }
+
+
+def get_beta_tester_limits() -> dict:
+    """Erweiterte Limits für Beta-Tester (Free-Plan mit Premium-Features)."""
+    return {
+        "leads": 1000,  # Erhöht
+        "chats_import": 500,  # Erhöht
+        "ai_analyses": 1000,  # Erhöht
+        "follow_ups": 2000,  # Erhöht
+        "templates": 100,  # Erhöht
+        "team_members": 10,  # Erhöht
+        "auto_actions": 1000,  # Aktiviert
+        "ghost_reengages": 500,  # Aktiviert
+        "transactions": 1000,  # Aktiviert
+        "lead_suggestions": 500,  # Aktiviert
     }
 
 

@@ -88,6 +88,10 @@ class MentorChatResponse(BaseModel):
         None,
         description="Zusammenfassung des verwendeten Kontexts"
     )
+    compliance_warning: Optional[dict] = Field(
+        None,
+        description="Compliance-Warnung falls Verstöße gefunden wurden"
+    )
 
 
 class MentorContextResponse(BaseModel):
@@ -217,6 +221,7 @@ async def mentor_chat(
         actions=actions,
         tokens_used=result.tokens_used,
         context_summary=context_summary,
+        compliance_warning=result.compliance_warning,
     )
 
 

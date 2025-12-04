@@ -173,3 +173,21 @@ export type {
   CheckoutSession,
 } from './billing';
 
+// Reactivation Agent
+export { reactivationApi } from './reactivation';
+export type {
+  ReactivationSignalType,
+  ReactivationChannel,
+  ReactivationStrategy,
+  ReactivationRunStatus,
+  DraftStatus,
+  ReviewAction,
+  ReactivationSignal,
+  DormantLead,
+  ReactivationRun,
+  ReactivationDraft,
+  ReviewDraftRequest,
+  ReviewDraftResponse,
+  BatchReactivationResponse,
+} from './reactivation';
+

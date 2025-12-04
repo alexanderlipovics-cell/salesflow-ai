@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl, Clipboard, Alert } from 'react-native';
 import { API_CONFIG } from '../../services/apiConfig';
+import { MentorLearning } from '../../services/mentorLearning';
 
 // API URL aus zentraler Config
 const getApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
@@ -125,7 +126,16 @@ export default function PlaybooksScreen({ navigation }) {
             <Pressable 
               key={playbook.id}
               style={[styles.playbookCard, { borderLeftColor: category?.color || '#3b82f6' }]}
-              onPress={() => setExpandedId(isExpanded ? null : playbook.id)}
+              onPress={async () => {
+                setExpandedId(isExpanded ? null : playbook.id);
+                // Track: Script angezeigt (wenn expandiert)
+                if (!isExpanded) {
+                  await MentorLearning.trackInteraction({ 
+                    actionType: 'script_shown', 
+                    scriptId: playbook.id 
+                  });
+                }
+              }}
             >
               <View style={styles.playbookHeader}>
                 <View style={styles.playbookTitleRow}>
@@ -148,7 +158,28 @@ export default function PlaybooksScreen({ navigation }) {
                       <Text style={styles.stepText}>{step}</Text>
                     </View>
                   ))}
-                  <Pressable style={styles.useButton}>
+                  <Pressable 
+                    style={styles.useButton}
+                    onPress={async () => {
+                      // Track: Script angezeigt
+                      await MentorLearning.trackInteraction({ 
+                        actionType: 'script_shown', 
+                        scriptId: playbook.id 
+                      });
+                      
+                      // Kopiere Script-Text
+                      const scriptText = playbook.steps.join('\n');
+                      await Clipboard.setString(scriptText);
+                      
+                      // Track: Script kopiert
+                      await MentorLearning.trackInteraction({ 
+                        actionType: 'script_copied', 
+                        scriptId: playbook.id 
+                      });
+                      
+                      Alert.alert('✅ Kopiert', 'Playbook in Zwischenablage kopiert!');
+                    }}
+                  >
                     <Text style={styles.useButtonText}>🚀 Playbook verwenden</Text>
                   </Pressable>
                 </View>

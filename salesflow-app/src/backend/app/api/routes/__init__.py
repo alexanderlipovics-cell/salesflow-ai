@@ -22,6 +22,7 @@ from . import mentor  # MENTOR AI Chat
 from . import contacts  # Kontaktverwaltung
 from . import dmo  # Daily Method of Operation
 from . import team  # Team Management
+from . import alerts  # Predictive Alerts
 
 __all__ = [
     "chat_import",
@@ -44,5 +45,6 @@ __all__ = [
     "contacts",
     "dmo",
     "team",
+    "alerts",
 ]
 

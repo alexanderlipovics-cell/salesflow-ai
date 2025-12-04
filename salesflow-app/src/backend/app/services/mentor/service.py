@@ -18,6 +18,7 @@ from .prompts import MENTOR_SYSTEM_PROMPT, MENTOR_CONTEXT_TEMPLATE, DISC_ADAPTAT
 from .action_parser import ActionParser, ActionTag, extract_action_tags, strip_action_tags
 from .context_builder import MentorContextBuilder, MentorContext
 from ...core.config import settings
+from ...services.compliance import check_message, ComplianceResult
 
 # Neue Prompt-Struktur
 import sys
@@ -51,6 +52,7 @@ class MentorResponse:
     latency_ms: Optional[int] = None
     context_summary: Optional[Dict[str, Any]] = None
     interaction_id: Optional[str] = None
+    compliance_warning: Optional[Dict[str, Any]] = None  # Compliance-Warnung falls vorhanden
     
     def to_dict(self) -> dict:
         """Konvertiert zu Dictionary für API Response."""
@@ -59,6 +61,7 @@ class MentorResponse:
             "actions": [a.to_dict() for a in self.actions],
             "tokens_used": self.tokens_used,
             "context_summary": self.context_summary,
+            "compliance_warning": self.compliance_warning,
         }
 
 
@@ -171,6 +174,49 @@ class MentorService:
         # Response parsen
         parse_result = self.action_parser.parse(raw_response)
         
+        # Compliance-Check für generierte Nachricht
+        compliance_warning = None
+        company_name = None
+        if company_id:
+            # Konvertiere company_id zu company_name für Compliance Sentinel
+            # Falls company_id direkt der Name ist
+            company_name = company_id.lower()
+        
+        compliance_result = check_message(parse_result.clean_text, company=company_name)
+        
+        # Wenn Verstöße gefunden wurden, füge Warning hinzu
+        if not compliance_result.is_compliant and compliance_result.violations:
+            # Erstelle Warning-Objekt
+            critical_violations = [v for v in compliance_result.violations if v.severity == "critical"]
+            error_violations = [v for v in compliance_result.violations if v.severity == "error"]
+            
+            if critical_violations or error_violations:
+                compliance_warning = {
+                    "has_violations": True,
+                    "risk_score": compliance_result.risk_score,
+                    "violation_count": len(compliance_result.violations),
+                    "critical_count": len(critical_violations),
+                    "error_count": len(error_violations),
+                    "violations": [
+                        {
+                            "type": v.type.value,
+                            "severity": v.severity,
+                            "matched_text": v.matched_text,
+                            "explanation": v.explanation,
+                            "suggestion": v.suggestion,
+                        }
+                        for v in compliance_result.violations[:5]  # Max 5 für Response
+                    ],
+                    "message": (
+                        f"⚠️ Compliance-Warnung: {len(compliance_result.violations)} Verstoß(e) gefunden. "
+                        f"Bitte überprüfe die Nachricht vor dem Versenden."
+                    ),
+                }
+                logger.warning(
+                    f"Compliance-Verstoß in MENTOR Response für User {user_id}: "
+                    f"{len(compliance_result.violations)} Verstöße, Risk Score: {compliance_result.risk_score}"
+                )
+        
         # Latenz berechnen
         latency_ms = int((time.time() - start_time) * 1000)
         
@@ -205,6 +251,7 @@ class MentorService:
             latency_ms=latency_ms,
             context_summary=context_summary,
             interaction_id=interaction_id,
+            compliance_warning=compliance_warning,
         )
     
     def _build_messages(

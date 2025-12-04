@@ -5,6 +5,7 @@ from .analyze_lead import get_analyze_lead_prompt
 from .generate_message import get_generate_message_prompt
 from .handle_objection import get_handle_objection_prompt
 from .daily_flow import get_daily_flow_prompt
+from .follow_up_timing import get_follow_up_timing_prompt
 
 __all__ = [
     "get_chat_prompt",
@@ -12,5 +13,6 @@ __all__ = [
     "get_generate_message_prompt",
     "get_handle_objection_prompt",
     "get_daily_flow_prompt",
+    "get_follow_up_timing_prompt",
 ]
 
