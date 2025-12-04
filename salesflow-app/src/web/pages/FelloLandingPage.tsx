@@ -6,7 +6,7 @@
  */
 
 import React, { useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -40,12 +40,80 @@ export default function FelloLandingPage() {
     navigation.navigate('Pricing');
   };
 
+  const handleLogin = () => {
+    navigation.navigate('Login');
+  };
+
+  const handleAppStart = () => {
+    // Navigiere zur Chat-App (MENTOR Screen)
+    // Versuche direkt zu navigieren, falls eingeloggt
+    try {
+      navigation.navigate('MentorChat');
+    } catch {
+      // Falls nicht verfügbar, zu Login
+      navigation.navigate('Login');
+    }
+  };
+
+  const handleBookConsultation = async () => {
+    // Öffne Calendly oder ähnliches
+    const url = 'https://calendly.com/fello-consultation';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      }
+    } catch (error) {
+      console.log('Error opening URL:', error);
+    }
+  };
+
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* HEADER */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>FELLO</Text>
+          </View>
+          <View style={styles.headerRight}>
+            {/* Login Link */}
+            <TouchableOpacity
+              onPress={handleLogin}
+              activeOpacity={0.7}
+              style={styles.loginLink}
+            >
+              <Text style={styles.loginLinkText}>Login</Text>
+            </TouchableOpacity>
+
+            {/* App starten Button */}
+            <TouchableOpacity
+              onPress={handleAppStart}
+              activeOpacity={0.8}
+              style={styles.appStartButton}
+            >
+              <Text style={styles.appStartButtonText}>App starten</Text>
+            </TouchableOpacity>
+
+            {/* Erstgespräch buchen Button */}
+            <TouchableOpacity
+              onPress={handleBookConsultation}
+              activeOpacity={0.8}
+              style={styles.consultationButton}
+            >
+              <Text style={styles.consultationButtonText}>Erstgespräch buchen</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* HERO SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -220,7 +288,8 @@ export default function FelloLandingPage() {
           </View>
         </View>
       </LinearGradient>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -229,14 +298,86 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bgDark,
   },
+  scrollView: {
+    flex: 1,
+  },
   contentContainer: {
     flexGrow: 1,
+  },
+  
+  // Header
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backdropFilter: 'blur(10px)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    paddingTop: isWeb ? 20 : 40,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    maxWidth: 1200,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logo: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    letterSpacing: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loginLink: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  loginLinkText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  appStartButton: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  appStartButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  consultationButton: {
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  consultationButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   
   // Hero Section
   heroSection: {
     minHeight: isWeb ? 800 : 700,
-    paddingTop: isWeb ? 100 : 60,
+    paddingTop: isWeb ? 180 : 140,
     paddingBottom: 60,
     paddingHorizontal: 24,
     position: 'relative',
