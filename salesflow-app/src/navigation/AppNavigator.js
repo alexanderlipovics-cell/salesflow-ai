@@ -87,6 +87,9 @@ import TeamDashboardScreen from '../screens/main/TeamDashboardScreen';
 import AlertsListScreen from '../screens/AlertsListScreen';
 import MentorChatScreen from '../screens/MentorChatScreen';
 
+// Campaign Screen
+import CampaignScreen from '../screens/CampaignScreen';
+
 // Billing/Pricing/Settings Screens
 import PricingScreen from '../screens/settings/PricingScreen';
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
@@ -263,6 +266,13 @@ function AppStack() {
       <Stack.Screen 
         name="AlertsList" 
         component={AlertsListScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="CampaignScreen" 
+        component={CampaignScreen}
         options={{
           headerShown: false,
         }}

@@ -19,6 +19,7 @@ from ...services.cron import (
     run_all_jobs_manually,
 )
 from ...services.jobs import FollowUpReminderService, get_redis_queue
+from ...services.referral import ReferralReminderService
 
 router = APIRouter(prefix="/cron", tags=["Cron Jobs"])
 
@@ -192,6 +193,57 @@ async def get_queue_stats(
 
 
 # =============================================================================
+# REFERRAL REMINDER JOBS (NetworkerOS)
+# =============================================================================
+
+@router.post("/referral/daily-check")
+async def trigger_referral_daily_check(
+    db: Client = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Triggert den täglichen Referral Check für alle User.
+    
+    Prüft alle Kontakte auf Referral-Opportunities (3 Tage nach Kauf) und:
+    - Sendet Push Notifications
+    - Erstellt Reminder
+    
+    Normalerweise läuft dieser Job täglich um 09:00 Uhr.
+    """
+    service = ReferralReminderService(db)
+    result = await service.run_daily_check()
+    
+    return {
+        "success": True,
+        "result": result,
+    }
+
+
+@router.post("/referral/check-user/{user_id}")
+async def trigger_referral_check_user(
+    user_id: str,
+    send_push: bool = Query(True),
+    db: Client = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Triggert Referral Check für einen einzelnen User.
+    
+    Prüft Kontakte auf Referral-Opportunities und sendet Reminder.
+    """
+    service = ReferralReminderService(db)
+    result = await service.check_and_send_reminders(
+        user_id=user_id,
+        send_push=send_push,
+    )
+    
+    return {
+        "success": True,
+        "result": result,
+    }
+
+
+# =============================================================================
 # JOB STATUS
 # =============================================================================
 
@@ -232,6 +284,18 @@ async def get_cron_job_status(
                 "name": "Archive Stale A/B Tests",
                 "schedule": "04:00 UTC daily",
                 "description": "Pausiert inaktive Tests (30+ Tage)",
+            },
+            {
+                "id": "followup_daily_check",
+                "name": "Follow-Up Daily Check",
+                "schedule": "08:00 UTC daily",
+                "description": "Prüft überfällige Follow-ups, sendet Reminder",
+            },
+            {
+                "id": "referral_daily_check",
+                "name": "Referral Daily Check",
+                "schedule": "09:00 UTC daily",
+                "description": "Prüft Referral-Opportunities (3 Tage nach Kauf), sendet Push",
             },
         ],
         "note": "In Development müssen Jobs manuell getriggert werden. In Production laufen sie automatisch."

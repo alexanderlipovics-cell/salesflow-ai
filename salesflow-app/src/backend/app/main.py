@@ -113,15 +113,20 @@ from .api.routes.review_queue import router as review_queue_router
 # Script Library (50+ Network Marketing Scripts)
 from .api.routes.scripts import router as scripts_router
 
-# NetworkerOS v2 API (Mentor, Contacts, DMO, Team, Alerts)
+# NetworkerOS v2 API (Mentor, Contacts, DMO, Team, Alerts, Profiler, Referral)
 from .api.routes.mentor import router as mentor_router
 from .api.routes.contacts import router as contacts_router
 from .api.routes.dmo import router as dmo_router
 from .api.routes.team import router as team_router
+from .api.routes.profiler import router as profiler_router
 from .api.routes import alerts
+from .api.routes import referral
 
 # Ghostbuster v2 API
 from .api.routes.ghostbuster import router as ghostbuster_v2_router
+
+# Campaigns v2 API
+from .api.routes.campaigns import router as campaigns_router
 
 # Sales Intelligence v3.0
 from .api.routes.sales_intelligence import router as sales_intelligence_router
@@ -410,10 +415,15 @@ app.include_router(mentor_router, prefix="/api/v2")
 app.include_router(contacts_router, prefix="/api/v2")
 app.include_router(dmo_router, prefix="/api/v2")
 app.include_router(team_router, prefix="/api/v2")
+app.include_router(profiler_router, prefix="/api/v2")
 app.include_router(alerts.router, prefix="/api/v2")
+app.include_router(referral.router, prefix="/api/v2")
 
 # Ghostbuster v2 API
 app.include_router(ghostbuster_v2_router, prefix="/api/v2")
+
+# Campaigns v2 API
+app.include_router(campaigns_router, prefix="/api/v2")
 
 # Sales Intelligence v3.0
 app.include_router(sales_intelligence_router, prefix="/api/v1")

@@ -15,6 +15,7 @@ Endpoints:
 
 from datetime import date, timedelta
 from typing import Optional
+import math
 from fastapi import APIRouter, HTTPException, Depends, Query
 
 from ..schemas.learning import (
@@ -872,6 +873,242 @@ async def get_objection_heatmap(
         
     except Exception as e:
         return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# VISUAL CFO ENDPOINTS - Revenue, Pipeline, Forecast
+# ═══════════════════════════════════════════════════════════════════════════
+
+@router.get(
+    "/v2/revenue",
+    summary="Revenue Analytics",
+    description="Lädt Umsatz-Daten für die letzten 30 Tage.",
+)
+async def get_revenue_analytics(
+    days: int = Query(default=30, ge=7, le=90, description="Anzahl Tage"),
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_db),
+):
+    """
+    Lädt Revenue-Daten für Visual CFO Dashboard.
+    
+    **Enthält:**
+    - Tägliche Umsatz-Daten
+    - Aktueller vs. Ziel-Umsatz
+    - Run-Rate Berechnung
+    """
+    user_id = current_user["id"]
+    company_id = current_user.get("company_id")
+    
+    try:
+        # Hole Kontakte mit Deal-Werten (vereinfacht: aus contacts Tabelle)
+        # In Produktion: Separate deals/transactions Tabelle verwenden
+        result = db.table("contacts")\
+            .select("id, pipeline_stage, created_at, updated_at")\
+            .eq("user_id", user_id)\
+            .in_("pipeline_stage", ["qualified", "proposal_sent", "negotiation", "closed_won"])\
+            .gte("created_at", f"now() - interval '{days} days'")\
+            .execute()
+        
+        # Demo: Generiere tägliche Revenue-Daten
+        # In Produktion: Aus transactions/orders Tabelle
+        from collections import defaultdict
+        daily_revenue = defaultdict(float)
+        
+        # Simuliere Deal-Werte (in Produktion: aus deals Tabelle)
+        for contact in result.data or []:
+            # Vereinfacht: Zufälliger Deal-Wert basierend auf Stage
+            stage_values = {
+                "qualified": 500,
+                "proposal_sent": 1000,
+                "negotiation": 2000,
+                "closed_won": 5000,
+            }
+            value = stage_values.get(contact.get("pipeline_stage"), 0)
+            
+            # Gruppiere nach Datum
+            created_date = contact.get("created_at", "")[:10] if contact.get("created_at") else None
+            if created_date:
+                daily_revenue[created_date] += value
+        
+        # Erstelle Zeitreihe
+        revenue_data = []
+        today = date.today()
+        for i in range(days - 1, -1, -1):
+            d = today - timedelta(days=i)
+            date_str = d.isoformat()
+            revenue_data.append({
+                "date": date_str,
+                "revenue": daily_revenue.get(date_str, 0),
+            })
+        
+        # Berechne Gesamt
+        total_revenue = sum(d["revenue"] for d in revenue_data)
+        daily_average = total_revenue / days if days > 0 else 0
+        
+        # Ziel (vereinfacht: 30k pro Monat)
+        goal = 30000
+        monthly_goal = goal
+        
+        return {
+            "data": revenue_data,
+            "current": total_revenue,
+            "goal": monthly_goal,
+            "daily_average": daily_average,
+            "percentage": round((total_revenue / monthly_goal) * 100, 1) if monthly_goal > 0 else 0,
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fehler beim Laden der Revenue-Daten: {str(e)}"
+        )
+
+
+@router.get(
+    "/v2/pipeline",
+    summary="Pipeline Analytics",
+    description="Lädt Pipeline-Wert und Deal-Statistiken.",
+)
+async def get_pipeline_analytics(
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_db),
+):
+    """
+    Lädt Pipeline-Analytics.
+    
+    **Enthält:**
+    - Gesamter Pipeline-Wert
+    - Gewichteter Pipeline-Wert (nach Wahrscheinlichkeit)
+    - Durchschnittliche Deal-Größe
+    - Deals nach Stage
+    """
+    user_id = current_user["id"]
+    
+    try:
+        # Hole alle offenen Deals
+        result = db.table("contacts")\
+            .select("id, pipeline_stage, name")\
+            .eq("user_id", user_id)\
+            .in_("pipeline_stage", ["lead", "contacted", "qualified", "proposal_sent", "negotiation"])\
+            .execute()
+        
+        # Stage-Wahrscheinlichkeiten
+        stage_probabilities = {
+            "lead": 10,
+            "contacted": 20,
+            "qualified": 40,
+            "proposal_sent": 60,
+            "negotiation": 80,
+        }
+        
+        # Stage-Werte (vereinfacht: Demo-Werte)
+        stage_values = {
+            "lead": 1000,
+            "contacted": 2000,
+            "qualified": 5000,
+            "proposal_sent": 10000,
+            "negotiation": 15000,
+        }
+        
+        deals = []
+        for contact in result.data or []:
+            stage = contact.get("pipeline_stage", "lead")
+            value = stage_values.get(stage, 1000)
+            probability = stage_probabilities.get(stage, 10)
+            
+            deals.append({
+                "id": contact.get("id"),
+                "name": contact.get("name", "Unbekannt"),
+                "stage": stage,
+                "value": value,
+                "probability": probability,
+            })
+        
+        return {
+            "deals": deals,
+            "total_value": sum(d["value"] for d in deals),
+            "weighted_value": sum(d["value"] * (d["probability"] / 100) for d in deals),
+            "avg_deal_size": sum(d["value"] for d in deals) / len(deals) if deals else 0,
+            "deal_count": len(deals),
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fehler beim Laden der Pipeline-Daten: {str(e)}"
+        )
+
+
+@router.get(
+    "/v2/forecast",
+    summary="Forecast Analytics",
+    description="Lädt AI-basierte Prognose und Empfehlungen.",
+)
+async def get_forecast_analytics(
+    goal: float = Query(default=30000, description="Monatsziel in €"),
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_db),
+):
+    """
+    Lädt Forecast-Analytics.
+    
+    **Enthält:**
+    - Prognostiziertes Ziel-Datum
+    - Benötigte Deals pro Woche
+    - AI-Empfehlungen
+    - Run-Rate Analyse
+    """
+    user_id = current_user["id"]
+    
+    try:
+        # Hole aktuelle Revenue-Daten
+        revenue_result = await get_revenue_analytics(days=30, current_user=current_user, db=db)
+        
+        current = revenue_result["current"]
+        daily_average = revenue_result["daily_average"]
+        
+        # Berechne Forecast
+        remaining = goal - current
+        days_needed = math.ceil(remaining / daily_average) if daily_average > 0 else 999
+        
+        from datetime import datetime
+        target_date = (datetime.now() + timedelta(days=days_needed)).isoformat() if daily_average > 0 else None
+        
+        # Berechne benötigte Deals
+        # Annahme: Durchschnittlicher Deal-Wert = 5000€
+        avg_deal_value = 5000
+        deals_needed = math.ceil(remaining / avg_deal_value) if avg_deal_value > 0 else 0
+        
+        # AI-Empfehlungen (vereinfacht)
+        recommendations = []
+        if daily_average < (goal / 30):
+            recommendations.append(
+                f"Täglicher Umsatz muss um {((goal / 30) - daily_average):.0f}€ steigen"
+            )
+        if deals_needed > 0:
+            recommendations.append(
+                f"Fokussiere auf {math.ceil(deals_needed / 4)} Deals pro Woche"
+            )
+        if current < goal * 0.5:
+            recommendations.append(
+                "Pipeline erweitern: Mehr Leads qualifizieren"
+            )
+        
+        return {
+            "current": current,
+            "goal": goal,
+            "daily_average": daily_average,
+            "deals_needed": deals_needed,
+            "target_date": target_date,
+            "recommendations": recommendations,
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fehler beim Berechnen der Forecast: {str(e)}"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════

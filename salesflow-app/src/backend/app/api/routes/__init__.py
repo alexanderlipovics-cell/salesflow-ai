@@ -23,6 +23,7 @@ from . import contacts  # Kontaktverwaltung
 from . import dmo  # Daily Method of Operation
 from . import team  # Team Management
 from . import alerts  # Predictive Alerts
+from . import referral  # Referral/Empfehlungs-System
 
 __all__ = [
     "chat_import",
@@ -46,5 +47,6 @@ __all__ = [
     "dmo",
     "team",
     "alerts",
+    "referral",
 ]
 

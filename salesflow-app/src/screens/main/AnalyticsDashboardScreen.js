@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_CONFIG, AnalyticsAPI } from '../../services/apiConfig';
 import Card from '../../components/Card';
 import { COLORS, SHADOWS, RADIUS, SPACING, TYPOGRAPHY } from '../../components/theme';
+import { RevenueChart, PipelineValue, ForecastCard } from '../../components/analytics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 64;
@@ -45,6 +46,12 @@ export default function AnalyticsDashboardScreen({ navigation }) {
   const [trendData, setTrendData] = useState(null);
   const [topTemplates, setTopTemplates] = useState([]);
   
+  // Visual CFO Data
+  const [revenueData, setRevenueData] = useState(null);
+  const [pipelineData, setPipelineData] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
+  const [activityMetrics, setActivityMetrics] = useState(null);
+  
   // ═══════════════════════════════════════════════════════════════════════
   // DATA LOADING
   // ═══════════════════════════════════════════════════════════════════════
@@ -59,7 +66,8 @@ export default function AnalyticsDashboardScreen({ navigation }) {
     fromDate.setDate(today.getDate() - dateRange);
     
     try {
-      const [dashboard, channels, templates, timeseries] = await Promise.all([
+      const baseUrl = API_CONFIG.baseUrl.replace('/api/v1', '');
+      const [dashboard, channels, templates, timeseries, revenue, pipeline, forecast] = await Promise.all([
         AnalyticsAPI.getDashboard(dateRange).catch(() => null),
         AnalyticsAPI.getChannels({
           fromDate: fromDate.toISOString().slice(0, 10),
@@ -75,6 +83,16 @@ export default function AnalyticsDashboardScreen({ navigation }) {
           toDate: today.toISOString().slice(0, 10),
           granularity: dateRange <= 7 ? 'day' : 'week',
         }).catch(() => null),
+        // Visual CFO APIs
+        fetch(`${baseUrl}/api/v2/analytics/revenue?days=30`, {
+          headers: user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {},
+        }).then(r => r.json()).catch(() => null),
+        fetch(`${baseUrl}/api/v2/analytics/pipeline`, {
+          headers: user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {},
+        }).then(r => r.json()).catch(() => null),
+        fetch(`${baseUrl}/api/v2/analytics/forecast?goal=30000`, {
+          headers: user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {},
+        }).then(r => r.json()).catch(() => null),
       ]);
       
       // Process Dashboard KPIs
@@ -105,6 +123,32 @@ export default function AnalyticsDashboardScreen({ navigation }) {
       } else {
         setTrendData(generateDemoTrends(dateRange));
       }
+      
+      // Process Visual CFO Data
+      if (revenue) {
+        setRevenueData(revenue);
+      } else {
+        setRevenueData(generateDemoRevenue());
+      }
+      
+      if (pipeline) {
+        setPipelineData(pipeline);
+      } else {
+        setPipelineData(generateDemoPipeline());
+      }
+      
+      if (forecast) {
+        setForecastData(forecast);
+      } else {
+        setForecastData(generateDemoForecast());
+      }
+      
+      // Activity Metrics (vereinfacht)
+      setActivityMetrics({
+        followUpsThisWeek: 12,
+        newContacts: 8,
+        conversionRate: 24.5,
+      });
       
     } catch (e) {
       console.error('Analytics load error:', e);
@@ -174,6 +218,42 @@ export default function AnalyticsDashboardScreen({ navigation }) {
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>⚠️ {error} - Demo-Daten werden angezeigt</Text>
           </View>
+        )}
+        
+        {/* Visual CFO: Revenue Chart */}
+        {revenueData && (
+          <RevenueChart
+            data={revenueData.data || []}
+            current={revenueData.current || 0}
+            goal={revenueData.goal || 30000}
+            currency="€"
+          />
+        )}
+        
+        {/* Visual CFO: Pipeline Value */}
+        {pipelineData && (
+          <PipelineValue
+            deals={pipelineData.deals || []}
+            currency="€"
+          />
+        )}
+        
+        {/* Visual CFO: Activity Metrics */}
+        {activityMetrics && (
+          <ActivityMetricsSection data={activityMetrics} />
+        )}
+        
+        {/* Visual CFO: Forecast */}
+        {forecastData && (
+          <ForecastCard
+            current={forecastData.current || 0}
+            goal={forecastData.goal || 30000}
+            dailyAverage={forecastData.daily_average || 0}
+            dealsNeeded={forecastData.deals_needed || 0}
+            targetDate={forecastData.target_date}
+            recommendations={forecastData.recommendations || []}
+            currency="€"
+          />
         )}
         
         {/* KPI Cards */}
@@ -572,6 +652,86 @@ function generateDemoTrends(days) {
   return trends;
 }
 
+function ActivityMetricsSection({ data }) {
+  return (
+    <View style={styles.activitySection}>
+      <Text style={styles.sectionTitle}>Aktivitäts-Metriken</Text>
+      <View style={styles.activityGrid}>
+        <Card style={styles.activityCard}>
+          <Text style={styles.activityIcon}>📞</Text>
+          <Text style={styles.activityValue}>{data.followUpsThisWeek}</Text>
+          <Text style={styles.activityLabel}>Follow-ups diese Woche</Text>
+        </Card>
+        <Card style={styles.activityCard}>
+          <Text style={styles.activityIcon}>➕</Text>
+          <Text style={styles.activityValue}>{data.newContacts}</Text>
+          <Text style={styles.activityLabel}>Neue Kontakte</Text>
+        </Card>
+        <Card style={styles.activityCard}>
+          <Text style={styles.activityIcon}>📈</Text>
+          <Text style={styles.activityValue}>{data.conversionRate}%</Text>
+          <Text style={styles.activityLabel}>Conversion Rate</Text>
+        </Card>
+      </View>
+    </View>
+  );
+}
+
+function generateDemoRevenue() {
+  const data = [];
+  const today = new Date();
+  let cumulative = 0;
+  
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(today.getDate() - i);
+    const daily = Math.floor(Math.random() * 2000) + 300;
+    cumulative += daily;
+    
+    data.push({
+      date: date.toISOString().slice(0, 10),
+      revenue: cumulative,
+    });
+  }
+  
+  return {
+    data,
+    current: cumulative,
+    goal: 30000,
+    daily_average: cumulative / 30,
+  };
+}
+
+function generateDemoPipeline() {
+  return {
+    deals: [
+      { id: '1', name: 'Deal 1', stage: 'qualified', value: 5000, probability: 40 },
+      { id: '2', name: 'Deal 2', stage: 'proposal_sent', value: 10000, probability: 60 },
+      { id: '3', name: 'Deal 3', stage: 'negotiation', value: 15000, probability: 80 },
+      { id: '4', name: 'Deal 4', stage: 'contacted', value: 2000, probability: 20 },
+    ],
+    total_value: 32000,
+    weighted_value: 19600,
+    avg_deal_size: 8000,
+    deal_count: 4,
+  };
+}
+
+function generateDemoForecast() {
+  return {
+    current: 12500,
+    goal: 30000,
+    daily_average: 416,
+    deals_needed: 4,
+    target_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString(),
+    recommendations: [
+      'Täglicher Umsatz muss um 584€ steigen',
+      'Fokussiere auf 1 Deals pro Woche',
+      'Pipeline erweitern: Mehr Leads qualifizieren',
+    ],
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // STYLES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -872,6 +1032,35 @@ const styles = StyleSheet.create({
   
   bottomSpacer: {
     height: 100,
+  },
+  
+  // Activity Metrics
+  activitySection: {
+    padding: SPACING.lg,
+  },
+  activityGrid: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  activityCard: {
+    flex: 1,
+    padding: SPACING.md,
+    alignItems: 'center',
+  },
+  activityIcon: {
+    fontSize: 28,
+    marginBottom: SPACING.xs,
+  },
+  activityValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: 2,
+  },
+  activityLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });
 

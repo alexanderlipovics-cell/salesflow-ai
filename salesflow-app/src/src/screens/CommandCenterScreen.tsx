@@ -40,8 +40,8 @@ export default function CommandCenterScreen({ navigation }: CommandCenterScreenP
     // Spezielle Navigation für bestimmte Actions
     if (screen === 'Leads') {
       if (actionLabel === 'JAGEN') {
-        // Für "JAGEN" - neue Leads filtern
-        navigation.navigate('Leads', { filter: 'new' });
+        // Für "JAGEN" - Navigiere zu Campaign Screen
+        navigation.navigate('CampaignScreen');
       } else if (actionLabel === 'CLOSEN') {
         // Für "CLOSEN" - offene Deals (qualified/proposal_sent)
         navigation.navigate('Leads', { filter: 'qualified' });
