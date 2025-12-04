@@ -45,14 +45,13 @@ export default function FelloLandingPage() {
   };
 
   const handleAppStart = () => {
-    // Navigiere zur Chat-App (MENTOR Screen)
-    // Versuche direkt zu navigieren, falls eingeloggt
-    try {
-      navigation.navigate('MentorChat');
-    } catch {
-      // Falls nicht verfügbar, zu Login
-      navigation.navigate('Login');
-    }
+    // Navigiere zur Chat-App
+    navigation.navigate('Login');
+  };
+
+  const handleSelectPlan = (planName: string) => {
+    // Navigiere zu Register mit Plan-Parameter
+    navigation.navigate('Register', { plan: planName });
   };
 
   const handleBookConsultation = async () => {
@@ -288,6 +287,184 @@ export default function FelloLandingPage() {
           </View>
         </View>
       </LinearGradient>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* PRICING SECTION */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <LinearGradient
+        colors={['#0f172a', '#1e293b', '#312e81']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.pricingSection}
+      >
+        <View style={styles.pricingContent}>
+          {/* Headline */}
+          <Text style={styles.pricingHeadline}>
+            Wähle deinen{' '}
+            <Text style={styles.pricingHeadlineAccent}>FELLO Plan</Text>
+          </Text>
+          <Text style={styles.pricingSubheadline}>
+            Starte mit 14 Tagen kostenlos. Keine Kreditkarte nötig.
+          </Text>
+
+          {/* Pricing Cards */}
+          <View style={styles.pricingGrid}>
+            {/* STARTER PLAN */}
+            <View style={styles.pricingCard}>
+              <Text style={styles.pricingCardName}>Starter</Text>
+              <View style={styles.pricingCardPriceRow}>
+                <Text style={styles.pricingCardPrice}>€29</Text>
+                <Text style={styles.pricingCardPeriod}>/Monat</Text>
+              </View>
+              <Text style={styles.pricingCardYearly}>
+                oder €290/Jahr (2 Monate gratis)
+              </Text>
+              <View style={styles.pricingCardFeatures}>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>100 Leads</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>KI-Copilot</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Follow-up Generator</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Basic Support</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.pricingCardButton}
+                onPress={() => handleSelectPlan('starter')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pricingCardButtonText}>Jetzt starten</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* GROWTH PLAN (BELIEBT) */}
+            <View style={[styles.pricingCard, styles.pricingCardPopular]}>
+              <View style={styles.pricingCardBadge}>
+                <Text style={styles.pricingCardBadgeText}>BELIEBT</Text>
+              </View>
+              <Text style={styles.pricingCardName}>Growth</Text>
+              <View style={styles.pricingCardPriceRow}>
+                <Text style={styles.pricingCardPrice}>€59</Text>
+                <Text style={styles.pricingCardPeriod}>/Monat</Text>
+              </View>
+              <Text style={styles.pricingCardYearly}>
+                oder €590/Jahr
+              </Text>
+              <View style={styles.pricingCardFeatures}>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>500 Leads</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Alle Starter Features</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Team Features</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Priority Support</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.pricingCardButton, styles.pricingCardButtonPopular]}
+                onPress={() => handleSelectPlan('growth')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pricingCardButtonText}>Jetzt starten</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* SCALE PLAN */}
+            <View style={styles.pricingCard}>
+              <Text style={styles.pricingCardName}>Scale</Text>
+              <View style={styles.pricingCardPriceRow}>
+                <Text style={styles.pricingCardPrice}>€119</Text>
+                <Text style={styles.pricingCardPeriod}>/Monat</Text>
+              </View>
+              <Text style={styles.pricingCardYearly}>
+                oder €1.190/Jahr
+              </Text>
+              <View style={styles.pricingCardFeatures}>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Unlimited Leads</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>White-Label</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>API Access</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Dedicated Support</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.pricingCardButton}
+                onPress={() => handleSelectPlan('scale')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pricingCardButtonText}>Jetzt starten</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* FOUNDING MEMBER (Special) */}
+            <View style={[styles.pricingCard, styles.pricingCardSpecial]}>
+              <View style={styles.pricingCardBadge}>
+                <Text style={styles.pricingCardBadgeText}>SPECIAL</Text>
+              </View>
+              <Text style={styles.pricingCardName}>Founding Member</Text>
+              <View style={styles.pricingCardPriceRow}>
+                <Text style={styles.pricingCardPrice}>€499</Text>
+                <Text style={styles.pricingCardPeriod}>einmalig</Text>
+              </View>
+              <Text style={styles.pricingCardYearly}>
+                Lifetime Access
+              </Text>
+              <View style={styles.pricingCardFeatures}>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Lifetime Zugang</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Alle Features</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Founder Badge</Text>
+                </View>
+                <View style={styles.pricingFeatureRow}>
+                  <Text style={styles.pricingFeatureCheck}>✓</Text>
+                  <Text style={styles.pricingFeatureText}>Früher Zugang zu neuen Features</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.pricingCardButton, styles.pricingCardButtonSpecial]}
+                onPress={() => handleSelectPlan('founding')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pricingCardButtonText}>Jetzt starten</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
       </ScrollView>
     </View>
   );
@@ -312,8 +489,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    backdropFilter: 'blur(10px)',
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     paddingTop: isWeb ? 20 : 40,
@@ -454,7 +630,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
   },
   bulletIcon: {
     fontSize: 32,
@@ -628,6 +803,143 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 26,
     maxWidth: 700,
+  },
+
+  // Pricing Section
+  pricingSection: {
+    paddingVertical: 100,
+    paddingHorizontal: 24,
+  },
+  pricingContent: {
+    maxWidth: 1400,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  pricingHeadline: {
+    fontSize: isWeb ? 48 : 32,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: isWeb ? 56 : 40,
+  },
+  pricingHeadlineAccent: {
+    color: COLORS.accent,
+  },
+  pricingSubheadline: {
+    fontSize: isWeb ? 20 : 16,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: 64,
+  },
+  pricingGrid: {
+    flexDirection: isWeb ? 'row' : 'column',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  pricingCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
+    padding: 32,
+    width: isWeb ? 280 : '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    position: 'relative',
+  },
+  pricingCardPopular: {
+    borderColor: '#10b981',
+    borderWidth: 2,
+    transform: isWeb ? [{ scale: 1.05 }] : [],
+  },
+  pricingCardSpecial: {
+    borderColor: '#f59e0b',
+    borderWidth: 2,
+  },
+  pricingCardBadge: {
+    position: 'absolute',
+    top: -12,
+    left: '50%',
+    transform: [{ translateX: -50 }],
+    backgroundColor: '#10b981',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  pricingCardBadgeText: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  pricingCardName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  pricingCardPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  pricingCardPrice: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  pricingCardPeriod: {
+    fontSize: 18,
+    color: COLORS.textSecondary,
+    marginLeft: 8,
+  },
+  pricingCardYearly: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  pricingCardFeatures: {
+    marginBottom: 32,
+    minHeight: 200,
+  },
+  pricingFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  pricingFeatureCheck: {
+    color: '#10b981',
+    fontSize: 18,
+    fontWeight: '700',
+    marginRight: 12,
+    width: 20,
+  },
+  pricingFeatureText: {
+    flex: 1,
+    color: COLORS.textSecondary,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  pricingCardButton: {
+    backgroundColor: COLORS.accent,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  pricingCardButtonPopular: {
+    backgroundColor: '#10b981',
+  },
+  pricingCardButtonSpecial: {
+    backgroundColor: '#f59e0b',
+  },
+  pricingCardButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 
