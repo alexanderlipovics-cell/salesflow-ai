@@ -1,3 +1,10 @@
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║  HYBRID APP SHELL - Premium Dark Mode with Nebula Effects                  ║
+ * ║  Combines Aura OS aesthetics with full functionality                       ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝
+ */
+
 import clsx from "clsx";
 import { NavLink, Outlet } from "react-router-dom";
 import {
@@ -31,58 +38,58 @@ import LanguageSwitcher from "../components/LanguageSwitcher";
 
 const navGroups = [
   {
-    title: "HEUTE",
+    title: "COMMAND CENTER",
     items: [
       { label: "Daily Command", to: "/daily-command", icon: Command },
-      { label: "Nächste beste Aktionen", to: "/next-best-actions", icon: Target },
+      { label: "Next Best Actions", to: "/next-best-actions", icon: Target },
       { label: "Hunter Board", to: "/hunter", icon: Target },
-      { label: "Chat / KI-Assistent", to: "/chat", icon: MessageSquare },
+      { label: "AI Copilot", to: "/chat", icon: MessageSquare },
       { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
-    title: "TOOLS",
+    title: "POWER TOOLS",
     items: [
-      { label: "Screenshot AI / Scanner", to: "/screenshot-ai", icon: Camera },
+      { label: "Screenshot AI", to: "/screenshot-ai", icon: Camera },
       { label: "Import", to: "/import", icon: FileSpreadsheet },
-      { label: "Lead-Hunter", to: "/lead-hunter", icon: Users },
-      { label: "Delay-Master", to: "/delay-master", icon: Clock3 },
+      { label: "Lead Hunter", to: "/lead-hunter", icon: Users },
+      { label: "Delay Master", to: "/delay-master", icon: Clock3 },
       { label: "Follow-ups", to: "/follow-ups", icon: MessageCircle },
-      { label: "Außendienst", to: "/field-ops", icon: MapPin },
-      { label: "Speed-Hunter", to: "/speed-hunter", icon: Zap },
-      { label: "Phönix", to: "/phoenix", icon: Flame },
-      { label: "Einwand-Killer", to: "/objections", icon: Brain },
-      { label: "GTM Copy Assistant", to: "/gtm-copy", icon: PenLine },
-      { label: "Alle Tools", to: "/all-tools", icon: AppWindow },
+      { label: "Field Ops", to: "/field-ops", icon: MapPin },
+      { label: "Speed Hunter", to: "/speed-hunter", icon: Zap },
+      { label: "Phoenix", to: "/phoenix", icon: Flame },
+      { label: "Objection Killer", to: "/objections", icon: Brain },
+      { label: "GTM Copy", to: "/gtm-copy", icon: PenLine },
+      { label: "All Tools", to: "/all-tools", icon: AppWindow },
     ],
   },
   {
     title: "ANALYTICS",
     items: [
-      { label: "Analytics Dashboard", to: "/analytics", icon: LayoutDashboard },
-      { label: "Einwände Analytics", to: "/manager/objections", icon: BarChart3 },
-      { label: "Follow-up Templates", to: "/manager/followup-templates", icon: FileText },
+      { label: "Analytics Hub", to: "/analytics", icon: LayoutDashboard },
+      { label: "Objection Analytics", to: "/manager/objections", icon: BarChart3 },
+      { label: "Template Manager", to: "/manager/followup-templates", icon: FileText },
     ],
   },
   {
-    title: "EINSTELLUNGEN",
+    title: "SETTINGS",
     items: [
-      { label: "KI-Einstellungen", to: "/settings/ai", icon: Sparkles },
+      { label: "AI Settings", to: "/settings/ai", icon: Sparkles },
     ],
   },
   {
-    title: "KONTAKTE",
+    title: "CONTACTS",
     items: [
       { label: "Leads", to: "/leads/prospects", icon: UserSearch },
-      { label: "Kunden", to: "/leads/customers", icon: UserCheck },
-      { label: "Partner", to: "/network/team", icon: Users },
+      { label: "Customers", to: "/leads/customers", icon: UserCheck },
+      { label: "Partners", to: "/network/team", icon: Users },
     ],
   },
   {
-    title: "WISSEN",
+    title: "KNOWLEDGE",
     items: [
       {
-        label: "Playbooks / Knowledge Base",
+        label: "Playbooks",
         to: "/knowledge-base",
         icon: BookOpen,
       },
@@ -97,25 +104,46 @@ const AppShell = () => {
   const mobileNavItems = navGroups.flatMap((group) => group.items);
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-50 antialiased">
-      <aside className="hidden h-screen w-64 flex-col space-y-6 border-r border-slate-900 bg-slate-950/95 py-6 xl:flex">
-        <div className="flex-1 space-y-6 overflow-y-auto">
+    <div className="relative flex min-h-screen bg-slate-950 text-slate-50 antialiased overflow-hidden">
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* NEBULA BACKGROUND                                                    */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      
+      <div className="nebula-bg">
+        <div className="nebula-blob-cyan" />
+        <div className="nebula-blob-violet" />
+        <div className="nebula-blob-center" />
+      </div>
+      <div className="noise-overlay" />
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* SIDEBAR                                                              */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      
+      <aside className="relative z-10 hidden h-screen w-72 flex-col border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl xl:flex">
+        <div className="flex-1 space-y-5 overflow-y-auto py-6 scrollbar-hide">
+          {/* Logo / Brand */}
           <div className="px-6">
-            <p className="text-lg font-semibold text-slate-50">Sales Flow AI</p>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-              Deal Operating System
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-slate-600">
-              Network Marketing Pro
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg glow-cyan">
+                <Zap className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-lg font-bold gradient-text">NEXUS</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                  Sales Intelligence
+                </p>
+              </div>
+            </div>
           </div>
 
+          {/* Navigation Groups */}
           {navGroups.map((section) => (
             <div key={section.title} className="mt-4">
-              <div className="px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <div className="px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/70">
                 {section.title}
               </div>
-              <nav className="mt-2 space-y-1 px-2">
+              <nav className="mt-2 space-y-1 px-3">
                 {section.items.map((item) => (
                   <SidebarLink key={item.to} {...item} />
                 ))}
@@ -124,26 +152,27 @@ const AppShell = () => {
           ))}
         </div>
 
-        <div className="space-y-4 border-t border-slate-900/60 px-6 pt-4">
-          <div className="card-surface bg-slate-900/70 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Aktueller Plan
-            </p>
-            <p className="mt-2 text-lg font-semibold text-slate-50">{planLabel}</p>
+        {/* Bottom Section */}
+        <div className="space-y-4 border-t border-slate-800/50 px-4 py-4">
+          {/* Plan Card */}
+          <div className="glass-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Current Plan
+                </p>
+                <p className="mt-1 text-lg font-bold text-white">{planLabel}</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center glow-cyan">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+            </div>
             <button
               onClick={() => openPricing(plan === "free" ? "starter" : "pro")}
-              className="mt-4 w-full rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400"
+              className="btn-premium mt-4 w-full"
             >
-              Upgrade entdecken
+              ✨ Upgrade Now
             </button>
-          </div>
-
-          <div className="card-surface bg-slate-900/70 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Eingeloggt
-            </p>
-            <p className="mt-2 text-sm font-semibold text-slate-100">{user.name}</p>
-            <p className="text-xs text-slate-500">{user.email}</p>
           </div>
 
           {/* Language Switcher */}
@@ -153,35 +182,45 @@ const AppShell = () => {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <div className="border-b border-slate-900 bg-slate-950/90 px-4 py-4 backdrop-blur xl:hidden">
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* MAIN CONTENT                                                         */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      
+      <div className="relative z-10 flex flex-1 flex-col">
+        {/* Mobile Header */}
+        <div className="border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl px-4 py-4 xl:hidden">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                Sales Flow AI
-              </p>
-              <p className="text-base font-semibold text-slate-50">
-                Network Marketing Pro
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center glow-cyan">
+                <Zap className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <p className="text-base font-bold gradient-text">NEXUS</p>
+                <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500">
+                  Sales Intelligence
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <LanguageSwitcher variant="minimal" />
-              <span className="rounded-full border border-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+              <span className="badge-neon badge-cyan">
                 {planLabel}
               </span>
             </div>
           </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          
+          {/* Mobile Nav Scroll */}
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {mobileNavItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
                   clsx(
-                    "whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition",
+                    "whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200",
                     isActive
-                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30"
-                      : "bg-slate-900/80 text-slate-400 hover:text-slate-100"
+                      ? "bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 shadow-lg glow-cyan"
+                      : "bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-700/60"
                   )
                 }
               >
@@ -191,8 +230,9 @@ const AppShell = () => {
           </div>
         </div>
 
+        {/* Page Content */}
         <div role="main" className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-6xl px-6 py-8">
+          <div className="mx-auto w-full max-w-7xl px-6 py-8">
             <Outlet />
           </div>
         </div>
@@ -201,15 +241,19 @@ const AppShell = () => {
   );
 };
 
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* SIDEBAR LINK COMPONENT                                                       */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
 const SidebarLink = ({ to, label, icon: Icon }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
       clsx(
-        "flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition",
+        "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
         isActive
-          ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20"
-          : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50"
+          ? "bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 shadow-lg glow-cyan"
+          : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
       )
     }
   >
@@ -217,13 +261,13 @@ const SidebarLink = ({ to, label, icon: Icon }) => (
       <>
         <span
           className={clsx(
-            "flex h-7 w-7 items-center justify-center rounded-full text-xs",
+            "flex h-8 w-8 items-center justify-center rounded-lg text-xs transition-all duration-200",
             isActive
-              ? "bg-slate-950/80 text-slate-50"
-              : "bg-slate-800/80 text-slate-300"
+              ? "bg-slate-950/30 text-white"
+              : "bg-slate-800/60 text-slate-400 group-hover:text-white"
           )}
         >
-          {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+          {Icon ? <Icon className="h-4 w-4" /> : null}
         </span>
         <span>{label}</span>
       </>
