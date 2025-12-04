@@ -351,3 +351,72 @@ async def get_payment_checks(
         for a in payment_checks
     ]
 
+
+@router.get("/status")
+async def get_daily_flow_status(
+    company_id: Optional[str] = Query("default", description="Company ID"),
+    for_date: Optional[str] = Query(None, description="Datum im ISO-Format (YYYY-MM-DD)"),
+    user=Depends(get_current_user),
+):
+    """
+    Holt den Daily Flow Status für einen User.
+    
+    Kompatibel mit Frontend activityService.getDailyFlowStatus()
+    """
+    from datetime import datetime
+    
+    db = get_supabase()
+    
+    # Wenn RPC-Funktion existiert, verwende sie
+    try:
+        check_date = for_date if for_date else datetime.now().strftime("%Y-%m-%d")
+        
+        result = db.rpc(
+            "get_daily_flow_status",
+            {
+                "p_user_id": str(user.id),
+                "p_company_id": company_id,
+                "p_date": check_date,
+            }
+        ).execute()
+        
+        if result.data:
+            return result.data
+    except Exception as e:
+        # Fallback: Erstelle Status aus Daily Flow Actions
+        pass
+    
+    # Fallback: Erstelle Status aus Summary
+    service = get_daily_flow_actions_service(db)
+    check_date = date.fromisoformat(for_date) if for_date else date.today()
+    
+    summary = await service.get_daily_summary(
+        user_id=user.id,
+        for_date=check_date,
+    )
+    
+    # Konvertiere zu Frontend-Format
+    return {
+        "daily": {
+            "new_contacts": {
+                "target": summary.new_contacts,
+                "done": 0,  # TODO: Aus activities berechnen
+            },
+            "followups": {
+                "target": summary.follow_ups,
+                "done": 0,
+            },
+            "reactivations": {
+                "target": summary.reactivations,
+                "done": 0,
+            },
+        },
+        "weekly": {
+            "target": 0,
+            "done": 0,
+        },
+        "monthly": {
+            "target": 0,
+            "done": 0,
+        },
+    }

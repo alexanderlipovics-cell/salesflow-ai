@@ -25,6 +25,8 @@ class MentorContext:
     company_id: Optional[str] = None
     vertical: str = "network_marketing"
     vertical_label: str = "Network Marketing"
+    skill_level: Optional[str] = None  # rookie, advanced, pro
+    enabled_modules: Optional[List[str]] = None  # phoenix, delay_master, etc.
     
     # Daily Flow Status
     daily_flow: Optional[Dict[str, Any]] = None
@@ -199,7 +201,7 @@ class MentorContextBuilder:
         """Lädt User Profile aus Supabase."""
         try:
             result = self.db.table("profiles").select(
-                "first_name, last_name, role, skill_level, company_id, vertical"
+                "first_name, last_name, role, skill_level, company_id, vertical, enabled_modules"
             ).eq("id", context.user_id).single().execute()
             
             if result.data:
@@ -213,12 +215,20 @@ class MentorContextBuilder:
                 
                 context.user_role = profile.get("role")
                 context.experience_level = profile.get("skill_level")
+                context.skill_level = profile.get("skill_level")  # Für neue Prompts
                 
                 if not context.company_id:
                     context.company_id = profile.get("company_id")
                 
                 if profile.get("vertical"):
                     context.vertical = profile["vertical"]
+                
+                # Enabled Modules laden
+                if profile.get("enabled_modules"):
+                    context.enabled_modules = profile["enabled_modules"]
+                else:
+                    # Default Modules
+                    context.enabled_modules = ["mentor", "dmo_tracker", "contacts"]
                     
         except Exception as e:
             print(f"Warning: Could not load user profile: {e}")

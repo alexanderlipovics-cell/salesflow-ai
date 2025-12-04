@@ -8,6 +8,7 @@ Endpoints:
 - POST /chat - Chat mit MENTOR
 - GET /context - Aktuellen Kontext abrufen
 - POST /feedback - Feedback zu Antwort geben
+- POST /quick-action - Quick Actions für häufige Anfragen
 """
 
 from typing import Optional, List
@@ -113,6 +114,27 @@ class FeedbackResponse(BaseModel):
     """Response für Feedback."""
     success: bool
     message: str
+
+
+class QuickActionRequest(BaseModel):
+    """Request für Quick Action."""
+    action_type: str = Field(
+        ...,
+        description="Typ der Quick Action: objection_help, opener_suggest, closing_tip, followup_suggest, motivation, dmo_status"
+    )
+    context: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="Kontext/Prompt für die Action"
+    )
+
+
+class QuickActionResponse(BaseModel):
+    """Response für Quick Action."""
+    suggestion: str = Field(..., description="Generierte Antwort/Vorschlag")
+    action_type: str
+    tokens_used: Optional[int] = 0
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -271,6 +293,70 @@ async def submit_feedback(
     )
 
 
+@router.post("/quick-action", response_model=QuickActionResponse)
+async def quick_action(
+    payload: QuickActionRequest,
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Quick Actions für häufige Anfragen.
+    
+    ## Unterstützte Action Types
+    
+    - `objection_help`: Einwandbehandlung (z.B. "keine Zeit", "zu teuer")
+    - `opener_suggest`: Opener vorschlagen für neuen Kontakt
+    - `closing_tip`: Closing-Tipps für warme Leads
+    - `followup_suggest`: Follow-up Nachricht generieren
+    - `motivation`: Motivations-Tipp für heute
+    - `dmo_status`: DMO Status-Zusammenfassung
+    
+    ## Beispiel
+    
+    ```json
+    {
+      "action_type": "objection_help",
+      "context": "Der Kunde sagt 'keine Zeit'"
+    }
+    ```
+    """
+    service = get_mentor_service(db)
+    
+    # Action-spezifische Prompts
+    action_prompts = {
+        "objection_help": "Hilf mir bei diesem Einwand: ",
+        "opener_suggest": "Schlage einen guten Opener vor für: ",
+        "closing_tip": "Gib mir einen Closing-Tipp für: ",
+        "followup_suggest": "Erstelle eine Follow-up Nachricht für: ",
+        "motivation": "Gib mir einen kurzen Motivations-Tipp für heute. Kontext: ",
+        "dmo_status": "Zeig mir eine kurze Zusammenfassung meines DMO Status. Kontext: ",
+    }
+    
+    base_prompt = action_prompts.get(payload.action_type, "")
+    full_message = f"{base_prompt}{payload.context}"
+    
+    try:
+        result = await service.chat(
+            user_id=current_user.id,
+            message=full_message,
+            company_id=current_user.company_id,
+            user_name=current_user.name,
+            include_context=True,  # Quick Actions nutzen Kontext
+            conversation_history=[],
+        )
+        
+        return QuickActionResponse(
+            suggestion=result.response,
+            action_type=payload.action_type,
+            tokens_used=result.tokens_used,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Quick Action failed: {str(e)}"
+        )
+
+
 @router.get("/status")
 async def mentor_status():
     """Health Check für MENTOR Service."""
@@ -289,6 +375,7 @@ async def mentor_status():
             "disc_adaptation",
             "conversation_history",
             "feedback_tracking",
+            "quick_actions",
         ],
     }
 

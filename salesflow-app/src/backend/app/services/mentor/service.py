@@ -19,6 +19,22 @@ from .action_parser import ActionParser, ActionTag, extract_action_tags, strip_a
 from .context_builder import MentorContextBuilder, MentorContext
 from ...core.config import settings
 
+# Neue Prompt-Struktur
+import sys
+from pathlib import Path
+backend_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(backend_root))
+from prompts import (
+    get_full_prompt,
+    get_network_marketing_prompt,
+    get_field_sales_prompt,
+    get_general_prompt,
+    get_phoenix_prompt,
+    get_delay_master_prompt,
+    get_dmo_tracker_prompt,
+    get_ghostbuster_prompt,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -121,12 +137,24 @@ class MentorService:
             except Exception as e:
                 logger.warning(f"Could not build context: {e}")
         
+        # Vertical und Module aus Context holen
+        vertical = None
+        skill_level = None
+        enabled_modules = None
+        if context:
+            vertical = context.vertical
+            skill_level = getattr(context, 'skill_level', None) or context.experience_level
+            enabled_modules = getattr(context, 'enabled_modules', None)
+        
         # Messages zusammenbauen
         messages = self._build_messages(
             message=message,
             context_text=context_text,
             conversation_history=conversation_history,
             disc_type=disc_type,
+            vertical=vertical,
+            skill_level=skill_level,
+            enabled_modules=enabled_modules,
         )
         
         # LLM aufrufen
@@ -185,22 +213,57 @@ class MentorService:
         context_text: Optional[str],
         conversation_history: Optional[List[Dict[str, str]]],
         disc_type: Optional[str],
+        vertical: Optional[str] = None,
+        skill_level: Optional[str] = None,
+        enabled_modules: Optional[List[str]] = None,
     ) -> List[Dict[str, str]]:
         """Baut die Messages für den LLM Call."""
         messages = []
         
-        # System Prompt
-        messages.append({
-            "role": "system",
-            "content": MENTOR_SYSTEM_PROMPT,
-        })
-        
-        # Context hinzufügen
-        if context_text:
+        # Neue Prompt-Struktur verwenden wenn Vertical bekannt
+        if vertical:
+            # Vertical-spezifischer Prompt laden
+            vertical_prompt = None
+            if vertical == "network_marketing":
+                vertical_prompt = get_network_marketing_prompt()
+            elif vertical == "field_sales":
+                vertical_prompt = get_field_sales_prompt()
+            else:
+                vertical_prompt = get_general_prompt()
+            
+            # Module Prompts zusammenbauen
+            module_prompts = []
+            if enabled_modules:
+                if "phoenix" in enabled_modules:
+                    module_prompts.append(get_phoenix_prompt())
+                if "delay_master" in enabled_modules:
+                    module_prompts.append(get_delay_master_prompt())
+                if "dmo_tracker" in enabled_modules:
+                    module_prompts.append(get_dmo_tracker_prompt())
+                if "ghostbuster" in enabled_modules:
+                    module_prompts.append(get_ghostbuster_prompt())
+            
+            # Vollständigen Prompt bauen
+            messages = get_full_prompt(
+                vertical=vertical or "network_marketing",
+                skill_level=skill_level or "advanced",
+                vertical_specific_prompt=vertical_prompt,
+                enabled_modules=enabled_modules or [],
+                context_text=context_text,
+            )
+        else:
+            # Fallback: Alte Prompts
             messages.append({
                 "role": "system",
-                "content": MENTOR_CONTEXT_TEMPLATE.format(context_text=context_text),
+                "content": MENTOR_SYSTEM_PROMPT,
             })
+            
+            # Context hinzufügen
+            if context_text:
+                messages.append({
+                    "role": "system",
+                    "content": MENTOR_CONTEXT_TEMPLATE.format(context_text=context_text),
+                })
         
         # DISC Adaptation
         if disc_type and disc_type in ["D", "I", "S", "G"]:

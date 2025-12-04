@@ -477,6 +477,62 @@ Antworte NUR mit validem JSON:
         )
 
 
+@router.get("/stats")
+async def get_contacts_stats(
+    db: Client = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Gibt Statistiken der Kontakte zurück.
+    Kompatibel mit Frontend-Erwartungen.
+    """
+    # Total Contacts
+    total = db.table("contacts").select("*", count="exact").eq(
+        "user_id", current_user.id
+    ).execute()
+    
+    # By Type
+    by_type = {}
+    for ctype in ["prospect", "customer", "partner"]:
+        result = db.table("contacts").select("*", count="exact").eq(
+            "user_id", current_user.id
+        ).eq("contact_type", ctype).execute()
+        by_type[ctype] = result.count or 0
+    
+    # By Stage
+    by_stage = {}
+    for stage in ["lead", "contacted", "interested", "presented", "won", "lost"]:
+        result = db.table("contacts").select("*", count="exact").eq(
+            "user_id", current_user.id
+        ).eq("pipeline_stage", stage).execute()
+        by_stage[stage] = result.count or 0
+    
+    # Follow-ups fällig
+    today = date.today().isoformat()
+    overdue = db.table("contacts").select("*", count="exact").eq(
+        "user_id", current_user.id
+    ).lt("next_follow_up_at", today).execute()
+    
+    # Score-Statistiken (falls vorhanden)
+    avg_score_result = db.table("contacts").select("lead_score").eq(
+        "user_id", current_user.id
+    ).not_.is_("lead_score", "null").execute()
+    
+    avg_score = 0
+    if avg_score_result.data and len(avg_score_result.data) > 0:
+        scores = [c.get("lead_score", 0) for c in avg_score_result.data if c.get("lead_score")]
+        if scores:
+            avg_score = round(sum(scores) / len(scores))
+    
+    return {
+        "total": total.count or 0,
+        "by_type": by_type,
+        "by_stage": by_stage,
+        "overdue_followups": overdue.count or 0,
+        "avg_score": avg_score,
+    }
+
+
 @router.get("/stats/summary")
 async def get_contacts_summary(
     db: Client = Depends(get_db),

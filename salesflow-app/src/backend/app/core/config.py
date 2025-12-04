@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # ═══════════════════════════════════════════════════════════════════════
     
     # CORS - Comma-separated list of allowed origins
-    CORS_ORIGINS: str = "http://localhost:19006,http://localhost:19008,http://localhost:3000"
+    CORS_ORIGINS: str = "http://localhost:19006,http://localhost:19008,http://localhost:3000,http://localhost:8082,http://localhost:8081,http://127.0.0.1:8082,http://127.0.0.1:8081,http://10.0.0.24:8082,http://10.0.0.24:8081"
     
     # Secret Key für JWT und Sessions (MUSS in Production gesetzt werden!)
     SECRET_KEY: str = "change-me-in-production-use-openssl-rand-base64-32"

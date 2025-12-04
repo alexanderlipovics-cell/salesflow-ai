@@ -137,13 +137,16 @@ function MainTabs() {
   );
 }
 
-// Auth Stack - Login first, Landing Page als Option
+// Auth Stack - Landing Page first, dann Login/Register
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ headerShown: false }}
+      initialRouteName="Landing"
+    >
+      <Stack.Screen name="Landing" component={LandingPage} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="Landing" component={LandingPage} />
     </Stack.Navigator>
   );
 }

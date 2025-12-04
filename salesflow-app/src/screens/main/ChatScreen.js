@@ -42,8 +42,6 @@ import { QuickTemplatesModal } from '../../components/templates';
 
 // API URLs - MENTOR (ehemals CHIEF)
 const getMentorApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/mentor`;
-const getChiefApiUrl = () => `${API_CONFIG.baseUrl}/ai/chief`; // Legacy fallback
-const getLegacyApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
 
 // =============================================================================
 // ACTION TAG PARSER - Parse [[ACTION:...]] Tags aus MENTOR Responses
@@ -716,59 +714,18 @@ export default function ChatScreen({ navigation }) {
       });
       
       if (!response.ok) {
-        // Fallback auf Demo-Endpoint wenn Auth fehlschlägt
-        const demoResponse = await fetch(`${getChiefApiUrl()}/chat/demo`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: userMessage.content,
-            conversation_history: conversationHistory,
-            include_context: true,
-          })
-        });
-        
-        if (!demoResponse.ok) {
-          throw new Error('API Fehler');
-        }
-        
-        const demoData = await demoResponse.json();
-        handleChiefResponse(demoData);
-        return;
+        const errorText = await response.text();
+        console.error('MENTOR API Fehler:', response.status, errorText);
+        throw new Error(`API Fehler: ${response.status}`);
       }
       
       const data = await response.json();
       handleChiefResponse(data);
       
     } catch (error) {
-      console.log('CHIEF API Fehler:', error);
+      console.error('MENTOR API Fehler:', error);
       
-      // Fallback auf Legacy-Endpoint
-      try {
-        const legacyResponse = await fetch(`${getLegacyApiUrl()}/api/ai/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: messageText,
-            user_id: user?.id
-          })
-        });
-        
-        if (legacyResponse.ok) {
-          const legacyData = await legacyResponse.json();
-          setMessages(prev => [...prev, {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: legacyData.response || legacyData.message || 'Keine Antwort erhalten.',
-            contextUsed: false,
-            actions: [],
-          }]);
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        // Ignore legacy fallback errors
-      }
-      
+      // Zeige Fehlermeldung
       setMessages(prev => [...prev, { 
         id: (Date.now() + 1).toString(),
         role: 'assistant', 
@@ -839,22 +796,8 @@ export default function ChatScreen({ navigation }) {
         })
       });
     } catch (error) {
-      // Fallback auf Legacy
-      try {
-        await fetch(`${getLegacyApiUrl()}/api/ai/feedback`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: userMessage,
-            response: aiResponse,
-            feedback: feedbackType,
-            pattern_type: 'general',
-            user_id: user?.id
-          })
-        });
-      } catch (e) {
-        console.log('Feedback API Fehler:', e);
-      }
+      console.error('Feedback API Fehler:', error);
+      // Feedback ist nicht kritisch - einfach loggen
     }
   };
 
@@ -872,13 +815,15 @@ export default function ChatScreen({ navigation }) {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const response = await fetch(`${getApiUrl()}/api/ai/quick-action`, {
+      const response = await fetch(`${getMentorApiUrl()}/quick-action`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': user?.access_token ? `Bearer ${user.access_token}` : '',
+        },
         body: JSON.stringify({
           action_type: actionType,
           context: context,
-          user_id: user?.id
         })
       });
       

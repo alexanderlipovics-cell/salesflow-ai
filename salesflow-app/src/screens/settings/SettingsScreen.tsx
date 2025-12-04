@@ -27,6 +27,9 @@ import {
   getAvailableLanguages,
   SupportedLanguage 
 } from '../../i18n/config';
+import { VerticalSelector } from '../../components/VerticalSelector';
+import { ModuleSelector } from '../../components/ModuleSelector';
+import { VerticalId } from '../../config/verticals/VerticalContext';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -243,6 +246,24 @@ export const SettingsScreen: React.FC = () => {
             subtitle="Name, Firma, Branche"
             onPress={() => navigation.navigate('NetworkSelection')}
           />
+          <VerticalSelector
+            currentVertical={(userProfile?.vertical as VerticalId) || 'network_marketing'}
+            onVerticalChange={(vertical) => {
+              // Vertical wurde geändert, Profile wird automatisch aktualisiert
+              Alert.alert('✅ Vertical geändert', `Dein Vertical wurde auf "${vertical}" gesetzt.`);
+            }}
+          />
+        </SettingSection>
+
+        {/* Module Settings */}
+        <SettingSection title="Module">
+          <ModuleSelector
+            vertical={(userProfile?.vertical as VerticalId) || 'network_marketing'}
+          />
+        </SettingSection>
+
+        {/* Account Settings continued */}
+        <SettingSection title={t('settings.account')}>
           <SettingItem
             icon="💳"
             title="Abo & Zahlung"

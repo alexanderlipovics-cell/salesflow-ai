@@ -30,8 +30,9 @@ import { DECISION_STATE_CONFIG } from '../../types/personality';
 import { API_CONFIG } from '../../services/apiConfig';
 import { ChatImportModal } from '../../components/chat-import';
 
-// API URL aus zentraler Config (ohne /api/v1 Suffix für legacy Endpoints)
+// API URL aus zentraler Config
 const getApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
+const getContactsApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/contacts`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // KONFIGURATION
@@ -451,14 +452,15 @@ export default function LeadsScreen({ navigation }) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
       
-      const response = await fetch(`${getApiUrl()}/api/leads?user_id=${user?.id || ''}`, {
+      const response = await fetch(`${getContactsApiUrl()}?user_id=${user?.id || ''}`, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
-        setLeads(data.leads || data || []);
+        // Neue API gibt {contacts: [...], total: ...} zurück
+        setLeads(data.contacts || data.leads || data || []);
       } else {
         setLeads(SAMPLE_LEADS);
       }
@@ -491,7 +493,7 @@ export default function LeadsScreen({ navigation }) {
     }
 
     try {
-      const response = await fetch(`${getApiUrl()}/api/leads`, {
+      const response = await fetch(`${getContactsApiUrl()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -552,8 +554,8 @@ export default function LeadsScreen({ navigation }) {
     const lead = leads.find(l => l.id === leadId);
     
     try {
-      await fetch(`${getApiUrl()}/api/leads/${leadId}`, {
-        method: 'PUT',
+      await fetch(`${getContactsApiUrl()}/${leadId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });

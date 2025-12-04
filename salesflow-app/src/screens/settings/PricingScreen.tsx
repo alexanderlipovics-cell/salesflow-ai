@@ -22,107 +22,44 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { AURA_COLORS, AURA_SHADOWS } from '../../components/aura';
 import { useBilling } from '../../hooks/useBilling';
+import {
+  BASIC_PLAN,
+  AUTOPILOT_ADDON,
+  FINANCE_ADDON,
+  LEADGEN_ADDON,
+  type PricingTier,
+} from '../../config/pricing';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PRICING DATA
+// PRICING DATA (aus config/pricing.ts)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const PRICING_PLANS = {
-  solo: {
-    name: 'Solo',
-    subtitle: 'Für Einzelkämpfer',
+// Alle 9 Preise: Basic + 3 Add-Ons mit jeweils 3 Tiers
+const ALL_PRICING_TIERS: (PricingTier & { category: string; icon: string })[] = [
+  // Basic Plan
+  {
+    ...BASIC_PLAN,
+    category: 'basic',
     icon: '🚀',
-    price: { monthly: 149, yearly: 1190 },
-    priceId: { monthly: 'basic_monthly', yearly: 'basic_yearly' },
-    features: [
-      { text: '100 Leads', included: true },
-      { text: '50 Chat-Imports/Monat', included: true },
-      { text: '100 AI-Analysen/Monat', included: true },
-      { text: 'Unbegrenzte Follow-ups', included: true },
-      { text: 'CHIEF AI Chat', included: true },
-      { text: 'DISG-Profiler', included: true },
-      { text: 'Knowledge Base (1 GB)', included: true },
-      { text: 'Voice-Steuerung', included: true },
-      { text: 'Autopilot', included: false },
-      { text: 'Team-Features', included: false },
-      { text: 'Enterprise API', included: false },
-    ],
-    recommended: false,
-    savings: null,
   },
-  team: {
-    name: 'Team',
-    subtitle: 'Für High-Performer Teams',
-    icon: '⚡',
-    price: { monthly: 990, yearly: 7920 },
-    priceId: { monthly: 'autopilot_pro_monthly', yearly: 'autopilot_pro_yearly' },
-    features: [
-      { text: 'Unbegrenzte Leads', included: true },
-      { text: 'Unbegrenzte Chat-Imports', included: true },
-      { text: 'Unbegrenzte AI-Analysen', included: true },
-      { text: 'Unbegrenzte Follow-ups', included: true },
-      { text: 'CHIEF AI Chat Pro', included: true },
-      { text: 'DISG-Profiler Advanced', included: true },
-      { text: 'Knowledge Base (10 GB)', included: true },
-      { text: 'Voice + Wake Word', included: true },
-      { text: 'Autopilot Basic', included: true },
-      { text: 'Bis zu 5 Teammitglieder', included: true },
-      { text: 'Team Analytics', included: true },
-      { text: 'Priority Support', included: true },
-      { text: 'Enterprise API', included: false },
-    ],
-    recommended: true,
-    savings: '2 Monate gratis bei jährlicher Zahlung',
-  },
-  enterprise: {
-    name: 'Enterprise',
-    subtitle: 'Für Organisationen',
-    icon: '🏢',
-    price: { monthly: 2400, yearly: 19200 },
-    priceId: { monthly: 'bundle_unlimited_monthly', yearly: 'bundle_unlimited_yearly' },
-    features: [
-      { text: 'Alles aus Team', included: true },
-      { text: 'Unbegrenzte Teammitglieder', included: true },
-      { text: 'Knowledge Base (100 GB)', included: true },
-      { text: 'Autopilot Full', included: true },
-      { text: 'Custom Branding', included: true },
-      { text: 'SSO / SAML', included: true },
-      { text: 'Enterprise API', included: true },
-      { text: 'Dedicated Support', included: true },
-      { text: 'SLA 99.9%', included: true },
-      { text: 'Custom Integrationen', included: true },
-      { text: 'Onboarding & Training', included: true },
-    ],
-    recommended: false,
-    savings: '4 Monate gratis bei jährlicher Zahlung',
-  },
-};
-
-const ADDONS = [
-  {
-    id: 'autopilot_starter',
-    name: 'Autopilot Starter',
-    icon: '🤖',
-    description: '100 Auto-Aktionen/Monat',
-    price: 49,
-    priceId: 'autopilot_starter_monthly',
-  },
-  {
-    id: 'finance_module',
-    name: 'Finance Tracker',
-    icon: '💰',
-    description: 'Provisionen & Steuervorbereitung',
-    price: 29,
-    priceId: 'finance_starter_monthly',
-  },
-  {
-    id: 'leadgen_module',
-    name: 'Lead Generator',
-    icon: '🎯',
-    description: '50 AI Lead-Vorschläge/Monat',
-    price: 39,
-    priceId: 'leadgen_starter_monthly',
-  },
+  // Autopilot Tiers (3)
+  ...AUTOPILOT_ADDON.tiers.map(tier => ({
+    ...tier,
+    category: 'autopilot',
+    icon: AUTOPILOT_ADDON.icon,
+  })),
+  // Finance Tiers (3)
+  ...FINANCE_ADDON.tiers.map(tier => ({
+    ...tier,
+    category: 'finance',
+    icon: FINANCE_ADDON.icon,
+  })),
+  // Leadgen Tiers (3)
+  ...LEADGEN_ADDON.tiers.map(tier => ({
+    ...tier,
+    category: 'leadgen',
+    icon: LEADGEN_ADDON.icon,
+  })),
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -130,35 +67,39 @@ const ADDONS = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 const PlanCard = ({
-  plan,
-  planKey,
+  tier,
   isYearly,
   isCurrentPlan,
   onSelect,
   loading,
 }: {
-  plan: typeof PRICING_PLANS.solo;
-  planKey: string;
+  tier: PricingTier & { category: string; icon: string };
   isYearly: boolean;
   isCurrentPlan: boolean;
   onSelect: () => void;
   loading: boolean;
 }) => {
-  const price = isYearly ? plan.price.yearly / 12 : plan.price.monthly;
-  const totalPrice = isYearly ? plan.price.yearly : plan.price.monthly;
+  const price = isYearly ? tier.yearlyPrice / 12 : tier.price;
+  const totalPrice = isYearly ? tier.yearlyPrice : tier.price;
+  const categoryLabels: Record<string, string> = {
+    basic: 'Basis-Plan',
+    autopilot: 'Autopilot',
+    finance: 'Finanzen',
+    leadgen: 'Lead-Generierung',
+  };
   
   return (
-    <View style={[styles.planCard, plan.recommended && styles.planCardRecommended]}>
-      {plan.recommended && (
+    <View style={[styles.planCard, tier.popular && styles.planCardRecommended]}>
+      {tier.popular && (
         <View style={styles.recommendedBadge}>
           <Text style={styles.recommendedText}>⭐ BELIEBT</Text>
         </View>
       )}
       
       <View style={styles.planHeader}>
-        <Text style={styles.planIcon}>{plan.icon}</Text>
-        <Text style={styles.planName}>{plan.name}</Text>
-        <Text style={styles.planSubtitle}>{plan.subtitle}</Text>
+        <Text style={styles.planIcon}>{tier.icon}</Text>
+        <Text style={styles.planName}>{tier.name}</Text>
+        <Text style={styles.planSubtitle}>{categoryLabels[tier.category] || tier.category}</Text>
       </View>
       
       <View style={styles.priceContainer}>
@@ -169,21 +110,17 @@ const PlanCard = ({
         )}
       </View>
       
-      {plan.savings && isYearly && (
+      {isYearly && (
         <View style={styles.savingsBadge}>
-          <Text style={styles.savingsText}>💡 {plan.savings}</Text>
+          <Text style={styles.savingsText}>💡 2 Monate gratis</Text>
         </View>
       )}
       
       <View style={styles.featuresContainer}>
-        {plan.features.map((feature, idx) => (
+        {tier.features.map((feature, idx) => (
           <View key={idx} style={styles.featureRow}>
-            <Text style={[styles.featureIcon, !feature.included && styles.featureIconDisabled]}>
-              {feature.included ? '✓' : '✗'}
-            </Text>
-            <Text style={[styles.featureText, !feature.included && styles.featureTextDisabled]}>
-              {feature.text}
-            </Text>
+            <Text style={styles.featureIcon}>✓</Text>
+            <Text style={styles.featureText}>{feature}</Text>
           </View>
         ))}
       </View>
@@ -191,7 +128,7 @@ const PlanCard = ({
       <TouchableOpacity
         style={[
           styles.selectButton,
-          plan.recommended && styles.selectButtonRecommended,
+          tier.popular && styles.selectButtonRecommended,
           isCurrentPlan && styles.selectButtonCurrent,
         ]}
         onPress={onSelect}
@@ -209,38 +146,6 @@ const PlanCard = ({
   );
 };
 
-const AddonCard = ({
-  addon,
-  isActive,
-  onToggle,
-  loading,
-}: {
-  addon: typeof ADDONS[0];
-  isActive: boolean;
-  onToggle: () => void;
-  loading: boolean;
-}) => (
-  <TouchableOpacity
-    style={[styles.addonCard, isActive && styles.addonCardActive]}
-    onPress={onToggle}
-    disabled={loading}
-  >
-    <View style={styles.addonHeader}>
-      <Text style={styles.addonIcon}>{addon.icon}</Text>
-      <View style={styles.addonInfo}>
-        <Text style={styles.addonName}>{addon.name}</Text>
-        <Text style={styles.addonDesc}>{addon.description}</Text>
-      </View>
-      <View style={styles.addonPrice}>
-        <Text style={styles.addonPriceAmount}>+€{addon.price}</Text>
-        <Text style={styles.addonPricePeriod}>/Mo</Text>
-      </View>
-    </View>
-    <View style={[styles.addonToggle, isActive && styles.addonToggleActive]}>
-      <Text style={styles.addonToggleText}>{isActive ? '✓' : '+'}</Text>
-    </View>
-  </TouchableOpacity>
-);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -252,33 +157,31 @@ export const PricingScreen = () => {
   const billing = useBilling();
   
   const [isYearly, setIsYearly] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   
-  const handleSelectPlan = async (planKey: string) => {
-    const plan = PRICING_PLANS[planKey as keyof typeof PRICING_PLANS];
-    if (!plan) return;
-    
-    setLoadingPlan(planKey);
+  // Gruppiere Preise nach Kategorie
+  const groupedTiers = ALL_PRICING_TIERS.reduce((acc, tier) => {
+    if (!acc[tier.category]) {
+      acc[tier.category] = [];
+    }
+    acc[tier.category].push(tier);
+    return acc;
+  }, {} as Record<string, typeof ALL_PRICING_TIERS>);
+  
+  const categories = Object.keys(groupedTiers);
+  const displayedTiers = selectedCategory 
+    ? groupedTiers[selectedCategory] 
+    : ALL_PRICING_TIERS;
+  
+  const handleSelectPlan = async (tierId: string) => {
+    setLoadingPlan(tierId);
     try {
-      const priceId = isYearly ? plan.priceId.yearly : plan.priceId.monthly;
+      // TODO: Implementiere Stripe Checkout mit tierId
+      const priceId = `${tierId}_${isYearly ? 'yearly' : 'monthly'}`;
       await billing.upgrade(priceId);
     } catch (error) {
       console.error('Checkout error:', error);
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-  
-  const handleAddAddon = async (addonId: string) => {
-    const addon = ADDONS.find(a => a.id === addonId);
-    if (!addon) return;
-    
-    setLoadingPlan(addonId);
-    try {
-      await billing.addAddon(addon.priceId);
-    } catch (error) {
-      console.error('Addon error:', error);
     } finally {
       setLoadingPlan(null);
     }
@@ -338,33 +241,52 @@ export const PricingScreen = () => {
         </View>
       )}
       
-      {/* Plans */}
-      <View style={styles.plansContainer}>
-        {Object.entries(PRICING_PLANS).map(([key, plan]) => (
-          <PlanCard
-            key={key}
-            planKey={key}
-            plan={plan}
-            isYearly={isYearly}
-            isCurrentPlan={currentPlan === key}
-            onSelect={() => handleSelectPlan(key)}
-            loading={loadingPlan === key}
-          />
-        ))}
-      </View>
+      {/* Category Filter */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoriesContainer}
+        contentContainerStyle={styles.categoriesContent}
+      >
+        <TouchableOpacity
+          style={[styles.categoryChip, !selectedCategory && styles.categoryChipActive]}
+          onPress={() => setSelectedCategory(null)}
+        >
+          <Text style={[styles.categoryText, !selectedCategory && styles.categoryTextActive]}>
+            Alle (9)
+          </Text>
+        </TouchableOpacity>
+        {categories.map(category => {
+          const categoryLabels: Record<string, string> = {
+            basic: '🚀 Basis',
+            autopilot: '🤖 Autopilot',
+            finance: '💰 Finanzen',
+            leadgen: '🎯 Lead-Gen',
+          };
+          return (
+            <TouchableOpacity
+              key={category}
+              style={[styles.categoryChip, selectedCategory === category && styles.categoryChipActive]}
+              onPress={() => setSelectedCategory(selectedCategory === category ? null : category)}
+            >
+              <Text style={[styles.categoryText, selectedCategory === category && styles.categoryTextActive]}>
+                {categoryLabels[category] || category} ({groupedTiers[category].length})
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
       
-      {/* Addons */}
-      <View style={styles.addonsSection}>
-        <Text style={styles.addonsTitle}>🔌 Add-Ons</Text>
-        <Text style={styles.addonsSubtitle}>Erweitere deinen Plan mit zusätzlichen Features</Text>
-        
-        {ADDONS.map(addon => (
-          <AddonCard
-            key={addon.id}
-            addon={addon}
-            isActive={billing.hasAddon(addon.id)}
-            onToggle={() => handleAddAddon(addon.id)}
-            loading={loadingPlan === addon.id}
+      {/* Plans - Alle 9 Preise */}
+      <View style={styles.plansContainer}>
+        {displayedTiers.map(tier => (
+          <PlanCard
+            key={tier.id}
+            tier={tier}
+            isYearly={isYearly}
+            isCurrentPlan={currentPlan === tier.id}
+            onSelect={() => handleSelectPlan(tier.id)}
+            loading={loadingPlan === tier.id}
           />
         ))}
       </View>
@@ -726,6 +648,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+  },
+  
+  // Category Filter
+  categoriesContainer: {
+    marginTop: 20,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  categoriesContent: {
+    gap: 8,
+    paddingRight: 20,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: AURA_COLORS.glass.surface,
+    borderWidth: 1,
+    borderColor: AURA_COLORS.glass.border,
+    marginRight: 8,
+  },
+  categoryChipActive: {
+    backgroundColor: AURA_COLORS.neon.cyan,
+    borderColor: AURA_COLORS.neon.cyan,
+  },
+  categoryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AURA_COLORS.text.secondary,
+  },
+  categoryTextActive: {
+    color: '#000',
   },
   
   // Trust

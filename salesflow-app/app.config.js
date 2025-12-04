@@ -41,11 +41,13 @@ export default {
       // ═══════════════════════════════════════════════════════════════════════
       
       // LOKALE ENTWICKLUNG:
-      // - Für Expo auf physischem Gerät: Nutze deine lokale IP
+      // - Für Web: localhost
+      // - Für Expo auf physischem Gerät: Nutze deine lokale IP (z.B. 10.0.0.24)
       // - Für Simulator/Emulator: localhost oder 10.0.2.2 (Android)
       
-      // Lokale IP im Netzwerk (anpassen!)
-      apiUrl: "http://10.0.0.24:8001/api/v1",
+      // Web verwendet localhost, mobile Geräte können IP verwenden
+      // Die apiConfig.js Logik wählt automatisch die richtige URL
+      apiUrl: process.env.EXPO_PUBLIC_API_URL || "http://localhost:8001/api/v1",
       
       // Supabase
       supabaseUrl: "https://lncwvbhcafkdorypnpnz.supabase.co",

@@ -79,10 +79,15 @@ export const getApiBaseUrl = () => {
   }
   
   // 3. Expo Constants (für EAS Build)
+  // WICHTIG: Für Web immer localhost verwenden, auch wenn Config IP hat
   try {
     const Constants = require('expo-constants').default;
     const apiUrl = Constants?.expoConfig?.extra?.apiUrl;
     if (apiUrl) {
+      // Web-Browser: Immer localhost verwenden, auch wenn Config IP hat
+      if (typeof window !== 'undefined' && apiUrl.includes('10.0.0.24')) {
+        return apiUrl.replace('10.0.0.24', 'localhost');
+      }
       return apiUrl;
     }
   } catch (e) {
@@ -100,6 +105,11 @@ export const getApiBaseUrl = () => {
   // Port 8001 für lokales Backend
   const DEV_PORT = 8001;
   
+  // Web-Browser: Immer localhost verwenden
+  if (typeof window !== 'undefined') {
+    return `http://localhost:${DEV_PORT}/api/v1`;
+  }
+  
   const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
   
   if (isAndroid) {
@@ -107,7 +117,7 @@ export const getApiBaseUrl = () => {
     return `http://10.0.2.2:${DEV_PORT}/api/v1`;
   }
   
-  // iOS Simulator & Web: localhost
+  // iOS Simulator: localhost
   return `http://localhost:${DEV_PORT}/api/v1`;
 };
 

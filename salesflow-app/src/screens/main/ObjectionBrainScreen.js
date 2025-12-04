@@ -4,6 +4,7 @@ import { API_CONFIG } from '../../services/apiConfig';
 
 // API URL aus zentraler Config
 const getApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
+const getAutonomousApiUrl = () => `${API_CONFIG.baseUrl}/autonomous`;
 
 const VERTICALS = [
   { key: 'network', label: '🌐 Network Marketing', color: '#8b5cf6' },
@@ -36,20 +37,31 @@ export default function ObjectionBrainScreen() {
     setResult(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/objection-brain/generate`, {
+      // Verwende MENTOR Quick Action für Objection Help
+      const response = await fetch(`${getApiUrl()}/api/v2/mentor/quick-action`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          objection: objection.trim(),
-          vertical,
-          channel,
-          language: 'de'
+          action_type: 'objection_help',
+          context: `${objection.trim()} (Branche: ${vertical}, Kanal: ${channel})`
         })
       });
       
       const data = await response.json();
-      if (data.variants) {
-        setResult(data);
+      if (data.suggestion) {
+        // Konvertiere neue Response-Struktur zu alter (für Kompatibilität)
+        setResult({
+          variants: [
+            {
+              label: '💡 Antwort',
+              message: data.suggestion,
+              summary: `Action: ${data.action_type}`
+            }
+          ],
+          tokens_used: data.tokens_used || 0
+        });
       } else {
         setError('Keine Antwort generiert');
       }

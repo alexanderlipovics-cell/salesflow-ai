@@ -482,6 +482,10 @@ export default function LandingPage() {
     navigation.navigate('Login');
   };
   
+  const handleSignUp = () => {
+    navigation.navigate('Register');
+  };
+  
   return (
     <ScrollView 
       style={styles.container}
@@ -537,15 +541,23 @@ export default function LandingPage() {
           {/* CTA Buttons */}
           <View style={styles.heroCTARow}>
             <GlowButton 
-              title="🚀 App öffnen / Login"
+              title="🚀 Login"
               onPress={handleLogin}
               variant="primary"
               icon="log-in-outline"
             />
             <GlowButton 
+              title="Kostenlos starten"
+              onPress={handleSignUp}
+              variant="secondary"
+              icon="person-add-outline"
+            />
+          </View>
+          <View style={[styles.heroCTARow, { marginTop: 12 }]}>
+            <GlowButton 
               title="Demo buchen"
               onPress={handleCTA}
-              variant="secondary"
+              variant="outline"
               icon="calendar-outline"
             />
           </View>
