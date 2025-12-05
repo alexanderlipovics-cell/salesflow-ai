@@ -1,0 +1,44 @@
+# SalesFlow AI Requirements
+# ==========================
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+starlette>=0.27.0
+
+# Authentication & Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
+cryptography>=41.0.0
+
+# Validation & Settings
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+email-validator>=2.1.0
+
+# Database
+supabase>=2.0.0
+asyncpg>=0.29.0
+
+# HTTP Client
+httpx>=0.25.0
+
+# Utilities
+python-multipart>=0.0.6
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.25.0  # For TestClient
+
+# Security Scanning (optional, for CI/CD)
+# pip-audit>=2.6.0
+# bandit>=1.7.0
+# safety>=2.3.0
+
+# Development
+# black>=23.0.0
+# isort>=5.12.0
+# mypy>=1.6.0
