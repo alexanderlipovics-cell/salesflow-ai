@@ -118,6 +118,29 @@ export async function batchGenerateFollowUps(leadIds: string[]): Promise<{
   return response.data;
 }
 
+/**
+ * Startet die Standard-Follow-Up-Sequenz für einen Lead.
+ * Wird z.B. nach dem Lead Hunter Import verwendet.
+ */
+export async function startStandardFollowUpSequenceForLead(
+  leadId: string,
+  sequenceType: string = 'new_lead'
+): Promise<{ success: boolean; message: string; sequence_id?: string }> {
+  try {
+    const response = await apiClient.post<{ success: boolean; message: string; sequence_id?: string }>(
+      `/follow-ups/${leadId}/start-sequence`,
+      { sequence_type: sequenceType }
+    );
+    return response.data;
+  } catch (error) {
+    console.warn('Could not start follow-up sequence:', error);
+    return { 
+      success: false, 
+      message: 'Follow-up sequence start postponed' 
+    };
+  }
+}
+
 // ============================================
 // REACT QUERY KEYS
 // ============================================
@@ -134,4 +157,5 @@ export default {
   generateFollowUpMessage,
   snoozeFollowUp,
   batchGenerateFollowUps,
+  startStandardFollowUpSequenceForLead,
 };
