@@ -1,31 +1,111 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { API_CONFIG } from '../../services/apiConfig';
+import { supabase } from '../../services/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { ObjectionResponsesCard } from '../../components/objection/ObjectionResponsesCard';
 
 // API URL aus zentraler Config
 const getApiUrl = () => API_CONFIG.baseUrl.replace('/api/v1', '');
-const getAutonomousApiUrl = () => `${API_CONFIG.baseUrl}/autonomous`;
 
-const VERTICALS = [
-  { key: 'network', label: '🌐 Network Marketing', color: '#8b5cf6' },
-  { key: 'real_estate', label: '🏠 Immobilien', color: '#10b981' },
-  { key: 'finance', label: '💰 Finanzvertrieb', color: '#f59e0b' },
-];
-
-const CHANNELS = [
-  { key: 'whatsapp', label: '💬 WhatsApp' },
-  { key: 'instagram', label: '📸 Instagram' },
-  { key: 'phone', label: '📞 Telefon' },
-  { key: 'email', label: '📧 E-Mail' },
+// Einwand-Kategorien
+const OBJECTION_CATEGORIES = [
+  { key: 'preis', label: '💰 Preis', color: '#ef4444', icon: '💰' },
+  { key: 'zeit', label: '⏰ Zeit', color: '#f59e0b', icon: '⏰' },
+  { key: 'interesse', label: '🤔 Interesse', color: '#8b5cf6', icon: '🤔' },
+  { key: 'skepsis', label: '🛡️ Skepsis', color: '#06b6d4', icon: '🛡️' },
 ];
 
 export default function ObjectionBrainScreen() {
+  const { user } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [objection, setObjection] = useState('');
-  const [vertical, setVertical] = useState('network');
-  const [channel, setChannel] = useState('whatsapp');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [responses, setResponses] = useState([]);
   const [error, setError] = useState('');
+  const [allResponses, setAllResponses] = useState([]); // Für Offline-Zugriff
+
+  // Lade alle Einwände beim Start (Offline-fähig)
+  useEffect(() => {
+    loadAllObjections();
+  }, []);
+
+  const loadAllObjections = async () => {
+    try {
+      let query = supabase
+        .from('objection_responses')
+        .select('*')
+        .eq('is_active', true)
+        .order('times_used', { ascending: false })
+        .limit(50); // Top 50 für Offline-Zugriff
+      
+      if (user?.company_id) {
+        query = query.or(`company_id.eq.${user.company_id},company_id.is.null`);
+      }
+      
+      const { data, error } = await query;
+      
+      if (!error && data) {
+        setAllResponses(data);
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Einwände:', err);
+    }
+  };
+
+  const getCategoryLabel = (key) => {
+    const labels = {
+      preis: 'Preis',
+      zeit: 'Zeit',
+      interesse: 'Interesse',
+      skepsis: 'Skepsis',
+    };
+    return labels[key] || key;
+  };
+
+  const browseByCategory = async (categoryKey) => {
+    setSelectedCategory(categoryKey);
+    setLoading(true);
+    setError('');
+    setResponses([]);
+
+    try {
+      let query = supabase
+        .from('objection_responses')
+        .select('*')
+        .eq('is_active', true)
+        .or(`objection_type.ilike.%${categoryKey}%,objection_type.ilike.%${getCategoryLabel(categoryKey)}%`)
+        .order('times_used', { ascending: false })
+        .limit(10);
+      
+      if (user?.company_id) {
+        query = query.or(`company_id.eq.${user.company_id},company_id.is.null`);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setResponses(data.map(item => ({
+          id: item.id,
+          type: item.objection_type,
+          responseShort: item.response_short,
+          responseFull: item.response_full || item.response_short,
+          technique: item.response_technique,
+          followUpQuestion: item.follow_up_question,
+          timesUsed: item.times_used || 0,
+          successRate: item.success_rate,
+        })));
+      } else {
+        setError('Keine Antworten in dieser Kategorie gefunden.');
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Kategorie:', err);
+      setError('Fehler beim Laden. Versuche es erneut.');
+    }
+    setLoading(false);
+  };
 
   const analyzeObjection = async () => {
     if (!objection.trim()) {
@@ -34,10 +114,24 @@ export default function ObjectionBrainScreen() {
     }
     setLoading(true);
     setError('');
-    setResult(null);
+    setResponses([]);
 
     try {
-      // Verwende MENTOR Quick Action für Objection Help
+      // Zuerst aus Supabase (kostenlos)
+      const { fetchObjectionResponses } = await import('../../services/objectionDetection');
+      const dbResponses = await fetchObjectionResponses(
+        objection.toLowerCase(),
+        user?.company_id,
+        'network_marketing' // TODO: Aus User-Context holen
+      );
+      
+      if (dbResponses && dbResponses.length > 0) {
+        setResponses(dbResponses);
+        setLoading(false);
+        return;
+      }
+      
+      // Fallback: API (nur wenn keine DB-Antworten)
       const response = await fetch(`${getApiUrl()}/api/v2/mentor/quick-action`, {
         method: 'POST',
         headers: { 
@@ -45,23 +139,20 @@ export default function ObjectionBrainScreen() {
         },
         body: JSON.stringify({
           action_type: 'objection_help',
-          context: `${objection.trim()} (Branche: ${vertical}, Kanal: ${channel})`
+          context: objection.trim()
         })
       });
       
       const data = await response.json();
       if (data.suggestion) {
-        // Konvertiere neue Response-Struktur zu alter (für Kompatibilität)
-        setResult({
-          variants: [
-            {
-              label: '💡 Antwort',
-              message: data.suggestion,
-              summary: `Action: ${data.action_type}`
-            }
-          ],
-          tokens_used: data.tokens_used || 0
-        });
+        setResponses([{
+          id: 'api-generated',
+          type: 'KI-generiert',
+          responseShort: data.suggestion,
+          responseFull: data.suggestion,
+          technique: 'KI-generiert',
+          timesUsed: 0,
+        }]);
       } else {
         setError('Keine Antwort generiert');
       }
@@ -74,41 +165,36 @@ export default function ObjectionBrainScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🧠 Objection Brain</Text>
-        <Text style={styles.headerSubtitle}>KI-gestützte Einwand-Behandlung</Text>
+        <Text style={styles.headerTitle}>🛡️ Einwand-Bibliothek</Text>
+        <Text style={styles.headerSubtitle}>Durchstöbere bewährte Antworten • Offline-fähig</Text>
       </View>
 
       <View style={styles.content}>
-        {/* Vertical Selection */}
-        <Text style={styles.label}>Branche</Text>
-        <View style={styles.optionsRow}>
-          {VERTICALS.map((v) => (
+        {/* Kategorien */}
+        <Text style={styles.label}>Kategorien</Text>
+        <View style={styles.categoriesGrid}>
+          {OBJECTION_CATEGORIES.map((cat) => (
             <Pressable
-              key={v.key}
-              style={[styles.optionChip, vertical === v.key && { backgroundColor: v.color }]}
-              onPress={() => setVertical(v.key)}
+              key={cat.key}
+              style={[
+                styles.categoryCard,
+                selectedCategory === cat.key && { backgroundColor: cat.color, borderColor: cat.color }
+              ]}
+              onPress={() => browseByCategory(cat.key)}
             >
-              <Text style={[styles.optionText, vertical === v.key && styles.optionTextActive]}>{v.label}</Text>
+              <Text style={styles.categoryIcon}>{cat.icon}</Text>
+              <Text style={[
+                styles.categoryLabel,
+                selectedCategory === cat.key && styles.categoryLabelActive
+              ]}>
+                {cat.label.replace(cat.icon + ' ', '')}
+              </Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Channel Selection */}
-        <Text style={styles.label}>Kanal</Text>
-        <View style={styles.optionsRow}>
-          {CHANNELS.map((c) => (
-            <Pressable
-              key={c.key}
-              style={[styles.optionChip, channel === c.key && styles.optionChipActive]}
-              onPress={() => setChannel(c.key)}
-            >
-              <Text style={[styles.optionText, channel === c.key && styles.optionTextActive]}>{c.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Objection Input */}
-        <Text style={styles.label}>Einwand des Kunden</Text>
+        {/* Oder: Einwand eingeben */}
+        <Text style={styles.label}>Oder: Einwand eingeben</Text>
         <TextInput
           style={styles.textArea}
           value={objection}
@@ -124,28 +210,79 @@ export default function ObjectionBrainScreen() {
         <Pressable 
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, loading && styles.buttonDisabled]}
           onPress={analyzeObjection}
-          disabled={loading}
+          disabled={loading || !objection.trim()}
         >
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.buttonText}>🎯 Antworten generieren</Text>
+            <Text style={styles.buttonText}>🔍 Antworten suchen</Text>
           )}
         </Pressable>
 
-        {/* Results */}
-        {result && result.variants && (
+        {/* Ergebnisse */}
+        {loading && !responses.length && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8b5cf6" />
+            <Text style={styles.loadingText}>Lade Antworten...</Text>
+          </View>
+        )}
+
+        {responses.length > 0 && (
           <View style={styles.resultsContainer}>
-            <Text style={styles.resultsTitle}>💡 Empfohlene Antworten</Text>
-            {result.variants.map((variant, index) => (
-              <View key={index} style={styles.variantCard}>
-                <Text style={styles.variantLabel}>{variant.label}</Text>
-                <Text style={styles.variantMessage}>{variant.message}</Text>
-                {variant.summary && (
-                  <Text style={styles.variantSummary}>💭 {variant.summary}</Text>
-                )}
-              </View>
-            ))}
+            <Text style={styles.resultsTitle}>
+              📚 {responses.length} Antwort{responses.length !== 1 ? 'en' : ''} gefunden
+            </Text>
+            <ObjectionResponsesCard
+              objectionType={selectedCategory ? getCategoryLabel(selectedCategory) : 'Einwand'}
+              responses={responses}
+              onCustomize={async () => {
+                if (!objection.trim()) {
+                  Alert.alert('Info', 'Bitte gib zuerst einen Einwand ein.');
+                  return;
+                }
+                setLoading(true);
+                try {
+                  const response = await fetch(`${getApiUrl()}/api/v2/mentor/quick-action`, {
+                    method: 'POST',
+                    headers: { 
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      action_type: 'objection_help',
+                      context: objection.trim()
+                    })
+                  });
+                  
+                  const data = await response.json();
+                  if (data.suggestion) {
+                    setResponses([{
+                      id: 'api-generated',
+                      type: 'KI-generiert',
+                      responseShort: data.suggestion,
+                      responseFull: data.suggestion,
+                      technique: 'KI-generiert',
+                      timesUsed: 0,
+                    }]);
+                    Alert.alert('✅ Angepasst', 'KI-generierte Antwort wurde erstellt.');
+                  }
+                } catch (err) {
+                  Alert.alert('Fehler', 'Antwort konnte nicht angepasst werden.');
+                }
+                setLoading(false);
+              }}
+              onCopy={() => {
+                Alert.alert('✅ Kopiert', 'Antwort wurde in die Zwischenablage kopiert.');
+              }}
+            />
+          </View>
+        )}
+
+        {/* Info: Offline-fähig */}
+        {allResponses.length > 0 && (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              💾 {allResponses.length} Antworten offline verfügbar
+            </Text>
           </View>
         )}
       </View>
@@ -159,23 +296,90 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
   headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   content: { padding: 20 },
-  label: { fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 8, marginTop: 16 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionChip: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0' },
-  optionChipActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-  optionText: { fontSize: 14, color: '#64748b' },
-  optionTextActive: { color: 'white', fontWeight: '600' },
-  textArea: { backgroundColor: 'white', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 16, fontSize: 16, minHeight: 100, textAlignVertical: 'top', color: '#1e293b' },
-  error: { color: '#ef4444', marginTop: 8, textAlign: 'center' },
-  button: { backgroundColor: '#8b5cf6', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
+  label: { fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 12, marginTop: 16 },
+  categoriesGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 12,
+    marginBottom: 8,
+  },
+  categoryCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  categoryIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  categoryLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  categoryLabelActive: {
+    color: 'white',
+  },
+  textArea: { 
+    backgroundColor: 'white', 
+    borderWidth: 1, 
+    borderColor: '#e2e8f0', 
+    borderRadius: 12, 
+    padding: 16, 
+    fontSize: 16, 
+    minHeight: 100, 
+    textAlignVertical: 'top', 
+    color: '#1e293b' 
+  },
+  error: { color: '#ef4444', marginTop: 8, textAlign: 'center', fontSize: 14 },
+  button: { 
+    backgroundColor: '#8b5cf6', 
+    borderRadius: 12, 
+    padding: 16, 
+    alignItems: 'center', 
+    marginTop: 24 
+  },
   buttonPressed: { backgroundColor: '#7c3aed' },
   buttonDisabled: { backgroundColor: '#cbd5e1' },
   buttonText: { color: 'white', fontSize: 18, fontWeight: '600' },
+  loadingContainer: {
+    marginTop: 32,
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#64748b',
+    fontSize: 14,
+  },
   resultsContainer: { marginTop: 32 },
-  resultsTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b', marginBottom: 16 },
-  variantCard: { backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  variantLabel: { fontSize: 14, fontWeight: '600', color: '#8b5cf6', marginBottom: 8 },
-  variantMessage: { fontSize: 16, color: '#1e293b', lineHeight: 24 },
-  variantSummary: { fontSize: 14, color: '#64748b', marginTop: 12, fontStyle: 'italic' },
+  resultsTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#1e293b', 
+    marginBottom: 16 
+  },
+  infoBox: {
+    backgroundColor: '#ecfdf5',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#059669',
+    fontWeight: '500',
+  },
 });
-

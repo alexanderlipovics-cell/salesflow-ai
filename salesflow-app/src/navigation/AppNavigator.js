@@ -83,6 +83,7 @@ import NetworkSelectionScreen from '../screens/onboarding/NetworkSelectionScreen
 
 // KI-Autonomie System
 import BrainScreen from '../screens/main/BrainScreen';
+import SalesBrainScreen from '../screens/main/SalesBrainScreen';
 
 // AURA OS Premium Dashboard
 import AuraOsDashboardScreen from '../screens/main/AuraOsDashboardScreen';
@@ -544,6 +545,15 @@ function AppStack() {
           }}
         />
       )}
+      
+      {/* Sales Brain - Sales Psychology Modules */}
+      <Stack.Screen 
+        name="SalesBrain" 
+        component={SalesBrainScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       
       {/* AURA OS Premium Dashboard - Deactivated */}
       {isFeatureEnabled('aura_os') && (

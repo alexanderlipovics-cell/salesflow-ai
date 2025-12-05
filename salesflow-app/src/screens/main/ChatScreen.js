@@ -39,6 +39,9 @@ import { LiveAssistBanner, CoachOverlay, ComplianceBadge } from '../../component
 import { DISCBadge } from '../../components/live-assist/DISCBadge';
 // 📚 Quick Templates
 import { QuickTemplatesModal } from '../../components/templates';
+// 🛡️ Hybrid-Einwandbehandlung
+import { detectObjection, fetchObjectionResponses, trackResponseUsage } from '../../services/objectionDetection';
+import { ObjectionResponsesCard } from '../../components/objection/ObjectionResponsesCard';
 
 // API URLs - MENTOR (ehemals CHIEF)
 const getMentorApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/mentor`;
@@ -697,6 +700,61 @@ export default function ChatScreen({ navigation }) {
     }
     
     // ═══════════════════════════════════════════════════════════════════════
+    // 🛡️ HYBRID-EINWANDBEHANDLUNG - Datenbank-First
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // Prüfe ob ein Einwand erkannt wird
+    const detectedObjection = detectObjection(messageText);
+    
+    if (detectedObjection) {
+      // Einwand erkannt - hole Antworten aus Supabase (kostenlos)
+      const userMessage = { 
+        id: messageId,
+        role: 'user', 
+        content: messageText 
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setInput('');
+      setLoading(true);
+      
+      try {
+        const responses = await fetchObjectionResponses(
+          detectedObjection.type,
+          user?.company_id,
+          'network_marketing' // TODO: Aus User-Context holen
+        );
+        
+        // Erstelle spezielle Nachricht mit Einwand-Antworten
+        const objectionMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: '', // Wird durch ObjectionResponsesCard ersetzt
+          isObjectionResponse: true,
+          objectionType: detectedObjection.category,
+          objectionResponses: responses,
+          objectionData: detectedObjection,
+          contextUsed: false,
+          actions: [],
+        };
+        
+        setMessages(prev => [...prev, objectionMessage]);
+      } catch (error) {
+        console.error('Fehler beim Abrufen von Einwand-Antworten:', error);
+        // Fallback: Normaler Chat-Flow
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: '⚠️ Einwand erkannt, aber Antworten konnten nicht geladen werden. Versuche es erneut.',
+          contextUsed: false,
+          actions: [],
+        }]);
+      }
+      
+      setLoading(false);
+      return;
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════
     // NORMALER CHIEF CHAT FLOW
     // ═══════════════════════════════════════════════════════════════════════
     
@@ -1096,12 +1154,59 @@ export default function ChatScreen({ navigation }) {
                   )}
                 </View>
               )}
-              <Text style={[
-                styles.messageText, 
-                msg.role === 'user' && styles.userText
-              ]}>
-                {msg.content}
-              </Text>
+              {/* 🛡️ Einwand-Antworten aus Datenbank */}
+              {msg.isObjectionResponse && msg.objectionResponses ? (
+                <ObjectionResponsesCard
+                  objectionType={msg.objectionType}
+                  responses={msg.objectionResponses}
+                  onCustomize={async () => {
+                    // API Call nur bei expliziter Anfrage
+                    setLoading(true);
+                    try {
+                      const response = await fetch(`${getMentorApiUrl()}/quick-action`, {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': user?.access_token ? `Bearer ${user.access_token}` : '',
+                        },
+                        body: JSON.stringify({
+                          action_type: 'objection_help',
+                          context: `Einwand: ${msg.objectionData?.keywords?.join(', ') || msg.objectionType}. Personalisiere die Antwort.`
+                        })
+                      });
+                      
+                      const data = await response.json();
+                      if (data.suggestion) {
+                        // Ersetze die Datenbank-Antworten durch KI-generierte
+                        setMessages(prev => prev.map(m => 
+                          m.id === msg.id 
+                            ? {
+                                ...m,
+                                isObjectionResponse: false,
+                                content: data.suggestion,
+                                isCustomized: true,
+                              }
+                            : m
+                        ));
+                      }
+                    } catch (error) {
+                      console.error('Fehler beim Anpassen der Antwort:', error);
+                      Alert.alert('Fehler', 'Antwort konnte nicht angepasst werden. Versuche es erneut.');
+                    }
+                    setLoading(false);
+                  }}
+                  onCopy={() => {
+                    // Optional: Toast oder Feedback
+                  }}
+                />
+              ) : (
+                <Text style={[
+                  styles.messageText, 
+                  msg.role === 'user' && styles.userText
+                ]}>
+                  {msg.content}
+                </Text>
+              )}
               
               {/* Action Buttons - wenn MENTOR Actions vorschlägt */}
               {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
