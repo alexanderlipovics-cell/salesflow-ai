@@ -1,321 +1,169 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Linking,
-  Alert,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSubscription } from '../context/SubscriptionContext';
+import * as Haptics from 'expo-haptics';
+import { COLORS } from '../theme';
 
-interface PaywallScreenProps {
-  navigation: any;
-  route?: {
-    params?: {
-      trigger?: 'lead_limit' | 'ai_blocked' | 'manual';
-    };
-  };
-}
+const { width } = Dimensions.get('window');
 
-const FEATURES = {
-  free: [
-    { text: '5 Leads verwalten', included: true },
-    { text: 'Script-Bibliothek', included: true },
-    { text: 'Einwand-Suche', included: true },
-    { text: 'KI-Copilot', included: false },
-    { text: 'Unbegrenzte Leads', included: false },
-    { text: 'Personalisierte Antworten', included: false },
-    { text: 'Autopilot', included: false },
-  ],
-  pro: [
-    { text: 'Unbegrenzte Leads', included: true },
-    { text: 'Script-Bibliothek', included: true },
-    { text: 'Einwand-Suche', included: true },
-    { text: 'KI-Copilot (unbegrenzt)', included: true },
-    { text: 'Personalisierte Antworten', included: true },
-    { text: 'Autopilot & Reminder', included: true },
-    { text: 'Priority Support', included: true },
-  ],
-};
+const PLANS = [
+  {
+    id: 'monthly',
+    name: 'Monatlich',
+    price: '29,99€',
+    period: '/Monat',
+    popular: false,
+  },
+  {
+    id: 'yearly',
+    name: 'Jährlich',
+    price: '19,99€',
+    period: '/Monat',
+    savings: 'Spare 33%',
+    popular: true,
+  },
+];
 
-const PaywallScreen: React.FC<PaywallScreenProps> = ({ navigation, route }) => {
-  const { upgradeToPro } = useSubscription();
-  const trigger = route?.params?.trigger;
+const FEATURES = [
+  { icon: 'sparkles', text: 'Unbegrenzte AI Scripts', included: true },
+  { icon: 'people', text: 'Unbegrenzte Leads', included: true },
+  { icon: 'analytics', text: 'Erweiterte Analytics', included: true },
+  { icon: 'notifications', text: 'Smart Follow-up Reminders', included: true },
+  { icon: 'sync', text: 'Multi-Plattform Sync', included: true },
+  { icon: 'shield-checkmark', text: 'Priority Support', included: true },
+];
 
-  const getTriggerMessage = () => {
-    switch (trigger) {
-      case 'lead_limit':
-        return 'Du hast das Limit von 5 Leads erreicht.';
-      case 'ai_blocked':
-        return 'Der KI-Copilot ist nur für Pro-User verfügbar.';
-      default:
-        return 'Hol das Maximum aus Sales Flow AI.';
-    }
+export default function PaywallScreen({ navigation }: any) {
+  const [selectedPlan, setSelectedPlan] = useState('yearly');
+
+  const handleSubscribe = async () => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // TODO: Implement subscription logic
+    navigation.goBack();
   };
 
-  const handleUpgrade = async () => {
-    // TODO: Integrate Stripe/RevenueCat
-    // For now, simulate upgrade
-    Alert.alert(
-      'Upgrade auf Pro',
-      'In der finalen Version wirst du hier zu Stripe weitergeleitet.\n\nFür Demo-Zwecke aktivieren wir Pro jetzt.',
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        { 
-          text: 'Demo: Pro aktivieren', 
-          onPress: async () => {
-            await upgradeToPro();
-            Alert.alert('Erfolg!', 'Du bist jetzt Pro-User! 🎉');
-            navigation.goBack();
-          }
-        },
-      ]
-    );
-  };
-
-  const handleRestore = () => {
-    Alert.alert('Käufe wiederherstellen', 'Wird in der finalen Version implementiert.');
+  const handleRestore = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // TODO: Implement restore purchases
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.closeButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="close" size={28} color="#a1a1aa" />
-          </TouchableOpacity>
-        </View>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleRestore}>
+          <Text style={styles.restoreText}>Wiederherstellen</Text>
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.iconContainer}>
-            <Ionicons name="rocket" size={48} color="#10b981" />
+            <Ionicons name="diamond" size={48} color={COLORS.primary} />
           </View>
-          <Text style={styles.title}>Upgrade auf Pro</Text>
-          <Text style={styles.subtitle}>{getTriggerMessage()}</Text>
+          <Text style={styles.title}>SalesFlow Pro</Text>
+          <Text style={styles.subtitle}>Entfessle dein volles Potenzial</Text>
         </View>
 
-        {/* Pricing */}
-        <View style={styles.pricingCard}>
-          <Text style={styles.price}>€9,99</Text>
-          <Text style={styles.period}>/ Monat</Text>
-          <Text style={styles.savings}>Spare 50% mit Jahresabo: €59,99/Jahr</Text>
-        </View>
-
-        {/* Feature Comparison */}
-        <View style={styles.comparison}>
-          {/* Free Column */}
-          <View style={styles.column}>
-            <Text style={styles.columnTitle}>Free</Text>
-            {FEATURES.free.map((feature, index) => (
-              <View key={index} style={styles.featureRow}>
-                <Ionicons 
-                  name={feature.included ? 'checkmark-circle' : 'close-circle'} 
-                  size={20} 
-                  color={feature.included ? '#10b981' : '#ef4444'} 
-                />
-                <Text style={[
-                  styles.featureText,
-                  !feature.included && styles.featureDisabled
-                ]}>
-                  {feature.text}
-                </Text>
+        {/* Features */}
+        <View style={styles.featuresContainer}>
+          {FEATURES.map((feature, index) => (
+            <View key={index} style={styles.featureRow}>
+              <View style={styles.featureIcon}>
+                <Ionicons name={feature.icon as any} size={20} color={COLORS.primary} />
               </View>
-            ))}
-          </View>
-
-          {/* Pro Column */}
-          <View style={[styles.column, styles.proColumn]}>
-            <View style={styles.proBadge}>
-              <Text style={styles.proBadgeText}>PRO</Text>
+              <Text style={styles.featureText}>{feature.text}</Text>
+              <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
             </View>
-            <Text style={styles.columnTitle}>Pro</Text>
-            {FEATURES.pro.map((feature, index) => (
-              <View key={index} style={styles.featureRow}>
-                <Ionicons 
-                  name="checkmark-circle" 
-                  size={20} 
-                  color="#10b981" 
-                />
-                <Text style={styles.featureText}>{feature.text}</Text>
+          ))}
+        </View>
+
+        {/* Plans */}
+        <View style={styles.plansContainer}>
+          {PLANS.map((plan) => (
+            <TouchableOpacity
+              key={plan.id}
+              style={[
+                styles.planCard,
+                selectedPlan === plan.id && styles.selectedPlanCard,
+                plan.popular && styles.popularPlanCard,
+              ]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setSelectedPlan(plan.id);
+              }}
+            >
+              {plan.popular && (
+                <View style={styles.popularBadge}>
+                  <Text style={styles.popularText}>BELIEBT</Text>
+                </View>
+              )}
+              <View style={styles.planHeader}>
+                <View style={[styles.radioOuter, selectedPlan === plan.id && styles.radioOuterSelected]}>
+                  {selectedPlan === plan.id && <View style={styles.radioInner} />}
+                </View>
+                <Text style={styles.planName}>{plan.name}</Text>
               </View>
-            ))}
-          </View>
+              <View style={styles.priceContainer}>
+                <Text style={styles.price}>{plan.price}</Text>
+                <Text style={styles.period}>{plan.period}</Text>
+              </View>
+              {plan.savings && <Text style={styles.savings}>{plan.savings}</Text>}
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* CTA */}
-        <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
-          <Text style={styles.upgradeButtonText}>Jetzt upgraden</Text>
-          <Ionicons name="arrow-forward" size={20} color="#fff" />
+        <TouchableOpacity style={styles.ctaBtn} onPress={handleSubscribe}>
+          <Text style={styles.ctaText}>Jetzt starten</Text>
         </TouchableOpacity>
 
-        {/* Restore */}
-        <TouchableOpacity style={styles.restoreButton} onPress={handleRestore}>
-          <Text style={styles.restoreText}>Käufe wiederherstellen</Text>
-        </TouchableOpacity>
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Jederzeit kündbar. Es gelten unsere AGB und Datenschutzrichtlinien.
+        {/* Terms */}
+        <Text style={styles.terms}>
+          Nach der kostenlosen Testphase wird das Abo automatisch verlängert.{'\n'}
+          Du kannst jederzeit kündigen.
         </Text>
       </ScrollView>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0a0a',
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 20,
-  },
-  closeButton: {
-    padding: 8,
-  },
-  hero: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#a1a1aa',
-    textAlign: 'center',
-  },
-  pricingCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 32,
-    borderWidth: 2,
-    borderColor: '#10b981',
-  },
-  price: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#10b981',
-  },
-  period: {
-    fontSize: 18,
-    color: '#a1a1aa',
-    marginBottom: 8,
-  },
-  savings: {
-    fontSize: 14,
-    color: '#8b5cf6',
-    fontWeight: '600',
-  },
-  comparison: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
-  },
-  column: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 16,
-  },
-  proColumn: {
-    borderWidth: 2,
-    borderColor: '#10b981',
-  },
-  proBadge: {
-    position: 'absolute',
-    top: -12,
-    right: 16,
-    backgroundColor: '#10b981',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  proBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  columnTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  featureText: {
-    fontSize: 13,
-    color: '#e4e4e7',
-    flex: 1,
-  },
-  featureDisabled: {
-    color: '#71717a',
-    textDecorationLine: 'line-through',
-  },
-  upgradeButton: {
-    backgroundColor: '#10b981',
-    borderRadius: 16,
-    padding: 18,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  upgradeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  restoreButton: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  restoreText: {
-    color: '#a1a1aa',
-    fontSize: 14,
-  },
-  footer: {
-    textAlign: 'center',
-    color: '#71717a',
-    fontSize: 12,
-    marginTop: 16,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10 },
+  closeBtn: { padding: 8, backgroundColor: COLORS.surface, borderRadius: 20 },
+  restoreText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  hero: { alignItems: 'center', marginBottom: 32 },
+  iconContainer: { width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: COLORS.primary },
+  title: { fontSize: 32, fontWeight: '800', color: COLORS.text, marginBottom: 8 },
+  subtitle: { fontSize: 16, color: COLORS.textSecondary },
+  featuresContainer: { marginBottom: 32 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.surface },
+  featureIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  featureText: { flex: 1, color: COLORS.text, fontSize: 15 },
+  plansContainer: { gap: 12, marginBottom: 24 },
+  planCard: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 20, borderWidth: 2, borderColor: COLORS.border },
+  selectedPlanCard: { borderColor: COLORS.primary },
+  popularPlanCard: { position: 'relative' },
+  popularBadge: { position: 'absolute', top: -10, right: 16, backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  popularText: { color: COLORS.background, fontSize: 10, fontWeight: '800' },
+  planHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  radioOuter: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.textMuted, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  radioOuterSelected: { borderColor: COLORS.primary },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.primary },
+  planName: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  priceContainer: { flexDirection: 'row', alignItems: 'baseline' },
+  price: { fontSize: 32, fontWeight: '800', color: COLORS.text },
+  period: { fontSize: 14, color: COLORS.textSecondary, marginLeft: 4 },
+  savings: { marginTop: 8, color: COLORS.primary, fontSize: 14, fontWeight: '700' },
+  ctaBtn: { backgroundColor: COLORS.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginBottom: 16 },
+  ctaText: { color: COLORS.background, fontSize: 18, fontWeight: '800' },
+  terms: { color: COLORS.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 },
 });
-
-export default PaywallScreen;
-

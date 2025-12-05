@@ -11,6 +11,9 @@ import ClosingScreen from '../screens/ClosingScreen';
 import AutopilotScreen from '../screens/AutopilotScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import PaywallScreen from '../screens/PaywallScreen';
+import LeadListScreen from '../screens/LeadListScreen';
+import LeadDetailScreen from '../screens/LeadDetailScreen';
+import MagicScriptScreen from '../screens/MagicScriptScreen';
 import { checkOnboardingComplete } from '../services/onboarding';
 import { COLORS } from '../constants/colors';
 
@@ -72,6 +75,16 @@ export default function AppNavigator() {
             headerShown: false,
             presentation: 'modal'
           }}
+        />
+        <Stack.Screen name="LeadListScreen" component={LeadListScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="LeadDetailScreen" component={LeadDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="MagicScriptScreen" 
+          component={MagicScriptScreen} 
+          options={{ 
+            headerShown: false, 
+            presentation: 'modal' 
+          }} 
         />
       </Stack.Navigator>
     </NavigationContainer>
