@@ -29,7 +29,7 @@ from app.schemas.vision_schemas import (
     ScreenshotUploadResponse,
 )
 from app.ai.prompts.vision_prompts import VISION_SCREENSHOT_PROMPT
-from app.core.config import get_settings
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 

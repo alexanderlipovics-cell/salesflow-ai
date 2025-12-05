@@ -708,7 +708,7 @@ async def _get_channel_credentials(
     """
     
     # Load from channel_credentials table or environment
-    from app.core.config import get_settings
+    from app.config import get_settings
     settings = get_settings()
     
     # First try environment variables
