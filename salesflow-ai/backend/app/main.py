@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     chat,
     contacts,
+    copilot,
     deals,
     delay_master,
     followups,
@@ -326,12 +327,14 @@ app.include_router(delay_master.router)
 app.include_router(phoenix.router)
 app.include_router(followups.router)
 app.include_router(objection_brain.router)
+app.include_router(copilot.router)
 app.include_router(chat.router, prefix="/api")
 app.include_router(followups.router, prefix="/api")
 app.include_router(contacts.router, prefix="/api")
 app.include_router(deals.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(objection_brain.router, prefix="/api")
+app.include_router(copilot.router, prefix="/api")
 app.include_router(import_customers.router)
 app.include_router(import_customers.router, prefix="/api")
 
