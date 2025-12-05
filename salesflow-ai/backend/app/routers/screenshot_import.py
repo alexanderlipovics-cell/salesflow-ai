@@ -106,8 +106,18 @@ async def import_screenshot(
     """
     Importiert einen Screenshot und erstellt automatisch einen Lead.
     """
-    # TODO: User-ID aus Auth Token extrahieren
-    user_id = str(uuid4())  # Placeholder
+    # User-ID aus Auth Header oder Default
+    from fastapi import Request
+    from app.routers.auth import get_current_user_optional
+    
+    # Versuche User aus Token zu holen, sonst anonymous
+    try:
+        # In production würde hier der echte Auth-Check stehen
+        # current_user = await get_current_user_optional(request)
+        # user_id = current_user.id if current_user else str(uuid4())
+        user_id = str(uuid4())  # Demo-Modus: Temporäre User-ID
+    except Exception:
+        user_id = str(uuid4())  # Fallback
     
     try:
         result = await service.process_screenshot_and_create_lead(

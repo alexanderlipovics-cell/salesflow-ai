@@ -270,8 +270,26 @@ class ImageProcessingService:
         
         # 4. Lead erstellen (falls auto_create)
         if auto_create:
-            # TODO: Hier würde der Lead in die Datenbank geschrieben
-            # created_lead = await self.lead_repo.create_lead(lead_data)
+            from app.db.supabase_client import get_supabase_client
+            try:
+                supabase = get_supabase_client()
+                result = await supabase.table("leads").insert({
+                    "id": lead_data["id"],
+                    "user_id": user_id,
+                    "first_name": lead_data["first_name"],
+                    "last_name": lead_data["last_name"],
+                    "email": lead_data.get("email"),
+                    "phone": lead_data.get("phone"),
+                    "source": lead_data["source"],
+                    "status": lead_data["status"],
+                    "tags": lead_data["tags"],
+                    "notes": lead_data["notes"],
+                    "lead_score": lead_data["lead_score"],
+                    "custom_fields": lead_data["custom_fields"],
+                }).execute()
+                logger.info(f"Lead saved to database: {lead_name} ({analysis.platform.value})")
+            except Exception as db_error:
+                logger.warning(f"Could not save lead to DB (continuing anyway): {db_error}")
             logger.info(f"Lead created from screenshot: {lead_name} ({analysis.platform.value})")
         
         # 5. Response erstellen

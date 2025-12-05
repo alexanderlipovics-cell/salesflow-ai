@@ -339,7 +339,7 @@ async def _process_single_event(
         message_text=event.normalized_text,
         action=action,
         channel=channel,
-        history=None  # TODO: Load conversation history
+        history=await _load_conversation_history(db, contact.id) if contact else None
     )
     
     reply_text = ai_response["text"]
@@ -707,10 +707,16 @@ async def _get_channel_credentials(
     For MVP: Return mock credentials or load from env vars.
     """
     
-    # TODO: Load from channel_credentials table
-    # For now, return mock config or raise error
+    # Load from channel_credentials table or environment
+    from app.core.config import get_settings
+    settings = get_settings()
     
-    logger.warning(f"Channel credentials not implemented - using mock config for {channel}")
+    # First try environment variables
+    env_credentials = _get_credentials_from_env(channel, settings)
+    if env_credentials:
+        return env_credentials
+    
+    logger.warning(f"No credentials found for {channel} - using mock config")
     
     # Mock configurations (replace with real credentials in production)
     mock_configs = {
@@ -735,6 +741,77 @@ async def _get_channel_credentials(
     }
     
     return mock_configs.get(channel)
+
+
+async def _load_conversation_history(
+    db: Client,
+    contact_id: str,
+    limit: int = 10
+) -> Optional[List[Dict[str, Any]]]:
+    """
+    Load recent conversation history for a contact.
+    
+    Returns the last N messages between us and the contact.
+    """
+    try:
+        result = db.table("message_events").select(
+            "id", "direction", "normalized_text", "channel", "created_at"
+        ).eq(
+            "contact_id", contact_id
+        ).order(
+            "created_at", desc=True
+        ).limit(limit).execute()
+        
+        if result.data:
+            # Reverse to get chronological order
+            history = list(reversed(result.data))
+            return [
+                {
+                    "role": "user" if msg["direction"] == "inbound" else "assistant",
+                    "content": msg["normalized_text"],
+                    "channel": msg["channel"],
+                    "timestamp": msg["created_at"]
+                }
+                for msg in history
+            ]
+    except Exception as e:
+        logger.warning(f"Could not load conversation history: {e}")
+    
+    return None
+
+
+def _get_credentials_from_env(channel: str, settings) -> Optional[Dict[str, Any]]:
+    """
+    Load channel credentials from environment variables.
+    """
+    if channel == "whatsapp":
+        if hasattr(settings, 'whatsapp_api_key') and settings.whatsapp_api_key:
+            return {
+                "api_key": settings.whatsapp_api_key,
+                "phone_number_id": getattr(settings, 'whatsapp_phone_number_id', '')
+            }
+    elif channel == "email":
+        if hasattr(settings, 'smtp_host') and settings.smtp_host:
+            return {
+                "host": settings.smtp_host,
+                "port": getattr(settings, 'smtp_port', 587),
+                "user": getattr(settings, 'smtp_user', ''),
+                "password": getattr(settings, 'smtp_password', ''),
+                "from_email": getattr(settings, 'smtp_from_email', '')
+            }
+    elif channel == "linkedin":
+        if hasattr(settings, 'linkedin_access_token') and settings.linkedin_access_token:
+            return {
+                "access_token": settings.linkedin_access_token
+            }
+    elif channel == "instagram":
+        if hasattr(settings, 'instagram_access_token') and settings.instagram_access_token:
+            return {
+                "page_access_token": settings.instagram_access_token,
+                "instagram_account_id": getattr(settings, 'instagram_account_id', '')
+            }
+    
+    return None
 
 
 __all__ = [
