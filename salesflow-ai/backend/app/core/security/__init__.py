@@ -29,6 +29,33 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 
+# ============================================
+# Functions imported from legacy security module
+# ============================================
+def verify_access_token(token: str):
+    """Verify an access token and return its payload."""
+    from jose import jwt, JWTError
+    from app.config import get_settings
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise InvalidTokenError("Invalid access token")
+
+
+def verify_refresh_token(token: str):
+    """Verify a refresh token and return its payload."""
+    from jose import jwt, JWTError
+    from app.config import get_settings
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.jwt_refresh_secret_key, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise InvalidTokenError("Invalid refresh token")
+
+
 # JWT
 from .jwt import (
     TokenType,
@@ -112,7 +139,8 @@ __all__ = [
     "ALGORITHM",
     "ACCESS_TOKEN_EXPIRE_MINUTES",
     "REFRESH_TOKEN_EXPIRE_DAYS",
-    "decode_token",
+    "verify_access_token",
+    "verify_refresh_token",
     
     # JWT
     "TokenType",
