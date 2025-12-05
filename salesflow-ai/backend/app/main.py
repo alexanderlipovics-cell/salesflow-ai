@@ -108,6 +108,8 @@ from .routers.screenshot_import import router as screenshot_router  # 🆕 Scree
 from .routers.followups import router as followups_router  # 🆕 GPT Follow-Up Engine
 from .routers.team_templates import router as team_templates_router  # 🆕 Team Duplikation
 from .routers.lead_hunter import router as lead_hunter_router  # 🆕 Lead Hunter für Networker
+from .routers.onboarding import router as onboarding_router  # 🆕 Magic Onboarding System
+from .routers.compensation import router as compensation_router  # 🆕 Provisionsberechnung
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -126,6 +128,8 @@ app.include_router(screenshot_router, prefix="/api")  # 🆕 Screenshot-to-Lead 
 app.include_router(followups_router, prefix="/api")  # 🆕 GPT Follow-Up Engine
 app.include_router(team_templates_router, prefix="/api")  # 🆕 Team Duplikation System
 app.include_router(lead_hunter_router, prefix="/api")  # 🆕 Lead Hunter für Networker
+app.include_router(onboarding_router, prefix="/api")  # 🆕 Magic Onboarding System
+app.include_router(compensation_router, prefix="/api")  # 🆕 Provisionsberechnung für MLM
 
 
 @app.get("/")
