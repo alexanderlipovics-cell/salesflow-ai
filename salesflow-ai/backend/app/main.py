@@ -338,6 +338,7 @@ app.include_router(objection_brain.router, prefix="/api")
 app.include_router(copilot.router, prefix="/api")
 app.include_router(import_customers.router)
 app.include_router(import_customers.router, prefix="/api")
+app.include_router(leads.router)
 app.include_router(leads.router, prefix="/api")
 
 __all__ = ["app"]
