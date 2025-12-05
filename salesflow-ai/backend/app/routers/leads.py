@@ -2,7 +2,7 @@
 Leads Router für FELLO - Lead Management mit Follow-up System.
 """
 
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
@@ -56,47 +56,45 @@ async def get_pending_leads():
 
 
 @router.post("")
-async def create_lead(lead: dict = Body(...)):
-    """Lead erstellen - flexibles Schema"""
+async def create_lead(request: Request):
+    """Lead erstellen"""
+    import json
     try:
+        body = await request.body()
+        lead = json.loads(body)
+        
         db = get_supabase()
         
-        if not lead.get("name"):
-            raise HTTPException(status_code=400, detail="Name ist Pflichtfeld")
-        
         data = {
-            "name": lead.get("name"),
+            "name": lead.get("name", "Unbekannt"),
             "platform": lead.get("platform", "WhatsApp"),
             "status": lead.get("status", "NEW"),
             "temperature": lead.get("temperature", 50),
-            "tags": lead.get("tags", []),
-            "last_message": lead.get("last_message"),
-            "notes": lead.get("notes"),
             "next_follow_up": lead.get("next_follow_up"),
             "follow_up_reason": lead.get("follow_up_reason"),
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
         }
         
         result = db.table("leads").insert(data).execute()
-        return {"lead": result.data[0], "message": "Lead erstellt"}
-    except HTTPException:
-        raise
+        return {"lead": result.data[0], "success": True}
     except Exception as e:
         logger.exception(f"Create lead error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e), "success": False}
 
 
 @router.put("/{lead_id}")
-async def update_lead(lead_id: str, lead: dict = Body(...)):
+async def update_lead(lead_id: str, request: Request):
+    import json
     try:
+        body = await request.body()
+        lead = json.loads(body)
+        
         db = get_supabase()
         lead["updated_at"] = datetime.now().isoformat()
         result = db.table("leads").update(lead).eq("id", lead_id).execute()
-        return {"lead": result.data[0], "message": "Lead aktualisiert"}
+        return {"lead": result.data[0], "success": True}
     except Exception as e:
         logger.exception(f"Update lead error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e), "success": False}
 
 
 @router.delete("/{lead_id}")
