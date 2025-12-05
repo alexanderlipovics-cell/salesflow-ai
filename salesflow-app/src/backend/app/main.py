@@ -139,6 +139,9 @@ from .api.routes.email import router as email_router
 # Sales Intelligence v3.0
 from .api.routes.sales_intelligence import router as sales_intelligence_router
 
+# FELLO AI Copilot
+from .api.routes.copilot import router as copilot_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -425,6 +428,9 @@ app.include_router(email_router, prefix="/api/v2")
 
 # Sales Intelligence v3.0
 app.include_router(sales_intelligence_router, prefix="/api/v1")
+
+# FELLO AI Copilot
+app.include_router(copilot_router, prefix="/api")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
