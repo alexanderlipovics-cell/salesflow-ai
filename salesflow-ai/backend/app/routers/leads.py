@@ -45,43 +45,78 @@ async def get_leads():
 
 @router.get("/pending")
 async def get_pending_leads():
+    """
+    Gibt alle Leads zurück, deren next_follow_up heute oder früher ist.
+    GET /api/leads/pending
+    """
     try:
         db = get_supabase()
         today = date.today().isoformat()
+        logger.info(f"Fetching pending leads for date: {today}")
         result = db.table("leads").select("*").lte("next_follow_up", today).order("next_follow_up").execute()
+        logger.info(f"Found {len(result.data)} pending leads")
         return {"leads": result.data, "count": len(result.data)}
     except Exception as e:
-        logger.exception(f"Get pending error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception(f"Get pending leads error: {e}")
+        # Return empty list statt 500 error für bessere UX
+        return {"leads": [], "count": 0, "error": str(e)}
 
 
 @router.post("/")
 @router.post("")
 async def create_lead(request: Request):
-    """Create a new lead - flexible schema."""
+    """
+    Create a new lead - flexible schema.
+    POST /api/leads oder POST /api/leads/
+    
+    Akzeptiert sowohl snake_case (last_message) als auch camelCase (lastMessage).
+    """
     import json
     try:
         body = await request.body()
-        lead_data = json.loads(body) if body else {}
+        logger.info(f"Create lead - Raw body: {body[:500] if body else 'empty'}")
         
-        lead_data["created_at"] = datetime.now().isoformat()
-        lead_data["updated_at"] = datetime.now().isoformat()
+        if not body:
+            return {"success": False, "error": "Empty request body"}
         
-        # Defaults setzen
+        try:
+            lead_data = json.loads(body)
+        except json.JSONDecodeError as je:
+            logger.error(f"JSON decode error: {je}")
+            return {"success": False, "error": f"Invalid JSON: {str(je)}"}
+        
+        logger.info(f"Create lead - Parsed data: {lead_data}")
+        
+        # Timestamps setzen
+        now = datetime.now().isoformat()
+        
+        # Flexibles Mapping - akzeptiere beide Namenskonventionen
         data = {
             "name": lead_data.get("name", "Unbekannt"),
             "platform": lead_data.get("platform", "WhatsApp"),
             "status": lead_data.get("status", "NEW"),
             "temperature": lead_data.get("temperature", 50),
-            "next_follow_up": lead_data.get("next_follow_up"),
-            "follow_up_reason": lead_data.get("follow_up_reason"),
-            "created_at": lead_data["created_at"],
-            "updated_at": lead_data["updated_at"],
+            # snake_case ODER camelCase
+            "next_follow_up": lead_data.get("next_follow_up") or lead_data.get("nextFollowUp"),
+            "follow_up_reason": lead_data.get("follow_up_reason") or lead_data.get("followUpReason"),
+            "last_message": lead_data.get("last_message") or lead_data.get("lastMessage"),
+            "notes": lead_data.get("notes"),
+            "tags": lead_data.get("tags", []),
+            "created_at": now,
+            "updated_at": now,
         }
+        
+        # Entferne None-Werte für sauberen Insert
+        data = {k: v for k, v in data.items() if v is not None}
+        
+        logger.info(f"Create lead - Final data for insert: {data}")
         
         db = get_supabase()
         result = db.table("leads").insert(data).execute()
+        
+        logger.info(f"Create lead - Insert result: {result.data}")
         return {"success": True, "lead": result.data[0] if result.data else data}
+        
     except Exception as e:
         logger.exception(f"Create lead error: {e}")
         return {"success": False, "error": str(e)}

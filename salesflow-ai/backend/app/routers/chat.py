@@ -33,17 +33,33 @@ class ChatCompletionRequest(BaseModel):
     """Request für Chat-Completion."""
 
     message: str
+    # history UND conversation_history für Kompatibilität
     history: Optional[List[ChatMessage]] = None
-    # Optional: Explizite Action (überschreibt Auto-Detection)
+    conversation_history: Optional[List[ChatMessage]] = None  # Alias für Mobile-App
+    # action UND mode für Kompatibilität
     action: Optional[str] = None
+    mode: Optional[str] = None  # Alias für Mobile-App (cold_call, closing, etc.)
     # Optional: Zusätzlicher Kontext (z.B. Lead-Name, Branche)
     context: Optional[str] = None
+    
+    @property
+    def effective_history(self) -> Optional[List[ChatMessage]]:
+        """Gibt history oder conversation_history zurück."""
+        return self.history or self.conversation_history
+    
+    @property
+    def effective_action(self) -> Optional[str]:
+        """Gibt action oder mode zurück."""
+        return self.action or self.mode
 
 
 class ChatCompletionResponse(BaseModel):
     """Response mit AI-Antwort."""
 
     reply: str
+    # Aliase für verschiedene Frontend-Versionen
+    response: Optional[str] = None  # Alias für Mobile-App
+    message: Optional[str] = None   # Weiterer Alias
     # Gibt an, welche Action erkannt/verwendet wurde
     detected_action: Optional[str] = None
 
@@ -87,10 +103,12 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
     # 1. Action bestimmen (explizit oder auto-detected)
     detected_action: Optional[str] = None
     
-    if request.action:
+    # Nutze effective_action für Kompatibilität mit action UND mode
+    effective_action = request.effective_action
+    if effective_action:
         # Explizite Action übergeben
-        detected_action = request.action
-        logger.info(f"Explizite Action verwendet: {detected_action}")
+        detected_action = effective_action
+        logger.info(f"Explizite Action/Mode verwendet: {detected_action}")
     else:
         # Auto-Detection aus User-Nachricht
         detected_action = detect_action_from_text(request.message)
@@ -113,6 +131,8 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
         mock_reply = generate_mock_response(request.message, detected_action)
         return ChatCompletionResponse(
             reply=mock_reply,
+            response=mock_reply,  # Alias für Mobile-App
+            message=mock_reply,   # Weiterer Alias
             detected_action=detected_action
         )
     
@@ -123,8 +143,8 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
             model=settings.openai_model,
         )
         
-        # History vorbereiten
-        history = request.history or []
+        # History vorbereiten (nutze effective_history für Kompatibilität)
+        history = request.effective_history or []
         
         # Aktuelle Nachricht hinzufügen
         messages = history + [
@@ -136,6 +156,8 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
         
         return ChatCompletionResponse(
             reply=reply,
+            response=reply,  # Alias für Mobile-App
+            message=reply,   # Weiterer Alias
             detected_action=detected_action
         )
         
