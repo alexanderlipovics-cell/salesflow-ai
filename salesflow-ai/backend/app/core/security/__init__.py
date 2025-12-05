@@ -4,6 +4,22 @@ Security Module for SalesFlow AI.
 Exports all security components for easy import.
 """
 
+# Legacy security module compatibility
+from ..security import (
+    SecurityError,
+    InvalidTokenError,
+    InvalidCredentialsError,
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    hash_password as legacy_hash_password,
+    verify_password as legacy_verify_password,
+    create_access_token as legacy_create_access_token,
+    create_refresh_token as legacy_create_refresh_token,
+    decode_token,
+    create_token_pair as legacy_create_token_pair,
+)
+
 # JWT
 from .jwt import (
     TokenType,
@@ -80,6 +96,15 @@ from .encryption import (
 )
 
 __all__ = [
+    # Legacy compatibility
+    "SecurityError",
+    "InvalidTokenError",
+    "InvalidCredentialsError",
+    "ALGORITHM",
+    "ACCESS_TOKEN_EXPIRE_MINUTES",
+    "REFRESH_TOKEN_EXPIRE_DAYS",
+    "decode_token",
+    
     # JWT
     "TokenType",
     "TokenPayload",
