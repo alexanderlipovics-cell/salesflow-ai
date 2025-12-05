@@ -56,15 +56,34 @@ async def get_pending_leads():
 
 
 @router.post("")
-async def create_lead(lead: LeadCreate):
+async def create_lead(lead: dict):
+    """Lead erstellen - flexibles Schema"""
     try:
         db = get_supabase()
-        data = lead.dict()
-        data["created_at"] = datetime.now().isoformat()
-        data["updated_at"] = datetime.now().isoformat()
+        
+        # Pflichtfelder prüfen
+        if not lead.get("name"):
+            raise HTTPException(status_code=400, detail="Name ist Pflichtfeld")
+        
+        # Defaults setzen
+        data = {
+            "name": lead.get("name"),
+            "platform": lead.get("platform", "WhatsApp"),
+            "status": lead.get("status", "NEW"),
+            "temperature": lead.get("temperature", 50),
+            "tags": lead.get("tags", []),
+            "last_message": lead.get("last_message"),
+            "notes": lead.get("notes"),
+            "next_follow_up": lead.get("next_follow_up"),
+            "follow_up_reason": lead.get("follow_up_reason"),
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+        }
         
         result = db.table("leads").insert(data).execute()
         return {"lead": result.data[0], "message": "Lead erstellt"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Create lead error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
