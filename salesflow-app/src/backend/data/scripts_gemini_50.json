@@ -1,0 +1,518 @@
+{
+  "scripts": [
+    {
+      "id": "script_001",
+      "title": "Warm Market Opener - Freunde",
+      "content": "Hey [Name]! 👋 Ich starte gerade ein spannendes Projekt und dabei hab ich an dich gedacht. Hast du 5 Minuten?",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["warm", "opener", "freunde"],
+      "tone": "casual",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_002",
+      "title": "Cold Outreach - LinkedIn Value First",
+      "content": "Hallo [Name], ich habe gesehen, dass du [Interesse/Erwähnung]. Ich habe eine Idee, die dir helfen könnte, [Nutzen]. Hast du 2 Minuten für einen kurzen Austausch?",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["cold", "linkedin", "value"],
+      "tone": "professional",
+      "variables": {"Name": "string", "Interesse": "string", "Nutzen": "string"}
+    },
+    {
+      "id": "script_003",
+      "title": "Instagram Story Reply",
+      "content": "Hey! Deine Story hat mich echt angesprochen 🔥 [Spezifischer Bezug]. Wie machst du das?",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["instagram", "story", "engagement"],
+      "tone": "casual",
+      "variables": {"Bezug": "string"}
+    },
+    {
+      "id": "script_004",
+      "title": "Event-Based Opener",
+      "content": "Hi [Name]! Wir waren beide bei [Event]. Dein Punkt zu [Thema] hat mich echt zum Nachdenken gebracht. Lass uns connecten!",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["event", "networking"],
+      "tone": "professional",
+      "variables": {"Name": "string", "Event": "string", "Thema": "string"}
+    },
+    {
+      "id": "script_005",
+      "title": "Referral Opener",
+      "content": "Hey [Name]! [Referenz] hat mir erzählt, dass du dich für [Thema] interessierst. Ich hab da was, das perfekt passen könnte. Kurz quatschen?",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["referral", "warm"],
+      "tone": "casual",
+      "variables": {"Name": "string", "Referenz": "string", "Thema": "string"}
+    },
+    {
+      "id": "script_006",
+      "title": "Follow-Up nach Präsentation",
+      "content": "Hey [Name]! Ich wollte kurz nachfragen, wie dir unser Gespräch letztens gefallen hat. Gibt es Fragen, die ich dir beantworten kann? 😊",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["followup", "soft", "präsentation"],
+      "tone": "freundlich",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_007",
+      "title": "Follow-Up Tag 3 - Sanft",
+      "content": "Hey [Name]! Nur kurz nachgehakt – hast du dir schon Gedanken gemacht? Kein Druck, nur neugierig 🙂",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["followup", "soft", "reminder"],
+      "tone": "casual",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_008",
+      "title": "Follow-Up Tag 7 - Value Add",
+      "content": "Hi [Name]! Ich hab hier einen Artikel/Video gefunden, der perfekt zu unserem letzten Gespräch passt: [Link]. Was meinst du?",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["followup", "value", "content"],
+      "tone": "professional",
+      "variables": {"Name": "string", "Link": "string"}
+    },
+    {
+      "id": "script_009",
+      "title": "Anti-Ghosting - Pattern Interrupt",
+      "content": "Hey [Name]! 🙋 Alles okay bei dir? Hab gerade an dich gedacht und wollte sichergehen, dass alles gut ist.",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["ghosting", "pattern-interrupt"],
+      "tone": "empathisch",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_010",
+      "title": "Anti-Ghosting - Ehrlich",
+      "content": "Hey [Name], ich merke das Timing passt gerade nicht. Kein Problem! Soll ich mich in 2-3 Monaten nochmal melden, oder lieber ganz sein lassen?",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["ghosting", "ehrlich", "exit"],
+      "tone": "direkt",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_011",
+      "title": "Einwand: Keine Zeit",
+      "content": "Das verstehe ich total! Gerade deshalb könnte das hier interessant sein – es geht um Zeitfreiheit. Wann hättest du 10 Minuten für einen kurzen Call?",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "zeit", "reframe"],
+      "tone": "empathisch",
+      "variables": {}
+    },
+    {
+      "id": "script_012",
+      "title": "Einwand: Zu teuer",
+      "content": "Ich verstehe, dass du auf dein Budget achtest. Lass uns mal schauen, was dir der Nutzen langfristig bringt. Was wäre es dir wert, wenn [konkreter Nutzen]?",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "preis", "wert"],
+      "tone": "empathisch",
+      "variables": {"Nutzen": "string"}
+    },
+    {
+      "id": "script_013",
+      "title": "Einwand: Muss drüber nachdenken",
+      "content": "Absolut, das ist eine wichtige Entscheidung. Was genau beschäftigt dich noch? Vielleicht kann ich dir dabei helfen.",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "nachdenken", "isolieren"],
+      "tone": "verständnisvoll",
+      "variables": {}
+    },
+    {
+      "id": "script_014",
+      "title": "Einwand: Partner fragen",
+      "content": "Super, dass du deinen Partner einbeziehst! 👍 Wann könnt ihr beide zusammen mit mir sprechen? So kann ich alle Fragen direkt beantworten.",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "partner", "termin"],
+      "tone": "positiv",
+      "variables": {}
+    },
+    {
+      "id": "script_015",
+      "title": "Einwand: Ist das MLM/Pyramide?",
+      "content": "Gute Frage! Pyramidensysteme sind illegal und haben kein echtes Produkt. Bei uns verdienst du durch Produktverkauf und Teamaufbau – wie bei jedem normalen Vertrieb. Der Unterschied? Du bestimmst, wie viel du arbeitest.",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "mlm", "pyramide", "aufklärung"],
+      "tone": "sachlich",
+      "variables": {}
+    },
+    {
+      "id": "script_016",
+      "title": "Einwand: Kenne niemanden",
+      "content": "Das dachte ich am Anfang auch! Aber wir zeigen dir genau, wie du online neue Kontakte aufbaust. Dein Bekanntenkreis ist nur der Anfang, nicht das Limit.",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "kontakte", "netzwerk"],
+      "tone": "motivierend",
+      "variables": {}
+    },
+    {
+      "id": "script_017",
+      "title": "Einwand: Bin kein Verkäufer",
+      "content": "Perfekt! Die besten in unserem Team sind auch keine klassischen Verkäufer. Es geht ums Teilen, nicht ums Verkaufen. Du empfiehlst Dinge, die du liebst – das machst du doch sowieso, oder?",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "verkauf", "teilen"],
+      "tone": "beruhigend",
+      "variables": {}
+    },
+    {
+      "id": "script_018",
+      "title": "Einwand: Hab's schon versucht",
+      "content": "Das höre ich öfter. Darf ich fragen, was damals nicht funktioniert hat? Oft liegt's am Training oder Support – und da sind wir anders aufgestellt.",
+      "category": "objection",
+      "company": "GENERAL",
+      "tags": ["einwand", "erfahrung", "vergangenheit"],
+      "tone": "neugierig",
+      "variables": {}
+    },
+    {
+      "id": "script_019",
+      "title": "Soft Close - Zusammenfassung",
+      "content": "Lass mich zusammenfassen: Du willst [Ziel], und genau dabei kann ich dir helfen. Der nächste Schritt wäre [Aktion]. Bereit?",
+      "category": "closing",
+      "company": "GENERAL",
+      "tags": ["closing", "soft", "zusammenfassung"],
+      "tone": "confident",
+      "variables": {"Ziel": "string", "Aktion": "string"}
+    },
+    {
+      "id": "script_020",
+      "title": "Assumptive Close",
+      "content": "Super, dann machen wir das so! 🎉 Startest du lieber diese Woche oder nächste?",
+      "category": "closing",
+      "company": "GENERAL",
+      "tags": ["closing", "assumptive"],
+      "tone": "selbstbewusst",
+      "variables": {}
+    },
+    {
+      "id": "script_021",
+      "title": "Urgency Close",
+      "content": "Das Starter-Paket gibt's nur diese Woche zu dem Preis. Danach steigt es auf [Preis]. Ich will nur sichergehen, dass du das weißt!",
+      "category": "closing",
+      "company": "GENERAL",
+      "tags": ["closing", "urgency", "fomo"],
+      "tone": "direkt",
+      "variables": {"Preis": "string"}
+    },
+    {
+      "id": "script_022",
+      "title": "What's Holding You Back Close",
+      "content": "Basierend auf unserem Gespräch glaube ich wirklich, dass das zu dir passt. Was hält dich noch davon ab, heute zu starten?",
+      "category": "closing",
+      "company": "GENERAL",
+      "tags": ["closing", "einwand", "direkt"],
+      "tone": "direkt",
+      "variables": {}
+    },
+    {
+      "id": "script_023",
+      "title": "Zinzino - Balance Test Pitch",
+      "content": "Wusstest du, dass 97% der Menschen ein Omega-Ungleichgewicht haben? Mit dem Zinzino BalanceTest siehst du in 15 Sekunden, wo du stehst. Interesse an deinen Werten?",
+      "category": "opener",
+      "company": "ZINZINO",
+      "tags": ["zinzino", "test", "omega", "gesundheit"],
+      "tone": "informativ",
+      "variables": {}
+    },
+    {
+      "id": "script_024",
+      "title": "Zinzino - Testen statt Raten",
+      "content": "Die meisten Menschen nehmen Supplements blind. Mit Zinzino testest du vorher und nachher – so weißt du, dass es wirkt. Daten statt Marketing!",
+      "category": "opener",
+      "company": "ZINZINO",
+      "tags": ["zinzino", "wissenschaft", "test"],
+      "tone": "sachlich",
+      "variables": {}
+    },
+    {
+      "id": "script_025",
+      "title": "Zinzino - Business Opportunity",
+      "content": "Hey! Ich baue gerade etwas Spannendes auf mit Zinzino. Wissenschaftsbasierte Produkte + messbare Ergebnisse = überzeugte Kunden. Willst du mehr erfahren?",
+      "category": "opener",
+      "company": "ZINZINO",
+      "tags": ["zinzino", "business", "team"],
+      "tone": "enthusiastisch",
+      "variables": {}
+    },
+    {
+      "id": "script_026",
+      "title": "LR Health - Aloe Vera Einstieg",
+      "content": "Hey! Ich trinke seit 3 Monaten das Aloe Vera Drinking Gel und meine Verdauung hat sich mega verbessert. Kennst du das Produkt schon?",
+      "category": "opener",
+      "company": "LR",
+      "tags": ["lr", "aloe", "gesundheit", "produkt"],
+      "tone": "persönlich",
+      "variables": {}
+    },
+    {
+      "id": "script_027",
+      "title": "LR Health - Firmenwagen Pitch",
+      "content": "Stell dir vor: Ein Firmenwagen deiner Wahl, komplett bezahlt. Bei LR ist das Realität für viele Partner. Ich zeig dir gerne, wie das funktioniert!",
+      "category": "opener",
+      "company": "LR",
+      "tags": ["lr", "auto", "business", "incentive"],
+      "tone": "motivierend",
+      "variables": {}
+    },
+    {
+      "id": "script_028",
+      "title": "Herbalife - Fitness Shake",
+      "content": "Ich ersetze mein Frühstück mit dem Formula 1 Shake und fühl mich den ganzen Vormittag energiegeladen. Willst du mal probieren?",
+      "category": "opener",
+      "company": "HERBALIFE",
+      "tags": ["herbalife", "shake", "fitness", "energie"],
+      "tone": "casual",
+      "variables": {}
+    },
+    {
+      "id": "script_029",
+      "title": "Herbalife - Weight Management",
+      "content": "Hey [Name]! Ich hab mit Herbalife [X] kg abgenommen und fühl mich mega. Darf ich dir zeigen, wie ich das gemacht hab?",
+      "category": "opener",
+      "company": "HERBALIFE",
+      "tags": ["herbalife", "abnehmen", "erfolg"],
+      "tone": "persönlich",
+      "variables": {"Name": "string", "X": "number"}
+    },
+    {
+      "id": "script_030",
+      "title": "doTERRA - Ätherische Öle Intro",
+      "content": "Hey! 🌿 Benutzt du ätherische Öle? Ich bin total verliebt in meine doTERRA Öle – Lavendel zum Entspannen, Pfefferminze für Energie. Soll ich dir mehr erzählen?",
+      "category": "opener",
+      "company": "DOTERRA",
+      "tags": ["doterra", "öle", "wellness", "natürlich"],
+      "tone": "enthusiastisch",
+      "variables": {}
+    },
+    {
+      "id": "script_031",
+      "title": "doTERRA - Natürliche Lösungen",
+      "content": "Ich hab so viel Chemie aus meinem Haushalt verbannt, seit ich doTERRA nutze. Von Putzmitteln bis Hautpflege – alles natürlich. Interessiert?",
+      "category": "opener",
+      "company": "DOTERRA",
+      "tags": ["doterra", "natürlich", "haushalt", "clean"],
+      "tone": "informativ",
+      "variables": {}
+    },
+    {
+      "id": "script_032",
+      "title": "Amway - Nutrilite Vitamine",
+      "content": "Die Nutrilite Vitamine von Amway sind organisch angebaut und wissenschaftlich getestet. Ich nehm sie täglich und merk den Unterschied!",
+      "category": "opener",
+      "company": "AMWAY",
+      "tags": ["amway", "nutrilite", "vitamine", "gesundheit"],
+      "tone": "sachlich",
+      "variables": {}
+    },
+    {
+      "id": "script_033",
+      "title": "Amway - Artistry Kosmetik",
+      "content": "Ich bin total begeistert von der Artistry Hautpflege! Premium-Qualität ohne Premium-Preisaufschlag. Soll ich dir was zum Testen schicken?",
+      "category": "opener",
+      "company": "AMWAY",
+      "tags": ["amway", "artistry", "kosmetik", "beauty"],
+      "tone": "enthusiastisch",
+      "variables": {}
+    },
+    {
+      "id": "script_034",
+      "title": "DISG D-Typ Script",
+      "content": "Kurz und knapp: [Produkt/Opportunity] bringt dir [Ergebnis] in [Zeitraum]. Investment: [X]. ROI ist garantiert. Starten wir?",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["disg", "dominant", "direkt"],
+      "tone": "direkt",
+      "variables": {"Produkt": "string", "Ergebnis": "string", "Zeitraum": "string", "X": "string"}
+    },
+    {
+      "id": "script_035",
+      "title": "DISG I-Typ Script",
+      "content": "Du wirst unser Team lieben! 🎉 Wir haben super Events, eine mega Community und du wirst schnell auf der Bühne stehen können. Bock drauf?",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["disg", "initiativ", "enthusiastisch"],
+      "tone": "enthusiastisch",
+      "variables": {}
+    },
+    {
+      "id": "script_036",
+      "title": "DISG S-Typ Script",
+      "content": "Ich verstehe deine Bedenken total. Wir lassen niemanden allein – du bekommst einen persönlichen Coach an die Seite, der dich Schritt für Schritt begleitet.",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["disg", "stetig", "empathisch"],
+      "tone": "empathisch",
+      "variables": {}
+    },
+    {
+      "id": "script_037",
+      "title": "DISG G-Typ Script",
+      "content": "Hier sind die Fakten: [Produkt] ist [Zertifizierung]-zertifiziert. Die Studie [X] belegt eine Wirksamkeit von [Y]%. Ich schick dir gerne das PDF.",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["disg", "gewissenhaft", "analytisch"],
+      "tone": "sachlich",
+      "variables": {"Produkt": "string", "Zertifizierung": "string", "X": "string", "Y": "number"}
+    },
+    {
+      "id": "script_038",
+      "title": "WhatsApp Voice Note Opener",
+      "content": "[Als Sprachnachricht] Hey [Name]! Kurze Frage: Bist du offen für ein Nebeneinkommen, wenn es zu deinem Lifestyle passt? Meld dich kurz!",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["whatsapp", "voice", "nebeneinkommen"],
+      "tone": "casual",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_039",
+      "title": "Curiosity Hook",
+      "content": "Hey! Ich muss dir was zeigen, was mein Leben verändert hat. Keine Sorge, kein Spam – aber ich glaub das könnte auch für dich interessant sein. Kurz Zeit?",
+      "category": "opener",
+      "company": "GENERAL",
+      "tags": ["curiosity", "hook", "teaser"],
+      "tone": "geheimnisvoll",
+      "variables": {}
+    },
+    {
+      "id": "script_040",
+      "title": "Post-Purchase Follow-Up",
+      "content": "Hey [Name]! Wie gefällt dir [Produkt] bisher? Ich wollte sichergehen, dass alles passt. Bei Fragen bin ich immer da! 😊",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["followup", "kunde", "zufriedenheit"],
+      "tone": "fürsorglich",
+      "variables": {"Name": "string", "Produkt": "string"}
+    },
+    {
+      "id": "script_041",
+      "title": "Reactivation Script - Inaktiver Kunde",
+      "content": "Hey [Name]! Lange nicht gehört 👋 Ich hab dich vermisst! Wir haben gerade [Neues Angebot]. Dachte, das könnte dich interessieren!",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["reaktivierung", "kunde", "inaktiv"],
+      "tone": "freundlich",
+      "variables": {"Name": "string", "Angebot": "string"}
+    },
+    {
+      "id": "script_042",
+      "title": "Testimonial Request",
+      "content": "Hey [Name]! Du bist schon [Zeitraum] dabei und ich freu mich so über deine Ergebnisse! Wärst du bereit, kurz zu erzählen, wie es dir damit geht? Würde anderen mega helfen!",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["testimonial", "social-proof", "erfolg"],
+      "tone": "wertschätzend",
+      "variables": {"Name": "string", "Zeitraum": "string"}
+    },
+    {
+      "id": "script_043",
+      "title": "Upgrade/Cross-Sell",
+      "content": "Hey [Name]! Weil du [Produkt A] so liebst, wollte ich dir [Produkt B] zeigen – das ergänzt sich perfekt. Viele Kunden nutzen beides zusammen!",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["upsell", "cross-sell", "produkt"],
+      "tone": "empfehlend",
+      "variables": {"Name": "string", "ProduktA": "string", "ProduktB": "string"}
+    },
+    {
+      "id": "script_044",
+      "title": "Team Motivation - Montagsmotivation",
+      "content": "Guten Morgen Team! 🌟 Neue Woche, neue Chancen! Wer hat sich diese Woche ein konkretes Ziel gesetzt? Teilt es in der Gruppe – Accountability wirkt Wunder!",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["team", "motivation", "montag"],
+      "tone": "motivierend",
+      "variables": {}
+    },
+    {
+      "id": "script_045",
+      "title": "Welcome New Team Member",
+      "content": "Herzlich willkommen [Name]! 🎉 Du hast die beste Entscheidung getroffen! In den nächsten 48h bekommst du deinen Kickstart-Call mit mir. Bereit durchzustarten?",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["onboarding", "willkommen", "team"],
+      "tone": "enthusiastisch",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_046",
+      "title": "90-Day Check-In Partner",
+      "content": "Hey [Name]! Du bist jetzt 90 Tage dabei 🎯 Lass uns kurz sprechen: Was läuft gut, wo brauchst du Support? Ich will sicherstellen, dass du auf Kurs bist!",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["partner", "check-in", "support"],
+      "tone": "fürsorglich",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_047",
+      "title": "Social Proof Story",
+      "content": "[Name aus Team] hat gerade [Ergebnis] erreicht! 🔥 Angefangen hat sie/er genau wie du – mit Zweifeln. Der Unterschied? Sie/er hat angefangen. Wann bist du dran?",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["social-proof", "story", "motivation"],
+      "tone": "inspirierend",
+      "variables": {"Name": "string", "Ergebnis": "string"}
+    },
+    {
+      "id": "script_048",
+      "title": "Event Invitation",
+      "content": "Hey [Name]! Am [Datum] haben wir [Event] – perfekt für dich, wenn du mehr über [Thema] erfahren willst. Soll ich dich auf die Gästeliste setzen?",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["event", "einladung", "networking"],
+      "tone": "einladend",
+      "variables": {"Name": "string", "Datum": "string", "Event": "string", "Thema": "string"}
+    },
+    {
+      "id": "script_049",
+      "title": "Year-End Review",
+      "content": "Hey [Name]! Das Jahr neigt sich dem Ende – Zeit für einen kurzen Rückblick: Was war dein größter Win? Und was ist dein #1 Ziel für nächstes Jahr?",
+      "category": "followup",
+      "company": "GENERAL",
+      "tags": ["jahresende", "review", "goals"],
+      "tone": "reflektierend",
+      "variables": {"Name": "string"}
+    },
+    {
+      "id": "script_050",
+      "title": "Birthday Message",
+      "content": "Happy Birthday [Name]! 🎂🎉 Ich wünsche dir einen fantastischen Tag voller Freude! Genieß deinen Tag – du hast es verdient! ❤️",
+      "category": "general",
+      "company": "GENERAL",
+      "tags": ["geburtstag", "persönlich", "beziehung"],
+      "tone": "herzlich",
+      "variables": {"Name": "string"}
+    }
+  ],
+  "metadata": {
+    "source": "gemini",
+    "generated_at": "2025-01-03",
+    "total_scripts": 50,
+    "categories": {
+      "opener": 15,
+      "followup": 10,
+      "objection": 8,
+      "closing": 4,
+      "general": 13
+    },
+    "companies": ["GENERAL", "ZINZINO", "LR", "HERBALIFE", "DOTERRA", "AMWAY"],
+    "version": "1.0.0"
+  }
+}

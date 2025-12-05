@@ -1,4 +1,5 @@
 export type RootStackParamList = {
+  Onboarding: undefined;
   MainTabs: undefined;
   Home: undefined;
   Chat: undefined;
@@ -13,3 +14,11 @@ export type RootStackParamList = {
   Profile: undefined;
 };
 
+export type OnboardingStackParamList = {
+  Welcome: undefined;
+  Tutorial: undefined;
+  CompanySelect: undefined;
+  GoalSelect: undefined;
+  MagicMoment: undefined;
+  MainTabs: undefined;
+};

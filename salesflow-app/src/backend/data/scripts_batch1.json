@@ -1,0 +1,496 @@
+{
+  "scripts": [
+    {
+      "id": "opener_001",
+      "title": "Warm Market - Familie & Freunde",
+      "content": "Hey [Name]! 👋 Ich starte gerade ein spannendes Projekt und dabei hab ich sofort an dich gedacht. Hast du 5 Minuten?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["warm", "freunde", "familie", "soft"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "opener_002",
+      "title": "Cold Outreach - LinkedIn Professional",
+      "content": "Hallo [Name], ich bin auf dein Profil gestoßen und finde deinen Werdegang in [Branche] beeindruckend. Ich habe eine Idee, die gut zu deinen Skills passen könnte. Hast du diese Woche 15 Minuten für einen kurzen Austausch?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["cold", "linkedin", "professional", "b2b"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Name", "Branche"]
+    },
+    {
+      "id": "opener_003",
+      "title": "Instagram Story Reaktion",
+      "content": "Hey! 🔥 Deine Story hat mich echt angesprochen. [Spezifischer Bezug] - wie machst du das? Würde mich mega interessieren!",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["instagram", "story", "social-media", "casual"],
+      "tone": "CASUAL",
+      "variables": ["Bezug"]
+    },
+    {
+      "id": "opener_004",
+      "title": "Event-Based Opener",
+      "content": "Hi [Name]! Wir waren beide bei [Event]. Dein Beitrag zu [Thema] hat mich echt zum Nachdenken gebracht. Lass uns connecten!",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["event", "networking", "professional"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Name", "Event", "Thema"]
+    },
+    {
+      "id": "opener_005",
+      "title": "Referral - Empfehlung",
+      "content": "Hey [Name]! [Empfehler] hat mir erzählt, dass du dich für [Thema] interessierst. Ich hab da was Spannendes - kurz quatschen?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["referral", "warm", "empfehlung"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Empfehler", "Thema"]
+    },
+    {
+      "id": "opener_006",
+      "title": "Curiosity Hook - Neugier wecken",
+      "content": "Hey! Ich muss dir was zeigen, was mein Leben verändert hat. Keine Sorge, kein Spam – aber ich glaub, das könnte auch für dich interessant sein. Kurz Zeit?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["curiosity", "hook", "teaser"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "opener_007",
+      "title": "Value First - Mehrwert zuerst",
+      "content": "Hi [Name]! Ich hab eine Checkliste erstellt für [Problem]. Dachte, die könnte für dich interessant sein. Soll ich sie dir schicken?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["value", "content", "lead-magnet"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Name", "Problem"]
+    },
+    {
+      "id": "opener_008",
+      "title": "WhatsApp Voice Note",
+      "content": "[Als Sprachnachricht] Hey [Name]! Kurze Frage: Bist du offen für ein Nebeneinkommen, wenn es zu deinem Lifestyle passt? Meld dich kurz!",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["whatsapp", "voice", "nebeneinkommen"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "opener_009",
+      "title": "Re-Connect nach langer Zeit",
+      "content": "Hey [Name]! Lange her! 👋 Wie geht's dir? Hab gerade an die alten Zeiten gedacht. Was treibst du so beruflich?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["reconnect", "warm", "langzeit"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "opener_010",
+      "title": "Compliment Opener - Echtes Lob",
+      "content": "Hey [Name]! Ich folge dir schon eine Weile und bin echt beeindruckt von [Leistung]. Wie hast du das geschafft?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["compliment", "social-media", "authentic"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Leistung"]
+    },
+    {
+      "id": "pitch_001",
+      "title": "Zinzino Balance Test Pitch",
+      "content": "Wusstest du, dass 97% der Menschen ein Omega-Ungleichgewicht haben? Mit dem Zinzino BalanceTest siehst du in 15 Sekunden, wo du stehst. Kein Raten mehr – Daten!\n\nDas Beste: Nach 4 Monaten mit unseren Produkten machen wir einen neuen Test. So siehst du messbar, was sich verbessert hat. Interesse?",
+      "category": "PITCH",
+      "industry": ["ZINZINO"],
+      "tags": ["zinzino", "test", "omega", "wissenschaft"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_002",
+      "title": "Zinzino Business Opportunity",
+      "content": "Hey! Ich baue gerade etwas Spannendes auf mit Zinzino.\n\n✅ Wissenschaftsbasierte Produkte\n✅ Messbare Ergebnisse für jeden Kunden\n✅ Kein Überreden – der Test überzeugt\n✅ Wachsender Gesundheitsmarkt\n\nIch suche 2-3 Leute, die das Potenzial sehen. Bist du dabei?",
+      "category": "PITCH",
+      "industry": ["ZINZINO"],
+      "tags": ["zinzino", "business", "team", "opportunity"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_003",
+      "title": "LR Aloe Vera Produkt Pitch",
+      "content": "Ich trinke seit 3 Monaten das Aloe Vera Drinking Gel von LR und meine Verdauung hat sich komplett verändert! 🌿\n\nDas Gel unterstützt:\n• Verdauung & Darmgesundheit\n• Immunsystem\n• Hautbild von innen\n\nHast du sowas schon mal probiert?",
+      "category": "PITCH",
+      "industry": ["LR"],
+      "tags": ["lr", "aloe", "gesundheit", "produkt"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_004",
+      "title": "LR Firmenwagen Pitch",
+      "content": "Stell dir vor: Ein Firmenwagen deiner Wahl, komplett bezahlt. 🚗\n\nBei LR ist das Realität für viele Partner. Der Weg dahin? Klare Schritte, echte Unterstützung, bewiesenes System.\n\nIch zeig dir gerne, wie das funktioniert – ohne Druck, nur Infos!",
+      "category": "PITCH",
+      "industry": ["LR"],
+      "tags": ["lr", "auto", "incentive", "business"],
+      "tone": "ENTHUSIASTIC",
+      "variables": []
+    },
+    {
+      "id": "pitch_005",
+      "title": "Herbalife Fitness & Ernährung",
+      "content": "Ich ersetze mein Frühstück mit dem Formula 1 Shake und fühl mich den ganzen Vormittag energiegeladen! 💪\n\n✅ 21 Vitamine & Mineralien\n✅ Hochwertiges Protein\n✅ In 2 Minuten fertig\n✅ Lecker in vielen Geschmacksrichtungen\n\nWillst du mal probieren?",
+      "category": "PITCH",
+      "industry": ["HERBALIFE"],
+      "tags": ["herbalife", "shake", "fitness", "ernährung"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_006",
+      "title": "Herbalife Abnehm-Erfolg",
+      "content": "Hey [Name]! Ich hab mit Herbalife [X] kg abgenommen und fühl mich mega! 🎉\n\nDas war kein Hungern – ich esse mehr als vorher, nur smarter.\n\nDarf ich dir zeigen, wie ich das gemacht hab?",
+      "category": "PITCH",
+      "industry": ["HERBALIFE"],
+      "tags": ["herbalife", "abnehmen", "erfolg", "transformation"],
+      "tone": "CASUAL",
+      "variables": ["Name", "X"]
+    },
+    {
+      "id": "pitch_007",
+      "title": "doTERRA Ätherische Öle Intro",
+      "content": "Hey! 🌿 Benutzt du ätherische Öle?\n\nIch bin total verliebt in meine doTERRA Öle:\n• Lavendel zum Entspannen 😴\n• Pfefferminze für Energie ⚡\n• Weihrauch für Fokus 🧘\n\nDie Qualität ist unschlagbar. Soll ich dir mehr erzählen?",
+      "category": "PITCH",
+      "industry": ["DOTERRA"],
+      "tags": ["doterra", "öle", "wellness", "natürlich"],
+      "tone": "ENTHUSIASTIC",
+      "variables": []
+    },
+    {
+      "id": "pitch_008",
+      "title": "doTERRA Clean Living",
+      "content": "Ich hab so viel Chemie aus meinem Haushalt verbannt, seit ich doTERRA nutze!\n\n🧹 Putzmittel? DIY mit Ölen\n🧴 Hautpflege? Natürliche Rezepte\n💊 Erste Hilfe? Öle-Set\n\nInteressiert dich das Thema Clean Living?",
+      "category": "PITCH",
+      "industry": ["DOTERRA"],
+      "tags": ["doterra", "clean", "haushalt", "natürlich"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_009",
+      "title": "Amway Nutrilite Vitamine",
+      "content": "Die Nutrilite Vitamine von Amway sind was Besonderes:\n\n🌱 Organisch angebaut auf eigenen Farmen\n🔬 Wissenschaftlich getestet\n♻️ Nachhaltig produziert\n\nIch nehm sie täglich und merk den Unterschied. Soll ich dir mehr erzählen?",
+      "category": "PITCH",
+      "industry": ["AMWAY"],
+      "tags": ["amway", "nutrilite", "vitamine", "bio"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_010",
+      "title": "PM International FitLine",
+      "content": "FitLine von PM International hat meinen Alltag verändert! 🏃‍♂️\n\n• Activize für Energie am Morgen\n• Optimal Set für die Basis\n• Restorate für erholsamen Schlaf\n\nAlles mit dem NTC (Nährstoff-Transport-Konzept) – wirkt in 10 Minuten!\n\nKennst du das schon?",
+      "category": "PITCH",
+      "industry": ["PM_INTERNATIONAL"],
+      "tags": ["pm", "fitline", "sport", "energie"],
+      "tone": "ENTHUSIASTIC",
+      "variables": []
+    },
+    {
+      "id": "followup_001",
+      "title": "Follow-Up nach Präsentation - Soft",
+      "content": "Hey [Name]! 😊 Ich wollte kurz nachfragen, wie dir unser Gespräch letztens gefallen hat. Gibt es Fragen, die ich dir beantworten kann?",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["followup", "präsentation", "soft"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_002",
+      "title": "Follow-Up Tag 3 - Sanfte Erinnerung",
+      "content": "Hey [Name]! Nur kurz nachgehakt – hast du dir schon Gedanken gemacht? Kein Druck, nur neugierig 🙂",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["followup", "reminder", "soft"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_003",
+      "title": "Follow-Up Tag 7 - Value Add",
+      "content": "Hi [Name]! Ich hab hier einen Artikel gefunden, der perfekt zu unserem letzten Gespräch passt: [Link]\n\nWas meinst du dazu?",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["followup", "value", "content"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Name", "Link"]
+    },
+    {
+      "id": "followup_004",
+      "title": "Anti-Ghosting Pattern Interrupt",
+      "content": "Hey [Name]! 🙋 Alles okay bei dir? Hab gerade an dich gedacht und wollte sichergehen, dass alles gut ist.",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["ghosting", "pattern-interrupt", "care"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_005",
+      "title": "Anti-Ghosting Ehrlich",
+      "content": "Hey [Name], ich merke das Timing passt gerade nicht. Kein Problem!\n\nSoll ich mich in 2-3 Monaten nochmal melden, oder lieber ganz sein lassen? Sei ehrlich – ich nehm's nicht persönlich 🙂",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["ghosting", "ehrlich", "exit"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_006",
+      "title": "Post-Purchase Check-In",
+      "content": "Hey [Name]! 📦 Wie gefällt dir [Produkt] bisher?\n\nIch wollte sichergehen, dass alles passt. Bei Fragen bin ich immer da!",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["kunde", "zufriedenheit", "service"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Produkt"]
+    },
+    {
+      "id": "followup_007",
+      "title": "Testimonial Request",
+      "content": "Hey [Name]! Du bist jetzt [Zeitraum] dabei und ich freu mich so über deine Ergebnisse! 🎉\n\nWärst du bereit, kurz zu erzählen, wie es dir damit geht? Würde anderen mega helfen!",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["testimonial", "social-proof", "success"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Zeitraum"]
+    },
+    {
+      "id": "followup_008",
+      "title": "90-Day Partner Check-In",
+      "content": "Hey [Name]! Du bist jetzt 90 Tage dabei 🎯\n\nLass uns kurz sprechen:\n• Was läuft gut?\n• Wo brauchst du Support?\n• Was sind deine Ziele für die nächsten 90 Tage?\n\nWann passt dir?",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["partner", "check-in", "coaching"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_009",
+      "title": "Reactivation - Inaktiver Kunde",
+      "content": "Hey [Name]! Lange nicht gehört 👋\n\nIch hab dich vermisst! Wir haben gerade [Neues Produkt/Angebot].\n\nDachte, das könnte dich interessieren. Wie geht's dir?",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["reaktivierung", "kunde", "win-back"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Angebot"]
+    },
+    {
+      "id": "followup_010",
+      "title": "Upgrade/Cross-Sell",
+      "content": "Hey [Name]! Weil du [Produkt A] so liebst, wollte ich dir [Produkt B] zeigen.\n\nDie ergänzen sich perfekt! Viele Kunden nutzen beides zusammen.\n\nSoll ich dir mehr erzählen?",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["upsell", "cross-sell", "upgrade"],
+      "tone": "CASUAL",
+      "variables": ["Name", "ProduktA", "ProduktB"]
+    },
+    {
+      "id": "pitch_011",
+      "title": "Network Marketing Lifestyle",
+      "content": "Stell dir vor:\n\n☀️ Aufwachen ohne Wecker\n💼 Arbeiten von überall\n💰 Einkommen, das auch fließt wenn du Urlaub machst\n👨‍👩‍👧 Mehr Zeit für Familie\n\nDas ist Network Marketing richtig gemacht. Und es funktioniert – wenn du bereit bist zu lernen.\n\nNeugierig?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["lifestyle", "freiheit", "vision"],
+      "tone": "ENTHUSIASTIC",
+      "variables": []
+    },
+    {
+      "id": "pitch_012",
+      "title": "Nebeneinkommen Pitch",
+      "content": "Was wäre, wenn du jeden Monat 500-1000€ extra hättest?\n\nKein Zweitjob. Keine festen Arbeitszeiten. Von zu Hause aus.\n\nIch zeig dir, wie ich das mache. Kein Druck, nur Infos. Deal?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["nebeneinkommen", "extra", "flexibel"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_013",
+      "title": "Teamaufbau Pitch",
+      "content": "Ich suche 3 hungrige Leute, die mit mir ein Team aufbauen wollen.\n\nKeine Erfahrung nötig – ich zeig dir alles.\nAber du musst bereit sein:\n✅ Zu lernen\n✅ Dranzubleiben\n✅ Anderen zu helfen\n\nBist du so jemand?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["team", "aufbau", "rekrutierung"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "pitch_014",
+      "title": "Problem-Solution Pitch",
+      "content": "Kennst du das?\n\n😤 Zu wenig Zeit für das Wichtige\n😤 Gehalt reicht gerade so\n😤 Keine Kontrolle über deinen Tag\n\nIch kannte das auch. Bis ich [Lösung] gefunden habe.\n\nWillst du wissen, wie ich das geändert hab?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["problem", "solution", "story"],
+      "tone": "EMPATHETIC",
+      "variables": ["Lösung"]
+    },
+    {
+      "id": "pitch_015",
+      "title": "Social Proof Pitch",
+      "content": "[Name aus Team] hat letzten Monat ihren ersten [Erfolg] erreicht! 🔥\n\nAngefangen hat sie genau wie du – mit null Erfahrung und vielen Zweifeln.\n\nDer Unterschied? Sie hat angefangen.\n\nWann bist du dran?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["social-proof", "success-story", "motivation"],
+      "tone": "ENTHUSIASTIC",
+      "variables": ["Name", "Erfolg"]
+    },
+    {
+      "id": "opener_011",
+      "title": "DISG D-Typ Opener (Dominant)",
+      "content": "Hey [Name], kurz und knapp: Ich hab eine Business-Opportunity, die zu deinem Profil passt. Ergebnisse in 90 Tagen messbar. Hast du 10 Minuten diese Woche?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["disg", "dominant", "direkt"],
+      "tone": "DIRECT",
+      "variables": ["Name"]
+    },
+    {
+      "id": "opener_012",
+      "title": "DISG I-Typ Opener (Initiativ)",
+      "content": "Hey [Name]! 🎉 Du wirst nicht glauben, was ich entdeckt hab! Das ist SO spannend - wir haben mega Events, eine tolle Community und du könntest richtig durchstarten! Lass uns quatschen!",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["disg", "initiativ", "enthusiastisch"],
+      "tone": "ENTHUSIASTIC",
+      "variables": ["Name"]
+    },
+    {
+      "id": "opener_013",
+      "title": "DISG S-Typ Opener (Stetig)",
+      "content": "Hey [Name], ich hoffe es geht dir gut. 😊 Ich hab da was gefunden, das ich gerne mit dir teilen würde. Kein Druck – ich wollte nur sichergehen, dass du davon weißt. Wann passt dir ein kurzes Gespräch?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["disg", "stetig", "empathisch"],
+      "tone": "EMPATHETIC",
+      "variables": ["Name"]
+    },
+    {
+      "id": "opener_014",
+      "title": "DISG G-Typ Opener (Gewissenhaft)",
+      "content": "Hallo [Name], ich habe ein Geschäftsmodell analysiert, das interessante Kennzahlen aufweist: [X]% der Partner erreichen [Y] innerhalb von [Z] Monaten. Die Daten sind verifiziert. Interessiert an den Details?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["disg", "gewissenhaft", "analytisch"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Name", "X", "Y", "Z"]
+    },
+    {
+      "id": "opener_015",
+      "title": "Facebook Gruppen Opener",
+      "content": "Hey [Name]! Ich hab deinen Kommentar in [Gruppe] gesehen - mega Punkt! 💯 Beschäftigst du dich beruflich mit [Thema] oder ist das Hobby?",
+      "category": "OPENER",
+      "industry": ["GENERAL"],
+      "tags": ["facebook", "gruppe", "social-media"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Gruppe", "Thema"]
+    },
+    {
+      "id": "pitch_016",
+      "title": "Gesundheit als Investment",
+      "content": "Wir investieren in Autos, Urlaub, Technik...\n\nAber was ist mit unserer Gesundheit? 🤔\n\nOhne Gesundheit ist alles andere wertlos.\n\nIch hab entschieden, in mich zu investieren. Willst du wissen, wie?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["gesundheit", "investment", "mindset"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_017",
+      "title": "Zinzino Xtend Pitch",
+      "content": "Xtend von Zinzino ist mein Daily Essential:\n\n🛡️ 23 Vitamine & Mineralien\n🌿 Polyphenole aus Oliven\n🦴 Vitamin D3 für Knochen\n💪 Immunsystem Support\n\nEin Produkt. Komplette Grundversorgung. Simpel!",
+      "category": "PITCH",
+      "industry": ["ZINZINO"],
+      "tags": ["zinzino", "xtend", "vitamine", "daily"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_018",
+      "title": "LR Beauty Pitch",
+      "content": "Die ZEITGARD Pflegelinie von LR ist mein Beauty-Geheimnis! ✨\n\n• Cleansing System für reine Haut\n• Anti-Age Produkte die wirken\n• Made in Germany Qualität\n\nDeine Haut verdient das Beste. Soll ich dir mehr zeigen?",
+      "category": "PITCH",
+      "industry": ["LR"],
+      "tags": ["lr", "beauty", "hautpflege", "zeitgard"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "pitch_019",
+      "title": "Herbalife 24 Sport Pitch",
+      "content": "Herbalife24 ist speziell für Sportler entwickelt:\n\n💪 Rebuild Strength nach dem Training\n⚡ CR7 Drive während dem Sport\n🏃 Formula 1 Sport für Athleten\n\nProfi-Nutrition, die auch für dich funktioniert!",
+      "category": "PITCH",
+      "industry": ["HERBALIFE"],
+      "tags": ["herbalife", "sport", "h24", "fitness"],
+      "tone": "ENTHUSIASTIC",
+      "variables": []
+    },
+    {
+      "id": "pitch_020",
+      "title": "Business für Mütter",
+      "content": "Als Mama wollte ich:\n✅ Bei meinen Kids sein\n✅ Aber auch was Eigenes aufbauen\n✅ Flexibel arbeiten können\n\nNetwork Marketing macht das möglich. Ich arbeite wenn die Kids schlafen oder spielen.\n\nKennst du das Gefühl, zerrissen zu sein?",
+      "category": "PITCH",
+      "industry": ["GENERAL"],
+      "tags": ["mütter", "familie", "flexibel", "work-life"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "followup_011",
+      "title": "Break-Up Message",
+      "content": "Hey [Name], ich will ehrlich sein:\n\nIch hab dir jetzt ein paar Mal geschrieben und keine Antwort bekommen. Das ist völlig okay!\n\nIch lösche dich nicht – falls sich was ändert, weißt du wo du mich findest. 🙂\n\nAlles Gute!",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["break-up", "abschluss", "ghosting"],
+      "tone": "DIRECT",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_012",
+      "title": "Video Message Follow-Up",
+      "content": "[Als Video-Nachricht]\n\nHey [Name]! Ich wollte mich kurz persönlich melden. Hab an unser Gespräch gedacht und wollte checken, wie es dir geht. Meld dich wenn du magst!",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["video", "persönlich", "nahbar"],
+      "tone": "CASUAL",
+      "variables": ["Name"]
+    },
+    {
+      "id": "followup_013",
+      "title": "Urgency Follow-Up",
+      "content": "Hey [Name]! Kurzes Update: [Angebot/Aktion] läuft nur noch bis [Datum].\n\nIch will nicht, dass du das verpasst. Letzte Chance – soll ich dir nochmal alles erklären?",
+      "category": "FOLLOW_UP",
+      "industry": ["GENERAL"],
+      "tags": ["urgency", "fomo", "deadline"],
+      "tone": "DIRECT",
+      "variables": ["Name", "Angebot", "Datum"]
+    }
+  ],
+  "metadata": {
+    "batch": 1,
+    "total_scripts": 50,
+    "categories": {
+      "OPENER": 15,
+      "PITCH": 20,
+      "FOLLOW_UP": 15
+    },
+    "version": "1.0.0",
+    "created_at": "2025-01-05"
+  }
+}
+

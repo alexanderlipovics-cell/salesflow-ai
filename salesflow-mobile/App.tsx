@@ -3,14 +3,17 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
+import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import 'react-native-gesture-handler';
 
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
-        <AppNavigator />
+        <SubscriptionProvider>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </SubscriptionProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

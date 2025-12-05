@@ -1,0 +1,515 @@
+{
+  "scripts": [
+    {
+      "id": "objection_001",
+      "title": "Einwand: Keine Zeit",
+      "content": "Das verstehe ich total! Gerade deshalb könnte das hier interessant sein – es geht um Zeitfreiheit.\n\nDie meisten in meinem Team haben auch so angefangen – neben Job und Familie.\n\nWann hättest du 15 Minuten für einen kurzen Call?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "zeit", "reframe"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "objection_002",
+      "title": "Einwand: Zu teuer",
+      "content": "Ich verstehe, dass du auf dein Budget achtest. Das zeigt, dass du klug mit Geld umgehst! 👍\n\nLass mich fragen: Was wäre es dir wert, wenn [konkreter Nutzen]?\n\nManchmal ist die Frage nicht 'Kann ich mir das leisten?' sondern 'Kann ich es mir leisten, es NICHT zu tun?'",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "preis", "wert", "reframe"],
+      "tone": "EMPATHETIC",
+      "variables": ["Nutzen"]
+    },
+    {
+      "id": "objection_003",
+      "title": "Einwand: Muss drüber schlafen",
+      "content": "Absolut, das ist eine wichtige Entscheidung! 💯\n\nMal angenommen, du hättest morgen früh nochmal drüber geschlafen – was müsste passiert sein, damit du Ja sagst?\n\nIch frag nur, damit ich dir die richtigen Infos geben kann.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "nachdenken", "isolieren"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_004",
+      "title": "Einwand: Muss Partner fragen",
+      "content": "Super, dass du deinen Partner einbeziehst! Das zeigt Respekt. 👫\n\nWann könnt ihr beide gemeinsam mit mir sprechen?\n\nSo kann ich alle Fragen direkt beantworten und ihr könnt zusammen entscheiden.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "partner", "termin"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_005",
+      "title": "Einwand: Ist das MLM/Pyramide?",
+      "content": "Gute Frage! Pyramidensysteme sind illegal – da gibt's kein echtes Produkt und nur die Gründer verdienen.\n\nBei uns:\n✅ Echte Produkte mit echtem Nutzen\n✅ Du verdienst durch Verkauf UND Teamaufbau\n✅ Jeder kann mehr verdienen als sein Sponsor\n✅ Komplett legal und reguliert\n\nDer Unterschied zu einem normalen Job? Du bestimmst dein Einkommen selbst.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "mlm", "pyramide", "aufklärung"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_006",
+      "title": "Einwand: Kenne niemanden",
+      "content": "Das dachte ich am Anfang auch! Aber weißt du was?\n\nWir zeigen dir genau, wie du online neue Kontakte aufbaust. Social Media macht's möglich.\n\nDein Bekanntenkreis ist nur der Anfang, nicht das Limit. 🚀\n\nBist du offen, zu lernen wie das geht?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "kontakte", "netzwerk", "social-media"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_007",
+      "title": "Einwand: Bin kein Verkäufer",
+      "content": "Perfekt! Die besten in meinem Team sind auch keine klassischen Verkäufer. 🙌\n\nEs geht nicht ums Verkaufen – es geht ums Teilen.\n\nDu empfiehlst sowieso Restaurants, Netflix-Serien, Produkte... Das machst du schon – nur ohne dafür bezahlt zu werden!",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "verkauf", "teilen", "empfehlen"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_008",
+      "title": "Einwand: Hab's schon mal versucht",
+      "content": "Oh interessant! Darf ich fragen, was damals nicht funktioniert hat?\n\n[Zuhören]\n\nVerstehe. Bei uns ist das anders: [Unterschied erklären]\n\nOft liegt's am Training, am Support oder am System selbst. Was wenn es diesmal anders läuft?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "erfahrung", "vergangenheit", "zweite-chance"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "objection_009",
+      "title": "Einwand: Nur die oben verdienen",
+      "content": "Ich verstehe die Sorge! Aber check das mal:\n\n📊 In unserem Team verdienen viele mehr als ihr Sponsor\n🔄 Das System belohnt Leistung, nicht Position\n📈 Je früher du startest, desto besser – aber spät ist nicht zu spät\n\nIch selbst hab auch nicht am Anfang angefangen. Willst du meine Zahlen sehen?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "struktur", "verdienst", "fakten"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_010",
+      "title": "Einwand: Kein Interesse",
+      "content": "Kein Problem! 🙂 Darf ich fragen – kein Interesse am Produkt, am Business, oder generell am Thema?\n\n[Je nach Antwort]\n\nVerstehe. Falls sich das mal ändert – du weißt wo du mich findest!",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "interesse", "qualifizierung", "exit"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_011",
+      "title": "Einwand: Ich weiß nicht ob das was für mich ist",
+      "content": "Das ist total verständlich! Am Anfang wusste ich das auch nicht.\n\nWas ich vorschlagen würde: Probier's 90 Tage aus. Nicht mehr, nicht weniger.\n\nNach 90 Tagen weißt du genau, ob's für dich ist. Und wenn nicht – kein Drama. Deal?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "unsicherheit", "test", "commitment"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_012",
+      "title": "Einwand: Meine Familie/Freunde sind dagegen",
+      "content": "Das höre ich oft. Weißt du was?\n\nDie Leute die dich am meisten lieben, wollen dich auch am meisten schützen.\n\nAber manchmal schützen sie dich vor Dingen, die sie selbst nicht verstehen.\n\nWas wenn du ihnen in 6 Monaten zeigst, dass es funktioniert?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "familie", "umfeld", "mindset"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "objection_013",
+      "title": "Einwand: Das funktioniert doch nicht",
+      "content": "Ich verstehe die Skepsis! Darf ich dich was fragen?\n\nWas genau funktioniert deiner Meinung nach nicht?\n\n[Zuhören]\n\nOkay, lass mich dir zeigen, wie [konkrete Person] es geschafft hat. Echte Person, echte Ergebnisse.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "skepsis", "proof", "social-proof"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_014",
+      "title": "Einwand: Ich hab kein Geld für den Start",
+      "content": "Verstehe ich! Das Startinvestment ist [Betrag].\n\nAber lass mich fragen: Wenn du wüsstest, dass du das in den ersten 30 Tagen wieder reinholen kannst – wäre es dann machbar?\n\nViele finanzieren den Start durch ihren ersten Verkauf. Ich zeig dir wie.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "geld", "investment", "start"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Betrag"]
+    },
+    {
+      "id": "objection_015",
+      "title": "Einwand: Ich muss erst recherchieren",
+      "content": "Super, du bist gründlich! Das mag ich. 👍\n\nWas genau willst du recherchieren? Vielleicht kann ich dir direkt die Infos geben.\n\n[Oder] Ich schick dir ein paar Links – neutrale Quellen, keine Werbung. Dann reden wir nochmal?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "recherche", "info", "vorbereitung"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_016",
+      "title": "Einwand: Bei mir im Umfeld kauft das keiner",
+      "content": "Das dachte ich auch! Aber dann hab ich was verstanden:\n\n🌍 Dein Markt ist nicht nur dein Umfeld\n📱 Social Media = unbegrenzter Markt\n🔍 Die Leute die das brauchen, findest du online\n\nIch zeig dir genau, wie du die richtigen Menschen erreichst.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "markt", "online", "reichweite"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_017",
+      "title": "Einwand: Das ist mir zu kompliziert",
+      "content": "Ich verstehe – am Anfang sieht alles kompliziert aus!\n\nAber weißt du was? Du musst nicht alles auf einmal lernen.\n\nWir gehen Schritt für Schritt:\n1️⃣ Erste Woche: Die Basics\n2️⃣ Zweite Woche: Erste Gespräche\n3️⃣ Dritte Woche: Erste Kunden\n\nUnd ich bin bei jedem Schritt dabei.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "kompliziert", "einfach", "support"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "objection_018",
+      "title": "Einwand: Produkt zu teuer für meine Kunden",
+      "content": "Das höre ich manchmal. Aber lass mich fragen:\n\nWer sind 'deine Kunden' in deiner Vorstellung?\n\n[Zuhören]\n\nWeißt du, es gibt genug Menschen die Qualität wollen und dafür zahlen. Die Kunst ist, die richtigen zu finden – nicht alle zu überzeugen.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "preis", "zielgruppe", "qualität"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_019",
+      "title": "Einwand: Ich bin zu alt/jung dafür",
+      "content": "Wir haben erfolgreiche Partner von 18 bis 70+!\n\n[Wenn zu alt]: Erfahrung ist unbezahlbar – du hast Netzwerk, Vertrauen, Lebenserfahrung.\n\n[Wenn zu jung]: Du hast Energie, Social Media Skills und keine Angst vor Neuem.\n\nDas perfekte Alter gibt's nicht. Es gibt nur den richtigen Zeitpunkt – und der ist jetzt.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "alter", "mindset", "timing"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_020",
+      "title": "Einwand: Ich hab schlechte Erfahrungen mit MLM",
+      "content": "Das tut mir leid zu hören. 😔 Darf ich fragen, was passiert ist?\n\n[Zuhören mit echtem Interesse]\n\nDas klingt frustrierend. Ich verstehe warum du skeptisch bist.\n\nBei uns läuft das anders: [Konkrete Unterschiede nennen]\n\nIch erwarte keine sofortige Entscheidung. Aber vielleicht willst du's dir nochmal anschauen?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "erfahrung", "mlm", "trauma"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "objection_021",
+      "title": "Zinzino: Produkte zu teuer",
+      "content": "Ich verstehe! Aber lass uns mal rechnen:\n\nBalance Oil + Test kostet ca. 99€/Monat.\n\nDafür bekommst du:\n✅ Tägliche Omega-3 Versorgung\n✅ 2 wissenschaftliche Tests/Jahr\n✅ Messbare Ergebnisse\n\nDas sind 3,30€ pro Tag. Weniger als ein Kaffee to go. Für deine Gesundheit.",
+      "category": "OBJECTION",
+      "industry": ["ZINZINO"],
+      "tags": ["zinzino", "preis", "wert", "rechnung"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_022",
+      "title": "Zinzino: Warum brauche ich einen Test?",
+      "content": "Gute Frage! 🔬\n\nOhne Test nimmst du Omega-3 'blind' – du weißt nicht ob es wirkt.\n\nMit Test:\n📊 Du siehst deinen Ist-Zustand\n📈 Du siehst nach 4 Monaten die Verbesserung\n✅ Du weißt, dass es bei DIR funktioniert\n\nDaten statt Hoffnung. Macht das Sinn?",
+      "category": "OBJECTION",
+      "industry": ["ZINZINO"],
+      "tags": ["zinzino", "test", "wissenschaft", "warum"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_023",
+      "title": "LR: Kenn ich nicht, ist das seriös?",
+      "content": "Verstehe die Frage! LR gibt's seit 1985 – fast 40 Jahre! 🏆\n\n✅ Sitz in Deutschland (Ahlen)\n✅ Über 300.000 Partner weltweit\n✅ Eigene Produktion, höchste Standards\n✅ Mehrfach ausgezeichnet\n\nKannst du gerne selbst googeln – aber ich kann auch Fragen beantworten!",
+      "category": "OBJECTION",
+      "industry": ["LR"],
+      "tags": ["lr", "seriosität", "fakten", "vertrauen"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "objection_024",
+      "title": "Herbalife: Ist das nicht ungesund?",
+      "content": "Ich verstehe die Sorge – es gab Gerüchte.\n\nFakten:\n✅ Herbalife ist in 90+ Ländern zugelassen\n✅ Millionen zufriedene Kunden weltweit\n✅ Wissenschaftlicher Beirat mit Ärzten\n✅ Alle Produkte getestet und zertifiziert\n\nIch selbst nutze die Produkte seit [Zeitraum]. Soll ich dir meine Erfahrung erzählen?",
+      "category": "OBJECTION",
+      "industry": ["HERBALIFE"],
+      "tags": ["herbalife", "gesundheit", "sicherheit", "fakten"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Zeitraum"]
+    },
+    {
+      "id": "objection_025",
+      "title": "Einwand: Ich will keine Freunde nerven",
+      "content": "Das will ich auch nicht! 🙂\n\nDeshalb:\n1️⃣ Wir sprechen nur mit Leuten die OFFEN sind\n2️⃣ Kein Spam, kein Nerven\n3️⃣ Wenn jemand Nein sagt → respektieren\n\nIch zeig dir, wie du professionell vorgehst ohne Beziehungen zu ruinieren. Deal?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "freunde", "beziehungen", "professionell"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_026",
+      "title": "Einwand: Das ist Zeitverschwendung",
+      "content": "Verstehe! Deine Zeit ist wertvoll. 💎\n\nLass mich kurz fragen: Was wäre für dich KEINE Zeitverschwendung?\n\n[Zuhören]\n\nOkay, und was wenn ich dir zeigen kann, dass [Zeit/Geld/Freiheit] genau das ist, was du mit uns erreichen kannst?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "zeit", "wert", "fragen"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "objection_027",
+      "title": "Einwand: Ich bin zufrieden mit meinem Job",
+      "content": "Das ist super! 👏 Ein guter Job ist wichtig.\n\nAber lass mich fragen: Bist du auch zufrieden mit:\n• Deinem Einkommen?\n• Deiner Freizeit?\n• Deinen Zukunftsaussichten?\n\nDie meisten starten nebenberuflich – nicht als Ersatz, sondern als Ergänzung.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "job", "zufriedenheit", "nebenberuflich"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_028",
+      "title": "Einwand: Ich probier erst mal alleine",
+      "content": "Respektiere ich! 🙌\n\nAber kurze Frage: Warum alleine, wenn du Support haben könntest?\n\nBei mir bekommst du:\n✅ Bewährte Vorlagen\n✅ Coaching Calls\n✅ Community die hilft\n\nAlleine ist härter. Zusammen geht's schneller. Was hält dich zurück?",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "alleine", "support", "team"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "objection_029",
+      "title": "Einwand: Ich melde mich wenn ich bereit bin",
+      "content": "Klar! 🙂 Aber lass mich dich was fragen:\n\nWann genau wärst du 'bereit'? Was müsste passieren?\n\n[Zuhören]\n\nWeißt du, die meisten warten auf den 'perfekten Moment'. Aber der kommt selten. Manchmal ist JETZT der richtige Zeitpunkt.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "timing", "prokrastination", "jetzt"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "objection_030",
+      "title": "Einwand: Mein Umfeld lacht mich aus",
+      "content": "Das kenn ich! Am Anfang haben auch manche über mich gelacht. 😅\n\nAber weißt du was?\n\nDieselben Leute fragen jetzt, wie ich das mache.\n\nDie Leute die lachen, sind oft die, die sich selbst nichts trauen. Lass dich davon nicht aufhalten.",
+      "category": "OBJECTION",
+      "industry": ["GENERAL"],
+      "tags": ["einwand", "umfeld", "kritik", "mut"],
+      "tone": "EMPATHETIC",
+      "variables": []
+    },
+    {
+      "id": "closing_001",
+      "title": "Soft Close - Zusammenfassung",
+      "content": "Okay, lass mich zusammenfassen:\n\nDu willst [Ziel]. ✅\nDu siehst, dass unser [Produkt/System] das liefern kann. ✅\nDie Investition passt für dich. ✅\n\nDer einzige Schritt jetzt ist [konkrete Aktion].\n\nBereit?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "soft", "zusammenfassung"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Ziel", "Produkt", "Aktion"]
+    },
+    {
+      "id": "closing_002",
+      "title": "Assumptive Close",
+      "content": "Super, dann machen wir das so! 🎉\n\nStartest du lieber mit dem [Paket A] oder dem [Paket B]?\n\n[Oder: Diese Woche oder nächste?]",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "assumptive", "wahlmöglichkeit"],
+      "tone": "CASUAL",
+      "variables": ["PaketA", "PaketB"]
+    },
+    {
+      "id": "closing_003",
+      "title": "Urgency Close - Zeitdruck",
+      "content": "Ich will ehrlich sein:\n\nDas Angebot [Beschreibung] gibt's nur noch bis [Datum]. Danach steigt der Preis auf [neuer Preis].\n\nIch will nicht, dass du das verpasst. Entscheidest du dich heute?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "urgency", "deadline", "fomo"],
+      "tone": "DIRECT",
+      "variables": ["Beschreibung", "Datum", "Preis"]
+    },
+    {
+      "id": "closing_004",
+      "title": "What's Holding You Back",
+      "content": "Basierend auf allem was du mir erzählt hast, glaube ich wirklich, dass das zu dir passt.\n\nWas hält dich noch davon ab, heute zu starten?\n\n[Zuhören und letzten Einwand behandeln]",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "direkt", "einwand-final"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "closing_005",
+      "title": "Future Pacing Close",
+      "content": "Stell dir mal vor:\n\nIn 6 Monaten hast du [Ergebnis erreicht]. Du wachst auf und fühlst dich [Gefühl].\n\nDas ist möglich. Aber nur wenn du heute den ersten Schritt machst.\n\nBist du bereit?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "vision", "emotion", "zukunft"],
+      "tone": "ENTHUSIASTIC",
+      "variables": ["Ergebnis", "Gefühl"]
+    },
+    {
+      "id": "closing_006",
+      "title": "Ben Franklin Close",
+      "content": "Lass uns das rational angehen.\n\nPro:\n✅ [Vorteil 1]\n✅ [Vorteil 2]\n✅ [Vorteil 3]\n\nContra:\n❓ [Bedenken - bereits besprochen]\n\nWenn die Vorteile überwiegen – und das tun sie – macht's Sinn zu starten, oder?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "logik", "pro-contra", "analytisch"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Vorteil1", "Vorteil2", "Vorteil3"]
+    },
+    {
+      "id": "closing_007",
+      "title": "Puppy Dog Close",
+      "content": "Weißt du was? Probier's einfach mal aus.\n\nWenn's nach [Zeitraum] nicht das ist was du dir vorgestellt hast, können wir reden.\n\nKein Druck, kein Risiko. Deal?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "testen", "risikofrei"],
+      "tone": "CASUAL",
+      "variables": ["Zeitraum"]
+    },
+    {
+      "id": "closing_008",
+      "title": "Now or Never Close",
+      "content": "Ich sag dir was:\n\nDer perfekte Zeitpunkt existiert nicht. Es gibt nur JETZT.\n\nIn einem Jahr wirst du dich fragen, warum du nicht heute angefangen hast.\n\nLass uns starten. Was sagst du?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "jetzt", "motivation", "entscheidung"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "closing_009",
+      "title": "Scale Close (1-10)",
+      "content": "Auf einer Skala von 1-10, wie überzeugt bist du?\n\n[Antwort hören]\n\nOkay, [Zahl]. Was müsste passieren, damit es eine 10 wird?\n\n[Letzten Einwand klären und nochmal fragen]",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "skala", "einwand", "qualifizierung"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "closing_010",
+      "title": "Testimonial Close",
+      "content": "[Name] war auch skeptisch. Genau wie du.\n\nSie hat trotzdem angefangen und jetzt [Ergebnis].\n\nIhr größtes Learning? 'Hätte ich mal früher angefangen.'\n\nWillst du in 6 Monaten dasselbe sagen können?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "social-proof", "story", "erfolg"],
+      "tone": "CASUAL",
+      "variables": ["Name", "Ergebnis"]
+    },
+    {
+      "id": "closing_011",
+      "title": "Price Breakdown Close",
+      "content": "Das Investment ist [Gesamtpreis].\n\nAber lass uns das aufschlüsseln:\n📆 Über 12 Monate = [pro Monat]\n📅 Pro Tag = [pro Tag]\n\nWeniger als [Vergleich]. Für [Nutzen]. Fair, oder?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "preis", "aufschlüsselung", "wert"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Gesamtpreis", "Monat", "Tag", "Vergleich", "Nutzen"]
+    },
+    {
+      "id": "closing_012",
+      "title": "Silent Close",
+      "content": "[Nach der Präsentation]\n\nSo, das ist das Angebot.\n\n[PAUSE - Schweigen aushalten - nicht als Erster reden]\n\n[Warten auf Reaktion des Prospects]",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "schweigen", "pause", "psychologie"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "closing_013",
+      "title": "Reverse Close",
+      "content": "Weißt du was? Ich bin mir nicht mal sicher, ob das das Richtige für dich ist.\n\nWarum glaubst DU, dass du damit erfolgreich sein könntest?\n\n[Prospect verkauft sich selbst]",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "reverse", "psychologie", "selbstverkauf"],
+      "tone": "CASUAL",
+      "variables": []
+    },
+    {
+      "id": "closing_014",
+      "title": "Accountability Close",
+      "content": "Ich mach dir einen Vorschlag:\n\nDu startest heute, und ich bin die nächsten 90 Tage dein Coach.\n\nWenn du nach 90 Tagen nicht [konkretes Ergebnis] erreicht hast, finden wir gemeinsam raus warum.\n\nDeal?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "garantie", "coaching", "commitment"],
+      "tone": "PROFESSIONAL",
+      "variables": ["Ergebnis"]
+    },
+    {
+      "id": "closing_015",
+      "title": "Fear of Loss Close",
+      "content": "Ich muss ehrlich sein:\n\nWenn du jetzt nicht startest, passiert... nichts.\n\nDu bist in 6 Monaten noch am gleichen Punkt.\n\nWillst du das? Oder willst du, dass sich was ändert?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "angst", "verlust", "status-quo"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "closing_016",
+      "title": "Partnership Close",
+      "content": "Ich such keine Kunden – ich such Partner.\n\nMenschen, mit denen ich langfristig zusammenarbeiten kann.\n\nWenn du das bist, dann lass uns starten. Zusammen.\n\nBist du dabei?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "partnerschaft", "langfristig", "team"],
+      "tone": "PROFESSIONAL",
+      "variables": []
+    },
+    {
+      "id": "closing_017",
+      "title": "Money Back Guarantee Close",
+      "content": "Hör mal:\n\nWenn du nach [Zeitraum] nicht zufrieden bist, bekommst du [Garantie].\n\nDu hast also null Risiko.\n\nDer einzige Weg zu verlieren ist, es nicht zu versuchen.",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "garantie", "risikofrei", "vertrauen"],
+      "tone": "CASUAL",
+      "variables": ["Zeitraum", "Garantie"]
+    },
+    {
+      "id": "closing_018",
+      "title": "Next Step Close",
+      "content": "Super! Der nächste Schritt ist ganz einfach:\n\n1️⃣ [Schritt 1]\n2️⃣ [Schritt 2]\n3️⃣ [Schritt 3]\n\nIch nehm dich an die Hand. Machen wir Schritt 1 jetzt zusammen?",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "schritte", "einfach", "handlung"],
+      "tone": "CASUAL",
+      "variables": ["Schritt1", "Schritt2", "Schritt3"]
+    },
+    {
+      "id": "closing_019",
+      "title": "Question Close",
+      "content": "Nur eine letzte Frage:\n\nSiehst du irgendeinen Grund, warum du NICHT heute starten solltest?\n\n[Wenn nein → Close]\n[Wenn ja → Einwand behandeln]",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "frage", "einwand", "direkt"],
+      "tone": "DIRECT",
+      "variables": []
+    },
+    {
+      "id": "closing_020",
+      "title": "Commitment Close",
+      "content": "Bevor wir starten, will ich sichergehen:\n\nBist du committed, das durchzuziehen?\n\nNicht 'ich versuch's mal' – sondern 'ich mach das'?\n\n[Wenn ja] Super, dann nichts wie los! 🚀",
+      "category": "CLOSING",
+      "industry": ["GENERAL"],
+      "tags": ["closing", "commitment", "ernsthaft", "erfolg"],
+      "tone": "DIRECT",
+      "variables": []
+    }
+  ],
+  "metadata": {
+    "batch": 2,
+    "total_scripts": 50,
+    "categories": {
+      "OBJECTION": 30,
+      "CLOSING": 20
+    },
+    "version": "1.0.0",
+    "created_at": "2025-01-05"
+  }
+}
+

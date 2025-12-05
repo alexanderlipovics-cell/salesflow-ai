@@ -44,7 +44,17 @@ import { detectObjection, fetchObjectionResponses, trackResponseUsage } from '..
 import { ObjectionResponsesCard } from '../../components/objection/ObjectionResponsesCard';
 
 // API URLs - MENTOR (ehemals CHIEF)
-const getMentorApiUrl = () => `${API_CONFIG.baseUrl.replace('/api/v1', '')}/api/v2/mentor`;
+// Backend API URL: https://salesflow-ai.onrender.com
+const getMentorApiUrl = () => {
+  const baseUrl = API_CONFIG.baseUrl.replace('/api/v1', '');
+  // Stelle sicher, dass wir die Production URL verwenden
+  if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+    // Development: Verwende lokale URL
+    return `${baseUrl}/api/v2/mentor`;
+  }
+  // Production: Verwende explizite Backend URL
+  return 'https://salesflow-ai.onrender.com/api/v2/mentor';
+};
 
 // =============================================================================
 // ACTION TAG PARSER - Parse [[ACTION:...]] Tags aus MENTOR Responses
