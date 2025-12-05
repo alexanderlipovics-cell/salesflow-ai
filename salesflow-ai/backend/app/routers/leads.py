@@ -55,30 +55,36 @@ async def get_pending_leads():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/")
 @router.post("")
 async def create_lead(request: Request):
-    """Lead erstellen"""
+    """Create a new lead - flexible schema."""
     import json
     try:
         body = await request.body()
-        lead = json.loads(body)
+        lead_data = json.loads(body) if body else {}
         
-        db = get_supabase()
+        lead_data["created_at"] = datetime.now().isoformat()
+        lead_data["updated_at"] = datetime.now().isoformat()
         
+        # Defaults setzen
         data = {
-            "name": lead.get("name", "Unbekannt"),
-            "platform": lead.get("platform", "WhatsApp"),
-            "status": lead.get("status", "NEW"),
-            "temperature": lead.get("temperature", 50),
-            "next_follow_up": lead.get("next_follow_up"),
-            "follow_up_reason": lead.get("follow_up_reason"),
+            "name": lead_data.get("name", "Unbekannt"),
+            "platform": lead_data.get("platform", "WhatsApp"),
+            "status": lead_data.get("status", "NEW"),
+            "temperature": lead_data.get("temperature", 50),
+            "next_follow_up": lead_data.get("next_follow_up"),
+            "follow_up_reason": lead_data.get("follow_up_reason"),
+            "created_at": lead_data["created_at"],
+            "updated_at": lead_data["updated_at"],
         }
         
+        db = get_supabase()
         result = db.table("leads").insert(data).execute()
-        return {"lead": result.data[0], "success": True}
+        return {"success": True, "lead": result.data[0] if result.data else data}
     except Exception as e:
         logger.exception(f"Create lead error: {e}")
-        return {"error": str(e), "success": False}
+        return {"success": False, "error": str(e)}
 
 
 @router.put("/{lead_id}")
