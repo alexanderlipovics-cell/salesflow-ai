@@ -1,49 +1,112 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║  ERROR BOUNDARY                                                            ║
+ * ║  Fängt React Fehler und zeigt Fallback UI                                  ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝
+ */
 
-interface ErrorBoundaryProps {
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  showDetails?: boolean;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
+// =============================================================================
+// ERROR BOUNDARY COMPONENT
+// =============================================================================
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // eslint-disable-next-line no-console
-    console.error('Dashboard error boundary:', error, errorInfo);
+    this.setState({ errorInfo });
+    
+    // Log error
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Callback
+    this.props.onError?.(error, errorInfo);
+    
+    // TODO: Send to error tracking service (Sentry, etc.)
   }
+
+  handleRetry = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    });
+  };
 
   render() {
     if (this.state.hasError) {
+      // Custom Fallback
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      // Default Error UI
       return (
-        <div className="flex min-h-screen items-center justify-center bg-sf-bg p-4">
-          <div className="max-w-md space-y-4 rounded-3xl border border-sf-border bg-sf-card p-8 text-center shadow-sf-md">
-            <AlertTriangle className="mx-auto h-10 w-10 text-sf-error" aria-hidden="true" />
-            <h2 className="text-lg font-semibold text-sf-text">Etwas ist schiefgelaufen</h2>
-            <p className="text-sm text-sf-text-muted">
-              {this.state.error?.message ?? 'Ein unerwarteter Fehler ist aufgetreten.'}
+        <div style={styles.container}>
+          <div style={styles.content}>
+            <div style={styles.iconContainer}>
+              <span style={{ fontSize: '48px' }}>⚠️</span>
+            </div>
+            
+            <h2 style={styles.title}>Etwas ist schiefgelaufen</h2>
+            <p style={styles.message}>
+              Ein unerwarteter Fehler ist aufgetreten. Wir arbeiten daran, das Problem zu beheben.
             </p>
-            <Button
-              variant="primary"
-              onClick={() => window.location.reload()}
-              className="gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Seite neu laden
-            </Button>
+
+            {/* Error Details (Development) */}
+            {this.props.showDetails && this.state.error && (
+              <div style={styles.detailsContainer}>
+                <h3 style={styles.detailsTitle}>Fehlerdetails:</h3>
+                <pre style={styles.detailsText}>
+                  {this.state.error.toString()}
+                </pre>
+                {this.state.errorInfo && (
+                  <pre style={styles.stackTrace}>
+                    {this.state.errorInfo.componentStack}
+                  </pre>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={styles.actions}>
+              <button 
+                style={styles.retryButton}
+                onClick={this.handleRetry}
+              >
+                <span style={{ marginRight: '8px' }}>🔄</span>
+                Erneut versuchen
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -52,3 +115,122 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return this.props.children;
   }
 }
+
+// =============================================================================
+// HOOK: useErrorHandler
+// =============================================================================
+
+export function useErrorHandler() {
+  const handleError = React.useCallback((error: Error, context?: string) => {
+    console.error(`[${context || 'Error'}]`, error);
+    
+    // TODO: Send to error tracking service
+    // Sentry.captureException(error, { extra: { context } });
+  }, []);
+
+  return { handleError };
+}
+
+// =============================================================================
+// STYLES
+// =============================================================================
+
+const styles: Record<string, React.CSSProperties> = {
+  container: {
+    display: 'flex',
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '24px',
+    minHeight: '100vh',
+  },
+  content: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '16px',
+    padding: '24px',
+    alignItems: 'center',
+    maxWidth: '400px',
+    width: '100%',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  },
+  iconContainer: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '40px',
+    backgroundColor: '#FEE2E2',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: '16px',
+  },
+  title: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: '8px',
+    textAlign: 'center',
+    margin: 0,
+  },
+  message: {
+    fontSize: '14px',
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: '22px',
+    marginBottom: '24px',
+    margin: 0,
+  },
+  detailsContainer: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: '8px',
+    padding: '12px',
+    maxHeight: '200px',
+    width: '100%',
+    marginBottom: '24px',
+    overflow: 'auto',
+  },
+  detailsTitle: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: '8px',
+    margin: 0,
+  },
+  detailsText: {
+    fontSize: '12px',
+    color: '#EF4444',
+    fontFamily: 'monospace',
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+  },
+  stackTrace: {
+    fontSize: '10px',
+    color: '#64748B',
+    fontFamily: 'monospace',
+    marginTop: '8px',
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+  },
+  actions: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '12px',
+  },
+  retryButton: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    padding: '12px 24px',
+    borderRadius: '8px',
+    gap: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#FFFFFF',
+    fontSize: '14px',
+    fontWeight: '600',
+  },
+};
+
+export default ErrorBoundary;
+

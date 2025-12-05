@@ -64,8 +64,9 @@ import SequenceTemplatesScreen from '../screens/main/SequenceTemplatesScreen';
 import SequenceAnalyticsScreen from '../screens/main/SequenceAnalyticsScreen';
 
 // Marketing Screens
-import LandingPage from '../screens/marketing/LandingPage';
+import LandingPageAura from '../screens/marketing/LandingPage';
 import FelloLandingPage from '../web/pages/FelloLandingPage';
+import LandingPage from '../web/pages/LandingPage';
 
 // Legal Screens
 import ImpressumScreen from '../screens/legal/ImpressumScreen';
@@ -93,10 +94,10 @@ import TeamDashboardScreen from '../screens/main/TeamDashboardScreen';
 
 // Alerts Screen
 import AlertsListScreen from '../screens/AlertsListScreen';
-import MentorChatScreen from '../screens/MentorChatScreen';
+import MentorChatScreen from '../src/screens/MentorChatScreen';
 
 // Campaign Screen
-import CampaignScreen from '../screens/CampaignScreen';
+import CampaignScreen from '../src/screens/CampaignScreen';
 
 // Billing/Pricing/Settings Screens
 import PricingScreen from '../screens/settings/PricingScreen';
@@ -176,7 +177,8 @@ function AuthStack() {
       initialRouteName="FelloLanding"
     >
       <Stack.Screen name="FelloLanding" component={FelloLandingPage} />
-      <Stack.Screen name="Landing" component={LandingPage} />
+      <Stack.Screen name="Landing" component={FelloLandingPage} />
+      <Stack.Screen name="LandingAura" component={LandingPageAura} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen 
@@ -446,7 +448,7 @@ function AppStack() {
       {/* Marketing Screens */}
       <Stack.Screen 
         name="LandingPage" 
-        component={LandingPage}
+        component={FelloLandingPage}
         options={{
           headerShown: false,
           presentation: 'modal',

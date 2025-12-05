@@ -1,15 +1,25 @@
-import { cn } from '@/lib/utils';
+import React from 'react';
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('animate-pulse rounded-md bg-sf-surface/50', className)}
-      {...props}
-    />
-  );
+interface SkeletonProps {
+  className?: string;
+  width?: string | number;
+  height?: string | number;
 }
 
-export { Skeleton };
+export const Skeleton: React.FC<SkeletonProps> = ({ 
+  className = '', 
+  width, 
+  height 
+}) => {
+  return (
+    <div 
+      className={`animate-pulse bg-gray-700 rounded ${className}`}
+      style={{ 
+        width: width || '100%', 
+        height: height || '1rem' 
+      }}
+    />
+  );
+};
+
+export default Skeleton;
