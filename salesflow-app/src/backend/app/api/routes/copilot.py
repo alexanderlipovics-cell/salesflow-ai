@@ -217,3 +217,115 @@ async def generate_responses_anonymous(
         logger.exception(f"Error in anonymous copilot generate: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# =============================================================================
+# MOBILE APP ENDPOINT (Simplified - No Auth Required)
+# =============================================================================
+
+class MobileCopilotRequest(BaseModel):
+    """Simplified request for mobile app."""
+    message: str = Field(..., description="Lead message or user question")
+    lead_context: Optional[dict] = Field(default={}, description="Optional lead context")
+    conversation_history: Optional[List[dict]] = Field(default=[], description="Chat history")
+    context: Optional[dict] = Field(default={}, description="Additional context")
+    vertical: Optional[str] = Field(default="mlm_sales", description="Vertical/industry")
+
+
+class MobileCopilotResponse(BaseModel):
+    """Mobile-friendly response with main text and options."""
+    response: str = Field(..., description="Main response text")
+    analysis: AnalysisResult
+    options: List[ResponseOption]
+
+
+@router.post("/mobile/generate", response_model=MobileCopilotResponse)
+async def generate_mobile_responses(
+    request: MobileCopilotRequest,
+    db = Depends(get_db),
+):
+    """
+    Mobile App Endpoint - Vereinfachtes Format ohne Auth.
+    
+    Akzeptiert: {"message": "Lead text", "lead_context": {}, "conversation_history": []}
+    
+    Liefert:
+    - response: Hauptantwort-Text
+    - analysis: Sentiment + DISG Analyse
+    - options: 3 Antwort-Optionen (Soft, Direct, Question)
+    """
+    try:
+        # Convert mobile format to standard format
+        user_company = request.lead_context.get("company", "Network Marketing") if request.lead_context else "Network Marketing"
+        
+        user_input = json.dumps({
+            "user_company": user_company,
+            "lead_message": request.message,
+            "context": str(request.lead_context) if request.lead_context else ""
+        }, ensure_ascii=False)
+        
+        llm_client = get_llm_client()
+        
+        response_text = await llm_client.chat(
+            messages=[
+                {"role": "system", "content": FELLO_SYSTEM_PROMPT},
+                {"role": "user", "content": user_input}
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+            json_mode=True
+        )
+        
+        result = json.loads(response_text)
+        
+        analysis = AnalysisResult(
+            sentiment=result["analysis"].get("sentiment", "Unknown"),
+            disg_type=result["analysis"].get("disg_type", "Unknown"),
+            reasoning=result["analysis"].get("reasoning", "")
+        )
+        
+        options = []
+        for opt in result.get("options", []):
+            options.append(ResponseOption(
+                id=opt.get("id", "unknown"),
+                label=opt.get("label", ""),
+                tone=opt.get("tone", ""),
+                content=opt.get("content", ""),
+                tags=opt.get("tags", [])
+            ))
+        
+        # Generate main response text from first option or analysis
+        main_response = ""
+        if options:
+            main_response = f"**Analyse:** {analysis.sentiment} | DISG: {analysis.disg_type}\n\n"
+            main_response += f"**Empfehlung:** {options[0].content if options else analysis.reasoning}"
+        else:
+            main_response = analysis.reasoning
+        
+        logger.info(f"Mobile Copilot | DISG: {analysis.disg_type} | Sentiment: {analysis.sentiment}")
+        
+        return MobileCopilotResponse(
+            response=main_response,
+            analysis=analysis,
+            options=options
+        )
+        
+    except json.JSONDecodeError:
+        logger.error("Failed to parse LLM response as JSON")
+        raise HTTPException(status_code=500, detail="AI-Antwort konnte nicht verarbeitet werden")
+    except Exception as e:
+        logger.exception(f"Error in mobile copilot: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/health")
+async def copilot_health():
+    """Health-Check für den Copilot-Service."""
+    return {
+        "status": "ok",
+        "service": "copilot",
+        "endpoints": [
+            "/api/copilot/generate",
+            "/api/copilot/generate-anonymous", 
+            "/api/copilot/mobile/generate"
+        ]
+    }

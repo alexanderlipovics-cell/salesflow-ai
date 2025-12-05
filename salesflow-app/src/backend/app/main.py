@@ -142,6 +142,9 @@ from .api.routes.sales_intelligence import router as sales_intelligence_router
 # FELLO AI Copilot
 from .api.routes.copilot import router as copilot_router
 
+# Simple Chat for Mobile
+from .api.routes.chat import router as chat_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -431,6 +434,9 @@ app.include_router(sales_intelligence_router, prefix="/api/v1")
 
 # FELLO AI Copilot
 app.include_router(copilot_router, prefix="/api")
+
+# Simple Chat for Mobile
+app.include_router(chat_router, prefix="/api")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
