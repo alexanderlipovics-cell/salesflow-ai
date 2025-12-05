@@ -1,50 +1,53 @@
 """
 Konfigurationsmodul für das Sales Flow AI Backend.
+Lädt Umgebungsvariablen aus .env Datei.
 """
 
-from functools import lru_cache
 from typing import Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 
 
-class Settings(BaseModel):
+class Settings(BaseSettings):
     """Zentrale App-Einstellungen, geladen aus Environment-Variablen."""
 
     project_name: str = Field(default="Sales Flow AI Backend")
-    openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
-    openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
-    supabase_url: Optional[str] = Field(default=None, alias="SUPABASE_URL")
-    supabase_service_role_key: Optional[str] = Field(
-        default=None, alias="SUPABASE_SERVICE_ROLE_KEY"
-    )
-    default_org_id: Optional[str] = Field(
-        default="demo-org", alias="DEFAULT_ORG_ID"
-    )
-    default_user_id: Optional[str] = Field(
-        default="demo-user", alias="DEFAULT_USER_ID"
-    )
-    default_user_name: Optional[str] = Field(
-        default="Demo User", alias="DEFAULT_USER_NAME"
-    )
+    openai_api_key: Optional[str] = Field(default=None)
+    openai_model: str = Field(default="gpt-4o-mini")
+    supabase_url: Optional[str] = Field(default=None)
+    supabase_service_role_key: Optional[str] = Field(default=None)
+    default_org_id: Optional[str] = Field(default="demo-org")
+    default_user_id: Optional[str] = Field(default="demo-user")
+    default_user_name: Optional[str] = Field(default="Demo User")
 
     model_config = {
-        "populate_by_name": True,
-        "protected_namespaces": (),
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
 
 
-@lru_cache
+_settings_instance: Optional[Settings] = None
+
+
 def get_settings() -> Settings:
     """
     Liefert eine gecachte Settings-Instanz.
-    Die Nutzung von LRU-Cache verhindert wiederholtes Parsen der Env-Variablen.
     """
+    global _settings_instance
+    if _settings_instance is None:
+        _settings_instance = Settings()
+    return _settings_instance
 
-    return Settings()  # type: ignore[arg-type]
+
+def clear_settings_cache() -> None:
+    """Löscht den Settings-Cache (nützlich für Tests)."""
+    global _settings_instance
+    _settings_instance = None
 
 
-__all__ = ["Settings", "get_settings"]
+__all__ = ["Settings", "get_settings", "clear_settings_cache"]

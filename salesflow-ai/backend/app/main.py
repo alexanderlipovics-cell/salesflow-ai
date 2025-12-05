@@ -17,7 +17,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
    allow_origins=[
-    "https://closerclub.vercel.app",
+    "https://aura-os-topaz.vercel.app",  # ✅ Echte Vercel URL
     "http://localhost:5173",
 ]
     allow_credentials=True,

@@ -29,6 +29,8 @@ import AppShell from "./layout/AppShell";
 import ContactsPage from "@/pages/crm/ContactsPage";
 import ContactDetailPage from "@/pages/crm/ContactDetailPage";
 import PipelinePage from "@/pages/crm/PipelinePage";
+import LeadsPage from "@/pages/crm/LeadsPage";
+import LeadDetailPage from "@/pages/crm/LeadDetailPage";
 import TemplateLeaderboardPage from "./pages/TemplateLeaderboardPage";
 import AICoachPage from "./pages/AICoachPage";
 import { AnalyticsDashboard } from "./pages/AnalyticsDashboard";
@@ -50,6 +52,7 @@ import DashboardRouterPage from "./pages/DashboardRouterPage";
 import DashboardPage from "./pages/DashboardPage.tsx";
 import SquadCoachPage from "./pages/SquadCoachPage.tsx";
 import MarketingLandingPage from "./pages/MarketingLandingPage";
+import AutopilotPage from "./pages/AutopilotPage";
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -174,10 +177,13 @@ const App = () => {
                       <Route path="crm/contacts" element={<ContactsPage />} />
                       <Route path="crm/contacts/:id" element={<ContactDetailPage />} />
                       <Route path="crm/pipeline" element={<PipelinePage />} />
+                      <Route path="crm/leads" element={<LeadsPage />} />
+                      <Route path="crm/leads/:leadId" element={<LeadDetailPage />} />
                       <Route path="templates" element={<TemplateLeaderboardPage />} />
                       <Route path="coach" element={<AICoachPage />} />
                       <Route path="coach/squad" element={<SquadCoachPage />} />
                       <Route path="analytics" element={<AnalyticsDashboard />} />
+                      <Route path="autopilot" element={<AutopilotPage />} />
                       <Route path="power-hour" element={<PowerHourPage />} />
                       <Route path="churn-radar" element={<ChurnRadarPage />} />
                       <Route path="network-graph" element={<NetworkGraphPage />} />

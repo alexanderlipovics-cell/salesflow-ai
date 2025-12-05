@@ -5,15 +5,17 @@ WICHTIG:
 - System-Prompt kommt aus dem zentralen Prompt-Hub (app.core.ai_prompts)
 - Automatische Intent-Erkennung: detect_action_from_text analysiert User-Nachrichten
 - Action kann auch explizit übergeben werden (überschreibt Auto-Detection)
+- AUTOPILOT: Jede Nachricht wird als Message Event geloggt
+- NBA: Next Best Action wird bei vorhandenem Lead-Kontext mitgeliefert
 """
 
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Header
+from pydantic import BaseModel, Field
 
 from app.ai_client import AIClient
 from app.config import get_settings
@@ -28,6 +30,66 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
+# DEV User ID für Tests wenn kein Header gesetzt
+DEV_USER_ID = "dev-user-00000000-0000-0000-0000-000000000001"
+
+
+# ============================================
+# A/B EXPERIMENT CONFIGURATION
+# ============================================
+
+# Aktuelle Experiment-Einstellungen (V1 - Defaults)
+CURRENT_TEMPLATE_VERSION = "v1.0"
+CURRENT_PERSONA_VARIANT = "default"
+
+
+# ============================================
+# MESSAGE EVENT LOGGING (Silent - no exceptions)
+# ============================================
+
+async def log_message_event(
+    user_id: str,
+    text: str,
+    direction: str,
+    detected_action: Optional[str] = None,
+    template_version: Optional[str] = None,
+    persona_variant: Optional[str] = None,
+) -> None:
+    """
+    Loggt eine Nachricht als Message Event für Autopilot.
+    Wirft KEINE Exception - bei Fehlern wird nur geloggt.
+    
+    A/B Experiment: Bei outbound Nachrichten werden template_version 
+    und persona_variant mitgeloggt.
+    """
+    try:
+        from app.supabase_client import get_supabase_client, SupabaseNotConfiguredError
+        from app.schemas.message_events import MessageEventCreate
+        from app.db.repositories.message_events import create_message_event
+        
+        db = get_supabase_client()
+        
+        event_data = MessageEventCreate(
+            contact_id=None,
+            channel="internal",
+            direction=direction,
+            text=text,
+            raw_payload={"detected_action": detected_action} if detected_action else None,
+            # A/B Experiment Fields (nur bei outbound relevant)
+            template_version=template_version if direction == "outbound" else None,
+            persona_variant=persona_variant if direction == "outbound" else None,
+        )
+        
+        await create_message_event(db, user_id, event_data)
+        logger.debug(
+            f"Message event logged: direction={direction}, action={detected_action}, "
+            f"template={template_version}, persona={persona_variant}"
+        )
+        
+    except Exception as e:
+        # NIEMALS Exception werfen - nur loggen
+        logger.debug(f"Could not log message event (non-critical): {e}")
+
 
 class ChatCompletionRequest(BaseModel):
     """Request für Chat-Completion."""
@@ -41,6 +103,9 @@ class ChatCompletionRequest(BaseModel):
     mode: Optional[str] = None  # Alias für Mobile-App (cold_call, closing, etc.)
     # Optional: Zusätzlicher Kontext (z.B. Lead-Name, Branche)
     context: Optional[str] = None
+    # NBA: Lead/Contact ID für Next Best Action
+    lead_id: Optional[str] = Field(default=None, description="Lead UUID für NBA-Berechnung")
+    contact_id: Optional[str] = Field(default=None, description="Contact UUID für NBA-Berechnung")
     
     @property
     def effective_history(self) -> Optional[List[ChatMessage]]:
@@ -53,6 +118,14 @@ class ChatCompletionRequest(BaseModel):
         return self.action or self.mode
 
 
+class NextBestActionInfo(BaseModel):
+    """Next Best Action Empfehlung"""
+    action_key: str = Field(description="Action: follow_up, call_script, offer_create, closing_helper, nurture, wait")
+    reason: str = Field(description="Begründung auf Deutsch")
+    suggested_channel: str = Field(description="Empfohlener Kanal")
+    priority: int = Field(ge=1, le=5, description="Priorität 1-5")
+
+
 class ChatCompletionResponse(BaseModel):
     """Response mit AI-Antwort."""
 
@@ -62,6 +135,11 @@ class ChatCompletionResponse(BaseModel):
     message: Optional[str] = None   # Weiterer Alias
     # Gibt an, welche Action erkannt/verwendet wurde
     detected_action: Optional[str] = None
+    # Next Best Action (wenn Lead-Kontext vorhanden)
+    next_best_action: Optional[NextBestActionInfo] = Field(
+        default=None,
+        description="NBA Empfehlung basierend auf P-Score und Events"
+    )
 
 
 # ============================================
@@ -75,9 +153,50 @@ class ChatCompletionResponse(BaseModel):
 BRAIN_SYSTEM_PROMPT = SALES_COACH_PROMPT
 
 
+# ============================================
+# NBA HELPER (Silent - no exceptions)
+# ============================================
+
+async def get_nba_for_lead(
+    user_id: str,
+    lead_id: Optional[str] = None,
+    contact_id: Optional[str] = None,
+) -> Optional[NextBestActionInfo]:
+    """
+    Holt NBA für einen Lead/Contact. Wirft KEINE Exception.
+    """
+    if not lead_id and not contact_id:
+        return None
+    
+    try:
+        from app.supabase_client import get_supabase_client
+        from app.services.next_best_action import compute_next_best_action_for_lead
+        
+        db = get_supabase_client()
+        nba = await compute_next_best_action_for_lead(
+            db=db,
+            user_id=user_id,
+            lead_id=lead_id,
+            contact_id=contact_id,
+        )
+        
+        return NextBestActionInfo(
+            action_key=nba["action_key"],
+            reason=nba["reason"],
+            suggested_channel=nba["suggested_channel"],
+            priority=nba["priority"],
+        )
+    except Exception as e:
+        logger.warning(f"Could not compute NBA (non-critical): {e}")
+        return None
+
+
 @router.post("", response_model=ChatCompletionResponse)
 @router.post("/completion", response_model=ChatCompletionResponse)
-async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionResponse:
+async def chat_completion(
+    request: ChatCompletionRequest,
+    x_user_id: Optional[str] = Header(default=None, alias="X-User-Id"),
+) -> ChatCompletionResponse:
     """
     Verarbeitet eine Chat-Nachricht und gibt eine AI-Antwort zurück.
     
@@ -86,6 +205,7 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
     - Explizite Action kann übergeben werden (überschreibt Auto-Detection)
     - Nutzt OpenAI API wenn Key vorhanden
     - Fällt auf Mock-Modus zurück wenn kein Key gesetzt ist
+    - AUTOPILOT: Loggt alle Nachrichten als Message Events
     
     Erkannte Actions:
     - offer_create: Angebot erstellen
@@ -99,6 +219,9 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
     - analyze_lead: Lead-Analyse
     - generate_message: Nachricht generieren
     """
+    
+    # User-ID aus Header oder DEV fallback
+    user_id = x_user_id or DEV_USER_ID
     
     # 1. Action bestimmen (explizit oder auto-detected)
     detected_action: Optional[str] = None
@@ -115,6 +238,14 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
         if detected_action:
             logger.info(f"Action automatisch erkannt: {detected_action}")
     
+    # AUTOPILOT: Inbound Message Event loggen (silent)
+    await log_message_event(
+        user_id=user_id,
+        text=request.message,
+        direction="inbound",
+        detected_action=detected_action,
+    )
+    
     # 2. System-Prompt basierend auf Action bauen
     if detected_action:
         system_prompt = build_coach_prompt_with_action(detected_action)
@@ -125,15 +256,34 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
     if request.context:
         system_prompt += f"\n\n═══════════════════════════════════════\nKONTEXT:\n{request.context}"
     
+    # NBA berechnen (silent, non-blocking)
+    nba = await get_nba_for_lead(
+        user_id=user_id,
+        lead_id=request.lead_id,
+        contact_id=request.contact_id,
+    )
+    
     # Mock-Modus: Wenn kein OpenAI Key vorhanden ist
     if not settings.openai_api_key:
         logger.warning("OPENAI_API_KEY nicht gesetzt - Mock-Modus aktiv")
         mock_reply = generate_mock_response(request.message, detected_action)
+        
+        # AUTOPILOT: Outbound Message Event loggen (silent) mit A/B Tracking
+        await log_message_event(
+            user_id=user_id,
+            text=mock_reply,
+            direction="outbound",
+            detected_action=detected_action,
+            template_version=CURRENT_TEMPLATE_VERSION,
+            persona_variant=CURRENT_PERSONA_VARIANT,
+        )
+        
         return ChatCompletionResponse(
             reply=mock_reply,
             response=mock_reply,  # Alias für Mobile-App
             message=mock_reply,   # Weiterer Alias
-            detected_action=detected_action
+            detected_action=detected_action,
+            next_best_action=nba,
         )
     
     # Normaler Modus: OpenAI API nutzen
@@ -154,11 +304,22 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
         # AI-Antwort generieren
         reply = ai_client.generate(system_prompt, messages)
         
+        # AUTOPILOT: Outbound Message Event loggen (silent) mit A/B Tracking
+        await log_message_event(
+            user_id=user_id,
+            text=reply,
+            direction="outbound",
+            detected_action=detected_action,
+            template_version=CURRENT_TEMPLATE_VERSION,
+            persona_variant=CURRENT_PERSONA_VARIANT,
+        )
+        
         return ChatCompletionResponse(
             reply=reply,
             response=reply,  # Alias für Mobile-App
             message=reply,   # Weiterer Alias
-            detected_action=detected_action
+            detected_action=detected_action,
+            next_best_action=nba,
         )
         
     except Exception as exc:

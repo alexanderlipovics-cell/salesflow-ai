@@ -18,7 +18,8 @@ import {
   BookOpen,
   AlertTriangle,
   Network,
-  Shield
+  Shield,
+  Sparkles
 } from 'lucide-react';
 
 export const AppShell: React.FC = () => {
@@ -36,6 +37,13 @@ export const AppShell: React.FC = () => {
         { name: 'Hunter Board', href: '/hunter', icon: Crosshair },
       ]
     },
+    {
+      category: 'AI & AUTOMATION',
+      items: [
+        { name: 'Autopilot Cockpit', href: '/autopilot', icon: Sparkles, color: 'text-emerald-500' },
+        { name: 'AI Coach', href: '/coach', icon: Brain, color: 'text-blue-500' },
+      ]
+    },
     { 
       category: 'TOOLS', 
       items: [
@@ -45,7 +53,6 @@ export const AppShell: React.FC = () => {
         { name: 'Roleplay Dojo', href: '/roleplay-dojo', icon: MessageSquare, color: 'text-green-500' },
         { name: 'Außendienst', href: '/field-ops', icon: MapPin },
         { name: 'Objection Brain', href: '/objections', icon: Brain },
-        { name: 'KI-Assistent', href: '/chat', icon: MessageSquare },
         { name: 'Lead Import', href: '/import', icon: UploadCloud },
       ]
     },

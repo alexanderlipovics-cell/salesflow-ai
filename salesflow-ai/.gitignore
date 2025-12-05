@@ -214,3 +214,5 @@ __marimo__/
 
 # Node / Netlify functions
 node_modules/
+.vercel
+.env*.local

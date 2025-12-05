@@ -178,7 +178,61 @@ class DailyCommandResponse(BaseModel):
     items: List[DailyCommandItem] = Field(default_factory=list)
 
 
+# Autopilot Schemas
+from .autopilot import (
+    AutopilotChannel,
+    AutopilotMode,
+    AutopilotSettings,
+    AutopilotSettingsBase,
+    AutopilotSettingsCreate,
+    AutopilotSettingsListResponse,
+    AutopilotSettingsResponse,
+    AutopilotSettingsUpdate,
+)
+
+# Message Events Schemas
+from .message_events import (
+    AutopilotStatus,
+    MessageChannel,
+    MessageDirection,
+    MessageEvent,
+    MessageEventCreate,
+    MessageEventListResponse,
+    MessageEventResponse,
+    MessageEventStatusUpdate,
+    SuggestedReply,
+)
+
+# Lead Schemas (P-Score)
+from .leads import (
+    PScoreTrend,
+    LeadBase,
+    LeadCreate,
+    LeadUpdate,
+    Lead,
+    PScoreResult,
+    PScoreRecalcSummary,
+    LeadResponse,
+    LeadListResponse,
+    PScoreRecalcResponse,
+)
+
+# Zero-Input CRM Schemas
+from .zero_input_crm import (
+    NoteType,
+    NoteSource,
+    ZeroInputRequest,
+    CRMNoteCreate,
+    CRMNoteUpdate,
+    CRMNote,
+    SuggestedNextStep,
+    ConversationSummary,
+    ZeroInputResponse,
+    CRMNotesListResponse,
+)
+
 __all__ = [
+    # Action/Chat Schemas
     "ActionType",
     "ChatRole",
     "ChatMessage",
@@ -194,6 +248,47 @@ __all__ = [
     "NeedsActionResponse",
     "DailyCommandItem",
     "DailyCommandResponse",
+    # Autopilot Schemas
+    "AutopilotMode",
+    "AutopilotChannel",
+    "AutopilotSettingsBase",
+    "AutopilotSettingsCreate",
+    "AutopilotSettingsUpdate",
+    "AutopilotSettings",
+    "AutopilotSettingsResponse",
+    "AutopilotSettingsListResponse",
+    # Message Events Schemas
+    "MessageChannel",
+    "MessageDirection",
+    "AutopilotStatus",
+    "MessageEventCreate",
+    "MessageEvent",
+    "MessageEventResponse",
+    "MessageEventListResponse",
+    "MessageEventStatusUpdate",
+    "SuggestedReply",
+    # Lead Schemas (P-Score)
+    "PScoreTrend",
+    "LeadBase",
+    "LeadCreate",
+    "LeadUpdate",
+    "Lead",
+    "PScoreResult",
+    "PScoreRecalcSummary",
+    "LeadResponse",
+    "LeadListResponse",
+    "PScoreRecalcResponse",
+    # Zero-Input CRM Schemas
+    "NoteType",
+    "NoteSource",
+    "ZeroInputRequest",
+    "CRMNoteCreate",
+    "CRMNoteUpdate",
+    "CRMNote",
+    "SuggestedNextStep",
+    "ConversationSummary",
+    "ZeroInputResponse",
+    "CRMNotesListResponse",
 ]
 
 

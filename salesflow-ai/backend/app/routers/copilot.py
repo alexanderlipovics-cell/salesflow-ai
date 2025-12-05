@@ -4,7 +4,9 @@ Copilot-Router für Sales Coach AI.
 Dieser Router liefert intelligente Antwort-Optionen (Soft, Direkt, Frage)
 basierend auf der Nutzeranfrage und dem Kontext.
 
-WICHTIG: System-Prompt kommt aus dem zentralen Prompt-Hub (app.core.ai_prompts)
+WICHTIG: 
+- System-Prompt kommt aus dem zentralen Prompt-Hub (app.core.ai_prompts)
+- AUTOPILOT: Jede Nachricht wird als Message Event geloggt
 """
 
 from __future__ import annotations
@@ -13,15 +15,74 @@ import logging
 import os
 from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 
 from app.config import get_settings
-from app.core.ai_prompts import SALES_COACH_PROMPT
+from app.core.ai_prompts import SALES_COACH_PROMPT, detect_action_from_text
 
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+# DEV User ID für Tests wenn kein Header gesetzt
+DEV_USER_ID = "dev-user-00000000-0000-0000-0000-000000000001"
+
+# ============================================
+# A/B EXPERIMENT CONFIGURATION
+# ============================================
+
+# Aktuelle Experiment-Einstellungen (V1 - Defaults)
+CURRENT_TEMPLATE_VERSION = "v1.0"
+CURRENT_PERSONA_VARIANT = "default"
+
+
+# ============================================
+# MESSAGE EVENT LOGGING (Silent - no exceptions)
+# ============================================
+
+async def log_message_event(
+    user_id: str,
+    text: str,
+    direction: str,
+    detected_action: Optional[str] = None,
+    template_version: Optional[str] = None,
+    persona_variant: Optional[str] = None,
+) -> None:
+    """
+    Loggt eine Nachricht als Message Event für Autopilot.
+    Wirft KEINE Exception - bei Fehlern wird nur geloggt.
+    
+    A/B Experiment: Bei outbound Nachrichten werden template_version 
+    und persona_variant mitgeloggt.
+    """
+    try:
+        from app.supabase_client import get_supabase_client, SupabaseNotConfiguredError
+        from app.schemas.message_events import MessageEventCreate
+        from app.db.repositories.message_events import create_message_event
+        
+        db = get_supabase_client()
+        
+        event_data = MessageEventCreate(
+            contact_id=None,
+            channel="internal",
+            direction=direction,
+            text=text,
+            raw_payload={"detected_action": detected_action} if detected_action else None,
+            # A/B Experiment Fields (nur bei outbound relevant)
+            template_version=template_version if direction == "outbound" else None,
+            persona_variant=persona_variant if direction == "outbound" else None,
+        )
+        
+        await create_message_event(db, user_id, event_data)
+        logger.debug(
+            f"Copilot message event logged: direction={direction}, "
+            f"template={template_version}, persona={persona_variant}"
+        )
+        
+    except Exception as e:
+        # NIEMALS Exception werfen - nur loggen
+        logger.debug(f"Could not log copilot message event (non-critical): {e}")
 
 
 # ============================================
@@ -35,6 +96,9 @@ class CopilotRequest(BaseModel):
     lead_context: Optional[Dict[str, Any]] = {}
     conversation_history: Optional[List[Dict[str, str]]] = []
     vertical: Optional[str] = "mlm_sales"
+    # NBA: Lead/Contact ID für Next Best Action
+    lead_id: Optional[str] = None
+    contact_id: Optional[str] = None
 
 
 class CopilotOption(BaseModel):
@@ -53,11 +117,21 @@ class CopilotAnalysis(BaseModel):
     urgency: str
 
 
+class NextBestActionInfo(BaseModel):
+    """Next Best Action Empfehlung"""
+    action_key: str
+    reason: str
+    suggested_channel: str
+    priority: int
+
+
 class CopilotResponse(BaseModel):
     """Response mit Analyse und Optionen."""
     response: str  # Hauptantwort für einfache Clients
     analysis: CopilotAnalysis
     options: List[CopilotOption]
+    # Next Best Action (wenn Lead-Kontext vorhanden)
+    next_best_action: Optional[NextBestActionInfo] = None
 
 
 # ============================================
@@ -81,6 +155,44 @@ Jede Option soll konkret und Copy-Paste-bereit sein.
 
 # Kombinierter Prompt für den Copilot-Endpoint
 COPILOT_SYSTEM_PROMPT = SALES_COACH_PROMPT + COPILOT_OPTIONS_INSTRUCTION
+
+
+# ============================================
+# NBA HELPER (Silent - no exceptions)
+# ============================================
+
+async def get_nba_for_lead(
+    user_id: str,
+    lead_id: Optional[str] = None,
+    contact_id: Optional[str] = None,
+) -> Optional[NextBestActionInfo]:
+    """
+    Holt NBA für einen Lead/Contact. Wirft KEINE Exception.
+    """
+    if not lead_id and not contact_id:
+        return None
+    
+    try:
+        from app.supabase_client import get_supabase_client
+        from app.services.next_best_action import compute_next_best_action_for_lead
+        
+        db = get_supabase_client()
+        nba = await compute_next_best_action_for_lead(
+            db=db,
+            user_id=user_id,
+            lead_id=lead_id,
+            contact_id=contact_id,
+        )
+        
+        return NextBestActionInfo(
+            action_key=nba["action_key"],
+            reason=nba["reason"],
+            suggested_channel=nba["suggested_channel"],
+            priority=nba["priority"],
+        )
+    except Exception as e:
+        logger.warning(f"Could not compute NBA (non-critical): {e}")
+        return None
 
 
 # ============================================
@@ -366,15 +478,40 @@ Jede Option soll Copy-Paste-bereit sein!
 # ============================================
 
 @router.post("/generate", response_model=CopilotResponse)
-async def generate_copilot_response(request: CopilotRequest) -> CopilotResponse:
+async def generate_copilot_response(
+    request: CopilotRequest,
+    x_user_id: Optional[str] = Header(default=None, alias="X-User-Id"),
+) -> CopilotResponse:
     """
     Generiert FELLO Copilot Antworten mit 3 Optionen (Soft, Direkt, Frage).
     
     - Nutzt Anthropic/OpenAI wenn Key vorhanden
     - Fällt auf intelligente Mock-Antworten zurück
+    - AUTOPILOT: Loggt alle Nachrichten als Message Events
     """
     
+    # User-ID aus Header oder DEV fallback
+    user_id = x_user_id or DEV_USER_ID
+    
+    # Action Detection für Autopilot
+    detected_action = detect_action_from_text(request.message)
+    
+    # AUTOPILOT: Inbound Message Event loggen (silent)
+    await log_message_event(
+        user_id=user_id,
+        text=request.message,
+        direction="inbound",
+        detected_action=detected_action,
+    )
+    
     try:
+        # NBA berechnen (silent, non-blocking)
+        nba = await get_nba_for_lead(
+            user_id=user_id,
+            lead_id=request.lead_id,
+            contact_id=request.contact_id,
+        )
+        
         # Kontext zusammenführen
         context = {
             **(request.context or {}),
@@ -386,10 +523,21 @@ async def generate_copilot_response(request: CopilotRequest) -> CopilotResponse:
         # Response generieren
         response_data = await generate_ai_response(request.message, context)
         
+        # AUTOPILOT: Outbound Message Event loggen (silent) mit A/B Tracking
+        await log_message_event(
+            user_id=user_id,
+            text=response_data["response"][:500],  # Max 500 chars für Outbound
+            direction="outbound",
+            detected_action=detected_action,
+            template_version=CURRENT_TEMPLATE_VERSION,
+            persona_variant=CURRENT_PERSONA_VARIANT,
+        )
+        
         return CopilotResponse(
             response=response_data["response"],
             analysis=CopilotAnalysis(**response_data["analysis"]),
-            options=[CopilotOption(**opt) for opt in response_data["options"]]
+            options=[CopilotOption(**opt) for opt in response_data["options"]],
+            next_best_action=nba,
         )
         
     except Exception as e:
@@ -401,13 +549,42 @@ async def generate_copilot_response(request: CopilotRequest) -> CopilotResponse:
 
 
 @router.post("/generate-anonymous")
-async def generate_anonymous(request: dict):
-    """Generiert Nachricht ohne Auth - für Mobile App."""
+async def generate_anonymous(
+    request: dict,
+    x_user_id: Optional[str] = Header(default=None, alias="X-User-Id"),
+):
+    """Generiert Nachricht ohne Auth - für Mobile App. Loggt trotzdem Message Events."""
+    
+    # User-ID aus Header oder DEV fallback
+    user_id = x_user_id or DEV_USER_ID
+    
     try:
         message = request.get("lead_message", request.get("message", ""))
         context = request.get("context", "")
         
+        # Action Detection
+        detected_action = detect_action_from_text(message) if message else None
+        
+        # AUTOPILOT: Inbound Message Event loggen (silent)
+        if message:
+            await log_message_event(
+                user_id=user_id,
+                text=message,
+                direction="inbound",
+                detected_action=detected_action,
+            )
+        
         response_data = await generate_ai_response(message, {"context": context})
+        
+        # AUTOPILOT: Outbound Message Event loggen (silent) mit A/B Tracking
+        await log_message_event(
+            user_id=user_id,
+            text=response_data["response"][:500],
+            direction="outbound",
+            detected_action=detected_action,
+            template_version=CURRENT_TEMPLATE_VERSION,
+            persona_variant=CURRENT_PERSONA_VARIANT,
+        )
         
         return {
             "response": response_data["response"],
