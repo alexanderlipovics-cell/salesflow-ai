@@ -2,7 +2,7 @@
 Leads Router für FELLO - Lead Management mit Follow-up System.
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
@@ -56,10 +56,9 @@ async def get_pending_leads():
 
 
 @router.post("")
-async def create_lead(request: Request):
+async def create_lead(lead: dict = Body(...)):
     """Lead erstellen - flexibles Schema"""
     try:
-        lead = await request.json()
         db = get_supabase()
         
         if not lead.get("name"):
