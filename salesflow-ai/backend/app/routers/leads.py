@@ -88,7 +88,7 @@ async def create_lead(lead: dict = Body(...)):
 
 
 @router.put("/{lead_id}")
-async def update_lead(lead_id: str, lead: dict):
+async def update_lead(lead_id: str, lead: dict = Body(...)):
     try:
         db = get_supabase()
         lead["updated_at"] = datetime.now().isoformat()
