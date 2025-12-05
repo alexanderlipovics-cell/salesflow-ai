@@ -2,6 +2,12 @@
  * useAIChat Hook
  * 
  * Hook für AI Chat mit Lead-Kontext Integration.
+ * 
+ * WICHTIG: Der Haupt-System-Prompt (SALES_COACH_PROMPT) liegt im Backend:
+ * backend/app/core/ai_prompts.py
+ * 
+ * Dieses Frontend-Modul baut nur den Lead-Kontext, der an den Backend-Prompt
+ * angehängt wird. Es gibt KEINE eigene Prompt-Definition mehr im Frontend.
  */
 
 import { useCallback, useState } from 'react';
@@ -32,25 +38,27 @@ interface UseAIChatReturn {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// System Prompt Builder
+// Lead Context Builder (NICHT mehr der volle System-Prompt!)
 // ─────────────────────────────────────────────────────────────────
+// 
+// HINWEIS: Der eigentliche System-Prompt (SALES_COACH_PROMPT) liegt im Backend:
+// backend/app/core/ai_prompts.py
+// 
+// Diese Funktion baut nur den Lead-Kontext, der als Ergänzung an den
+// Backend-Prompt angehängt wird. Das "basePrompt" hier ist nur ein
+// leichtgewichtiges Frontend-Overlay für die Netlify-Bridge.
 
 export function buildSystemPrompt(context: LeadContext | null): string {
-  const basePrompt = `Du bist CHIEF, der Sales-Coach von Sales Flow AI.
-Du hilfst Vertrieblern dabei, ihre Leads optimal zu bearbeiten und mehr Deals abzuschließen.
-
-WICHTIGE REGELN:
-- Antworte IMMER auf Deutsch
-- Sei kurz, prägnant und actionable
-- Gib konkrete Handlungsempfehlungen
-- Nutze Emojis sparsam aber effektiv
-- Berücksichtige den Lead-Kontext bei deinen Antworten`;
+  // Leichtgewichtiges Frontend-Overlay
+  // Der vollständige SALES_COACH_PROMPT ist im Backend definiert
+  const basePrompt = `Du bist der Sales-Coach von Sales Flow AI.
+Antworte IMMER auf Deutsch. Sei kurz, prägnant und actionable.
+Berücksichtige den Lead-Kontext bei deinen Antworten.`;
 
   if (!context) {
     return `${basePrompt}
 
-Du hast aktuell keinen spezifischen Lead-Kontext geladen.
-Beantworte allgemeine Sales-Fragen und gib Best Practices.`;
+Kein Lead-Kontext geladen. Beantworte allgemeine Sales-Fragen.`;
   }
 
   const { lead, score, followup_status, recent_interactions, recent_messages } = context;

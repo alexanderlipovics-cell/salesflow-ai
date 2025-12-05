@@ -20,6 +20,7 @@ import {
   getAllPlans,
   getAvailableCompanies,
 } from '../config/compensation';
+import { normalizeCompanyKey } from '../config/companies';
 
 // ============================================
 // PLAN LOADING
@@ -28,28 +29,50 @@ import {
 /**
  * Lädt einen Compensation Plan
  * Primär aus lokaler Config, Fallback auf DB-Cache
+ * 
+ * @param companyId - Company-ID/Slug (wird automatisch normalisiert)
+ * @param region - Region (Standard: 'DE')
+ * @returns CompensationPlan oder null wenn nicht gefunden
  */
 export async function loadCompensationPlan(
   companyId: string,
   region: string = 'DE'
 ): Promise<CompensationPlan | null> {
-  // Primär: Lokale Config
-  const localPlan = getPlanById(companyId, region);
-  if (localPlan) {
-    return localPlan;
+  // Normalisiere den Company-Key
+  const normalizedKey = normalizeCompanyKey(companyId);
+  
+  // Primär: Lokale Config (wenn nicht 'other')
+  if (normalizedKey !== 'other') {
+    const localPlan = getPlanById(normalizedKey, region);
+    if (localPlan) {
+      return localPlan;
+    }
   }
   
-  // Fallback: DB-Cache
+  // Fallback: DB-Cache (mit originaler und normalisierter ID versuchen)
   try {
-    const { data, error } = await supabase
+    // Versuche erst mit normalisierter ID
+    let { data, error } = await supabase
       .from('compensation_plan_cache')
       .select('*')
-      .eq('company_id', companyId)
+      .eq('company_id', normalizedKey)
       .eq('region', region)
       .single();
     
+    // Falls nicht gefunden, versuche mit Original-ID
     if (error || !data) {
-      console.warn(`Plan not found: ${companyId} (${region})`);
+      const result = await supabase
+        .from('compensation_plan_cache')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('region', region)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
+    
+    if (error || !data) {
+      console.warn(`Compensation Plan not found: ${companyId} (normalized: ${normalizedKey}, region: ${region})`);
       return null;
     }
     

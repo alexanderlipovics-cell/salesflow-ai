@@ -1,8 +1,10 @@
 """
-Copilot-Router für FELLO - Sales AI Copilot.
+Copilot-Router für Sales Coach AI.
 
 Dieser Router liefert intelligente Antwort-Optionen (Soft, Direkt, Frage)
 basierend auf der Nutzeranfrage und dem Kontext.
+
+WICHTIG: System-Prompt kommt aus dem zentralen Prompt-Hub (app.core.ai_prompts)
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.config import get_settings
+from app.core.ai_prompts import SALES_COACH_PROMPT
 
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 settings = get_settings()
@@ -58,30 +61,16 @@ class CopilotResponse(BaseModel):
 
 
 # ============================================
-# SYSTEM PROMPT - FELLO PERSONALITY
+# SYSTEM PROMPT - Aus zentralem Prompt-Hub
 # ============================================
+# HINWEIS: SALES_COACH_PROMPT wird oben aus app.core.ai_prompts importiert
+# Der alte FELLO_SYSTEM_PROMPT wurde in den zentralen Hub verschoben und
+# mit BRAIN + MENTOR kombiniert zum einheitlichen SALES_COACH_PROMPT.
 
-FELLO_SYSTEM_PROMPT = """Du bist FELLO, der KI-Copilot für Network Marketing & Direktvertrieb.
+# Copilot-spezifische Erweiterung für 3-Optionen-Format
+COPILOT_OPTIONS_INSTRUCTION = """
 
-🎯 DEINE MISSION:
-Du hilfst Vertriebspartnern, bessere Gespräche zu führen und mehr Abschlüsse zu erzielen.
-
-💬 DEIN STIL:
-- Kurz, knackig, auf den Punkt
-- Praxisorientiert - sofort umsetzbare Tipps
-- Du duzt den User
-- Sales-Psychologie ist dein Werkzeug
-- Motivierend, aber realistisch
-
-📊 DEINE EXPERTISE:
-- Einwandbehandlung (LIRA-Framework)
-- Cold & Warm Outreach
-- Follow-Up Strategien
-- Closing Techniken
-- DISG-Persönlichkeitstypen
-- Network Marketing Best Practices
-
-🔥 ANTWORT-FORMAT:
+🔥 ANTWORT-FORMAT FÜR DIESEN MODUS:
 Liefere IMMER 3 Antwort-Optionen:
 1. SOFT (empathisch, beziehungsorientiert)
 2. DIREKT (klar, handlungsorientiert)  
@@ -89,6 +78,9 @@ Liefere IMMER 3 Antwort-Optionen:
 
 Jede Option soll konkret und Copy-Paste-bereit sein.
 """
+
+# Kombinierter Prompt für den Copilot-Endpoint
+COPILOT_SYSTEM_PROMPT = SALES_COACH_PROMPT + COPILOT_OPTIONS_INSTRUCTION
 
 
 # ============================================
@@ -315,7 +307,7 @@ async def generate_ai_response(message: str, context: Dict[str, Any]) -> Dict[st
             response = client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1500,
-                system=FELLO_SYSTEM_PROMPT,
+                system=COPILOT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": f"""
 Anfrage: {message}
 
@@ -353,7 +345,7 @@ Jede Option soll Copy-Paste-bereit sein!
             )
             
             messages = [ChatMessage(role="user", content=message)]
-            ai_text = ai_client.generate(FELLO_SYSTEM_PROMPT, messages)
+            ai_text = ai_client.generate(COPILOT_SYSTEM_PROMPT, messages)
             
             # Kombiniere AI-Text mit strukturierten Mock-Optionen
             mock_response = generate_mock_options(message)

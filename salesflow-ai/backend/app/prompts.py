@@ -1,11 +1,13 @@
 """
 Enthält die Prompt-Logik für alle Actions.
+
+WICHTIG: BASE_STYLE und ACTION_INSTRUCTIONS kommen aus dem zentralen Prompt-Hub.
+Diese Datei enthält nur noch die build_system_prompt Logik.
 """
 
 from __future__ import annotations
 
 import json
-from textwrap import dedent
 from typing import List, Optional
 
 from .schemas import ActionData, ActionType
@@ -13,13 +15,8 @@ from .scenario_service import fetch_scenarios, render_scenarios_as_knowledge
 from .templates import FOLLOWUP_TEMPLATES
 from .verticals import VERTICALS
 
-BASE_STYLE = dedent(
-    """
-    Du bist Sales Flow AI – ein freundlicher, direkter Revenue-Coach.
-    Sprich Nutzer immer mit "du" an, antworte knapp, WhatsApp-tauglich, ohne Floskeln.
-    Lieber praxisnah als akademisch. Nutze Emojis sparsam und nur wenn sie Mehrwert bringen.
-    """
-).strip()
+# Import aus dem zentralen Prompt-Hub
+from .core.ai_prompts import BASE_STYLE, ACTION_INSTRUCTIONS
 
 
 DEFAULT_VERTICAL_KEY = "chief"
@@ -81,28 +78,8 @@ def _inject_user_context(prompt: str, user_name: str, user_nickname: str) -> str
     return rendered
 
 
-ACTION_INSTRUCTIONS: dict[ActionType, str] = {
-    "chat": (
-        "Modus: Coaching/Chat.\n"
-        "Beantworte Fragen, teile Taktiken und nenne konkrete nächste Schritte."
-    ),
-    "generate_message": (
-        "Modus: Direktnachricht.\n"
-        "Erstelle 1 kurze Nachricht (max. 4 Zeilen) für WhatsApp/DM, direkt adressiert, locker."
-    ),
-    "analyze_lead": (
-        "Modus: Lead-Analyse.\n"
-        "Bewerte den Lead (kalt / warm / heiß), nenne die Begründung und schlage den nächsten Schritt vor."
-    ),
-    "create_template": (
-        "Modus: Template-Studio.\n"
-        "Baue wiederverwendbare Vorlagen mit Platzhaltern in eckigen Klammern, z. B. [NAME], [THEMA]."
-    ),
-    "knowledge_answer": (
-        "Modus: Knowledge Q&A.\n"
-        "Nutze ausschließlich den gelieferten Knowledge-Text. Wenn etwas fehlt, sag das ehrlich."
-    ),
-}
+# ACTION_INSTRUCTIONS wird aus app.core.ai_prompts importiert (siehe oben)
+# Die lokale Definition wurde entfernt - alle Actions sind jetzt zentral definiert.
 
 
 def build_system_prompt(action: ActionType, data: ActionData) -> str:

@@ -4,6 +4,12 @@
  * - Führt Chat-Anfragen an Claude/OpenAI/Gemini aus
  * - Bietet strukturierte Actions (Lead-Listen, Follow-ups) mit Supabase-Zugriff
  * - Liefert bei Bedarf Debug-Informationen über ausgeführte Queries
+ * 
+ * WICHTIG: Dies ist die „leichtgewichtige" Version des SALES_COACH_PROMPT.
+ * Der vollständige Prompt liegt im Backend: backend/app/core/ai_prompts.py
+ * 
+ * Diese Bridge wird von Frontend-Calls genutzt, die direkt über Netlify Functions
+ * gehen (z.B. vom useAIChat Hook). Der Stil orientiert sich am BASE_STYLE.
  */
 
 import { getSupabase } from "./supabaseClient.js";
@@ -27,18 +33,61 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-pro-latest";
 const SUPABASE_TABLE = "leads";
 
-const systemPrompt = `Du bist Sales Flow AI, ein Sales-Coach.
-- Antworte DIREKT, keine Erklärungen deiner Methode
+// ═══════════════════════════════════════════════════════════════════════════════
+// SYSTEM PROMPT - Leichtgewichtige Version des SALES_COACH_PROMPT
+// ═══════════════════════════════════════════════════════════════════════════════
+// Der vollständige SALES_COACH_PROMPT liegt im Backend: backend/app/core/ai_prompts.py
+// Dieser Prompt hier ist eine kompakte Version für die Netlify Bridge.
+// Stil orientiert sich am zentralen BASE_STYLE.
+
+const systemPrompt = `Du bist Sales Flow AI – ein freundlicher, direkter Revenue-Coach.
+
+STIL:
+- Sprich Nutzer immer mit "du" an
+- Antworte knapp, WhatsApp-tauglich, ohne Floskeln
+- Lieber praxisnah als akademisch
+- Nutze Emojis sparsam und nur wenn sie Mehrwert bringen
+- Antworte IMMER auf Deutsch
+
+FOKUS:
 - Gib copy-paste fertige Nachrichten
-- Kurz und prägnant
-Antworte auf Deutsch.`;
+- Liefere konkrete nächste Schritte
+- Sei kurz und prägnant`;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODULE_INSTRUCTIONS - Modus-spezifische Instruktionen
+// ═══════════════════════════════════════════════════════════════════════════════
+// Stilistisch an BASE_STYLE ausgerichtet.
 
 const MODULE_INSTRUCTIONS = {
-  general_sales: "Du bist der allgemeine Sales-Operator. Analysiere Leads, erkenne Chancen und antworte mit einem konkreten nächsten Schritt + Nachrichtentext.",
-  einwand_killer: "Modus: EINWAND-KILLER. Liefere exakt drei Antwortvarianten (Logisch / Emotional / Provokant) und bleibe respektvoll.",
-  speed_hunter_loop: "Modus: SPEED-HUNTER LOOP. Nenne den nächsten besten Lead, gib eine fertige Nachricht und einen klaren Call-to-Action.",
-  deal_medic: "Modus: DEAL-MEDIC. Analysiere Budget/Authority/Need/Timing, gib Urteil (stark/mittel/schwach) + konkrete Empfehlung.",
-  screenshot_reactivator: "Modus: SCREENSHOT-REACTIVATOR. Reaktiviere alte Kontakte, sortiere nach Potenzial und formuliere Follow-up-Vorschläge.",
+  general_sales: 
+    "Modus: Sales-Coach.\n" +
+    "Analysiere Leads, erkenne Chancen und antworte mit einem konkreten nächsten Schritt + Nachrichtentext.",
+  
+  einwand_killer: 
+    "Modus: EINWAND-KILLER.\n" +
+    "Liefere exakt drei Antwortvarianten (Logisch / Emotional / Provokant). " +
+    "Nutze das LIRA-Framework: Listen, Isolate, Reframe, Advance.",
+  
+  speed_hunter_loop: 
+    "Modus: SPEED-HUNTER.\n" +
+    "Nenne den nächsten besten Lead, gib eine fertige Nachricht und einen klaren CTA.",
+  
+  deal_medic: 
+    "Modus: DEAL-MEDIC.\n" +
+    "Analysiere Budget/Authority/Need/Timing, gib Urteil (stark/mittel/schwach) + konkrete Empfehlung.",
+  
+  screenshot_reactivator: 
+    "Modus: REAKTIVATOR.\n" +
+    "Reaktiviere alte Kontakte, sortiere nach Potenzial und formuliere Follow-up-Vorschläge.",
+  
+  follow_up:
+    "Modus: FOLLOW-UP.\n" +
+    "Schreibe eine kurze, wertschätzende Follow-up-Nachricht. Max. 5-6 Sätze, WhatsApp-tauglich.",
+  
+  closing_helper:
+    "Modus: CLOSING-HELPER.\n" +
+    "Erkenne Kaufsignale und schlage passende Closing-Techniken vor.",
 };
 
 const ACTION_MODULE_MAP = {
