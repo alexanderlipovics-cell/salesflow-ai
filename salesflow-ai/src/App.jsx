@@ -53,6 +53,9 @@ import DashboardPage from "./pages/DashboardPage.tsx";
 import SquadCoachPage from "./pages/SquadCoachPage.tsx";
 import MarketingLandingPage from "./pages/MarketingLandingPage";
 import AutopilotPage from "./pages/AutopilotPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import { ProtectedRoute } from "./components/auth";
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -140,10 +143,24 @@ const App = () => {
               <VerticalProvider>
                 <BrowserRouter>
                   <Routes>
+                    {/* Public Routes - Auth Pages */}
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/auth" element={<AuthPage />} />
+                    
+                    {/* Marketing/Landing */}
                     <Route path="/" element={<MarketingLandingPage />} />
                     <Route path="/app" element={<Navigate to="/chat" replace />} />
+                    
+                    {/* Onboarding (can be public or protected based on your needs) */}
                     <Route path="/onboarding" element={<OnboardingWizardPage />} />
-                    <Route element={<AppShell />}>
+                    
+                    {/* Protected Routes - Main App */}
+                    <Route element={
+                      <ProtectedRoute>
+                        <AppShell />
+                      </ProtectedRoute>
+                    }>
                       <Route path="chat" element={<ChatPage />} />
                       <Route path="daily-command" element={<DailyCommandPage />} />
                       <Route path="hunter" element={<HunterPage />} />
@@ -202,8 +219,9 @@ const App = () => {
                         />
                       ))}
                     </Route>
-                    <Route path="/auth" element={<AuthPage />} />
-                    <Route path="*" element={<Navigate to="/chat" replace />} />
+                    
+                    {/* Fallback - Redirect to login if not authenticated */}
+                    <Route path="*" element={<Navigate to="/login" replace />} />
                   </Routes>
                   <PricingModal />
                   <FeatureGateModal />

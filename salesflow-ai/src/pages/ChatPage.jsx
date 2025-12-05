@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Sparkles, Upload, User, Volume2, VolumeX } from "lucide-react";
 import { useVoice } from "../hooks/useVoice";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const initialMessages = [
   {

@@ -136,27 +136,162 @@ CREATE INDEX IF NOT EXISTS idx_ab_experiments_created_by ON ab_test_experiments(
 -- 4. A/B TEST RESULTS (Metrics Tracking)
 -- ============================================================================
 
+-- Prüfung: Existiert ab_test_experiments Tabelle?
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_name = 'ab_test_experiments'
+    ) THEN
+        RAISE EXCEPTION '❌ FEHLER: ab_test_experiments Tabelle existiert nicht!';
+    END IF;
+END $$;
+
+-- Prüfe ob Tabelle bereits existiert und ob sie die richtige Struktur hat
+DO $$
+BEGIN
+    -- Wenn Tabelle existiert, aber experiment_id Spalte fehlt, füge sie hinzu
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_name = 'ab_test_results'
+    ) THEN
+        -- Prüfe ob experiment_id Spalte fehlt
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'ab_test_results'
+              AND column_name = 'experiment_id'
+        ) THEN
+            ALTER TABLE ab_test_results ADD COLUMN experiment_id UUID;
+        END IF;
+        
+        -- Prüfe ob andere Spalten fehlen
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'ab_test_results'
+              AND column_name = 'variant_id'
+        ) THEN
+            ALTER TABLE ab_test_results ADD COLUMN variant_id TEXT;
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'ab_test_results'
+              AND column_name = 'metric_name'
+        ) THEN
+            ALTER TABLE ab_test_results ADD COLUMN metric_name TEXT;
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'ab_test_results'
+              AND column_name = 'metric_value'
+        ) THEN
+            ALTER TABLE ab_test_results ADD COLUMN metric_value FLOAT DEFAULT 1.0;
+        END IF;
+    END IF;
+END $$;
+
+-- Erstelle Tabelle (wenn nicht vorhanden)
 CREATE TABLE IF NOT EXISTS ab_test_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID NOT NULL REFERENCES ab_test_experiments(id) ON DELETE CASCADE,
-    variant_id TEXT NOT NULL,
+    experiment_id UUID,
+    variant_id TEXT,
     
     -- Message Link
     message_event_id UUID REFERENCES message_events(id),
     autopilot_job_id UUID REFERENCES autopilot_jobs(id),
-    contact_id UUID NOT NULL,
+    contact_id UUID,
     
     -- Metric
-    metric_name TEXT NOT NULL,  -- sent, opened, replied, converted, clicked
-    metric_value FLOAT NOT NULL DEFAULT 1.0,
+    metric_name TEXT,  -- sent, opened, replied, converted, clicked
+    metric_value FLOAT DEFAULT 1.0,
     
     -- Metadata
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
-    -- Constraints
+    -- Constraints werden separat hinzugefügt
     CONSTRAINT ab_results_metric_check CHECK (metric_name IN ('sent', 'opened', 'replied', 'converted', 'clicked'))
 );
+
+-- Setze NOT NULL Constraints (wenn Spalten existieren)
+DO $$
+BEGIN
+    -- Setze experiment_id auf NOT NULL (wenn Spalte existiert)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'ab_test_results'
+          AND column_name = 'experiment_id'
+          AND is_nullable = 'YES'
+    ) THEN
+        ALTER TABLE ab_test_results ALTER COLUMN experiment_id SET NOT NULL;
+    END IF;
+    
+    -- Setze variant_id auf NOT NULL
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'ab_test_results'
+          AND column_name = 'variant_id'
+          AND is_nullable = 'YES'
+    ) THEN
+        ALTER TABLE ab_test_results ALTER COLUMN variant_id SET NOT NULL;
+    END IF;
+    
+    -- Setze contact_id auf NOT NULL
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'ab_test_results'
+          AND column_name = 'contact_id'
+          AND is_nullable = 'YES'
+    ) THEN
+        ALTER TABLE ab_test_results ALTER COLUMN contact_id SET NOT NULL;
+    END IF;
+    
+    -- Setze metric_name auf NOT NULL
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'ab_test_results'
+          AND column_name = 'metric_name'
+          AND is_nullable = 'YES'
+    ) THEN
+        ALTER TABLE ab_test_results ALTER COLUMN metric_name SET NOT NULL;
+    END IF;
+END $$;
+
+-- Foreign Key separat hinzufügen (falls Tabelle bereits existiert)
+DO $$
+BEGIN
+    -- Prüfe ob Spalte existiert
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'ab_test_results'
+          AND column_name = 'experiment_id'
+    ) THEN
+        -- Prüfe ob Foreign Key bereits existiert
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE constraint_name = 'ab_test_results_experiment_id_fkey'
+              AND table_name = 'ab_test_results'
+        ) THEN
+            ALTER TABLE ab_test_results 
+            ADD CONSTRAINT ab_test_results_experiment_id_fkey 
+            FOREIGN KEY (experiment_id) 
+            REFERENCES ab_test_experiments(id) 
+            ON DELETE CASCADE;
+        END IF;
+    END IF;
+END $$;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ab_results_experiment ON ab_test_results(experiment_id);

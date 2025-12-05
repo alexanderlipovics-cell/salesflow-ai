@@ -77,7 +77,7 @@ export interface OutreachResult {
 // API BASE
 // ============================================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 async function apiCall<T>(
   endpoint: string,
@@ -86,7 +86,7 @@ async function apiCall<T>(
 ): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession();
   
-  const response = await fetch(`${API_BASE}/api/lead-generation${endpoint}`, {
+  const response = await fetch(`${API_BASE_URL}/api/lead-generation${endpoint}`, {
     method,
     headers: {
       'Content-Type': 'application/json',

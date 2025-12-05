@@ -1,105 +1,279 @@
-import { supabase } from './supabase';
-import type { User, Session, AuthError } from '@supabase/supabase-js';
-
-export interface SignUpMetadata {
-  name?: string;
-  full_name?: string;
-  mlm_company?: string;
-  plan?: 'free' | 'starter' | 'growth' | 'scale';
-  onboarding_completed?: boolean;
-}
-
-export interface UpdateUserData {
-  name?: string;
-  full_name?: string;
-  mlm_company?: string;
-  plan?: 'free' | 'starter' | 'growth' | 'scale';
-  onboarding_completed?: boolean;
-  [key: string]: any;
-}
-
 /**
- * Anmeldung mit Email und Passwort
+ * Authentication Service
+ * 
+ * Handles all authentication-related API calls
+ * - Login, Signup, Logout
+ * - Token management
+ * - Current user fetching
+ * 
+ * @author Frontend Auth Implementation
  */
-export async function signIn(email: string, password: string): Promise<{ data: { user: User | null; session: Session | null } | null; error: AuthError | null }> {
-  return await supabase.auth.signInWithPassword({ email, password });
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
-/**
- * Registrierung mit Email und Passwort
- */
-export async function signUp(
-  email: string,
-  password: string,
-  metadata?: SignUpMetadata
-): Promise<{ data: { user: User | null; session: Session | null } | null; error: AuthError | null }> {
-  return await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: metadata || {},
-    },
-  });
+interface SignupData {
+  email: string;
+  password: string;
+  name: string;
+  company?: string;
 }
 
-/**
- * Abmeldung
- */
-export async function signOut(): Promise<{ error: AuthError | null }> {
-  return await supabase.auth.signOut();
+interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
-/**
- * Passwort zurücksetzen - sendet E-Mail mit Reset-Link
- */
-export async function resetPassword(email: string, redirectTo?: string): Promise<{ error: AuthError | null }> {
-  return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: redirectTo || 'aura-os://reset-password',
-  });
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  company?: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
 }
 
-/**
- * Passwort aktualisieren (nach Reset-Link)
- */
-export async function updatePassword(newPassword: string): Promise<{ data: { user: User | null } | null; error: AuthError | null }> {
-  return await supabase.auth.updateUser({ password: newPassword });
+interface AuthResponse {
+  user: User;
+  tokens: AuthTokens;
+  message: string;
 }
 
-/**
- * User-Profil aktualisieren (Metadata)
- */
-export async function updateUser(data: UpdateUserData): Promise<{ data: { user: User | null } | null; error: AuthError | null }> {
-  return await supabase.auth.updateUser({
-    data,
-  });
+class AuthService {
+  /**
+   * Login user with email and password
+   */
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Login fehlgeschlagen');
+    }
+
+    const data: AuthResponse = await response.json();
+
+    // Store tokens in localStorage
+    this.setTokens(data.tokens);
+
+    return data;
+  }
+
+  /**
+   * Register new user
+   */
+  async signup(signupData: SignupData): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(signupData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Registrierung fehlgeschlagen');
+    }
+
+    const data: AuthResponse = await response.json();
+
+    // Store tokens in localStorage
+    this.setTokens(data.tokens);
+
+    return data;
+  }
+
+  /**
+   * Logout current user
+   */
+  async logout(): Promise<void> {
+    const token = this.getAccessToken();
+
+    if (token) {
+      try {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error('Logout API call failed:', error);
+      }
+    }
+
+    // Clear tokens from localStorage
+    this.clearTokens();
+  }
+
+  /**
+   * Get current user info
+   */
+  async getCurrentUser(): Promise<User | null> {
+    const token = this.getAccessToken();
+
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired, try to refresh
+          const refreshed = await this.refreshToken();
+          if (refreshed) {
+            // Retry with new token
+            return this.getCurrentUser();
+          }
+        }
+        throw new Error('Failed to get user info');
+      }
+
+      const data = await response.json();
+      return data.user;
+    } catch (error) {
+      console.error('Get current user failed:', error);
+      this.clearTokens();
+      return null;
+    }
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+
+    if (!refreshToken) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!response.ok) {
+        this.clearTokens();
+        return false;
+      }
+
+      const data = await response.json();
+      this.setTokens(data);
+
+      return true;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      this.clearTokens();
+      return false;
+    }
+  }
+
+  /**
+   * Change password
+   */
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    const token = this.getAccessToken();
+
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        old_password: oldPassword,
+        new_password: newPassword,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Passwort ändern fehlgeschlagen');
+    }
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    return !!this.getAccessToken();
+  }
+
+  /**
+   * Store tokens in localStorage
+   */
+  private setTokens(tokens: AuthTokens): void {
+    localStorage.setItem('access_token', tokens.access_token);
+    localStorage.setItem('refresh_token', tokens.refresh_token);
+  }
+
+  /**
+   * Get access token from localStorage
+   */
+  getAccessToken(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
+  /**
+   * Get refresh token from localStorage
+   */
+  private getRefreshToken(): string | null {
+    return localStorage.getItem('refresh_token');
+  }
+
+  /**
+   * Clear tokens from localStorage
+   */
+  private clearTokens(): void {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  }
+
+  /**
+   * Get authorization header
+   */
+  getAuthHeader(): Record<string, string> {
+    const token = this.getAccessToken();
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`,
+      };
+    }
+    return {};
+  }
 }
 
-/**
- * Aktuelle Session abrufen
- */
-export async function getSession(): Promise<{ data: { session: Session | null }; error: AuthError | null }> {
-  return await supabase.auth.getSession();
-}
+// Export singleton instance
+export const authService = new AuthService();
 
-/**
- * Auth State Change Listener
- */
-export function onAuthStateChange(
-  callback: (event: string, session: Session | null) => void
-): { data: { subscription: { unsubscribe: () => void } } } {
-  return supabase.auth.onAuthStateChange((event, session) => {
-    callback(event, session);
-  });
-}
-
-/**
- * Aktuellen User abrufen
- */
-export async function getCurrentUser(): Promise<{ data: { user: User | null }; error: AuthError | null }> {
-  const { data: { session }, error } = await getSession();
-  return {
-    data: { user: session?.user ?? null },
-    error,
-  };
-}
-
+// Export types
+export type { LoginCredentials, SignupData, AuthTokens, User, AuthResponse };

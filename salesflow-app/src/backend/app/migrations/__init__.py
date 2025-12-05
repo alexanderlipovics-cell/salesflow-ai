@@ -1,4 +1,0 @@
-"""
-Database Migrations Package
-"""
-

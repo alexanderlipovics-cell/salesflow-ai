@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     default_org_id: Optional[str] = Field(default="demo-org")
     default_user_id: Optional[str] = Field(default="demo-user")
     default_user_name: Optional[str] = Field(default="Demo User")
+    
+    # JWT Settings
+    jwt_secret_key: str = Field(
+        default="CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_USE_STRONG_RANDOM_STRING",
+        description="Secret key for JWT token encoding/decoding"
+    )
+    jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
 
     model_config = {
         "env_file": ".env",

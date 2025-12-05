@@ -18,7 +18,8 @@ interface PhoenixResponse {
   suggestions: PhoenixSuggestion[];
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BACKEND_URL = API_BASE_URL;
 
 const PhoenixPage = () => {
   const { user } = useAuth();

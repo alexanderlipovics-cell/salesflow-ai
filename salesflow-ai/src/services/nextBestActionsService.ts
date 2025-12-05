@@ -34,6 +34,12 @@ export type NextBestAction = {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// API Configuration
+// ─────────────────────────────────────────────────────────────────
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// ─────────────────────────────────────────────────────────────────
 // Service Functions
 // ─────────────────────────────────────────────────────────────────
 
@@ -47,7 +53,7 @@ export async function fetchNextBestActions(
 ): Promise<NextBestAction[]> {
   if (!tasks.length) return [];
 
-  const response = await fetch("http://localhost:8000/api/next-best-actions/suggest", {
+  const response = await fetch(`${API_BASE_URL}/api/next-best-actions/suggest`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

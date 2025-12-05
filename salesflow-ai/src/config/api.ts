@@ -11,7 +11,7 @@ export const API_CONFIG = {
   USE_MOCK_API: isDevelopment, // Auto: Mock in dev, Live in production
 
   // API Base URLs
-  LIVE_API_BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8000/mobile/',
+  LIVE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
   MOCK_API_BASE_URL: 'mock://', // Special protocol for mock
 
   // Timeouts

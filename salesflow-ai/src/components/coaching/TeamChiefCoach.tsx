@@ -43,7 +43,7 @@ export const TeamChiefCoach: React.FC<TeamChiefCoachProps> = ({ squadId }) => {
         throw new Error("Not authenticated");
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
       const response = await fetch(`${API_BASE_URL}/api/squad/coach`, {
         method: "POST",

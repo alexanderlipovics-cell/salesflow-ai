@@ -1,3 +1,0 @@
-"""Hilfsfunktionen und Utilities."""
-
-

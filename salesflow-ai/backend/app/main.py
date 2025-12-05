@@ -16,16 +16,18 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-   allow_origins=[
-    "https://aura-os-topaz.vercel.app",  # ✅ Echte Vercel URL
-    "http://localhost:5173",
-]
+    allow_origins=[
+        "https://aura-os-topaz.vercel.app",  # ✅ Echte Vercel URL
+        "http://localhost:5173",
+        "http://localhost:5174",  # Vite Dev Server (alternativer Port)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Router importieren (aus app/routers/)
+from .routers.auth import router as auth_router  # JWT Authentication
 from .routers.leads import router as leads_router
 from .routers.copilot import router as copilot_router
 from .routers.chat import router as chat_router
@@ -38,6 +40,7 @@ from .routers.lead_generation import router as lead_gen_router  # Non Plus Ultra
 from .routers.idps import router as idps_router  # IDPS: Intelligent DM Persistence System
 
 # Router registrieren
+app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
 app.include_router(leads_router, prefix="/api")
 app.include_router(copilot_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")

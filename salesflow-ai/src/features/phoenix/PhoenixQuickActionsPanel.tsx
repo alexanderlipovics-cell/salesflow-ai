@@ -18,12 +18,8 @@ interface PhoenixResponse {
   suggestions: PhoenixSuggestion[];
 }
 
-const env =
-  (import.meta as ImportMeta & {
-    env?: Record<string, string | undefined>;
-  }).env ?? {};
-
-const BACKEND_URL = env.VITE_BACKEND_URL || "http://localhost:8001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BACKEND_URL = API_BASE_URL;
 
 type QuickMode = "networker" | "immo" | "cafes";
 
