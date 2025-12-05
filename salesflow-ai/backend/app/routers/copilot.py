@@ -427,5 +427,56 @@ async def copilot_health():
     }
 
 
+@router.post("/analyze-screenshot")
+async def analyze_screenshot(request: dict):
+    """Analysiert Chat-Screenshot und extrahiert Lead-Daten."""
+    import anthropic
+    import json
+    
+    try:
+        image_base64 = request.get("image_base64")
+        
+        if not image_base64:
+            raise HTTPException(status_code=400, detail="image_base64 ist erforderlich")
+        
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+        if not anthropic_key:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY nicht konfiguriert")
+        
+        client = anthropic.Anthropic(api_key=anthropic_key)
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_base64}},
+                    {"type": "text", "text": """Analysiere diesen Chat-Screenshot.
+
+Extrahiere:
+1. Name des Kontakts
+2. Plattform (Instagram, WhatsApp, Facebook, LinkedIn, TikTok)
+3. Letzte Nachricht des Kontakts
+4. Status: NEW (neu), CONVERSATION (im Gespräch), INTERESTED (interessiert), SKEPTICAL (skeptisch), GHOSTING (antwortet nicht mehr)
+5. Temperatur 0-100 (wie kaufbereit ist der Lead)
+6. Tags (z.B. ["Instagram", "Mama", "Fitness"])
+
+Antworte NUR als JSON:
+{"name": "...", "platform": "...", "lastMessage": "...", "status": "...", "temperature": 50, "tags": [...]}"""}
+                ]
+            }]
+        )
+        
+        result = json.loads(response.content[0].text)
+        return result
+        
+    except json.JSONDecodeError as e:
+        logger.exception(f"Screenshot JSON parse error: {e}")
+        raise HTTPException(status_code=500, detail="Konnte AI-Antwort nicht parsen")
+    except Exception as e:
+        logger.exception(f"Screenshot analyze error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 __all__ = ["router"]
 
