@@ -1,295 +1,234 @@
 # 🤖 AI Autopilot
 
-Der **Autopilot** analysiert Ihre Leads und schlägt automatisch nächste Schritte vor. Er nutzt künstliche Intelligenz, um personalisierte Nachrichten zu generieren und den optimalen Zeitpunkt für Kontaktaufnahme zu bestimmen.
+Der Autopilot analysiert Ihre Leads und schlägt automatisch nächste Schritte vor – powered by GPT-4o und Claude 3.5.
 
 ---
 
 ## Wie der Autopilot arbeitet
 
-### 1. Analyse
-Sobald ein Lead erstellt wird oder eine Nachricht eingeht, scannt die KI:
-- Firmendaten und Website
-- LinkedIn-Profil
-- Vorherige Interaktionen
-- Kontext und Timing
+```mermaid
+sequenceDiagram
+    participant L as Lead
+    participant A as Autopilot
+    participant AI as AI Engine
+    participant U as User
 
-### 2. Scoring
-Der Lead erhält einen **Confidence Score** (0-1):
-- **≥ 0.85:** Automatische Generierung und Vorschlag
-- **< 0.85:** Sendet zur manuellen Überprüfung in die Review Queue
+    L->>A: Neuer Lead erstellt
+    A->>AI: Analysiere Lead-Daten
+    AI->>AI: Score berechnen
+    AI->>AI: Recherche (optional)
+    AI-->>A: Score + Empfehlungen
+    A->>A: E-Mail Draft generieren
+    A-->>U: Benachrichtigung
+    U->>A: Review & Approve
+    A->>L: E-Mail gesendet
+```
 
-### 3. Suggestion
-Die KI generiert einen **personalisierten E-Mail-Entwurf** basierend auf:
-- Lead-Profil
-- Firmeninformationen
-- Best Practices
-- A/B Test Erkenntnissen
+### Die 3 Schritte
 
-### 4. Scheduling
-Der Autopilot bestimmt den **optimalen Zeitpunkt** basierend auf:
-- Kontakt-Zeitzone
-- Beste Kontaktzeit (aus historischen Daten)
-- Rate Limiting (verhindert Spam)
-
-### 5. Approval & Sending
-- **Automatisch:** Wenn Confidence ≥ 0.85 und Auto-Approve aktiviert
-- **Manuell:** Wenn Confidence < 0.85 oder Auto-Approve deaktiviert
+| Step | Was passiert | Dauer |
+|------|--------------|-------|
+| 1️⃣ **Analyse** | KI scannt Firmendaten, LinkedIn, Website | ~5 Sek |
+| 2️⃣ **Scoring** | Lead erhält Score (0-100) basierend auf Potenzial | instant |
+| 3️⃣ **Suggestion** | KI generiert personalisierten E-Mail-Entwurf | ~3 Sek |
 
 ---
 
-## Screenshot: Autopilot Sidebar
+## Autopilot aktivieren
 
-### Screenshot Anweisung
+1. Gehen Sie zu **Einstellungen** → **Autopilot**
+2. Aktivieren Sie den Schalter "Autopilot aktiv"
+3. Wählen Sie Ihre Präferenzen:
 
-**Datei:** `docs/user-guide/screenshots/autopilot-sidebar.png`
+> **📸 Screenshot Anweisung:**
+> - Screenshot der Autopilot-Einstellungen
+> - Zeige: Toggle-Schalter, Dropdown für "Aggressivität"
+> - Caption: *"Autopilot-Konfiguration"*
 
-**Was zu sehen sein sollte:**
-- Geöffneter Lead-Detail-View
-- Autopilot Sidebar auf der rechten Seite
-- Generierte E-Mail-Draft Box mit:
-  - Betreff: "Ihr Interesse an [Produkt]"
-  - Nachrichtentext (personalisiert)
-  - Confidence Score: 0.92 (grün markiert)
-- **"Approve & Send"** Button (rot umkreist)
-- **"Edit"** Button
-- **"Reject"** Button
-- **"Schedule for later"** Option
+### Konfigurations-Optionen
 
-**Annotation:**
-- Pfeil auf Confidence Score: "92% Confidence - Auto-Approve möglich"
-- Kreis um "Approve & Send" Button
-
-**Caption:** *Der Autopilot schlägt eine personalisierte Intro-Email vor. Bei hohem Confidence Score kann die Nachricht automatisch gesendet werden.*
+| Option | Beschreibung | Empfehlung |
+|--------|--------------|------------|
+| **Aktiviert** | An/Aus | An für aktive Seller |
+| **Aggressivität** | Konservativ / Balanced / Aggressiv | Balanced |
+| **Auto-Send** | Ohne Review senden | ⚠️ Nur für erfahrene Nutzer |
+| **Kanäle** | E-Mail, LinkedIn, WhatsApp | Mindestens E-Mail |
 
 ---
 
-## Autopilot Einstellungen
+## AI-generierte Vorschläge
 
-### Zugriff
-1. Klicken Sie auf **"Einstellungen"** in der Sidebar
-2. Wählen Sie **"Autopilot"**
+Wenn der Autopilot einen Vorschlag hat, sehen Sie:
 
-### Screenshot Anweisung
+> **📸 Screenshot Anweisung:**
+> - Screenshot eines offenen Leads, Fokus auf "Autopilot Sidebar"
+> - Visual: Zeige die generierte E-Mail-Draft Box
+> - Annotation: Kreise den "Approve & Send" Button ein
+> - Caption: *"Der Autopilot schlägt eine personalisierte Intro-Email vor"*
 
-**Datei:** `docs/user-guide/screenshots/autopilot-settings.png`
+### Vorschlag-Typen
 
-**Was zu sehen sein sollte:**
-- Autopilot Settings Seite
-- Toggle: "Autopilot aktivieren" (AN)
-- Toggle: "Auto-Approve bei hohem Confidence" (AUS)
-- Slider: "Confidence Threshold" (0.85)
-- Dropdown: "Standard Kanal" (Email)
-- Checkboxen: "Kanäle aktivieren"
-  - ☑ Email
-  - ☑ WhatsApp
-  - ☐ LinkedIn
-  - ☐ Instagram
-
-**Caption:** *Autopilot Einstellungen. Hier können Sie den Confidence Threshold anpassen und Kanäle aktivieren.*
+| Typ | Icon | Beschreibung |
+|-----|------|--------------|
+| 📧 **E-Mail Draft** | ✉️ | Personalisierter E-Mail-Entwurf |
+| 📞 **Call Reminder** | 📱 | Erinnerung zum Anruf mit Talking Points |
+| 🔗 **LinkedIn Action** | 💼 | Connection Request oder Nachricht |
+| 📅 **Meeting Vorschlag** | 📆 | Optimaler Termin basierend auf Engagement |
 
 ---
 
-### Wichtige Einstellungen
+## Confidence Score
 
-| Einstellung | Beschreibung | Empfohlen |
-|-------------|-------------|-----------|
-| **Autopilot aktivieren** | Aktiviert/deaktiviert den Autopilot | ✅ Aktiviert |
-| **Auto-Approve** | Sendet automatisch bei Confidence ≥ Threshold | ⚠️ Vorsichtig nutzen |
-| **Confidence Threshold** | Mindest-Confidence für Auto-Approve | 0.85 (85%) |
-| **Standard Kanal** | Standard-Kanal für Nachrichten | Email |
-| **Rate Limiting** | Max. Nachrichten pro Tag/Kontakt | 3 pro Tag |
+Jeder Vorschlag hat einen **Confidence Score**:
+
+```mermaid
+pie title Confidence Score Bedeutung
+    "Sehr Sicher (85-100%)" : 40
+    "Sicher (70-84%)" : 35
+    "Unsicher (50-69%)" : 20
+    "Review nötig (<50%)" : 5
+```
+
+| Score | Bedeutung | Was tun? |
+|-------|-----------|----------|
+| 🟢 85-100% | Sehr sicher | Auto-Send möglich |
+| 🟡 70-84% | Sicher | Kurzer Review empfohlen |
+| 🟠 50-69% | Unsicher | Manuell prüfen |
+| 🔴 <50% | Review nötig | Immer manuell prüfen! |
+
+---
+
+## Vorschlag bearbeiten
+
+Sie können jeden Vorschlag anpassen:
+
+1. Klicken Sie auf **"Bearbeiten"** im Vorschlag
+2. Passen Sie Text, Betreff oder Timing an
+3. Klicken Sie **"Speichern & Senden"** oder **"Nur Speichern"**
+
+### Best Practices für Edits
+
+✅ **Personalisierung hinzufügen:**
+- Erwähnen Sie ein konkretes Problem des Leads
+- Referenzieren Sie einen LinkedIn-Post oder News-Artikel
+
+❌ **Vermeiden:**
+- Zu viel "Sales Speak" hinzufügen
+- Den Ton komplett ändern (bricht AI-Konsistenz)
+
+---
+
+## Autopilot Dashboard
+
+Das Dashboard zeigt:
+
+```mermaid
+graph TD
+    subgraph Dashboard
+        A[Aktive Kampagnen: 12]
+        B[Heute gesendet: 45]
+        C[Open Rate: 34%]
+        D[Reply Rate: 8%]
+    end
+    
+    subgraph Pending
+        E[Awaiting Review: 7]
+        F[Scheduled: 23]
+    end
+    
+    A --> E
+    B --> F
+```
+
+> **📸 Screenshot Anweisung:**
+> - Screenshot des Autopilot Dashboards
+> - Zeige: KPI-Karten oben, Pending Queue unten
+> - Caption: *"Autopilot Dashboard mit Echtzeit-Metriken"*
 
 ---
 
 ## Review Queue
 
-Wenn der Confidence Score unter dem Threshold liegt, werden Vorschläge in die **Review Queue** gesendet.
+Vorschläge mit niedrigem Confidence Score landen in der **Review Queue**:
 
-### Screenshot Anweisung
+1. Gehen Sie zu **Autopilot** → **Review Queue**
+2. Sehen Sie alle Vorschläge, die Ihre Aufmerksamkeit brauchen
+3. Für jeden Vorschlag: **Approve**, **Edit**, oder **Dismiss**
 
-**Datei:** `docs/user-guide/screenshots/review-queue.png`
+### Queue-Priorisierung
 
-**Was zu sehen sein sollte:**
-- Review Queue Seite
-- Liste von Vorschlägen mit:
-  - Lead Name
-  - Confidence Score (z.B. 0.72 - gelb markiert)
-  - Vorschlag-Vorschau
-  - "Approve", "Edit", "Reject" Buttons
-- Filter: "Nach Confidence Score", "Nach Kanal"
-- Pagination
-
-**Caption:** *Die Review Queue zeigt alle Vorschläge, die manuelle Überprüfung benötigen.*
+| Priorität | Kriterium |
+|-----------|-----------|
+| 🔴 Hoch | Lead Score > 70, Confidence < 70% |
+| 🟠 Mittel | Lead Score 40-70 |
+| 🟢 Niedrig | Lead Score < 40 |
 
 ---
 
 ## A/B Testing
 
-Der Autopilot nutzt **A/B Testing**, um die besten Nachrichten-Templates zu finden.
+Der Autopilot testet automatisch verschiedene Varianten:
 
-### Wie es funktioniert
+| Variante | Betreff | Performance |
+|----------|---------|-------------|
+| A | "Kurze Frage zu {Company}" | Open: 42% |
+| B | "{FirstName}, passt das?" | Open: 38% |
+| C | "Idee für {Company}" | Open: 51% ✅ |
 
-1. **Experiment erstellen:**
-   - Definieren Sie Varianten (z.B. "Empathetic", "Direct", "Question")
-   - Setzen Sie Traffic Split (z.B. 33% / 33% / 34%)
-   - Wählen Sie Ziel-Metrik (z.B. Reply Rate)
-
-2. **Automatische Verteilung:**
-   - Der Autopilot verteilt Leads zufällig auf Varianten
-   - Jede Variante wird gleich oft getestet
-
-3. **Ergebnisse tracken:**
-   - Reply Rate, Open Rate, Conversion Rate werden gemessen
-   - Nach 30+ Nachrichten wird der Gewinner ermittelt
-
-4. **Auto-Optimization:**
-   - Die beste Variante wird automatisch bevorzugt
-   - Neue Experimente können gestartet werden
-
-### Screenshot Anweisung
-
-**Datei:** `docs/user-guide/screenshots/ab-test-dashboard.png`
-
-**Was zu sehen sein sollte:**
-- A/B Test Dashboard
-- Aktives Experiment: "Objection Handling V1"
-- Drei Varianten mit Metriken:
-  - Variant A (Empathetic): 45% Reply Rate
-  - Variant B (Direct): 52% Reply Rate ⭐
-  - Variant C (Question): 38% Reply Rate
-- Graph zeigt Performance über Zeit
-- "Variant B ist der Gewinner" Badge
-
-**Caption:** *A/B Test Dashboard zeigt die Performance verschiedener Nachrichten-Varianten.*
+Die beste Variante wird automatisch für neue Leads verwendet.
 
 ---
 
-## Rate Limiting
+## Kanäle konfigurieren
 
-Der Autopilot verhindert Spam durch **Rate Limiting**:
+### E-Mail Setup
 
-- **Pro Kontakt:** Max. 3 Nachrichten pro Tag
-- **Pro Kanal:** Max. 10 Nachrichten pro Tag
-- **Global:** Max. 100 Nachrichten pro Tag (kann angepasst werden)
+1. **Einstellungen** → **Kanäle** → **E-Mail**
+2. Verbinden Sie Ihr E-Mail-Konto (Gmail, Outlook, SMTP)
+3. Verifizieren Sie Ihre Absender-Adresse
 
-Wenn das Limit erreicht ist, werden Nachrichten automatisch für den nächsten Tag geplant.
+### LinkedIn Setup
 
----
+1. **Einstellungen** → **Kanäle** → **LinkedIn**
+2. Installieren Sie die Browser-Extension
+3. Autorisieren Sie SalesFlow
 
-## Intelligent Scheduling
+### WhatsApp Setup (Business API)
 
-Der Autopilot bestimmt den **optimalen Zeitpunkt** basierend auf:
-
-### Faktoren
-
-1. **Zeitzone des Kontakts**
-   - Automatisch erkannt oder manuell gesetzt
-   - Nachrichten werden zur lokalen Zeit gesendet
-
-2. **Beste Kontaktzeit**
-   - Aus historischen Daten gelernt
-   - Standard: 14:00 Uhr (2 PM) lokale Zeit
-
-3. **Wochentag**
-   - Montag-Freitag bevorzugt
-   - Wochenenden vermieden (außer konfiguriert)
-
-4. **Rate Limiting**
-   - Verhindert zu viele Nachrichten am selben Tag
-
-### Beispiel
-
-```
-Kontakt: Max Mustermann (Berlin, UTC+1)
-Beste Zeit: 14:00 Uhr
-Geplante Nachricht: Morgen, 14:00 Uhr MEZ
-```
+1. **Einstellungen** → **Kanäle** → **WhatsApp**
+2. Verbinden Sie Ihre WhatsApp Business API
+3. Wählen Sie zugelassene Templates
 
 ---
 
-## Kanäle
+## Limits & Fair Use
 
-Der Autopilot unterstützt mehrere Kanäle:
-
-| Kanal | Status | Features |
-|-------|--------|----------|
-| **Email** | ✅ Aktiv | Personalisierte E-Mails, HTML Templates |
-| **WhatsApp** | ✅ Aktiv | Text-Nachrichten, Media Support |
-| **LinkedIn** | 🟡 Beta | InMail, Connection Requests |
-| **Instagram** | 🟡 Beta | Direct Messages |
-
-### Kanal-Konfiguration
-
-Jeder Kanal benötigt API-Credentials:
-
-1. Gehen Sie zu **Einstellungen → Kanäle**
-2. Wählen Sie einen Kanal
-3. Geben Sie API-Keys ein:
-   - **Email:** SMTP Credentials oder SendGrid API Key
-   - **WhatsApp:** WhatsApp Business API Credentials
-   - **LinkedIn:** LinkedIn API Credentials
-   - **Instagram:** Instagram Graph API Credentials
+| Plan | Tägliche AI-Calls | Auto-Send Limit |
+|------|-------------------|-----------------|
+| Free | 10 | 0 (nur Manual) |
+| Pro | 100 | 25 |
+| Enterprise | Unlimited | Unlimited |
 
 ---
 
-## Monitoring & Analytics
+## Troubleshooting
 
-### Autopilot Dashboard
+### "Autopilot generiert keine Vorschläge"
 
-**Screenshot Anweisung**
+- ✅ Prüfen Sie, ob Autopilot aktiviert ist
+- ✅ Prüfen Sie, ob der Lead eine E-Mail hat
+- ✅ Prüfen Sie Ihr Daily Limit
 
-**Datei:** `docs/user-guide/screenshots/autopilot-dashboard.png`
+### "E-Mails werden nicht gesendet"
 
-**Was zu sehen sein sollte:**
-- Autopilot Dashboard
-- Metriken:
-  - Gesendete Nachrichten: 1,234
-  - Reply Rate: 23.5%
-  - Average Confidence: 0.87
-  - Pending in Queue: 12
-- Graph: Nachrichten über Zeit
-- Top Performing Templates Liste
-
-**Caption:** *Das Autopilot Dashboard zeigt alle wichtigen Metriken und Performance-Indikatoren.*
+- ✅ Prüfen Sie Ihre E-Mail-Integration
+- ✅ Prüfen Sie den Spam-Ordner des Empfängers
+- ✅ Prüfen Sie die Rate Limits Ihres E-Mail-Providers
 
 ---
 
-## Best Practices
+## Nächste Schritte
 
-✅ **Confidence Threshold anpassen** - Starten Sie mit 0.85, senken Sie bei Bedarf
-
-✅ **Review Queue regelmäßig prüfen** - Auch bei Auto-Approve sollten Sie die Queue überwachen
-
-✅ **A/B Tests nutzen** - Testen Sie verschiedene Ansätze, um die beste Performance zu finden
-
-✅ **Rate Limiting respektieren** - Zu viele Nachrichten schaden Ihrer Reputation
-
-✅ **Kanäle diversifizieren** - Nutzen Sie verschiedene Kanäle für verschiedene Kontakte
-
-✅ **Zeitzonen beachten** - Stellen Sie sicher, dass Kontakte ihre Zeitzone korrekt haben
-
----
-
-## Häufige Fragen (FAQ)
-
-**Q: Kann ich den Autopilot für bestimmte Leads deaktivieren?**  
-A: Ja, Sie können den Autopilot pro Lead in den Lead-Einstellungen deaktivieren.
-
-**Q: Wie oft werden Nachrichten gesendet?**  
-A: Das hängt von Ihren Einstellungen ab. Standard: Max. 3 Nachrichten pro Tag pro Kontakt.
-
-**Q: Kann ich eigene Templates erstellen?**  
-A: Ja, Sie können eigene Templates in den Einstellungen erstellen und für A/B Tests nutzen.
-
-**Q: Was passiert, wenn ein Kontakt "Opt-Out" wählt?**  
-A: Der Kontakt wird automatisch zur Opt-Out-Liste hinzugefügt und erhält keine weiteren Nachrichten.
-
----
-
-## Next Steps
-
-- [ ] Add video tutorial
-- [ ] Add advanced A/B testing guide
-- [ ] Add template creation guide
-- [ ] Add troubleshooting section
-
+- [Lead Management](./leads.md)
+- [Analytics & Reports](./analytics.md)
+- [Einstellungen](./settings.md)

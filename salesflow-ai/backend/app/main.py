@@ -1,9 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import logging
 
-# Logging
-logging.basicConfig(level=logging.INFO)
+# Logging mit Request ID Format
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(request_id)s] %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 logger = logging.getLogger(__name__)
 
 # App erstellen
@@ -13,18 +18,78 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS
+# ============= Exception Handlers =============
+from .core.exceptions import SalesFlowException, exception_to_dict, get_status_code
+
+@app.exception_handler(SalesFlowException)
+async def salesflow_exception_handler(request: Request, exc: SalesFlowException):
+    """Handle all SalesFlow custom exceptions."""
+    return JSONResponse(
+        status_code=exc.get_status_code(),
+        content=exc.to_dict()
+    )
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected exceptions."""
+    logger.exception(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred",
+            "details": {}
+        }
+    )
+
+# ============= Middleware (Reihenfolge wichtig!) =============
+from .middleware import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+    RequestIdMiddleware,
+    get_development_config,
+    RequestContextFilter,
+)
+from .config import get_settings
+
+settings = get_settings()
+
+# 1. Request ID Middleware (zuerst, damit alle Logs die ID haben)
+app.add_middleware(
+    RequestIdMiddleware,
+    log_requests=True,
+    include_timing=True,
+    exclude_paths=["/health", "/docs", "/openapi.json", "/redoc"]
+)
+
+# 2. Security Headers Middleware
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    config=get_development_config(),  # In Production: get_production_config()
+    exclude_paths=["/docs", "/openapi.json", "/redoc"]
+)
+
+# 3. Rate Limiting Middleware
+app.add_middleware(
+    RateLimitMiddleware,
+    enabled=settings.rate_limit_enabled,
+    default_limit=settings.rate_limit_default_requests,
+    default_window=settings.rate_limit_default_window_seconds,
+    exclude_paths=["/health", "/docs", "/openapi.json", "/redoc"]
+)
+
+# 4. CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://aura-os-topaz.vercel.app",  # ✅ Echte Vercel URL
-        "http://localhost:5173",
-        "http://localhost:5174",  # Vite Dev Server (alternativer Port)
-    ],
+    allow_origins=settings.cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request Context Filter für Logging (fügt request_id zu Logs hinzu)
+for handler in logging.root.handlers:
+    handler.addFilter(RequestContextFilter())
 
 # Router importieren (aus app/routers/)
 from .routers.auth import router as auth_router  # JWT Authentication
@@ -38,6 +103,11 @@ from .routers.channel_webhooks import router as webhooks_router
 from .routers.collective_intelligence import router as ci_router
 from .routers.lead_generation import router as lead_gen_router  # Non Plus Ultra Lead Generation
 from .routers.idps import router as idps_router  # IDPS: Intelligent DM Persistence System
+from .routers.chat_import import router as chat_import_router  # 🆕 Chat Import für Networker
+from .routers.screenshot_import import router as screenshot_router  # 🆕 Screenshot-to-Lead Magic
+from .routers.followups import router as followups_router  # 🆕 GPT Follow-Up Engine
+from .routers.team_templates import router as team_templates_router  # 🆕 Team Duplikation
+from .routers.lead_hunter import router as lead_hunter_router  # 🆕 Lead Hunter für Networker
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -51,6 +121,11 @@ app.include_router(webhooks_router, prefix="/api")
 app.include_router(ci_router)  # Collective Intelligence (Non Plus Ultra)
 app.include_router(lead_gen_router, prefix="/api")  # Non Plus Ultra Lead Generation System
 app.include_router(idps_router, prefix="/api")  # IDPS: Intelligent DM Persistence System
+app.include_router(chat_import_router, prefix="/api")  # 🆕 Chat Import für Networker
+app.include_router(screenshot_router, prefix="/api")  # 🆕 Screenshot-to-Lead Magic (GPT-4o Vision)
+app.include_router(followups_router, prefix="/api")  # 🆕 GPT Follow-Up Engine
+app.include_router(team_templates_router, prefix="/api")  # 🆕 Team Duplikation System
+app.include_router(lead_hunter_router, prefix="/api")  # 🆕 Lead Hunter für Networker
 
 
 @app.get("/")

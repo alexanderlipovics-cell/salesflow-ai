@@ -1,87 +1,127 @@
 # 📚 SalesFlow AI Documentation
 
-Willkommen zur **SalesFlow AI** Dokumentation!
+Willkommen zur offiziellen Dokumentation von **SalesFlow AI** – dem intelligenten Sales CRM mit AI-Autopilot.
 
 ---
 
-## 📖 Dokumentations-Übersicht
+## 🗂️ Dokumentation Übersicht
 
-### 👨‍💻 Developer Documentation
+### Für Developer
 
-- **[Architecture](./developer/architecture.md)** - System-Architektur, Datenfluss, Technologie-Stack
-- **[Database Schema](./developer/database-schema.md)** - Datenbankstruktur, ERD, Tabellen-Dokumentation
-- **[Setup Guide](./developer/setup.md)** - Lokale Entwicklungsumgebung einrichten
+| Dokument | Beschreibung |
+|----------|--------------|
+| [🏗️ Architecture](./developer/architecture.md) | System-Architektur, Datenfluss, Layer |
+| [📊 Database Schema](./developer/database-schema.md) | ERD, Tabellen, Enums, RLS |
+| [🚀 Local Setup](./developer/setup.md) | Installation, Environment, IDE |
 
-### 👤 User Guide
+### Für User
 
-- **[Lead Management](./user-guide/features/leads.md)** - Leads erstellen, bearbeiten, verwalten
-- **[AI Autopilot](./user-guide/features/autopilot.md)** - Autopilot konfigurieren und nutzen
+| Dokument | Beschreibung |
+|----------|--------------|
+| [📋 Lead Management](./user-guide/features/leads.md) | Leads erstellen, bearbeiten, Status |
+| [🤖 AI Autopilot](./user-guide/features/autopilot.md) | AI-Vorschläge, Review Queue, Kanäle |
 
 ---
 
 ## 🚀 Quick Start
 
-### Für Entwickler
+### Für Developer
 
-1. **Setup:** [Local Development Setup](./developer/setup.md)
-2. **Architektur verstehen:** [System Architecture](./developer/architecture.md)
-3. **Datenbank:** [Database Schema](./developer/database-schema.md)
+```bash
+# Clone & Install
+git clone https://github.com/your-org/salesflow-ai.git
+cd salesflow-ai
 
-### Für Benutzer
+# Backend
+cd backend && pip install -r requirements.txt
+uvicorn app.main:app --reload
 
-1. **Leads verwalten:** [Lead Management Guide](./user-guide/features/leads.md)
-2. **Autopilot nutzen:** [AI Autopilot Guide](./user-guide/features/autopilot.md)
-
----
-
-## 📋 Dokumentations-Struktur
-
-```
-docs/
-├── README.md                    # Diese Datei
-├── developer/
-│   ├── architecture.md          # System-Architektur
-│   ├── database-schema.md       # Datenbank-Schema
-│   └── setup.md                 # Setup Guide
-└── user-guide/
-    └── features/
-        ├── leads.md             # Lead Management
-        └── autopilot.md         # AI Autopilot
+# Frontend
+npm install && npm run dev
 ```
 
----
+👉 Ausführliche Anleitung: [Local Setup](./developer/setup.md)
 
-## 🎯 Nächste Schritte
+### Für User
 
-### Geplante Dokumentation
-
-- [ ] API Reference (OpenAPI/Swagger)
-- [ ] Deployment Guide
-- [ ] Troubleshooting Guide
-- [ ] Performance Optimization
-- [ ] Security Best Practices
-- [ ] Video Tutorials
+1. Öffnen Sie [app.salesflow.ai](https://app.salesflow.ai)
+2. Loggen Sie sich ein oder erstellen Sie ein Konto
+3. Erstellen Sie Ihren ersten Lead
+4. Aktivieren Sie den Autopilot
 
 ---
 
-## 🤝 Beitragen
+## 📊 Architektur auf einen Blick
 
-Möchten Sie zur Dokumentation beitragen?
+```mermaid
+graph LR
+    subgraph Frontend
+        React[React 18]
+        Query[TanStack Query]
+    end
 
-1. Fork das Repository
-2. Erstellen Sie einen Feature Branch
-3. Fügen Sie Ihre Dokumentation hinzu
-4. Erstellen Sie einen Pull Request
+    subgraph Backend
+        FastAPI[FastAPI]
+        Services[Service Layer]
+        AI[AI Router]
+    end
+
+    subgraph Data
+        Supabase[(Supabase)]
+        OpenAI[OpenAI]
+    end
+
+    React --> FastAPI
+    FastAPI --> Services
+    Services --> Supabase
+    Services --> AI
+    AI --> OpenAI
+```
+
+---
+
+## 🔑 Key Features
+
+| Feature | Status | Beschreibung |
+|---------|--------|--------------|
+| ✅ Lead Management | Live | CRUD, Status, Scoring |
+| ✅ AI Autopilot | Live | E-Mail-Drafts, Recommendations |
+| ✅ Multi-Model AI | Live | GPT-4o, Claude 3.5, Fallbacks |
+| ✅ Security | Live | JWT, Rate Limiting, Encryption |
+| 🚧 Analytics Dashboard | Beta | Charts, KPIs, Export |
+| 📅 Mobile App | Planned | iOS/Android |
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Framework:** FastAPI (Python 3.10+)
+- **Database:** Supabase (PostgreSQL)
+- **AI:** OpenAI GPT-4o, Anthropic Claude 3.5
+- **Auth:** JWT + Refresh Token Rotation
+- **Security:** bcrypt, Fernet Encryption, Rate Limiting
+
+### Frontend
+- **Framework:** React 18 + Vite
+- **State:** TanStack Query (React Query)
+- **Styling:** TailwindCSS
+- **Forms:** React Hook Form + Zod
 
 ---
 
 ## 📞 Support
 
-- **GitHub Issues:** [Issues](https://github.com/your-org/salesflow-ai/issues)
 - **Email:** support@salesflow.ai
-- **Discord:** [Community](https://discord.gg/salesflow-ai)
+- **Discord:** [Join Community](https://discord.gg/salesflow)
+- **GitHub Issues:** [Report Bug](https://github.com/your-org/salesflow-ai/issues)
 
 ---
 
-**Letzte Aktualisierung:** 2025-01-06
+## 📄 License
 
+SalesFlow AI is proprietary software. See [LICENSE](../LICENSE) for details.
+
+---
+
+*Last updated: December 2024*

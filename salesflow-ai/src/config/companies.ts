@@ -28,8 +28,8 @@ export const COMPANY_REGISTRY = {
     id: 'herbalife',
     name: 'Herbalife',
     slug: 'herbalife',
-    hasCompPlan: false, // Noch nicht implementiert
-    compPlanId: null,
+    hasCompPlan: true, // ✅ Implementiert
+    compPlanId: 'herbalife_de_2024',
     emoji: '🌿',
     color: '#78BE20',
     externalPlanUrl: 'https://www.herbalife.com/business-opportunity',
@@ -39,8 +39,8 @@ export const COMPANY_REGISTRY = {
     id: 'doterra',
     name: 'dōTERRA',
     slug: 'doterra',
-    hasCompPlan: false, // Noch nicht implementiert
-    compPlanId: null,
+    hasCompPlan: true, // ✅ Implementiert
+    compPlanId: 'doterra_de_2024',
     emoji: '🌸',
     color: '#7C3AED',
     externalPlanUrl: 'https://www.doterra.com/business',
@@ -50,8 +50,8 @@ export const COMPANY_REGISTRY = {
     id: 'pm-international',
     name: 'PM-International',
     slug: 'pm-international',
-    hasCompPlan: false, // Noch nicht implementiert
-    compPlanId: null,
+    hasCompPlan: true, // ✅ Implementiert
+    compPlanId: 'pm_de_2024',
     emoji: '💪',
     color: '#1E40AF',
     externalPlanUrl: 'https://www.pm-international.com/career',
@@ -61,8 +61,8 @@ export const COMPANY_REGISTRY = {
     id: 'lr-health',
     name: 'LR Health & Beauty',
     slug: 'lr-health',
-    hasCompPlan: false, // Noch nicht implementiert
-    compPlanId: null,
+    hasCompPlan: true, // ✅ Implementiert
+    compPlanId: 'lr_de_2024',
     emoji: '🌿',
     color: '#059669',
     externalPlanUrl: 'https://www.lrworld.com/business',

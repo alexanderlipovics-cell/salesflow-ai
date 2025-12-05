@@ -1,386 +1,347 @@
+# file: app/routers/followups.py
 """
-Follow-up-Router für die Follow-up Engine & Tages-Cockpit.
+Follow-Up API Router - GPT-5.1 Design
+
+Endpoints für das intelligente Follow-Up System:
+- GET /follow-ups/today - Heutige Follow-ups
+- POST /follow-ups/{lead_id}/generate - AI-Nachricht generieren
+- POST /follow-ups/{lead_id}/snooze - Follow-up verschieben
+- GET /follow-ups/debug/info - Debug-Informationen
 """
 
 from __future__ import annotations
 
-import logging
-from datetime import date, datetime
-from typing import Literal, Optional, cast
+from typing import List, Dict, Any, Optional
 from uuid import UUID
+from datetime import datetime, timedelta
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
-from app.ai_client import AIClient
-from app.config import get_settings
-from app.prompts_chief import CHIEF_SYSTEM_PROMPT
-from app.schemas import ChatMessage
-from app.supabase_client import get_supabase_client
+from app.models.followup import (
+    FollowUpSuggestion,
+    AIMessage,
+    LeadContext,
+    FollowUpPriority,
+)
+from app.repositories.followup_repository_mock import InMemoryFollowUpRepository
+from app.services.followup_engine import FollowUpEngine
+from app.services.timezone_service import DefaultTimezoneService
+from app.services.ai_router_dummy import DummyAIRouter
 
-router = APIRouter(prefix="/followups", tags=["followups"])
-settings = get_settings()
-logger = logging.getLogger(__name__)
-
-_ai_client: Optional[AIClient] = None
-
-FollowUpStage = Literal["first_contact", "followup1", "followup2", "reactivation"]
-FollowUpChannel = Literal["whatsapp", "email", "dm"]
-FollowUpTone = Literal["du", "sie"]
-
-VALID_STAGE_VALUES = set(FollowUpStage.__args__)  # type: ignore[attr-defined]
-VALID_CHANNEL_VALUES = set(FollowUpChannel.__args__)  # type: ignore[attr-defined]
-VALID_TONE_VALUES = set(FollowUpTone.__args__)  # type: ignore[attr-defined]
-
-LEGACY_STAGE_MAP = {
-    "first_touch": "first_contact",
-    "followup_1": "followup1",
-    "followup_2": "followup2",
-}
-LEGACY_CHANNEL_MAP = {
-    "instagram_dm": "dm",
-    "facebook_dm": "dm",
-}
+router = APIRouter(prefix="/follow-ups", tags=["Follow-Ups"])
 
 
-class FollowupGenerateRequest(BaseModel):
-    branch: str
-    stage: FollowUpStage
-    channel: FollowUpChannel
-    tone: FollowUpTone
-    name: Optional[str] = None
-    context: Optional[str] = None
+# ─────────────────────────────────
+# Dependency Injection
+# ─────────────────────────────────
+
+_repo_singleton: Optional[InMemoryFollowUpRepository] = None
+_engine_singleton: Optional[FollowUpEngine] = None
 
 
-class FollowupGenerateResponse(BaseModel):
+def get_repository() -> InMemoryFollowUpRepository:
+    """Gibt das Repository zurück (Singleton für Tests)."""
+    global _repo_singleton
+    if _repo_singleton is None:
+        _repo_singleton = InMemoryFollowUpRepository()
+    return _repo_singleton
+
+
+def get_engine() -> FollowUpEngine:
+    """Gibt die Follow-Up Engine zurück (Singleton)."""
+    global _engine_singleton
+    if _engine_singleton is None:
+        repo = get_repository()
+        tz_service = DefaultTimezoneService(default_tz="Europe/Vienna")
+        ai_router = DummyAIRouter()
+        _engine_singleton = FollowUpEngine(
+            repo=repo,
+            ai_router=ai_router,
+            tz_service=tz_service,
+        )
+    return _engine_singleton
+
+
+# ─────────────────────────────────
+# Request/Response Models
+# ─────────────────────────────────
+
+class GenerateFollowUpRequest(BaseModel):
+    """Request für /generate Endpoint"""
+    context: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Zusätzlicher Kontext für die AI"
+    )
+
+
+class SnoozeFollowUpRequest(BaseModel):
+    """Request für /snooze Endpoint"""
+    preset: Optional[str] = Field(
+        default=None,
+        description="Preset: '1h', 'evening', 'tomorrow', 'next_monday'"
+    )
+    custom_time: Optional[datetime] = Field(
+        default=None,
+        description="Custom datetime für Snooze"
+    )
+
+
+class SnoozeResponse(BaseModel):
+    """Response für /snooze Endpoint"""
+    success: bool
+    lead_id: str
+    new_scheduled_time: datetime
     message: str
-    template_id: Optional[str] = None
-    source: Optional[str] = None
 
 
-class FollowupTaskItem(BaseModel):
-    id: UUID
-    lead_id: Optional[UUID] = None
-    lead_name: str
-    branch: str
-    stage: FollowUpStage
-    channel: FollowUpChannel
-    tone: FollowUpTone
-    context: Optional[str] = None
-    due_at: datetime
-    last_result: Optional[str] = None
+class TodayFollowUpResponse(BaseModel):
+    """Response für /today Endpoint"""
+    count: int
+    critical: int
+    high: int
+    medium: int
+    low: int
+    follow_ups: List[FollowUpSuggestion]
 
 
-def _get_ai_client() -> Optional[AIClient]:
+class BatchFollowUpRequest(BaseModel):
+    """Request für Batch Follow-up Mode"""
+    lead_ids: List[UUID] = Field(..., description="Liste der Lead IDs")
+
+
+class BatchFollowUpResponse(BaseModel):
+    """Response für Batch Follow-up Mode"""
+    generated: int
+    messages: List[AIMessage]
+
+
+# ─────────────────────────────────
+# Endpoints
+# ─────────────────────────────────
+
+@router.get(
+    "/today",
+    response_model=TodayFollowUpResponse,
+    summary="Heutige Follow-ups abrufen",
+    description="""
+    Gibt alle Follow-ups zurück, die heute fällig sind.
+    
+    **Sortiert nach Priorität:**
+    1. CRITICAL (🔴)
+    2. HIGH (🟠)
+    3. MEDIUM (🟡)
+    4. LOW (🟢)
+    
+    **Tipp:** Integriere das in den Daily Flow!
     """
-    Liefert einen wiederverwendeten AIClient oder None, wenn keine Credentials vorhanden sind.
-    """
+)
+async def get_today_followups(
+    engine: FollowUpEngine = Depends(get_engine),
+) -> TodayFollowUpResponse:
+    """Holt alle Follow-ups für heute."""
+    suggestions = await engine.get_today_followups()
+    
+    # Zähle nach Priorität
+    counts = {p: 0 for p in FollowUpPriority}
+    for s in suggestions:
+        counts[s.priority] = counts.get(s.priority, 0) + 1
+    
+    return TodayFollowUpResponse(
+        count=len(suggestions),
+        critical=counts.get(FollowUpPriority.CRITICAL, 0),
+        high=counts.get(FollowUpPriority.HIGH, 0),
+        medium=counts.get(FollowUpPriority.MEDIUM, 0),
+        low=counts.get(FollowUpPriority.LOW, 0),
+        follow_ups=suggestions,
+    )
 
-    global _ai_client
-    if not settings.openai_api_key:
-        return None
 
-    if _ai_client is None:
-        _ai_client = AIClient(
-            api_key=settings.openai_api_key,
-            model=settings.openai_model,
+@router.get(
+    "/{lead_id}",
+    response_model=Optional[FollowUpSuggestion],
+    summary="Nächsten Follow-up für Lead abrufen",
+)
+async def get_next_followup(
+    lead_id: UUID,
+    engine: FollowUpEngine = Depends(get_engine),
+) -> Optional[FollowUpSuggestion]:
+    """Gibt den nächsten empfohlenen Follow-up für einen Lead zurück."""
+    suggestion = await engine.get_next_follow_up(lead_id)
+    if not suggestion:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Kein Follow-up verfügbar für Lead {lead_id}"
         )
-    return _ai_client
+    return suggestion
 
 
-def build_followup_prompt(req: FollowupGenerateRequest) -> str:
+@router.post(
+    "/{lead_id}/generate",
+    response_model=AIMessage,
+    summary="AI-Nachricht generieren",
+    description="""
+    Generiert eine personalisierte Follow-up Nachricht für einen Lead.
+    
+    **Was die AI berücksichtigt:**
+    - Lead-Daten (Name, Sprache, Tags)
+    - Aktuelle Sequenz & Step
+    - Bisherige Interaktionen
+    - Optimale Tonalität
+    
+    **Tipp:** Die generierte Nachricht kann vor dem Senden editiert werden!
     """
-    Baut einen klaren Prompt für das FOLLOW-UP ENGINE Modul des CHIEF.
-    """
-
-    branch_label = (req.branch or "Sales / Business").strip() or "Sales / Business"
-
-    stage_label = {
-        "first_contact": "Erstkontakt",
-        "followup1": "erstes Follow-up",
-        "followup2": "zweites Follow-up / letztes höfliches Nachfassen",
-        "reactivation": "Reaktivierung nach längerer Pause",
-    }.get(req.stage, "Follow-up")
-
-    channel_label = {
-        "whatsapp": "WhatsApp",
-        "email": "E-Mail",
-        "dm": "Direktnachricht",
-    }.get(req.channel, "Nachricht")
-
-    tone_label = "du" if req.tone == "du" else "Sie"
-
-    name = req.name or "dein Kontakt"
-    context = req.context.strip() if req.context else "Kein zusätzlicher Kontext."
-
-    prompt = f"""
-Du arbeitest im FOLLOW-UP ENGINE Modul.
-
-Aufgabe:
-Schreibe eine einzige Follow-up-Nachricht auf Deutsch, die sofort verschickt werden kann.
-
-Rahmen:
-- Branche: {branch_label}
-- Phase: {stage_label}
-- Kanal: {channel_label}
-- Ton: {tone_label}
-- Name des Kontakts: {name}
-
-Kontext (falls relevant):
-{context}
-
-Zusatzregeln:
-- Nutze den Ton "{tone_label}" konsequent und baue einen klaren, aber nicht aufdringlichen Call-to-Action ein (z. B. kurzer Call, Termin, Rückmeldung).
-- Passe die Dramaturgie an die Phase an:
-  - first_contact -> freundlicher Erstkontakt, kurzer Pitch, klarer CTA.
-  - followup1 -> referenziere letzte Nachricht, öffne Einwände ("falls du unsicher bist ...").
-  - followup2 -> höfliches letztes Nachfassen, Entscheidung erleichtern, Option zum Absagen lassen.
-  - reactivation -> Bezug auf früheren Kontakt, echtes Interesse an Entwicklung, Einladung zum unverbindlichen Update.
-- Keine Erklärungen oder Meta-Kommentare - gib nur den Nachrichtentext aus, optional mit Zeilenumbrüchen.
-- Halte die Nachricht kompakt (max. 5-6 Sätze) und schreibe sie so, als käme sie von einem erfahrenen Vertriebler.
-""".strip()
-
-    return prompt
-
-
-async def _generate_followup_via_llm(req: FollowupGenerateRequest) -> str:
-    """
-    Versucht, über die zentrale CHIEF-/LLM-Infrastruktur eine Follow-up-Nachricht zu erzeugen.
-    """
-
-    client = _get_ai_client()
-    if not client:
-        raise NotImplementedError("CHIEF-Client ist nicht konfiguriert.")
-
-    prompt = build_followup_prompt(req)
-    return client.generate(
-        CHIEF_SYSTEM_PROMPT,
-        [ChatMessage(role="user", content=prompt)],
-    )
-
-
-async def call_chief_followup_engine(req: FollowupGenerateRequest) -> FollowupGenerateResponse:
-    """
-    Wrapper gegen den CHIEF-LLM. Dient als saubere Integrations-Schicht.
-    """
-
-    message = await _generate_followup_via_llm(req)
-    return FollowupGenerateResponse(
-        message=message.strip(),
-        template_id=None,
-        source="chief",
-    )
-
-
-async def generate_followup_message(req: FollowupGenerateRequest) -> FollowupGenerateResponse:
-    """
-    Orchestriert die Generierung: zuerst CHIEF, dann Fallback.
-    """
-
-    try:
-        return await call_chief_followup_engine(req)
-    except NotImplementedError:
-        logger.info("OPENAI_API_KEY fehlt - nutze Follow-up-Fallback.")
-    except Exception as llm_exc:  # pragma: no cover - defensive
-        logger.warning("LLM-Follow-up fehlgeschlagen: %s", llm_exc)
-
-    fallback_message = build_followup_message_fallback(req)
-    return FollowupGenerateResponse(
-        message=fallback_message,
-        template_id=None,
-        source="fallback",
-    )
-
-
-@router.post("/generate", response_model=FollowupGenerateResponse)
-async def generate_followup(req: FollowupGenerateRequest) -> FollowupGenerateResponse:
-    """
-    Erzeugt eine Follow-up-Nachricht inkl. Fallback-Mechanik.
-    """
-
-    try:
-        return await generate_followup_message(req)
-    except HTTPException:
-        raise
-    except Exception as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-@router.get("/due-today", response_model=list[FollowupTaskItem])
-async def get_due_followups_today() -> list[FollowupTaskItem]:
-    """
-    Liefert alle offenen Follow-up Tasks, die am aktuellen Tag fällig sind.
-    """
-
-    try:
-        client = get_supabase_client()
-        today_iso = date.today().isoformat()
-        response = (
-            client.table("followup_tasks")
-            .select(
-                "id,lead_id,lead_name,branch,stage,channel,tone,context,due_at,last_result"
-            )
-            .eq("status", "open")
-            .filter("due_at::date", "eq", today_iso)
-            .order("due_at", desc=False)
-            .limit(20)
-            .execute()
+)
+async def generate_followup_message(
+    lead_id: UUID,
+    body: GenerateFollowUpRequest,
+    engine: FollowUpEngine = Depends(get_engine),
+) -> AIMessage:
+    """Generiert eine AI-Nachricht für einen Lead."""
+    message = await engine.generate_message(lead_id=lead_id, context=body.context)
+    if not message:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Kein Follow-up verfügbar für Lead {lead_id}"
         )
-    except Exception as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    rows = getattr(response, "data", None) or []
-
-    items: list[FollowupTaskItem] = []
-    for row in rows:
-        try:
-            items.append(
-                FollowupTaskItem(
-                    id=row["id"],
-                    lead_id=row.get("lead_id"),
-                    lead_name=row.get("lead_name") or "Unbekannt",
-                    branch=(row.get("branch") or "generic").strip() or "generic",
-                    stage=_sanitize_stage(row.get("stage")),
-                    channel=_sanitize_channel(row.get("channel")),
-                    tone=_sanitize_tone(row.get("tone")),
-                    context=row.get("context"),
-                    due_at=row.get("due_at"),
-                    last_result=row.get("last_result"),
-                )
-            )
-        except Exception as exc:  # pragma: no cover - defensive
-            logger.warning("Konnte Follow-up-Row nicht parsen: %s", exc)
-
-    return items
+    return message
 
 
-def build_followup_message_fallback(req: FollowupGenerateRequest) -> str:
-    name = req.name or "dein Kontakt"
-    kanal = {
-        "whatsapp": "WhatsApp",
-        "email": "E-Mail",
-        "dm": "DM",
-    }.get(req.channel, "Nachricht")
-
-    branch_label = (req.branch or "Sales / Business").strip() or "Sales / Business"
-    tone_du = req.tone == "du"
-
-    if req.context:
-        context = f"{req.context.strip()}\n\n"
+@router.post(
+    "/{lead_id}/snooze",
+    response_model=SnoozeResponse,
+    summary="Follow-up verschieben (Snooze)",
+    description="""
+    Verschiebt einen Follow-up auf einen späteren Zeitpunkt.
+    
+    **Presets:**
+    - `1h` - In einer Stunde
+    - `evening` - Heute Abend (18:00)
+    - `tomorrow` - Morgen früh (9:00)
+    - `next_monday` - Nächsten Montag (18:00)
+    
+    Alternativ: `custom_time` für exakten Zeitpunkt.
+    """
+)
+async def snooze_followup(
+    lead_id: UUID,
+    body: SnoozeFollowUpRequest,
+    repo: InMemoryFollowUpRepository = Depends(get_repository),
+) -> SnoozeResponse:
+    """Verschiebt einen Follow-up."""
+    from app.services.timezone_service import DefaultTimezoneService
+    tz_service = DefaultTimezoneService()
+    
+    # Lead holen für Timezone
+    lead = await repo.get_lead_context(lead_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead nicht gefunden")
+    
+    # Neue Zeit berechnen
+    now = tz_service.now_in_tz(lead.timezone)
+    
+    if body.custom_time:
+        new_time = body.custom_time
+    elif body.preset:
+        if body.preset == "1h":
+            new_time = now + timedelta(hours=1)
+        elif body.preset == "evening":
+            new_time = tz_service.next_best_contact_time(lead.timezone, base=now)
+        elif body.preset == "tomorrow":
+            new_time = tz_service.next_morning_time(lead.timezone, base=now, hour=9)
+        elif body.preset == "next_monday":
+            new_time = tz_service.next_weekday_time(lead.timezone, target_weekday=0, hour=18)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unbekanntes Preset: {body.preset}")
     else:
-        context = ""
-
-    if req.stage == "first_contact":
-        if tone_du:
-            return (
-                f"Hey {name},\n\n"
-                f"ich wollte dir kurz schreiben, weil du super in unser {branch_label}-Profil passt. "
-                f"Lass uns gern in den nächsten Tagen einen kurzen {kanal}-Call machen und schauen, "
-                f"wie ich dich unterstützen kann.\n\n"
-                f"Sag mir einfach, was dir zeitlich passt. 🙂"
-            )
-        return (
-            f"Guten Tag {name},\n\n"
-            f"ich melde mich, weil Sie hervorragend in unser {branch_label}-Profil passen. "
-            f"Gern würde ich mich kurz per {kanal} mit Ihnen austauschen, um zu sehen, wie wir helfen können.\n\n"
-            f"Geben Sie mir einfach ein kurzes Zeichen, wann es für Sie passt."
-        )
-
-    if req.stage == "followup1":
-        if tone_du:
-            return (
-                f"Hey {name},\n\n"
-                f"{context}"
-                f"ich wollte kurz nachhaken, ob du dir meine letzte Nachricht schon anschauen konntest. "
-                f"Wenn du Fragen hast oder dir unsicher bist, klären wir das gern in einem kurzen Call.\n\n"
-                f"Lass mich wissen, ob das spannend für dich ist."
-            )
-        return (
-            f"Guten Tag {name},\n\n"
-            f"{context}"
-            f"ich wollte freundlich nachfragen, ob Sie meine vorherige Nachricht bereits sehen konnten. "
-            f"Sehr gern beantworte ich offene Fragen in einem kurzen Gespräch.\n\n"
-            f"Über eine kurze Rückmeldung freue ich mich."
-        )
-
-    if req.stage == "followup2":
-        if tone_du:
-            return (
-                f"Hi {name},\n\n"
-                f"{context}"
-                f"ich melde mich ein letztes Mal, damit wir das Thema sauber abschließen. "
-                f"Wenn es gerade nicht passt, gib mir einfach ein kurzes Update – vollkommen okay.\n\n"
-                f"Und falls doch Interesse da ist, finden wir sofort einen Termin."
-            )
-        return (
-            f"Guten Tag {name},\n\n"
-            f"{context}"
-            f"ich wollte ein letztes Mal kurz nachfassen, damit wir das Thema für Sie einordnen können. "
-            f"Wenn es momentan nicht passt, reicht eine kurze Nachricht.\n\n"
-            f"Sollte weiterhin Interesse bestehen, plane ich gern einen Termin ein."
-        )
-
-    if req.stage == "reactivation":
-        if tone_du:
-            return (
-                f"Hey {name},\n\n"
-                f"{context}"
-                f"wir hatten vor einiger Zeit schon Kontakt zu {branch_label}-Themen. "
-                f"Mich würde interessieren, wie sich deine Situation seitdem entwickelt hat "
-                f"und ob es gerade wieder Sinn macht, dazu zu sprechen.\n\n"
-                f"Wenn du magst, lass uns kurz updaten."
-            )
-        return (
-            f"Guten Tag {name},\n\n"
-            f"{context}"
-            f"wir hatten vor einiger Zeit bereits Kontakt zu {branch_label}. "
-            f"Mich würde interessieren, wie sich Ihre Situation entwickelt hat "
-            f"und ob eine kurze Abstimmung erneut hilfreich wäre.\n\n"
-            f"Gern können wir uns unverbindlich austauschen."
-        )
-
-    if tone_du:
-        return (
-            f"Hey {name},\n\n"
-            f"{context}"
-            f"ich wollte kurz hören, wo du gerade stehst.\n\n"
-            f"Freue mich über ein kurzes Update."
-        )
-    return (
-        f"Guten Tag {name},\n\n"
-        f"{context}"
-        f"ich wollte mich kurz nach dem aktuellen Stand erkundigen.\n\n"
-        f"Über ein kurzes Feedback freue ich mich."
+        # Default: morgen früh
+        new_time = tz_service.next_morning_time(lead.timezone, base=now, hour=9)
+    
+    # State aktualisieren (in Produktion)
+    state = await repo.get_active_sequence_state(lead_id)
+    if state:
+        from app.models.followup import FollowUpSequenceStatus
+        state.paused_until = new_time
+        state.status = FollowUpSequenceStatus.PAUSED
+        await repo.upsert_sequence_state(state)
+    
+    return SnoozeResponse(
+        success=True,
+        lead_id=str(lead_id),
+        new_scheduled_time=new_time,
+        message=f"Follow-up für {lead.first_name or 'Lead'} verschoben auf {new_time.strftime('%d.%m.%Y %H:%M')}"
     )
 
 
-def _sanitize_stage(value: Optional[str]) -> FollowUpStage:
-    normalized = (value or "").strip().lower()
-    normalized = LEGACY_STAGE_MAP.get(normalized, normalized)
-    if normalized in VALID_STAGE_VALUES:
-        return cast(FollowUpStage, normalized)
-    return "followup1"
+@router.post(
+    "/batch/generate",
+    response_model=BatchFollowUpResponse,
+    summary="Batch: Mehrere Nachrichten generieren",
+    description="""
+    **"5 in 2 Minuten" Mode:**
+    
+    Generiert Follow-up Nachrichten für mehrere Leads auf einmal.
+    Perfekt für den Daily Flow - schnell durchklicken, bestätigen, senden.
+    """
+)
+async def batch_generate_followups(
+    body: BatchFollowUpRequest,
+    engine: FollowUpEngine = Depends(get_engine),
+) -> BatchFollowUpResponse:
+    """Generiert Nachrichten für mehrere Leads."""
+    messages: List[AIMessage] = []
+    
+    for lead_id in body.lead_ids[:10]:  # Max 10 auf einmal
+        try:
+            message = await engine.generate_message(lead_id=lead_id)
+            if message:
+                messages.append(message)
+        except Exception:
+            continue  # Skip bei Fehlern
+    
+    return BatchFollowUpResponse(
+        generated=len(messages),
+        messages=messages,
+    )
 
 
-def _sanitize_channel(value: Optional[str]) -> FollowUpChannel:
-    normalized = (value or "").strip().lower()
-    normalized = LEGACY_CHANNEL_MAP.get(normalized, normalized)
-    if normalized in VALID_CHANNEL_VALUES:
-        return cast(FollowUpChannel, normalized)
-    return "whatsapp"
+# ─────────────────────────────────
+# Debug Endpoints
+# ─────────────────────────────────
+
+@router.get(
+    "/debug/info",
+    summary="Debug-Informationen",
+    description="Gibt Debug-Infos über das InMemory-Repo zurück (nur für Tests).",
+)
+async def debug_info(
+    repo: InMemoryFollowUpRepository = Depends(get_repository),
+) -> Dict[str, Any]:
+    """Debug-Endpoint für Tests."""
+    return repo.debug_get_info()
 
 
-def _sanitize_tone(value: Optional[str]) -> FollowUpTone:
-    normalized = (value or "").strip().lower()
-    if normalized in VALID_TONE_VALUES:
-        return cast(FollowUpTone, normalized)
-    return "du"
+@router.get(
+    "/debug/leads",
+    summary="Alle Demo-Leads anzeigen",
+)
+async def debug_leads(
+    repo: InMemoryFollowUpRepository = Depends(get_repository),
+) -> List[Dict[str, Any]]:
+    """Zeigt alle Demo-Leads."""
+    leads = await repo.list_all_leads()
+    return [
+        {
+            "id": str(l.id),
+            "name": l.full_name,
+            "first_name": l.first_name,
+            "score": l.lead_score,
+            "tags": l.tags,
+            "last_contacted": l.last_contacted_at.isoformat() if l.last_contacted_at else None,
+            "channel": l.primary_channel.value if l.primary_channel else None,
+        }
+        for l in leads
+    ]
 
 
-__all__ = [
-    "generate_followup",
-    "get_due_followups_today",
-    "call_chief_followup_engine",
-    "generate_followup_message",
-]
-
+__all__ = ["router"]

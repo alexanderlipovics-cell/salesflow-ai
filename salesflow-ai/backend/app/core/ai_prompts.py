@@ -638,6 +638,254 @@ def build_coach_prompt_with_action_and_context(action: Optional[str], context: O
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# PROMPT VERSIONING & REGISTRY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from dataclasses import dataclass, field
+from typing import List
+from .ai_types import AITaskType, AIModelName
+
+
+@dataclass
+class PromptDefinition:
+    """
+    Versionierte Prompt-Definition für A/B-Testing und Tracking.
+    """
+    key: str  # z.B. "sales_coach_chat"
+    version: str  # z.B. "v1", "v2"
+    variant: str  # z.B. "A", "B" für A/B-Testing
+    task_type: AITaskType
+    default_model: AIModelName
+    system_prompt: str
+    few_shot_examples: List[Dict[str, str]] = field(default_factory=list)
+    metadata: Dict[str, any] = field(default_factory=dict)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROMPT REGISTRY - Zentrale Verwaltung aller Prompts
+# ═══════════════════════════════════════════════════════════════════════════════
+
+PROMPT_REGISTRY: Dict[str, PromptDefinition] = {
+    # === SALES COACH CHAT ===
+    "sales_coach_chat_v1_A": PromptDefinition(
+        key="sales_coach_chat",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.SALES_COACH_CHAT,
+        default_model=AIModelName.GPT_4O,
+        system_prompt=SALES_COACH_PROMPT,
+        few_shot_examples=[],
+        metadata={"description": "Standard Sales Coach Prompt"}
+    ),
+    
+    # === FOLLOW-UP GENERATION ===
+    "followup_generation_v1_A": PromptDefinition(
+        key="followup_generation",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.FOLLOWUP_GENERATION,
+        default_model=AIModelName.GPT_4O,
+        system_prompt=build_coach_prompt_with_action("follow_up"),
+        few_shot_examples=[
+            {
+                "input": "Kontakt: Max, Status: warm, Letzte Nachricht vor 3 Tagen",
+                "output": "Hey Max! 👋 Kurze Frage: Hast du dir schon Gedanken gemacht wegen unserem Gespräch? Ich hab noch einen konkreten Vorschlag für dich, der genau zu deiner Situation passt. Magst du kurz telefonieren? 📞"
+            }
+        ],
+        metadata={"description": "Follow-up Nachrichten Generator"}
+    ),
+    
+    # === OBJECTION HANDLER ===
+    "objection_handler_v1_A": PromptDefinition(
+        key="objection_handler",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.OBJECTION_HANDLER,
+        default_model=AIModelName.GPT_4O,
+        system_prompt=build_coach_prompt_with_action("objection_handler"),
+        few_shot_examples=[
+            {
+                "input": "Einwand: Das ist mir zu teuer",
+                "output": "**SOFT:** Verstehe ich total – Investitionen wollen gut überlegt sein. Darf ich fragen: Was wäre für dich der Punkt, an dem es sich rechnen würde?\n\n**DIREKT:** Zu teuer im Vergleich wozu? Lass uns kurz rechnen: Wenn du pro Monat nur 2 Kunden mehr gewinnst, hast du die Investition x3 zurück.\n\n**FRAGE:** Spannend – was genau meinst du mit 'zu teuer'? Den Preis an sich oder das Verhältnis zum erwarteten Ergebnis?"
+            }
+        ],
+        metadata={"description": "Einwandbehandlung mit LIRA-Framework"}
+    ),
+    
+    # === LEAD ANALYSIS ===
+    "lead_analysis_v1_A": PromptDefinition(
+        key="lead_analysis",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.LEAD_ANALYSIS,
+        default_model=AIModelName.GPT_4O_MINI,  # Mini reicht für Analyse
+        system_prompt=build_coach_prompt_with_action("analyze_lead"),
+        few_shot_examples=[],
+        metadata={"description": "Lead-Bewertung und Scoring"}
+    ),
+    
+    # === SENTIMENT ANALYSIS ===
+    "sentiment_analysis_v1_A": PromptDefinition(
+        key="sentiment_analysis",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.SENTIMENT_ANALYSIS,
+        default_model=AIModelName.GPT_4O_MINI,  # Mini für einfache Klassifikation
+        system_prompt=BASE_STYLE + """
+Du analysierst Nachrichten und gibst ein Sentiment zurück.
+Format: {"sentiment": "positive|neutral|negative", "confidence": 0.0-1.0, "signals": [...]}
+""",
+        few_shot_examples=[],
+        metadata={"description": "Sentiment-Analyse für Nachrichten"}
+    ),
+    
+    # === CLASSIFICATION ===
+    "classification_v1_A": PromptDefinition(
+        key="classification",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.CLASSIFICATION,
+        default_model=AIModelName.GPT_4O_MINI,  # Mini für Klassifikation
+        system_prompt=BASE_STYLE + """
+Du klassifizierst Nachrichten in Kategorien.
+Antworte NUR mit dem Kategorie-Namen, nichts anderes.
+""",
+        few_shot_examples=[],
+        metadata={"description": "Nachrichtenklassifikation"}
+    ),
+    
+    # === CLOSING HELPER ===
+    "closing_helper_v1_A": PromptDefinition(
+        key="closing_helper",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.CLOSING_HELPER,
+        default_model=AIModelName.GPT_4O,
+        system_prompt=build_coach_prompt_with_action("closing_helper"),
+        few_shot_examples=[],
+        metadata={"description": "Abschluss-Unterstützung"}
+    ),
+    
+    # === OFFER CREATE ===
+    "offer_create_v1_A": PromptDefinition(
+        key="offer_create",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.OFFER_CREATE,
+        default_model=AIModelName.GPT_4O,
+        system_prompt=build_coach_prompt_with_action("offer_create"),
+        few_shot_examples=[],
+        metadata={"description": "Angebotserstellung"}
+    ),
+    
+    # === GENERATE MESSAGE ===
+    "generate_message_v1_A": PromptDefinition(
+        key="generate_message",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.GENERATE_MESSAGE,
+        default_model=AIModelName.GPT_4O_MINI,  # Mini für einfache Nachrichten
+        system_prompt=build_coach_prompt_with_action("generate_message"),
+        few_shot_examples=[],
+        metadata={"description": "DM/Nachricht Generator"}
+    ),
+    
+    # === DAILY PLAN ===
+    "daily_plan_v1_A": PromptDefinition(
+        key="daily_plan",
+        version="v1",
+        variant="A",
+        task_type=AITaskType.DAILY_PLAN,
+        default_model=AIModelName.GPT_4O_MINI,
+        system_prompt=build_coach_prompt_with_action("daily_plan"),
+        few_shot_examples=[],
+        metadata={"description": "Tagesplan Generator"}
+    ),
+}
+
+
+def get_prompt_definition(
+    task_type: AITaskType,
+    version: str = "v1",
+    variant: str = "A",
+) -> PromptDefinition:
+    """
+    Holt eine Prompt-Definition aus der Registry.
+    
+    Args:
+        task_type: Task-Typ
+        version: Prompt-Version (default: "v1")
+        variant: A/B-Variante (default: "A")
+    
+    Returns:
+        PromptDefinition oder Default
+    """
+    # Task-Typ zu Key mappen
+    task_to_key = {
+        AITaskType.SALES_COACH_CHAT: "sales_coach_chat",
+        AITaskType.FOLLOWUP_GENERATION: "followup_generation",
+        AITaskType.OBJECTION_HANDLER: "objection_handler",
+        AITaskType.LEAD_ANALYSIS: "lead_analysis",
+        AITaskType.SENTIMENT_ANALYSIS: "sentiment_analysis",
+        AITaskType.CLASSIFICATION: "classification",
+        AITaskType.CLOSING_HELPER: "closing_helper",
+        AITaskType.OFFER_CREATE: "offer_create",
+        AITaskType.GENERATE_MESSAGE: "generate_message",
+        AITaskType.DAILY_PLAN: "daily_plan",
+    }
+    
+    key = task_to_key.get(task_type, "sales_coach_chat")
+    registry_key = f"{key}_{version}_{variant}"
+    
+    if registry_key in PROMPT_REGISTRY:
+        return PROMPT_REGISTRY[registry_key]
+    
+    # Fallback auf Standard
+    fallback_key = f"{key}_v1_A"
+    if fallback_key in PROMPT_REGISTRY:
+        return PROMPT_REGISTRY[fallback_key]
+    
+    # Absolute Fallback
+    return PromptDefinition(
+        key=key,
+        version=version,
+        variant=variant,
+        task_type=task_type,
+        default_model=AIModelName.GPT_4O,
+        system_prompt=SALES_COACH_PROMPT,
+    )
+
+
+def register_prompt(prompt_def: PromptDefinition) -> None:
+    """
+    Registriert eine neue Prompt-Definition.
+    
+    Args:
+        prompt_def: Die zu registrierende Definition
+    """
+    registry_key = f"{prompt_def.key}_{prompt_def.version}_{prompt_def.variant}"
+    PROMPT_REGISTRY[registry_key] = prompt_def
+
+
+def list_prompt_versions(key: str) -> List[str]:
+    """
+    Listet alle verfügbaren Versionen für einen Prompt-Key.
+    
+    Args:
+        key: Prompt-Key (z.B. "sales_coach_chat")
+    
+    Returns:
+        Liste von Version-Variant-Strings (z.B. ["v1_A", "v1_B", "v2_A"])
+    """
+    versions = []
+    for registry_key in PROMPT_REGISTRY:
+        if registry_key.startswith(f"{key}_"):
+            version_variant = registry_key[len(f"{key}_"):]
+            versions.append(version_variant)
+    return versions
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # EXPORTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -654,4 +902,10 @@ __all__ = [
     "build_coach_prompt_with_action",
     "build_coach_prompt_with_context",
     "build_coach_prompt_with_action_and_context",
+    # Prompt Versioning
+    "PromptDefinition",
+    "PROMPT_REGISTRY",
+    "get_prompt_definition",
+    "register_prompt",
+    "list_prompt_versions",
 ]

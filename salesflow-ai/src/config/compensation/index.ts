@@ -8,6 +8,10 @@
 import { CompensationPlan, RankDefinition } from '../../types/compensation';
 import { CompanyKey, normalizeCompanyKey, COMPANY_REGISTRY, getCompanyInfo } from '../companies';
 import { ZINZINO_PLAN } from './zinzino';
+import { HERBALIFE_PLAN } from './herbalife';
+import { DOTERRA_PLAN } from './doterra';
+import { PM_INTERNATIONAL_PLAN } from './pm-international';
+import { LR_HEALTH_PLAN } from './lr-health';
 
 // ============================================
 // COMPENSATION PLANS REGISTRY
@@ -16,17 +20,19 @@ import { ZINZINO_PLAN } from './zinzino';
 /**
  * Registry aller verfügbaren Compensation Plans
  * 
- * Füge neue Pläne hier hinzu:
- * 1. Erstelle eine neue Datei (z.B. herbalife.ts)
- * 2. Importiere den Plan
- * 3. Füge ihn zur COMPENSATION_PLANS Registry hinzu
+ * ✅ DACH TOP 5 Network Marketing Firmen implementiert:
+ * - Zinzino (Schweden, Omega-3)
+ * - Herbalife (USA, Ernährung) 
+ * - PM-International (Deutschland, FitLine)
+ * - LR Health & Beauty (Deutschland, Aloe Vera)
+ * - doTERRA (USA, Ätherische Öle)
  */
 export const COMPENSATION_PLANS: Partial<Record<CompanyKey, CompensationPlan>> = {
   zinzino: ZINZINO_PLAN,
-  // herbalife: HERBALIFE_PLAN,  // TODO: Implementieren
-  // doterra: DOTERRA_PLAN,      // TODO: Implementieren
-  // 'pm-international': PM_PLAN, // TODO: Implementieren
-  // 'lr-health': LR_PLAN,       // TODO: Implementieren
+  herbalife: HERBALIFE_PLAN,
+  doterra: DOTERRA_PLAN,
+  'pm-international': PM_INTERNATIONAL_PLAN,
+  'lr-health': LR_HEALTH_PLAN,
 } as const;
 
 // ============================================
