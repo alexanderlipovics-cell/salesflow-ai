@@ -1,6 +1,9 @@
 {
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://salesflow-ai-backend.onrender.com/api/:path*" },
+    { "source": "/api/(.*)", "destination": "https://salesflow-ai-backend.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [
@@ -13,6 +16,10 @@
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
       ]
     }
-  ]
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "@supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key"
+  }
 }
 
