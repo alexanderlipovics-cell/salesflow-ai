@@ -408,6 +408,27 @@ async def generate_copilot_response(request: CopilotRequest) -> CopilotResponse:
         )
 
 
+@router.post("/generate-anonymous")
+async def generate_anonymous(request: dict):
+    """Generiert Nachricht ohne Auth - für Mobile App."""
+    try:
+        message = request.get("lead_message", request.get("message", ""))
+        context = request.get("context", "")
+        
+        response_data = await generate_ai_response(message, {"context": context})
+        
+        return {
+            "response": response_data["response"],
+            "options": response_data["options"]
+        }
+    except Exception as e:
+        logger.error(f"Generate Anonymous Error: {e}")
+        return {
+            "response": "Hey! Ich wollte mich kurz melden - hast du noch Fragen?",
+            "options": [{"id": "default", "content": "Hey! Ich wollte mich kurz melden - hast du noch Fragen? 😊"}]
+        }
+
+
 @router.get("/health")
 async def copilot_health():
     """Health-Check für den Copilot-Service."""

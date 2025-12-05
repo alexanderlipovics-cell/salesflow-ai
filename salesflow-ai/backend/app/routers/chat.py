@@ -58,6 +58,7 @@ Fokus:
 """
 
 
+@router.post("", response_model=ChatCompletionResponse)
 @router.post("/completion", response_model=ChatCompletionResponse)
 async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionResponse:
     """
