@@ -99,14 +99,17 @@ app.add_middleware(
 )
 
 # 4. CORS Middleware
-# Wichtig: In Production nur definierte Origins erlauben, damit Browser nicht blockt.
-# Wir nutzen die in settings.cors_allowed_origins hinterlegten Domains (Vercel + Localhost).
-allowed_origins = settings.cors_allowed_origins or []
+# Erlaubt Frontend-Origins (Vercel + localhost). Previews über Regex *.vercel.app.
+allowed_origins = [
+    "https://aura-n92sibt17-sales-flow-ais-projects.vercel.app",
+    "http://localhost:3000",
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # alle Vercel-Previews
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"],        # OPTIONS wird automatisch gehandhabt
     allow_headers=["*"],
     expose_headers=["*"],
 )
