@@ -221,11 +221,13 @@ async def signup(
         "email": signup_data.email,
         "password_hash": password_hash,
         "name": signup_data.name,
-        "company": signup_data.company,
         "role": "user",
         "is_active": True,
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": datetime.utcnow().isoformat(),
     }
+    # Nur setzen, wenn vorhanden – vermeidet Schema-Fehler, falls Spalte fehlt
+    if signup_data.company:
+        user_data["company"] = signup_data.company
     
     created_user = await create_user(supabase, user_data)
     
