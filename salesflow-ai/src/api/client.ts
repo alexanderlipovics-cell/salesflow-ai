@@ -10,6 +10,7 @@ import {
   HttpMethod,
 } from '../types/api';
 import { authManager } from '../utils/authManager';
+import { authService } from '../services/authService';
 import { cacheManager } from '../utils/cacheManager';
 import { offlineQueue } from '../utils/offlineQueue';
 import * as MockAPI from './mock';
@@ -166,12 +167,18 @@ class ApiClient {
             throw error;
           }
           try {
-            await authManager.refreshAccessToken();
+            // Versuche REST-Refresh statt Supabase
+            const refreshed = await authService.refreshToken();
+            if (!refreshed) {
+              this.authHardFail = true;
+              throw error;
+            }
             options.headers = await this.buildHeaders({}, false);
             continue; // Retry with new token
           } catch (refreshError) {
             // Refresh failed - clear auth and throw
             await authManager.clearToken();
+            authService.clearTokens?.();
             this.authHardFail = true;
             throw error;
           }
@@ -305,10 +312,16 @@ class ApiClient {
     };
 
     if (!skipAuth) {
-      // Try to get token from Supabase session first
-      const token = await authManager.getSupabaseToken();
+      // Primär unseren REST-Token verwenden (authService / localStorage)
+      const token = authService.getAccessToken?.();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        // Fallback: Supabase-Session (falls genutzt)
+        const supaToken = await authManager.getSupabaseToken();
+        if (supaToken) {
+          headers['Authorization'] = `Bearer ${supaToken}`;
+        }
       }
     }
 
