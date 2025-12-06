@@ -11,8 +11,10 @@
 
 // Base URL - VITE_API_BASE_URL sollte OHNE /api sein (z.B. https://salesflow-ai.onrender.com)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-// Ensure no trailing /api in base URL
-const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+// Entfernt wiederholte /api-Endungen und trailing Slashes robust
+const cleanBaseUrl = API_BASE_URL
+  .replace(/(\/api)+\/?$/, '') // strip mehrfach angehängte /api
+  .replace(/\/+$/, '');        // strip trailing /
 
 interface LoginCredentials {
   email: string;
