@@ -208,9 +208,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if self.config.cross_origin_resource_policy:
             response.headers["Cross-Origin-Resource-Policy"] = self.config.cross_origin_resource_policy
         
-        # Remove potentially dangerous headers
-        response.headers.pop("Server", None)
-        response.headers.pop("X-Powered-By", None)
+        # Remove potentially dangerous headers (safely, as MutableHeaders has no pop())
+        if "Server" in response.headers:
+            del response.headers["Server"]
+        if "X-Powered-By" in response.headers:
+            del response.headers["X-Powered-By"]
         
         return response
 
