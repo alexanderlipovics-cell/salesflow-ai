@@ -56,6 +56,7 @@ import AutopilotPage from "./pages/AutopilotPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import { ProtectedRoute } from "./components/auth";
+import MagicSendDemo from "./pages/MagicSendDemo";
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -205,6 +206,7 @@ const App = () => {
                       <Route path="churn-radar" element={<ChurnRadarPage />} />
                       <Route path="network-graph" element={<NetworkGraphPage />} />
                       <Route path="roleplay-dojo" element={<RoleplayDojoPage />} />
+                      <Route path="magic-send" element={<MagicSendDemo />} />
                       {placeholderRoutes.map((route) => (
                         <Route
                           key={route.path}

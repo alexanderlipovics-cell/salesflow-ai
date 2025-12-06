@@ -14,7 +14,6 @@ import {
   Search,
   Target,
   Zap,
-  Users,
   RefreshCw,
   Instagram,
   Linkedin,
@@ -22,7 +21,6 @@ import {
   ChevronRight,
   Sparkles,
   TrendingUp,
-  Heart,
   Check,
   Loader2,
 } from 'lucide-react';

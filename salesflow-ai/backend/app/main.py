@@ -89,13 +89,15 @@ app.add_middleware(
     exclude_paths=["/health", "/docs", "/openapi.json", "/redoc"]
 )
 
-# 4. CORS Middleware
+# 4. CORS Middleware - Erlaubt alle Origins für MVP
+# In Production sollte dies auf spezifische Domains beschränkt werden
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for MVP
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Request Context Filter für Logging (fügt request_id zu Logs hinzu)

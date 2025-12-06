@@ -130,8 +130,11 @@ class Settings(BaseSettings):
     cors_allowed_origins: List[str] = Field(
         default=[
             "https://aura-os-topaz.vercel.app",
+            "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
+            "https://*.vercel.app",
             "http://localhost:5173",
             "http://localhost:5174",
+            "http://localhost:3000",
         ]
     )
 

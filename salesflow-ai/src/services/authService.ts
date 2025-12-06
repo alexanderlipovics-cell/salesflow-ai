@@ -9,7 +9,10 @@
  * @author Frontend Auth Implementation
  */
 
+// Base URL - VITE_API_BASE_URL sollte OHNE /api sein (z.B. https://salesflow-ai.onrender.com)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Ensure no trailing /api in base URL
+const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
 
 interface LoginCredentials {
   email: string;
@@ -51,7 +54,7 @@ class AuthService {
    * Login user with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(`${cleanBaseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,7 +79,7 @@ class AuthService {
    * Register new user
    */
   async signup(signupData: SignupData): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+    const response = await fetch(`${cleanBaseUrl}/api/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,7 +108,7 @@ class AuthService {
 
     if (token) {
       try {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        await fetch(`${cleanBaseUrl}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -131,7 +134,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      const response = await fetch(`${cleanBaseUrl}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -169,7 +172,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      const response = await fetch(`${cleanBaseUrl}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -203,7 +206,7 @@ class AuthService {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+    const response = await fetch(`${cleanBaseUrl}/api/auth/change-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
