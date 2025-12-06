@@ -3,6 +3,8 @@
  * 
  * API Integration für das intelligente Follow-Up System.
  * Verbindet Frontend mit GPT-5.1 Follow-Up Engine Backend.
+ * 
+ * @version 2.0.0
  */
 
 import { apiClient } from '../api/client';
