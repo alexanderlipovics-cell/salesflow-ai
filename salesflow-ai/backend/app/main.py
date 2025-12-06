@@ -93,6 +93,8 @@ app.add_middleware(
         "/redoc",
         "/api/auth/signup",  # Signup darf nicht gedrosselt werden
         "/api/auth/login",   # Login auch nicht drosseln
+        "/api/auth/refresh", # Refresh nicht drosseln
+        "/api/auth/me",      # Me nicht drosseln
     ]
 )
 
