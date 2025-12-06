@@ -5,7 +5,7 @@
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,20 @@ import {
   StatusBar,
   Dimensions,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../config/theme';
 import { RootStackParamList } from '../types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../services/supabase';
+import { useAuth } from '../context/AuthContext';
+import { registerForPushNotificationsAsync } from '../services/notifications';
+import { useNotifications } from '../hooks/useNotifications';
+import { Lead } from '../types/database';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -35,10 +43,15 @@ interface DashboardStats {
   warmLeads: number;
 }
 
+const CACHE_KEY = 'cached_leads_list';
+
 export default function DashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isOffline, setIsOffline] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     openFollowUps: 5,
     todayTasks: 3,
@@ -48,31 +61,58 @@ export default function DashboardScreen() {
     warmLeads: 8,
   });
 
+  // Push Notifications Hook aktivieren
+  useNotifications();
+
   useEffect(() => {
-    loadDashboardData();
+    loadData();
+    setupPushToken();
   }, []);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      // TODO: API Call implementieren
-      // Beispiel: const data = await fetchDashboardStats();
-      // setStats(data);
-      
-      // Simuliere API Call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error('Fehler beim Laden der Dashboard-Daten:', error);
-    } finally {
-      setLoading(false);
+  const setupPushToken = async () => {
+    const token = await registerForPushNotificationsAsync();
+    if (token && user) {
+      // Token im User Profil speichern (DB Update)
+      await supabase.from('profiles').upsert({ id: user.id, push_token: token });
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
+  const loadData = async () => {
+    // 1. Zuerst Cache laden (für sofortige UI)
+    const cached = await AsyncStorage.getItem(CACHE_KEY);
+    if (cached) setLeads(JSON.parse(cached));
+
+    // 2. Dann Netzwerk Request
+    await fetchLeads();
   };
+
+  const fetchLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setLeads(data);
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data)); // Cache aktualisieren
+        setIsOffline(false);
+      }
+    } catch (err) {
+      console.log('Offline mode active or error fetching:', err);
+      setIsOffline(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchLeads();
+  }, []);
 
   const ActionCard = ({ 
     title, 
@@ -136,8 +176,8 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerGreeting}>Willkommen zurück! 👋</Text>
-          <Text style={styles.headerTitle}>Dashboard</Text>
+          <Text style={styles.headerGreeting}>Hello, Closer 👋</Text>
+          <Text style={styles.headerTitle}>You have {leads.length} active leads.</Text>
         </View>
         <TouchableOpacity 
           style={styles.notificationButton}
@@ -243,13 +283,66 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* Recent Leads */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Aktuelle Leads</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('LeadManagement')}>
+              <Text style={styles.viewAllText}>Alle anzeigen</Text>
+            </TouchableOpacity>
+          </View>
+
+          {leads.length > 0 ? (
+            <View style={styles.leadsContainer}>
+              {leads.slice(0, 3).map((lead) => (
+                <TouchableOpacity
+                  key={lead.id}
+                  style={styles.leadCard}
+                  onPress={() => navigation.navigate('LeadDetail', { leadId: lead.id })}
+                >
+                  <View style={styles.leadHeader}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.leadName}>{lead.first_name} {lead.last_name}</Text>
+                      {lead.temperature === 'hot' && <Ionicons name="flame" size={16} color={COLORS.error} />}
+                    </View>
+                    <Text style={[styles.leadScore, { color: (lead.p_score || 0) > 70 ? COLORS.success : COLORS.textSecondary }]}>
+                      {lead.p_score ? `${lead.p_score}%` : '-'}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.leadCompany}>{lead.company_name || 'No Company'}</Text>
+
+                  <View style={styles.leadFooter}>
+                    <View style={[styles.leadBadge, { backgroundColor: lead.status === 'new' ? COLORS.primaryDark : COLORS.surfaceLight }]}>
+                      <Text style={styles.leadBadgeText}>{lead.status.toUpperCase()}</Text>
+                    </View>
+                    <Text style={styles.leadDate}>{new Date(lead.created_at).toLocaleDateString()}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyLeads}>
+              <Text style={styles.emptyLeadsText}>No leads found yet.</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Offline Banner */}
+        {isOffline && (
+          <View style={styles.offlineBanner}>
+            <Ionicons name="cloud-offline" size={16} color="#000" />
+            <Text style={styles.offlineText}>Offline Mode - Showing cached data</Text>
+          </View>
+        )}
+
         {/* Daily Tip */}
         <View style={styles.tipCard}>
           <Text style={styles.tipIcon}>💡</Text>
           <View style={styles.tipContent}>
             <Text style={styles.tipTitle}>Tipp des Tages</Text>
             <Text style={styles.tipText}>
-              Konzentriere dich heute auf deine heißen Leads. Sie haben die höchste 
+              Konzentriere dich heute auf deine heißen Leads. Sie haben die höchste
               Conversion-Wahrscheinlichkeit!
             </Text>
           </View>
@@ -451,6 +544,97 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodySmall,
     color: COLORS.textSecondary,
     lineHeight: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  viewAllText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  leadsContainer: {
+    backgroundColor: COLORS.glass,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.sm,
+  },
+  leadCard: {
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  leadHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  leadName: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+  leadScore: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  leadCompany: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  leadFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  leadBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  leadBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  leadDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  emptyLeads: {
+    padding: SPACING.lg,
+    alignItems: 'center',
+  },
+  emptyLeadsText: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.warning,
+    padding: SPACING.md,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderRadius: RADIUS.md,
+    gap: SPACING.sm,
+  },
+  offlineText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: '#000',
+    fontWeight: 'bold',
+    flex: 1,
   },
 });
 
