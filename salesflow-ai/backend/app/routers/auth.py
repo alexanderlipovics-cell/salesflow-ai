@@ -235,13 +235,14 @@ async def signup(
     created_user.setdefault("company", signup_data.company)
     created_user.setdefault("created_at", datetime.utcnow().isoformat())
     
-    # Generate tokens
+    # Generate tokens (JWT factory erwartet UUID + role)
+    try:
+        uuid_val = UUID(str(user_id))
+    except Exception:
+        uuid_val = UUID(int=0)
     tokens = create_token_pair(
-        user_id=user_id,
-        user_data={
-            "email": created_user["email"],
-            "role": created_user["role"]
-        }
+        uuid_val,
+        created_user.get("role", "user"),
     )
     
     logger.info(f"User registered: {signup_data.email}")
@@ -287,13 +288,14 @@ async def login(
             detail="Account is inactive. Please contact support."
         )
     
-    # Generate tokens
+    # Generate tokens (JWT factory erwartet UUID + role)
+    try:
+        uuid_val = UUID(str(user["id"]))
+    except Exception:
+        uuid_val = UUID(int=0)
     tokens = create_token_pair(
-        user_id=str(user["id"]),
-        user_data={
-            "email": user["email"],
-            "role": user.get("role", "user")
-        }
+        uuid_val,
+        user_response.get("role", "user"),
     )
     
     logger.info(f"User logged in: {login_data.email}")
