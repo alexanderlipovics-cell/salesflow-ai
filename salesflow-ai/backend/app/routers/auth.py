@@ -353,18 +353,24 @@ async def refresh_token(
                 detail="Account is inactive"
             )
         
-        # Generate new token pair
+        # Defaults absichern
+        user_role = user.get("role", "user")
+        user_email = user.get("email", "")
+
+        # Generate new token pair (JWT factory erwartet UUID + role)
+        try:
+            uuid_val = UUID(str(user_id))
+        except Exception:
+            uuid_val = UUID(int=0)
+
         tokens = create_token_pair(
-            user_id=user_id,
-            user_data={
-                "email": user["email"],
-                "role": user.get("role", "user")
-            }
+            uuid_val,
+            user_role,
         )
         
-        logger.info(f"Token refreshed for user: {user['email']}")
+        logger.info(f"Token refreshed for user: {user_email}")
         
-        return TokenResponse(**tokens)
+        return TokenResponse(**tokens.model_dump())
         
     except InvalidTokenError as e:
         raise HTTPException(
