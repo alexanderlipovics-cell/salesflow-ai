@@ -6,9 +6,9 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
-import { scheduleNextLoopCheckinTask } from "@/services/followUpService";
-import type { Lead, LeadTaskStatus, LeadTaskWithLead } from "@/types/leadTasks";
+import { supabaseClient } from "../lib/supabaseClient";
+import { scheduleNextLoopCheckinTask } from "../services/followUpService";
+import type { Lead, LeadTaskStatus, LeadTaskWithLead } from "../types/leadTasks";
 
 type FollowUpTaskCompletionStatus = Extract<LeadTaskStatus, "done" | "skipped">;
 

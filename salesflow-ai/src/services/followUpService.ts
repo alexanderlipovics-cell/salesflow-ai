@@ -143,6 +143,37 @@ export async function startStandardFollowUpSequenceForLead(
   }
 }
 
+/**
+ * Plant den nächsten Loop-Check-in Task.
+ * Wird nach Abschluss eines rx_loop_checkin Tasks aufgerufen.
+ */
+export async function scheduleNextLoopCheckinTask(task: {
+  id: string;
+  lead_id: string;
+  due_at: string | null;
+}): Promise<{ success: boolean; next_due_at?: string }> {
+  try {
+    const response = await apiClient.post<{ success: boolean; next_due_at?: string }>(
+      `/follow-ups/${task.lead_id}/schedule-loop-checkin`,
+      { 
+        previous_task_id: task.id,
+        previous_due_at: task.due_at 
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.warn('Could not schedule next loop check-in:', error);
+    // Fallback: Lokale Berechnung (7 Tage später)
+    const nextDue = task.due_at 
+      ? new Date(new Date(task.due_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    return { 
+      success: false, 
+      next_due_at: nextDue 
+    };
+  }
+}
+
 // ============================================
 // REACT QUERY KEYS
 // ============================================
@@ -160,4 +191,5 @@ export default {
   snoozeFollowUp,
   batchGenerateFollowUps,
   startStandardFollowUpSequenceForLead,
+  scheduleNextLoopCheckinTask,
 };
