@@ -221,17 +221,19 @@ async def signup(
         "id": user_id,
         "email": signup_data.email,
         "password_hash": password_hash,
-        "name": signup_data.name,
         "created_at": datetime.utcnow().isoformat(),
     }
-    # Optional, nur wenn vorhanden (Spalte kann fehlen)
-    if signup_data.company:
-        user_data["company"] = signup_data.company
+    # Optional befüllen (Spalten könnten fehlen)
+    # company und name nur setzen, wenn die Spalte existiert – hier defensiv weggelassen,
+    # um Schema-Fehler zu vermeiden. Falls Spalten existieren, bitte in Supabase ergänzen.
     
     created_user = await create_user(supabase, user_data)
     # Fülle optionale Felder für die Response, auch wenn sie in der DB fehlen
     created_user.setdefault("role", "user")
     created_user.setdefault("is_active", True)
+    created_user.setdefault("name", signup_data.name)
+    created_user.setdefault("company", signup_data.company)
+    created_user.setdefault("created_at", datetime.utcnow().isoformat())
     
     # Generate tokens
     tokens = create_token_pair(
@@ -300,6 +302,7 @@ async def login(
     user_response = {**user}
     user_response.setdefault("role", "user")
     user_response.setdefault("is_active", True)
+    user_response.setdefault("name", user.get("name", ""))
 
     return LoginResponse(
         user=UserResponse(**user_response),
