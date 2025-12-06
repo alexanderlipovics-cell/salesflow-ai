@@ -144,12 +144,9 @@ class AuthService {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token expired, try to refresh
-          const refreshed = await this.refreshToken();
-          if (refreshed) {
-            // Retry with new token
-            return this.getCurrentUser();
-          }
+          // Ungültiger Token: alles löschen und null zurück
+          this.clearTokens();
+          return null;
         }
         throw new Error('Failed to get user info');
       }
