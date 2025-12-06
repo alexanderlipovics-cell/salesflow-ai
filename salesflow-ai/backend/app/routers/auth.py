@@ -250,7 +250,7 @@ async def signup(
     
     return SignupResponse(
         user=UserResponse(**created_user),
-        tokens=TokenResponse(**tokens),
+        tokens=TokenResponse(**tokens.model_dump()),
         message="Account created successfully"
     )
 
@@ -310,7 +310,7 @@ async def login(
 
     return LoginResponse(
         user=UserResponse(**user_response),
-        tokens=TokenResponse(**tokens),
+        tokens=TokenResponse(**tokens.model_dump()),
         message="Login successful"
     )
 
