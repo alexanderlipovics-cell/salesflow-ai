@@ -2,21 +2,32 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
+import sys
 
-# Logging mit Request ID Format
+# Logging Setup (ohne request_id da das nur mit Middleware funktioniert)
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(request_id)s] %(levelname)s %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
 
 # App erstellen
 app = FastAPI(
     title="SalesFlow AI API",
-    description="Backend für FELLO Sales Copilot",
-    version="1.0.0"
+    description="Backend für SalesFlow AI - Network Marketing CRM",
+    version="2.0.0"
 )
+
+# EARLY Health Check (vor allen Imports)
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "version": "2.0.0"}
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "app": "SalesFlow AI", "version": "2.0.0"}
 
 # ============= Exception Handlers =============
 from .core.exceptions import SalesFlowException, exception_to_dict, get_status_code
@@ -132,11 +143,4 @@ app.include_router(onboarding_router, prefix="/api")  # 🆕 Magic Onboarding Sy
 app.include_router(compensation_router, prefix="/api")  # 🆕 Provisionsberechnung für MLM
 
 
-@app.get("/")
-async def root():
-    return {"status": "ok", "app": "SalesFlow AI"}
-
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
+# Health check und root sind jetzt am Anfang der Datei definiert
