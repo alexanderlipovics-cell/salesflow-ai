@@ -86,7 +86,14 @@ app.add_middleware(
     enabled=settings.rate_limit_enabled,
     default_limit=settings.rate_limit_default_requests,
     default_window=settings.rate_limit_default_window_seconds,
-    exclude_paths=["/health", "/docs", "/openapi.json", "/redoc"]
+    exclude_paths=[
+        "/health",
+        "/docs",
+        "/openapi.json",
+        "/redoc",
+        "/api/auth/signup",  # Signup darf nicht gedrosselt werden
+        "/api/auth/login",   # Login auch nicht drosseln
+    ]
 )
 
 # 4. CORS Middleware - Erlaubt alle Origins für MVP
