@@ -3,46 +3,43 @@
  * Dark Glassmorphism Design inspired by AURA OS
  */
 
+import { StyleSheet } from 'react-native';
+
 export const COLORS = {
-  // Primary Colors
-  primary: '#06b6d4', // Cyan
+  primary: '#06b6d4',       // Cyan
   primaryDark: '#0891b2',
   primaryLight: '#22d3ee',
-  
-  // Background
-  background: '#0f172a', // Slate-900
-  backgroundLight: '#1e293b', // Slate-800
-  surface: '#1e293b',
-  surfaceLight: '#334155',
-  
+
+  background: '#0f172a',    // Slate-900
+  surface: '#1e293b',       // Slate-800
+
+  text: '#f8fafc',          // Slate-50
+  textSecondary: '#94a3b8', // Slate-400
+
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+
   // Glass Effects
   glass: 'rgba(30, 41, 59, 0.7)',
-  glassLight: 'rgba(51, 65, 85, 0.5)',
-  
-  // Text
-  text: '#f8fafc', // Slate-50
-  textSecondary: '#cbd5e1', // Slate-300
-  textMuted: '#64748b', // Slate-500
-  
-  // Accent Colors
-  accent: '#f97316', // Orange
-  success: '#10b981', // Green
-  warning: '#f59e0b', // Amber
-  error: '#ef4444', // Red
-  info: '#3b82f6', // Blue
-  
-  // Status Colors
-  hot: '#ef4444',
-  warm: '#f59e0b',
-  cold: '#3b82f6',
-  
-  // Borders
   border: 'rgba(255, 255, 255, 0.1)',
-  borderLight: 'rgba(255, 255, 255, 0.2)',
-  
-  // Overlays
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayDark: 'rgba(0, 0, 0, 0.7)',
+};
+
+export const SHADOWS = {
+  glow: {
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  }
 };
 
 export const SPACING = {
@@ -60,37 +57,6 @@ export const RADIUS = {
   lg: 16,
   xl: 24,
   full: 9999,
-};
-
-export const SHADOWS = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.44,
-    shadowRadius: 10.32,
-    elevation: 16,
-  },
-  glow: {
-    shadowColor: '#06b6d4',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 10,
-  },
 };
 
 export const TYPOGRAPHY = {
@@ -125,4 +91,20 @@ export const TYPOGRAPHY = {
     lineHeight: 16,
   },
 };
+
+export const GLOBAL_STYLES = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  glassCard: {
+    backgroundColor: COLORS.glass,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    marginBottom: 16,
+    ...SHADOWS.card,
+  },
+});
 

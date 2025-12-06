@@ -138,6 +138,9 @@ from .routers.lead_hunter import router as lead_hunter_router  # 🆕 Lead Hunte
 from .routers.onboarding import router as onboarding_router  # 🆕 Magic Onboarding System
 from .routers.compensation import router as compensation_router  # 🆕 Provisionsberechnung
 from .routers.ad_webhooks import router as ad_webhooks_router  # 🆕 Ad Platform Webhooks (Facebook, LinkedIn, Instagram)
+from .routers.facebook_webhook import router as facebook_webhook_router  # 🆕 Facebook Lead Ads Webhook
+from .routers.linkedin_webhook import router as linkedin_webhook_router  # 🆕 LinkedIn Lead Gen Webhook
+from .routers.instagram_webhook import router as instagram_webhook_router  # 🆕 Instagram DM Webhook
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -159,6 +162,9 @@ app.include_router(lead_hunter_router, prefix="/api")  # 🆕 Lead Hunter für N
 app.include_router(onboarding_router, prefix="/api")  # 🆕 Magic Onboarding System
 app.include_router(compensation_router, prefix="/api")  # 🆕 Provisionsberechnung für MLM
 app.include_router(ad_webhooks_router, prefix="/api")  # 🆕 Ad Platform Webhooks (Facebook, LinkedIn, Instagram)
+app.include_router(facebook_webhook_router)  # 🆕 Facebook Lead Ads Webhook
+app.include_router(linkedin_webhook_router)  # 🆕 LinkedIn Lead Gen Webhook
+app.include_router(instagram_webhook_router)  # 🆕 Instagram DM Webhook
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

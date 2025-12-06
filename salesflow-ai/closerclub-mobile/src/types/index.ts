@@ -80,3 +80,6 @@ export interface ApiResponse<T> {
   };
 }
 
+// Re-export database types
+export * from './database';
+

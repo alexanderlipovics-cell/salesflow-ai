@@ -42,6 +42,28 @@ class Settings(BaseSettings):
     default_org_id: Optional[str] = Field(default="demo-org")
     default_user_id: Optional[str] = Field(default="demo-user")
     default_user_name: Optional[str] = Field(default="Demo User")
+
+    # ============= Lead Assignment =============
+    default_lead_owner_id: Optional[str] = Field(default=None)
+
+    # ============= Facebook / Meta =============
+    facebook_verify_token: str = Field(default="change-me")
+    facebook_app_secret: str = Field(default="change-me")
+    facebook_page_access_token: str = Field(default="change-me")
+    facebook_webhook_ip_whitelist: List[str] = Field(default_factory=list)
+
+    # ============= LinkedIn =============
+    linkedin_client_id: str = Field(default="change-me")
+    linkedin_client_secret: str = Field(default="change-me")
+    linkedin_redirect_uri: str = Field(default="https://yourapp.com/webhooks/linkedin/oauth/callback")
+    linkedin_access_token: Optional[str] = Field(default=None)
+    linkedin_webhook_ip_whitelist: List[str] = Field(default_factory=list)
+
+    # ============= Instagram =============
+    instagram_verify_token: str = Field(default="change-me")
+    instagram_app_secret: str = Field(default="change-me")
+    instagram_webhook_ip_whitelist: List[str] = Field(default_factory=list)
+    instagram_send_autoreply: bool = Field(default=False)
     
     # ============= JWT Settings =============
     jwt_secret_key: str = Field(

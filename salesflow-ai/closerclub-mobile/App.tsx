@@ -7,13 +7,14 @@
 
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import RootNavigator from './src/navigation/RootNavigator';
+import { AuthProvider } from './src/context/AuthContext';
+import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
-    <>
-      <RootNavigator />
+    <AuthProvider>
+      <AppNavigator />
       <StatusBar style="light" />
-    </>
+    </AuthProvider>
   );
 }
