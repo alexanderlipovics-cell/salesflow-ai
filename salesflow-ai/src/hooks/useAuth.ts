@@ -7,7 +7,7 @@
  * @author Frontend Auth Implementation
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { authService, User, LoginCredentials, SignupData } from '../services/authService';
 
 interface UseAuthReturn {
@@ -26,6 +26,8 @@ export const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef<boolean>(false); // verhindert parallele /auth/me Calls
+  const authFailedRef = useRef<boolean>(false); // verhindert Endlosschleifen nach 401
 
   /**
    * Load current user on mount
@@ -38,14 +40,44 @@ export const useAuth = (): UseAuthReturn => {
    * Load user from backend
    */
   const loadUser = async () => {
+    // Kein doppelter Fetch parallel
+    if (isFetchingRef.current || authFailedRef.current) return;
+    isFetchingRef.current = true;
+
     setIsLoading(true);
     try {
+      // Sofort abbrechen, wenn kein Token lokal vorhanden ist
+      const token = authService.getAccessToken();
+      if (!token) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
       const currentUser = await authService.getCurrentUser();
+
+      if (!currentUser) {
+        // 401 oder ungültiger Token: Tokens löschen und redirect zum Login
+        await authService.logout();
+        setUser(null);
+        authFailedRef.current = true;
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.replace('/login');
+        }
+        return;
+      }
+
       setUser(currentUser);
     } catch (err) {
       console.error('Failed to load user:', err);
       setUser(null);
+      authFailedRef.current = true;
+      authService.clearTokens?.();
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   };
