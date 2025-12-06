@@ -21,6 +21,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../config/theme';
+import { RootStackParamList } from '../types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +36,7 @@ interface DashboardStats {
 }
 
 export default function DashboardScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
@@ -137,7 +139,10 @@ export default function DashboardScreen() {
           <Text style={styles.headerGreeting}>Willkommen zurück! 👋</Text>
           <Text style={styles.headerTitle}>Dashboard</Text>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
+        <TouchableOpacity 
+          style={styles.notificationButton}
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Text style={styles.notificationIcon}>🔔</Text>
           <View style={styles.notificationBadge}>
             <Text style={styles.notificationBadgeText}>3</Text>
@@ -233,7 +238,7 @@ export default function DashboardScreen() {
               title="Analytics"
               icon="📊"
               gradient={['#10b981', '#059669']}
-              onPress={() => {}}
+              onPress={() => navigation.navigate('Analytics')}
             />
           </View>
         </View>

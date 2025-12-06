@@ -85,10 +85,12 @@ export default function AICoachScreen() {
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
 
+    const userQuestion = inputText.trim();
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputText.trim(),
+      content: userQuestion,
       timestamp: new Date(),
     };
 
@@ -98,16 +100,16 @@ export default function AICoachScreen() {
 
     try {
       // TODO: API Call implementieren
-      // Simuliere AI Response
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Simuliere AI Response mit Bezug auf die Frage
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Das ist eine großartige Frage! Hier sind meine Empfehlungen:\n\n1. Baue zunächst Rapport auf\n2. Stelle offene Fragen\n3. Höre aktiv zu\n4. Präsentiere Lösungen, keine Features\n\nMöchtest du mehr über einen dieser Punkte erfahren?',
+        content: `Zu deiner Frage: "${userQuestion}"\n\nEmpfohlene nächsten Schritte:\n1) Kläre das Ziel: Was genau willst du erreichen?\n2) Stelle 2-3 offene Fragen, um Bedarf zu verstehen.\n3) Spiegle die Haupt-Herausforderung zurück.\n4) Biete eine konkrete nächste Aktion an (Call, Demo, Angebot).\n\nWillst du ein konkretes Script oder Einwand-Response dafür?`,
         timestamp: new Date(),
       };
-      
+
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('Fehler beim Senden der Nachricht:', error);

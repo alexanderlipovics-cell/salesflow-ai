@@ -21,6 +21,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../config/theme';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -53,6 +56,7 @@ const PRIORITY_CONFIG = {
 };
 
 export default function LeadManagementScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -175,6 +179,7 @@ export default function LeadManagementScreen() {
       <TouchableOpacity 
         style={styles.leadCard}
         activeOpacity={0.8}
+        onPress={() => navigation.navigate('LeadDetail', { lead })}
       >
         <View style={styles.leadHeader}>
           <View style={styles.leadInfo}>

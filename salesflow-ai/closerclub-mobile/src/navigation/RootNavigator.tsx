@@ -13,6 +13,9 @@ import DashboardScreen from '../screens/DashboardScreen';
 import SpeedHunterScreen from '../screens/SpeedHunterScreen';
 import LeadManagementScreen from '../screens/LeadManagementScreen';
 import AICoachScreen from '../screens/AICoachScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
+import LeadDetailScreen from '../screens/LeadDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,6 +58,27 @@ export default function RootNavigator() {
           component={LeadManagementScreen}
           options={{
             title: 'Lead Management',
+          }}
+        />
+        <Stack.Screen
+          name="LeadDetail"
+          component={LeadDetailScreen}
+          options={{
+            title: 'Lead Detail',
+          }}
+        />
+        <Stack.Screen
+          name="Notifications"
+          component={NotificationsScreen}
+          options={{
+            title: 'Benachrichtigungen',
+          }}
+        />
+        <Stack.Screen
+          name="Analytics"
+          component={AnalyticsScreen}
+          options={{
+            title: 'Analytics',
           }}
         />
         <Stack.Screen

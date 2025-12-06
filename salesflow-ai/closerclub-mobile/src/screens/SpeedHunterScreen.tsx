@@ -20,6 +20,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../config/theme';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -44,6 +47,7 @@ interface SpeedHunterData {
 }
 
 export default function SpeedHunterScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedWindow, setSelectedWindow] = useState('24h');
@@ -119,6 +123,7 @@ export default function SpeedHunterScreen() {
     <TouchableOpacity 
       style={styles.accountCard}
       activeOpacity={0.8}
+      onPress={() => navigation.navigate('LeadDetail', { lead: account })}
     >
       <View style={styles.accountHeader}>
         <View style={styles.accountInfo}>

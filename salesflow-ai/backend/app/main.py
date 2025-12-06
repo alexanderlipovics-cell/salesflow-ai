@@ -96,12 +96,14 @@ app.add_middleware(
     ]
 )
 
-# 4. CORS Middleware - Erlaubt alle Origins für MVP
-# In Production sollte dies auf spezifische Domains beschränkt werden
+# 4. CORS Middleware
+# Wichtig: In Production nur definierte Origins erlauben, damit Browser nicht blockt.
+# Wir nutzen die in settings.cors_allowed_origins hinterlegten Domains (Vercel + Localhost).
+allowed_origins = settings.cors_allowed_origins or []
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for MVP
-    allow_credentials=False,  # Must be False when allow_origins=["*"]
+    allow_origins=allowed_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],

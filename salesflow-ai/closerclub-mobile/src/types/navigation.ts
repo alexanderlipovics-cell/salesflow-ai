@@ -7,8 +7,10 @@ export type RootStackParamList = {
   SpeedHunter: undefined;
   LeadManagement: undefined;
   AICoach: undefined;
-  LeadDetail: { leadId: string };
-  Settings: undefined;
+  LeadDetail: { lead: any };
+  Notifications: undefined;
+  Analytics: undefined;
+  Settings?: undefined;
 };
 
 declare global {
