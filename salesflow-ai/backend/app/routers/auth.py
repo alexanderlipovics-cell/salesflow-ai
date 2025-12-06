@@ -229,11 +229,12 @@ async def signup(
     
     created_user = await create_user(supabase, user_data)
     # Fülle optionale Felder für die Response, auch wenn sie in der DB fehlen
-    created_user.setdefault("role", "user")
-    created_user.setdefault("is_active", True)
-    created_user.setdefault("name", signup_data.name)
-    created_user.setdefault("company", signup_data.company)
-    created_user.setdefault("created_at", datetime.utcnow().isoformat())
+    created_user["role"] = created_user.get("role", "user")
+    created_user["is_active"] = created_user.get("is_active", True)
+    created_user["name"] = created_user.get("name") or signup_data.name or ""
+    created_user["email"] = created_user.get("email") or signup_data.email
+    created_user["company"] = created_user.get("company") or (signup_data.company or "")
+    created_user["created_at"] = created_user.get("created_at", datetime.utcnow().isoformat())
     
     # Generate tokens (JWT factory erwartet UUID + role)
     try:
@@ -290,9 +291,10 @@ async def login(
 
     # Response absichern mit Defaults (vor Token-Erstellung, damit auch bei Fehlern definiert)
     user_response = {**user}
-    user_response.setdefault("role", "user")
-    user_response.setdefault("is_active", True)
-    user_response.setdefault("name", user.get("name", ""))
+    user_response["role"] = user_response.get("role", "user")
+    user_response["is_active"] = user_response.get("is_active", True)
+    user_response["name"] = user_response.get("name") or ""
+    user_response["email"] = user_response.get("email") or ""
 
     # Generate tokens (JWT factory erwartet UUID + role)
     try:
