@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useHunterTasks } from '../hooks/useHunterTasks';
 import { SALES_SCRIPTS } from '../lib/salesScripts';
-import { startStandardFollowUpSequenceForLead } from '@/services/followUpService';
+import { startStandardFollowUpSequenceForLead } from '../services/followUpService';
 // @ts-expect-error - UserContext is a JS file without type declarations
 import { useUser } from '../context/UserContext';
 
