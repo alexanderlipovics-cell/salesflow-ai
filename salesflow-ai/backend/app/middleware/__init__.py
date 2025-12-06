@@ -9,13 +9,14 @@ Enthält:
 
 from .rate_limiter import (
     RateLimitMiddleware,
-    RateLimitCategory,
     RateLimitExceeded,
-    RateLimitDependency,
-    rate_limiter,
+    SlidingWindowRateLimiter,
+    TokenBucketRateLimiter,
+    BruteForceProtection,
+    RateLimitConfig,
     rate_limit,
-    get_rate_limit_key,
-    get_endpoint_category,
+    ip_rate_limit,
+    user_rate_limit,
 )
 
 from .security_headers import (
@@ -38,13 +39,14 @@ from .request_id import (
 __all__ = [
     # Rate Limiting
     "RateLimitMiddleware",
-    "RateLimitCategory",
     "RateLimitExceeded",
-    "RateLimitDependency",
-    "rate_limiter",
+    "SlidingWindowRateLimiter",
+    "TokenBucketRateLimiter",
+    "BruteForceProtection",
+    "RateLimitConfig",
     "rate_limit",
-    "get_rate_limit_key",
-    "get_endpoint_category",
+    "ip_rate_limit",
+    "user_rate_limit",
     
     # Security Headers
     "SecurityHeadersMiddleware",

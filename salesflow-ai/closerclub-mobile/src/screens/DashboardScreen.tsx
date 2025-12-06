@@ -170,7 +170,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="dashboard-screen">
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
       {/* Header */}
@@ -293,7 +293,7 @@ export default function DashboardScreen() {
           </View>
 
           {leads.length > 0 ? (
-            <View style={styles.leadsContainer}>
+            <View style={styles.leadsContainer} testID="leads-list">
               {leads.slice(0, 3).map((lead) => (
                 <TouchableOpacity
                   key={lead.id}

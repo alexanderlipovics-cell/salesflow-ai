@@ -1,332 +1,511 @@
 """
-Rate Limiting Middleware for SalesFlow AI.
+============================================
+🛡️ SALESFLOW AI - ADVANCED RATE LIMITING
+============================================
 
-Implements tiered rate limiting with:
-- Per-IP and per-user limiting
-- Different limits by endpoint category
-- Sliding window algorithm
-- Redis-compatible interface
+Multi-layer rate limiting with:
+
+- IP-based limits
+- User-based limits
+- Endpoint-specific limits
+- Burst protection
+- Redis backend
 """
-import asyncio
-from collections import defaultdict
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Callable, Optional
+
+import time
 import hashlib
-import logging
+from typing import Callable, Optional, Tuple
+from functools import wraps
 
-from fastapi import Request, Response
+from fastapi import Request, Response, HTTPException, status
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
+from redis.asyncio import Redis
+import structlog
 
-from app.config import get_settings
+logger = structlog.get_logger()
 
-logger = logging.getLogger(__name__)
+class RateLimitConfig:
+    """Rate limit configuration per endpoint type."""
 
+    # Default limits
+    DEFAULT_REQUESTS_PER_MINUTE = 100
+    DEFAULT_REQUESTS_PER_SECOND = 10
 
-class RateLimitCategory(str, Enum):
-    """Rate limit categories with different thresholds."""
-    AUTH = "auth"  # Login, register, password reset
-    API = "api"  # General API endpoints
-    SEARCH = "search"  # Search/list endpoints
-    WRITE = "write"  # Create/update endpoints
-    EXPORT = "export"  # Bulk export endpoints
-    AI = "ai"  # AI/ML endpoints (Copilot)
+    # Authentication endpoints (strict)
+    AUTH_LOGIN_PER_MINUTE = 5
+    AUTH_REGISTER_PER_MINUTE = 3
+    AUTH_PASSWORD_RESET_PER_HOUR = 3
 
+    # API endpoints (moderate)
+    API_READ_PER_MINUTE = 200
+    API_WRITE_PER_MINUTE = 50
 
-# Default rate limits per category (requests, seconds)
-DEFAULT_LIMITS = {
-    RateLimitCategory.AUTH: (5, 300),  # 5 per 5 minutes
-    RateLimitCategory.API: (100, 60),  # 100 per minute
-    RateLimitCategory.SEARCH: (30, 60),  # 30 per minute
-    RateLimitCategory.WRITE: (20, 60),  # 20 per minute
-    RateLimitCategory.EXPORT: (5, 300),  # 5 per 5 minutes
-    RateLimitCategory.AI: (10, 60),  # 10 per minute
-}
+    # Webhook endpoints (high volume)
+    WEBHOOK_PER_MINUTE = 500
 
+    # AI/Chat endpoints (expensive operations)
+    AI_CHAT_PER_MINUTE = 20
+    AI_GENERATE_PER_MINUTE = 10
 
-class RateLimitExceeded(Exception):
-    """Rate limit has been exceeded."""
-    
-    def __init__(self, retry_after: int, limit: int, window: int):
+    # Export endpoints (resource intensive)
+    EXPORT_PER_HOUR = 10
+
+class RateLimitExceeded(HTTPException):
+    """Rate limit exceeded exception."""
+
+    def __init__(
+        self,
+        retry_after: int = 60,
+        detail: str = "Rate limit exceeded"
+    ):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=detail,
+            headers={"Retry-After": str(retry_after)}
+        )
         self.retry_after = retry_after
-        self.limit = limit
-        self.window = window
-        super().__init__(f"Rate limit exceeded. Retry after {retry_after} seconds")
 
+class SlidingWindowRateLimiter:
+    """
+    Sliding window rate limiter using Redis.
 
-class SlidingWindowCounter:
+    More accurate than fixed window, prevents burst at window boundaries.
     """
-    Sliding window rate limiter using in-memory storage.
-    
-    In production, replace with Redis implementation.
-    """
-    
-    def __init__(self):
-        # {key: [(timestamp, count), ...]}
-        self._windows: dict[str, list[tuple[datetime, int]]] = defaultdict(list)
-        self._lock = asyncio.Lock()
-    
+
+    def __init__(self, redis: Redis, prefix: str = "ratelimit"):
+        self.redis = redis
+        self.prefix = prefix
+
+    def _get_key(self, identifier: str, endpoint: str) -> str:
+        """Generate rate limit key."""
+        # Hash endpoint to avoid special characters
+        endpoint_hash = hashlib.md5(endpoint.encode()).hexdigest()[:8]
+        return f"{self.prefix}:{endpoint_hash}:{identifier}"
+
     async def is_allowed(
         self,
-        key: str,
-        limit: int,
+        identifier: str,
+        endpoint: str,
+        max_requests: int,
         window_seconds: int
-    ) -> tuple[bool, int, int]:
+    ) -> Tuple[bool, int, int]:
         """
-        Check if request is allowed and record it.
-        
-        Returns:
-            Tuple of (is_allowed, remaining, retry_after)
+        Check if request is allowed.
+
+        Returns: (is_allowed, remaining_requests, reset_time)
         """
-        async with self._lock:
-            now = datetime.utcnow()
-            window_start = now - timedelta(seconds=window_seconds)
-            
-            # Clean old entries
-            self._windows[key] = [
-                (ts, count) for ts, count in self._windows[key]
-                if ts > window_start
-            ]
-            
-            # Count current requests
-            current_count = sum(count for _, count in self._windows[key])
-            
-            if current_count >= limit:
-                # Calculate retry after
-                if self._windows[key]:
-                    oldest = min(ts for ts, _ in self._windows[key])
-                    retry_after = int((oldest + timedelta(seconds=window_seconds) - now).total_seconds())
-                    retry_after = max(1, retry_after)
-                else:
-                    retry_after = window_seconds
-                
-                return False, 0, retry_after
-            
-            # Record new request
-            self._windows[key].append((now, 1))
-            remaining = limit - current_count - 1
-            
-            return True, remaining, 0
-    
-    async def get_usage(self, key: str, window_seconds: int) -> int:
-        """Get current usage count for a key."""
-        async with self._lock:
-            now = datetime.utcnow()
-            window_start = now - timedelta(seconds=window_seconds)
-            
-            return sum(
-                count for ts, count in self._windows.get(key, [])
-                if ts > window_start
-            )
-    
-    async def reset(self, key: str) -> None:
-        """Reset rate limit for a key."""
-        async with self._lock:
-            self._windows.pop(key, None)
+        key = self._get_key(identifier, endpoint)
+        now = time.time()
+        window_start = now - window_seconds
 
+        pipe = self.redis.pipeline()
 
-# Global rate limiter
-rate_limiter = SlidingWindowCounter()
+        # Remove old entries
+        pipe.zremrangebyscore(key, 0, window_start)
 
+        # Count current requests
+        pipe.zcard(key)
 
-def get_rate_limit_key(
-    request: Request,
-    user_id: Optional[str] = None
-) -> str:
+        # Add current request (will be rolled back if not allowed)
+        pipe.zadd(key, {str(now): now})
+
+        # Set expiry
+        pipe.expire(key, window_seconds)
+
+        results = await pipe.execute()
+        current_count = results[1]
+
+        if current_count >= max_requests:
+            # Remove the request we just added
+            await self.redis.zrem(key, str(now))
+
+            # Get oldest entry time for reset calculation
+            oldest = await self.redis.zrange(key, 0, 0, withscores=True)
+            reset_time = int(oldest[0][1] + window_seconds - now) if oldest else window_seconds
+
+            return False, 0, reset_time
+
+        remaining = max_requests - current_count - 1
+        reset_time = window_seconds
+
+        return True, remaining, reset_time
+
+    async def get_usage(
+        self,
+        identifier: str,
+        endpoint: str,
+        window_seconds: int
+    ) -> int:
+        """Get current request count in window."""
+        key = self._get_key(identifier, endpoint)
+        now = time.time()
+        window_start = now - window_seconds
+
+        # Clean old entries and count
+        await self.redis.zremrangebyscore(key, 0, window_start)
+        return await self.redis.zcard(key)
+
+class TokenBucketRateLimiter:
     """
-    Generate rate limit key for request.
-    
-    Uses user_id if authenticated, otherwise IP address.
+    Token bucket rate limiter for burst protection.
+
+    Allows short bursts while maintaining long-term rate limits.
     """
-    if user_id:
-        return f"user:{user_id}"
-    
-    # Get real IP from headers (for proxied requests)
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        ip = forwarded.split(",")[0].strip()
-    else:
-        ip = request.client.host if request.client else "unknown"
-    
-    return f"ip:{ip}"
 
+    def __init__(self, redis: Redis, prefix: str = "tokenbucket"):
+        self.redis = redis
+        self.prefix = prefix
 
-def get_endpoint_category(path: str, method: str) -> RateLimitCategory:
-    """Determine rate limit category from endpoint path."""
-    path_lower = path.lower()
-    
-    # Auth endpoints
-    if any(x in path_lower for x in ["/auth/", "/login", "/register", "/password"]):
-        return RateLimitCategory.AUTH
-    
-    # AI endpoints
-    if any(x in path_lower for x in ["/copilot", "/ai/", "/generate"]):
-        return RateLimitCategory.AI
-    
-    # Export endpoints
-    if "export" in path_lower:
-        return RateLimitCategory.EXPORT
-    
-    # Write operations
-    if method in ["POST", "PUT", "PATCH", "DELETE"]:
-        return RateLimitCategory.WRITE
-    
-    # Search/list endpoints
-    if method == "GET" and any(x in path_lower for x in ["/search", "?q=", "filter"]):
-        return RateLimitCategory.SEARCH
-    
-    return RateLimitCategory.API
+    def _get_key(self, identifier: str, endpoint: str) -> str:
+        """Generate bucket key."""
+        endpoint_hash = hashlib.md5(endpoint.encode()).hexdigest()[:8]
+        return f"{self.prefix}:{endpoint_hash}:{identifier}"
 
+    async def is_allowed(
+        self,
+        identifier: str,
+        endpoint: str,
+        bucket_size: int,
+        refill_rate: float,  # tokens per second
+        tokens_required: int = 1
+    ) -> Tuple[bool, int]:
+        """
+        Check if request is allowed using token bucket algorithm.
+
+        Returns: (is_allowed, remaining_tokens)
+        """
+        key = self._get_key(identifier, endpoint)
+        now = time.time()
+
+        # Get current state
+        data = await self.redis.hgetall(key)
+
+        if not data:
+            # Initialize bucket
+            tokens = bucket_size - tokens_required
+            await self.redis.hset(key, mapping={
+                "tokens": tokens,
+                "last_refill": now
+            })
+            await self.redis.expire(key, 3600)  # 1 hour expiry
+            return True, tokens
+
+        tokens = float(data.get("tokens", bucket_size))
+        last_refill = float(data.get("last_refill", now))
+
+        # Calculate refilled tokens
+        time_passed = now - last_refill
+        tokens = min(bucket_size, tokens + (time_passed * refill_rate))
+
+        if tokens < tokens_required:
+            # Not enough tokens
+            return False, int(tokens)
+
+        # Consume tokens
+        tokens -= tokens_required
+
+        await self.redis.hset(key, mapping={
+            "tokens": tokens,
+            "last_refill": now
+        })
+
+        return True, int(tokens)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
-    Rate limiting middleware for FastAPI.
-    
-    Usage:
-        app.add_middleware(RateLimitMiddleware)
+    FastAPI middleware for rate limiting.
+
+    Applies different limits based on:
+    - IP address
+    - User ID (if authenticated)
+    - Endpoint pattern
     """
-    
+
     def __init__(
         self,
         app,
-        default_limit: int = 100,
-        default_window: int = 60,
+        redis: Redis,
         enabled: bool = True,
-        exclude_paths: Optional[list[str]] = None,
-        custom_limits: Optional[dict[str, tuple[int, int]]] = None
+        exclude_paths: list[str] = None
     ):
         super().__init__(app)
-        self.default_limit = default_limit
-        self.default_window = default_window
         self.enabled = enabled
-        self.exclude_paths = exclude_paths or ["/health", "/metrics", "/docs", "/openapi.json"]
-        self.custom_limits = custom_limits or {}
-    
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        self.sliding_limiter = SlidingWindowRateLimiter(redis)
+        self.burst_limiter = TokenBucketRateLimiter(redis)
+        self.exclude_paths = exclude_paths or ["/health", "/docs", "/openapi.json"]
+
+    def _get_client_ip(self, request: Request) -> str:
+        """Get client IP from request."""
+        # Check for proxy headers
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+
+        real_ip = request.headers.get("X-Real-IP")
+        if real_ip:
+            return real_ip
+
+        return request.client.host if request.client else "unknown"
+
+    def _get_user_id(self, request: Request) -> Optional[str]:
+        """Extract user ID from request (if authenticated)."""
+        # Check for user in state (set by auth middleware)
+        user = getattr(request.state, "user", None)
+        if user:
+            return str(user.get("id", user.get("sub")))
+        return None
+
+    def _get_rate_limit_config(
+        self,
+        path: str,
+        method: str
+    ) -> Tuple[int, int]:
+        """
+        Get rate limit config for endpoint.
+
+        Returns: (max_requests, window_seconds)
+        """
+        # Auth endpoints
+        if path.startswith("/auth/login"):
+            return RateLimitConfig.AUTH_LOGIN_PER_MINUTE, 60
+        if path.startswith("/auth/register"):
+            return RateLimitConfig.AUTH_REGISTER_PER_MINUTE, 60
+        if path.startswith("/auth/password-reset"):
+            return RateLimitConfig.AUTH_PASSWORD_RESET_PER_HOUR, 3600
+
+        # Webhook endpoints
+        if path.startswith("/api/v1/webhooks"):
+            return RateLimitConfig.WEBHOOK_PER_MINUTE, 60
+
+        # AI endpoints
+        if path.startswith("/api/v1/chat"):
+            return RateLimitConfig.AI_CHAT_PER_MINUTE, 60
+        if path.startswith("/api/v1/ai"):
+            return RateLimitConfig.AI_GENERATE_PER_MINUTE, 60
+
+        # Export endpoints
+        if "/export" in path:
+            return RateLimitConfig.EXPORT_PER_HOUR, 3600
+
+        # Standard API
+        if method in ["GET", "HEAD", "OPTIONS"]:
+            return RateLimitConfig.API_READ_PER_MINUTE, 60
+        else:
+            return RateLimitConfig.API_WRITE_PER_MINUTE, 60
+
+    async def dispatch(self, request: Request, call_next) -> Response:
         """Process request with rate limiting."""
         if not self.enabled:
             return await call_next(request)
-        
-        # Skip excluded paths
+
         path = request.url.path
-        if any(path.startswith(excluded) for excluded in self.exclude_paths):
+        method = request.method
+
+        # Skip excluded paths
+        if any(path.startswith(p) for p in self.exclude_paths):
             return await call_next(request)
-        
-        # Get rate limit key
-        user_id = getattr(request.state, "user_id", None) if hasattr(request, "state") else None
-        key = get_rate_limit_key(request, user_id)
-        
-        # Determine category and limits
-        category = get_endpoint_category(path, request.method)
-        
-        # Check custom limits first
-        if path in self.custom_limits:
-            limit, window = self.custom_limits[path]
-        else:
-            limit, window = DEFAULT_LIMITS.get(
-                category,
-                (self.default_limit, self.default_window)
-            )
-        
-        # Build full key
-        full_key = f"{key}:{category.value}"
-        
-        # Check rate limit
-        is_allowed, remaining, retry_after = await rate_limiter.is_allowed(
-            full_key, limit, window
+
+        # Get identifiers
+        client_ip = self._get_client_ip(request)
+        user_id = self._get_user_id(request)
+
+        # Use user_id if available, otherwise IP
+        identifier = user_id or client_ip
+
+        # Get rate limit config
+        max_requests, window = self._get_rate_limit_config(path, method)
+
+        # Check sliding window limit
+        allowed, remaining, reset_time = await self.sliding_limiter.is_allowed(
+            identifier=identifier,
+            endpoint=f"{method}:{path}",
+            max_requests=max_requests,
+            window_seconds=window
         )
-        
-        if not is_allowed:
+
+        if not allowed:
             logger.warning(
-                f"Rate limit exceeded: {key} on {path} "
-                f"(limit: {limit}/{window}s, retry: {retry_after}s)"
+                "Rate limit exceeded",
+                identifier=identifier,
+                path=path,
+                method=method
             )
-            
             return JSONResponse(
                 status_code=429,
                 content={
-                    "error": "RATE_LIMIT_EXCEEDED",
-                    "message": "Too many requests. Please try again later.",
-                    "retry_after": retry_after
+                    "error": "Rate limit exceeded",
+                    "retry_after": reset_time,
+                    "limit": max_requests,
+                    "window": window
                 },
                 headers={
                     "Retry-After": str(retry_after),
-                    "X-RateLimit-Limit": str(limit),
+                    "X-RateLimit-Limit": str(max_requests),
                     "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(retry_after)
+                    "X-RateLimit-Reset": str(reset_time)
                 }
             )
-        
+
+        # Check burst protection for write operations
+        if method not in ["GET", "HEAD", "OPTIONS"]:
+            burst_allowed, tokens = await self.burst_limiter.is_allowed(
+                identifier=identifier,
+                endpoint=f"burst:{path}",
+                bucket_size=RateLimitConfig.DEFAULT_REQUESTS_PER_SECOND,
+                refill_rate=RateLimitConfig.DEFAULT_REQUESTS_PER_SECOND / 60
+            )
+
+            if not burst_allowed:
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "error": "Too many requests, please slow down",
+                        "retry_after": 1
+                    },
+                    headers={"Retry-After": "1"}
+                )
+
         # Process request
         response = await call_next(request)
-        
+
         # Add rate limit headers
-        response.headers["X-RateLimit-Limit"] = str(limit)
+        response.headers["X-RateLimit-Limit"] = str(max_requests)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
-        response.headers["X-RateLimit-Window"] = str(window)
-        
+        response.headers["X-RateLimit-Reset"] = str(reset_time)
+
         return response
 
+# ==================== DECORATORS ====================
 
-class RateLimitDependency:
+def rate_limit(
+    max_requests: int = 100,
+    window_seconds: int = 60,
+    key_func: Callable[[Request], str] = None
+):
     """
-    Dependency for per-endpoint rate limiting.
-    
+    Decorator for endpoint-specific rate limiting.
+
     Usage:
         @router.post("/expensive-operation")
-        async def expensive_op(
-            rate_limit: None = Depends(RateLimitDependency(limit=5, window=60))
-        ):
+        @rate_limit(max_requests=10, window_seconds=60)
+        async def expensive_operation(request: Request):
             ...
     """
-    
-    def __init__(
-        self,
-        limit: int = 10,
-        window: int = 60,
-        key_func: Optional[Callable] = None
-    ):
-        self.limit = limit
-        self.window = window
-        self.key_func = key_func
-    
-    async def __call__(self, request: Request) -> None:
-        """Check rate limit."""
-        # Get key
-        if self.key_func:
-            key = self.key_func(request)
-        else:
-            user_id = getattr(request.state, "user_id", None) if hasattr(request, "state") else None
-            key = get_rate_limit_key(request, user_id)
-        
-        # Add endpoint to key
-        key = f"{key}:{request.url.path}"
-        
-        is_allowed, remaining, retry_after = await rate_limiter.is_allowed(
-            key, self.limit, self.window
-        )
-        
-        if not is_allowed:
-            raise RateLimitExceeded(retry_after, self.limit, self.window)
-
-
-def rate_limit(limit: int = 10, window: int = 60):
-    """
-    Decorator for rate limiting specific endpoints.
-    
-    Usage:
-        @router.post("/action")
-        @rate_limit(limit=5, window=60)
-        async def action():
-            ...
-    """
-    dependency = RateLimitDependency(limit=limit, window=window)
-    
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable):
+        @wraps(func)
         async def wrapper(request: Request, *args, **kwargs):
-            await dependency(request)
+            # Get Redis from app state
+            redis = getattr(request.app.state, "redis", None)
+            if not redis:
+                return await func(request, *args, **kwargs)
+
+            # Get identifier
+            if key_func:
+                identifier = key_func(request)
+            else:
+                identifier = request.client.host if request.client else "unknown"
+
+            limiter = SlidingWindowRateLimiter(redis)
+            allowed, remaining, reset = await limiter.is_allowed(
+                identifier=identifier,
+                endpoint=f"{func.__module__}.{func.__name__}",
+                max_requests=max_requests,
+                window_seconds=window_seconds
+            )
+
+            if not allowed:
+                raise RateLimitExceeded(retry_after=reset)
+
             return await func(request, *args, **kwargs)
         return wrapper
-    
     return decorator
+
+def ip_rate_limit(max_requests: int = 100, window_seconds: int = 60):
+    """Rate limit by IP address."""
+    def key_func(request: Request) -> str:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        return request.client.host if request.client else "unknown"
+
+    return rate_limit(max_requests, window_seconds, key_func)
+
+def user_rate_limit(max_requests: int = 100, window_seconds: int = 60):
+    """Rate limit by authenticated user."""
+    def key_func(request: Request) -> str:
+        user = getattr(request.state, "user", None)
+        if user:
+            return str(user.get("id", user.get("sub")))
+        return request.client.host if request.client else "unknown"
+
+    return rate_limit(max_requests, window_seconds, key_func)
+
+# ==================== BRUTEFORCE PROTECTION ====================
+
+class BruteForceProtection:
+    """
+    Protection against brute force attacks.
+
+    Features:
+    - Progressive delays
+    - Account lockout
+    - IP blacklisting
+    """
+
+    def __init__(self, redis: Redis, prefix: str = "bruteforce"):
+        self.redis = redis
+        self.prefix = prefix
+
+        # Config
+        self.max_attempts = 5
+        self.lockout_duration = 900  # 15 minutes
+        self.attempt_window = 300    # 5 minutes
+
+    async def record_attempt(
+        self,
+        identifier: str,
+        success: bool
+    ) -> Tuple[bool, int]:
+        """
+        Record login attempt.
+
+        Returns: (is_locked, remaining_attempts)
+        """
+        key = f"{self.prefix}:{identifier}"
+
+        if success:
+            # Clear attempts on success
+            await self.redis.delete(key)
+            return False, self.max_attempts
+
+        # Increment failed attempts
+        attempts = await self.redis.incr(key)
+        await self.redis.expire(key, self.attempt_window)
+
+        if attempts >= self.max_attempts:
+            # Lock account
+            lock_key = f"{self.prefix}:lock:{identifier}"
+            await self.redis.setex(lock_key, self.lockout_duration, "1")
+            return True, 0
+
+        return False, self.max_attempts - attempts
+
+    async def is_locked(self, identifier: str) -> Tuple[bool, int]:
+        """
+        Check if identifier is locked.
+
+        Returns: (is_locked, seconds_remaining)
+        """
+        lock_key = f"{self.prefix}:lock:{identifier}"
+        ttl = await self.redis.ttl(lock_key)
+
+        if ttl > 0:
+            return True, ttl
+        return False, 0
+
+    async def unlock(self, identifier: str):
+        """Manually unlock identifier."""
+        key = f"{self.prefix}:{identifier}"
+        lock_key = f"{self.prefix}:lock:{identifier}"
+        await self.redis.delete(key, lock_key)

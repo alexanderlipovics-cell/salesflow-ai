@@ -1,71 +1,123 @@
-"""
-OpenAI Client Wrapper für das Sales Flow AI Backend.
-"""
+# backend/app/ai_client.py
 
 from __future__ import annotations
 
-from typing import Any, List
+import logging
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
-from .schemas import ChatMessage
+from app.core.config import settings
 
+logger = logging.getLogger(__name__)
 
-class AIClient:
+# Zentrale AI-Client-Instanz
+client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+ChatMessage = Dict[str, str]  # {"role": "system|user|assistant", "content": "..."}
+
+def estimate_token_count(messages: List[ChatMessage]) -> int:
     """
-    Dünne Abstraktion über die OpenAI Responses API.
-    Alle vendor-spezifischen Details bleiben hier gekapselt.
+    Grobe Heuristik: ~4 Zeichen pro Token + etwas Overhead.
+    Für produktiven Einsatz kannst du tiktoken integrieren.
     """
+    total_chars = sum(len(m.get("content", "")) for m in messages)
+    return total_chars // 4 + len(messages) * 10
 
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini") -> None:
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY fehlt.")
-        self._model = model
-        self._client = OpenAI(api_key=api_key)
+def optimize_context_window(
+    messages: List[ChatMessage],
+    max_tokens: int = 6000,
+    preserve_system: bool = True,
+    keep_last_n: int = 10,
+) -> List[ChatMessage]:
+    """
+    Intelligente Context-Komprimierung:
+    - Behalte System-Prompts
+    - Behalte die letzten N Nachrichten
+    - Entferne ältere User/Assistant-Paare, bis Tokenlimit passt
+    (später kannst du hier Summaries einbauen)
+    """
+    if not messages:
+        return []
+    # System-Messages separieren
+    system_msgs: List[ChatMessage] = []
+    non_system_msgs: List[ChatMessage] = []
+    for m in messages:
+        if preserve_system and m.get("role") == "system":
+            system_msgs.append(m)
+        else:
+            non_system_msgs.append(m)
 
-    def generate(self, system_prompt: str, messages: List[ChatMessage]) -> str:
-        """
-        Erzeugt eine Antwort basierend auf Systemprompt + Chatverlauf.
-        """
+    # Letzte N nicht-System-Messages behalten
+    base_context = system_msgs + non_system_msgs[-keep_last_n:]
 
-        input_payload = self._build_payload(system_prompt, messages)
-        response = self._client.responses.create(
-            model=self._model,
-            temperature=0.35,
-            max_output_tokens=600,
-            input=input_payload,
-        )
-        return self._extract_text(response)
+    current_tokens = estimate_token_count(base_context)
 
-    @staticmethod
-    def _build_payload(system_prompt: str, messages: List[ChatMessage]):
-        payload = []
-        if system_prompt:
-            payload.append(
-                {
-                    "role": "system",
-                    "content": [{"type": "text", "text": system_prompt}],
-                }
-            )
-        for message in messages:
-            payload.append(
-                {
-                    "role": message.role,
-                    "content": [{"type": "text", "text": message.content}],
-                }
-            )
-        return payload
+    # Falls immer noch zu groß: ältere Messages weiter wegschneiden
+    while current_tokens > max_tokens and len(non_system_msgs) > keep_last_n:
+        # schneide vom Anfang weg
+        non_system_msgs = non_system_msgs[1:]
+        base_context = system_msgs + non_system_msgs[-keep_last_n:]
+        current_tokens = estimate_token_count(base_context)
 
-    @staticmethod
-    def _extract_text(response: Any) -> str:
-        chunks: List[str] = []
-        for item in getattr(response, "output", []):
-            for content in getattr(item, "content", []):
-                if getattr(content, "type", None) == "text":
-                    text = getattr(content, "text", "").strip()
-                    if text:
-                        chunks.append(text)
-        return "\n".join(chunks).strip() or "Ich habe dazu gerade keine Idee."
+    if current_tokens > max_tokens:
+        # als Fallback: nur System + allerletzte Nachricht
+        logger.warning("Context immer noch zu groß – harte Kürzung auf letzte Nachricht.")
+        last_user = next((m for m in reversed(messages) if m["role"] == "user"), None)
+        base_context = system_msgs + ([last_user] if last_user else [])
 
+    return base_context
 
-__all__ = ["AIClient"]
+async def chat_completion(
+    messages: List[ChatMessage],
+    model: str,
+    max_tokens: int = 512,
+    temperature: float = 0.7,
+) -> str:
+    """
+    Einmaliger Chat-Call ohne Streaming.
+    """
+    optimized_messages = optimize_context_window(messages)
+    resp = await client.chat.completions.create(
+        model=model,
+        messages=optimized_messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
+    return resp.choices[0].message.content or ""
+
+async def stream_chat_response(
+    messages: List[ChatMessage],
+    model: str,
+    max_tokens: int = 512,
+    temperature: float = 0.7,
+) -> AsyncGenerator[str, None]:
+    """
+    Stream GPT-Antwort in Echtzeit.
+    Wird in FastAPI über StreamingResponse ausgespielt.
+    """
+    optimized_messages = optimize_context_window(messages)
+    stream = await client.chat.completions.create(
+        model=model,
+        messages=optimized_messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        stream=True,
+    )
+    async for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta
+        if delta and delta.content:
+            yield delta.content
+
+async def get_embedding(text: str, model: Optional[str] = None) -> List[float]:
+    """
+    Embedding-Wrapper für pgvector (z. B. für Conversation Memory).
+    """
+    model_name = model or settings.openai_embedding_model or "text-embedding-3-small"
+    resp = await client.embeddings.create(
+        model=model_name,
+        input=text,
+    )
+    return resp.data[0].embedding

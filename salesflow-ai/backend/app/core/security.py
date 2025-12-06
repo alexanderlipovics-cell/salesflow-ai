@@ -300,6 +300,85 @@ def create_token_pair(user_id: str, user_data: Optional[Dict[str, Any]] = None) 
     }
 
 
+# ============================================================================
+# FASTAPI DEPENDENCIES & AUTH
+# ============================================================================
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+
+from ..db.session import get_db
+from ..models.user import User  # Adjust import path as needed
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    """
+    FastAPI dependency to get the current authenticated user.
+    Validates JWT token and returns User object from database.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = verify_access_token(token)
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except InvalidTokenError:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    FastAPI dependency to ensure the current user is active.
+    """
+    if hasattr(current_user, "is_active") and not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+# ============================================================================
+# LEGACY COMPATIBILITY (for existing routers that expect Dict)
+# ============================================================================
+
+from fastapi import Depends
+
+
+def get_current_user_dict(
+    current_user: User = Depends(get_current_active_user),
+) -> Dict[str, Any]:
+    """
+    Legacy compatibility function that returns user as Dict.
+    Used by existing routers that expect the old format.
+    """
+    return {
+        "org_id": "demo-org",  # Default org for now
+        "team_member_id": current_user.id,
+        "user_id": current_user.id,
+        "role": current_user.role,
+        "name": f"{current_user.first_name or ''} {current_user.last_name or ''}".strip(),
+        "email": current_user.email,
+        "is_verified": current_user.is_verified,
+        "company": current_user.company,
+    }
+
+
 __all__ = [
     "hash_password",
     "verify_password",
@@ -315,5 +394,9 @@ __all__ = [
     "InvalidCredentialsError",
     "ACCESS_TOKEN_EXPIRE_MINUTES",
     "REFRESH_TOKEN_EXPIRE_DAYS",
+    "oauth2_scheme",
+    "get_current_user",
+    "get_current_active_user",
+    "get_current_user_dict",
 ]
 

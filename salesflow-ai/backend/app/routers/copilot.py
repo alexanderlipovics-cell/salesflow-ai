@@ -15,13 +15,17 @@ import logging
 import os
 from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 
 from app.config import get_settings
 from app.core.ai_prompts import SALES_COACH_PROMPT, detect_action_from_text
 
-router = APIRouter(prefix="/copilot", tags=["copilot"])
+router = APIRouter(
+    prefix="/copilot",
+    tags=["copilot"],
+    dependencies=[Depends(get_current_user_dict)]
+)
 settings = get_settings()
 logger = logging.getLogger(__name__)
 

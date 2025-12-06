@@ -5,55 +5,29 @@ Exports all security components for easy import.
 """
 
 # ============================================
-# Legacy compatibility exceptions (defined here to avoid circular imports)
+# Main Security Module (FastAPI Auth)
 # ============================================
 
-class SecurityError(Exception):
-    """Base exception for security-related errors."""
-    pass
-
-
-class InvalidTokenError(SecurityError):
-    """Raised when a JWT token is invalid or expired."""
-    pass
-
-
-class InvalidCredentialsError(SecurityError):
-    """Raised when credentials are invalid."""
-    pass
-
-
-# Constants
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
-REFRESH_TOKEN_EXPIRE_DAYS = 30
-
-
-# ============================================
-# Functions imported from legacy security module
-# ============================================
-def verify_access_token(token: str):
-    """Verify an access token and return its payload."""
-    from jose import jwt, JWTError
-    from app.config import get_settings
-    settings = get_settings()
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        raise InvalidTokenError("Invalid access token")
-
-
-def verify_refresh_token(token: str):
-    """Verify a refresh token and return its payload."""
-    from jose import jwt, JWTError
-    from app.config import get_settings
-    settings = get_settings()
-    try:
-        payload = jwt.decode(token, settings.jwt_refresh_secret_key, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        raise InvalidTokenError("Invalid refresh token")
+from .main import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    verify_access_token,
+    verify_refresh_token,
+    get_user_id_from_token,
+    create_token_pair,
+    SecurityError,
+    InvalidTokenError,
+    InvalidCredentialsError,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    oauth2_scheme,
+    get_current_user,
+    get_current_active_user,
+    get_current_user_dict,
+)
 
 
 # JWT
@@ -132,15 +106,25 @@ from .encryption import (
 )
 
 __all__ = [
-    # Legacy compatibility
+    # Main security functions
+    "hash_password",
+    "verify_password",
+    "create_access_token",
+    "create_refresh_token",
+    "decode_token",
+    "verify_access_token",
+    "verify_refresh_token",
+    "get_user_id_from_token",
+    "create_token_pair",
     "SecurityError",
     "InvalidTokenError",
     "InvalidCredentialsError",
-    "ALGORITHM",
     "ACCESS_TOKEN_EXPIRE_MINUTES",
     "REFRESH_TOKEN_EXPIRE_DAYS",
-    "verify_access_token",
-    "verify_refresh_token",
+    "oauth2_scheme",
+    "get_current_user",
+    "get_current_active_user",
+    "get_current_user_dict",
     
     # JWT
     "TokenType",

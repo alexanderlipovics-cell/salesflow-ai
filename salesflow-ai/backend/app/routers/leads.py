@@ -1,16 +1,25 @@
 """
-Leads Router für FELLO - Lead Management mit Follow-up System.
+Leads Router für SalesFlow AI - Lead Management mit Follow-up System.
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
 import logging
 import os
 from supabase import create_client
+from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/leads", tags=["leads"])
+from ..core.security import get_current_active_user
+from ..db.session import get_db
+from ..models.user import User
+
+router = APIRouter(
+    prefix="/leads",
+    tags=["leads"],
+    dependencies=[Depends(get_current_active_user)]  # ALLE Endpoints brauchen Auth
+)
 logger = logging.getLogger(__name__)
 
 

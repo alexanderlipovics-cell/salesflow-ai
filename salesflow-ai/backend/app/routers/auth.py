@@ -1,463 +1,288 @@
 """
-Authentication Router for SalesFlow AI.
-
-Endpoints:
-- POST /auth/signup - User registration
-- POST /auth/login - User login
-- POST /auth/refresh - Refresh access token
-- POST /auth/logout - User logout (token blacklist)
-- GET /auth/me - Get current user info
-- POST /auth/change-password - Change password
+Authentication router for SalesFlow AI Backend.
+Handles login, signup, token refresh, password reset, and user profile.
 """
 
-from __future__ import annotations
-
-import logging
-from datetime import datetime
-from typing import Dict
-from uuid import UUID, uuid4
+from datetime import timedelta
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from supabase import Client
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 
-from ..core.deps import get_supabase
 from ..core.security import (
-    InvalidCredentialsError,
-    InvalidTokenError,
     create_token_pair,
+    get_current_active_user,
     hash_password,
-    verify_access_token,
     verify_password,
     verify_refresh_token,
 )
+from ..db.session import get_db
+from ..models.user import User
 from ..schemas.auth import (
+    LoginRequest,
     LoginResponse,
-    LogoutResponse,
-    MeResponse,
-    PasswordChangeRequest,
+    RefreshTokenRequest,
+    SignupRequest,
     SignupResponse,
-    TokenRefreshRequest,
-    TokenResponse,
-    User,
-    UserLoginRequest,
-    UserResponse,
-    UserSignupRequest,
+    UserProfile,
+    UserProfileUpdate,
 )
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
-logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-
-async def get_user_by_email(supabase: Client, email: str) -> Dict | None:
-    """Get user by email from database."""
-    try:
-        result = supabase.table("users").select("*").eq("email", email).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
-        return None
-    except Exception as e:
-        logger.error(f"Error fetching user by email: {e}")
-        return None
-
-
-async def get_user_by_id(supabase: Client, user_id: str) -> Dict | None:
-    """Get user by ID from database."""
-    try:
-        result = supabase.table("users").select("*").eq("id", user_id).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
-        return None
-    except Exception as e:
-        logger.error(f"Error fetching user by ID: {e}")
-        return None
-
-
-async def create_user(supabase: Client, user_data: Dict) -> Dict:
-    """Create a new user in database."""
-    try:
-        result = supabase.table("users").insert(user_data).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user"
-        )
-    except Exception as e:
-        logger.error(f"Error creating user: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
-
-
-async def update_user(supabase: Client, user_id: str, update_data: Dict) -> Dict:
-    """Update user in database."""
-    try:
-        result = supabase.table("users").update(update_data).eq("id", user_id).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    except Exception as e:
-        logger.error(f"Error updating user: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
-
-
-async def get_current_user_from_token(
-    token: str,
-    supabase: Client
-) -> Dict:
-    """
-    Validate token and get current user.
-    
-    Raises:
-        HTTPException: If token is invalid or user not found
-    """
-    try:
-        payload = verify_access_token(token)
-        user_id = payload.get("sub")
-        
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID"
-            )
-        
-        user = await get_user_by_id(supabase, user_id)
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
-            )
-        
-        if not user.get("is_active", True):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is inactive"
-            )
-        
-        return user
-        
-    except InvalidTokenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-
-# ============================================================================
-# DEPENDENCY: Get Current User
-# ============================================================================
-
-
-async def get_current_user(
-    authorization: str = Depends(lambda: None),  # Will be set in actual endpoint
-    supabase: Client = Depends(get_supabase)
-) -> Dict:
-    """
-    Dependency to get current authenticated user.
-    
-    Usage:
-        @router.get("/protected")
-        async def protected_route(user: Dict = Depends(get_current_user)):
-            return {"user_id": user["id"]}
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid authorization header",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-    
-    token = authorization.replace("Bearer ", "")
-    return await get_current_user_from_token(token, supabase)
-
-
-# ============================================================================
-# AUTH ENDPOINTS
-# ============================================================================
-
-
-@router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/signup", response_model=SignupResponse)
 async def signup(
-    signup_data: UserSignupRequest,
-    supabase: Client = Depends(get_supabase)
-):
+    user_data: SignupRequest,
+    db: Session = Depends(get_db),
+) -> SignupResponse:
     """
-    Register a new user account.
-    
+    Create a new user account.
+
     - Validates email uniqueness
-    - Hashes password with bcrypt
+    - Hashes password
     - Creates user in database
-    - Returns user data + authentication tokens
+    - Returns JWT tokens
     """
-    # Check if email already exists
-    existing_user = await get_user_by_email(supabase, signup_data.email)
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Email already registered",
         )
-    
+
     # Hash password
-    password_hash = hash_password(signup_data.password)
-    
+    hashed_password = hash_password(user_data.password)
+
     # Create user
-    user_id = str(uuid4())
-    # Minimaler Datensatz, um Schema-Probleme (fehlende Spalten) zu vermeiden
-    user_data = {
-        "id": user_id,
-        "email": signup_data.email,
-        "password_hash": password_hash,
-        "created_at": datetime.utcnow().isoformat(),
-    }
-    # Optional befüllen (Spalten könnten fehlen)
-    # company und name nur setzen, wenn die Spalte existiert – hier defensiv weggelassen,
-    # um Schema-Fehler zu vermeiden. Falls Spalten existieren, bitte in Supabase ergänzen.
-    
-    created_user = await create_user(supabase, user_data)
-    # Fülle optionale Felder für die Response, auch wenn sie in der DB fehlen
-    created_user["role"] = created_user.get("role", "user")
-    created_user["is_active"] = created_user.get("is_active", True)
-    created_user["name"] = created_user.get("name") or signup_data.name or ""
-    created_user["email"] = created_user.get("email") or signup_data.email
-    created_user["company"] = created_user.get("company") or (signup_data.company or "")
-    created_user["created_at"] = created_user.get("created_at", datetime.utcnow().isoformat())
-    
-    # Generate tokens (JWT factory erwartet UUID + role)
-    try:
-        uuid_val = UUID(str(user_id))
-    except Exception:
-        uuid_val = UUID(int=0)
-    tokens = create_token_pair(
-        uuid_val,
-        created_user.get("role", "user"),
+    user = User(
+        id=user_data.email,  # Using email as ID for simplicity, could be UUID
+        email=user_data.email,
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        hashed_password=hashed_password,
+        company=user_data.company,
     )
-    
-    logger.info(f"User registered: {signup_data.email}")
-    
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    # Create tokens
+    tokens = create_token_pair(user.id, {
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    })
+
     return SignupResponse(
-        user=UserResponse(**created_user),
-        tokens=TokenResponse(**tokens.model_dump()),
-        message="Account created successfully"
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
+        token_type="bearer",
+        expires_in=1800,  # 30 minutes
+        user=UserProfile(
+            id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            role=user.role,
+            is_verified=user.is_verified,
+        ),
     )
 
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
-    login_data: UserLoginRequest,
-    supabase: Client = Depends(get_supabase)
-):
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+) -> LoginResponse:
     """
-    Authenticate user and return tokens.
-    
-    - Validates email and password
-    - Returns user data + authentication tokens
+    Authenticate user with email and password.
+
+    Returns JWT access and refresh tokens.
     """
-    # Get user by email
-    user = await get_user_by_email(supabase, login_data.email)
-    
+    user = db.query(User).filter(User.email == form_data.username).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Verify password
-    if not verify_password(login_data.password, user["password_hash"]):
+
+    if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Check if account is active
-    if not user.get("is_active", True):
+
+    if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is inactive. Please contact support."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is deactivated",
         )
 
-    # Response absichern mit Defaults (vor Token-Erstellung, damit auch bei Fehlern definiert)
-    user_response = {**user}
-    user_response["role"] = user_response.get("role", "user")
-    user_response["is_active"] = user_response.get("is_active", True)
-    user_response["name"] = user_response.get("name") or ""
-    user_response["email"] = user_response.get("email") or ""
-
-    # Generate tokens (JWT factory erwartet UUID + role)
-    try:
-        uuid_val = UUID(str(user["id"]))
-    except Exception:
-        uuid_val = UUID(int=0)
-    tokens = create_token_pair(
-        uuid_val,
-        user_response.get("role", "user"),
-    )
-    
-    logger.info(f"User logged in: {login_data.email}")
+    # Create tokens
+    tokens = create_token_pair(user.id, {
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    })
 
     return LoginResponse(
-        user=UserResponse(**user_response),
-        tokens=TokenResponse(**tokens.model_dump()),
-        message="Login successful"
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
+        token_type="bearer",
+        expires_in=1800,  # 30 minutes
+        user=UserProfile(
+            id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            role=user.role,
+            is_verified=user.is_verified,
+        ),
     )
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=LoginResponse)
 async def refresh_token(
-    refresh_data: TokenRefreshRequest,
-    supabase: Client = Depends(get_supabase)
-):
+    token_data: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
     """
     Refresh access token using refresh token.
-    
-    - Validates refresh token
-    - Issues new access token
-    - Returns new token pair
+
+    Returns new JWT access and refresh tokens.
     """
     try:
-        # Verify refresh token
-        payload = verify_refresh_token(refresh_data.refresh_token)
-        user_id = payload.get("sub")
-        
+        payload = verify_refresh_token(token_data.refresh_token)
+        user_id: str = payload.get("sub")
+
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token"
+                detail="Invalid refresh token",
             )
-        
-        # Get user from database
-        user = await get_user_by_id(supabase, user_id)
-        
-        if not user:
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
+                detail="User not found or inactive",
             )
-        
-        if not user.get("is_active", True):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Account is inactive"
-            )
-        
-        # Defaults absichern
-        user_role = user.get("role", "user")
-        user_email = user.get("email", "")
 
-        # Generate new token pair (JWT factory erwartet UUID + role)
-        try:
-            uuid_val = UUID(str(user_id))
-        except Exception:
-            uuid_val = UUID(int=0)
+        # Create new tokens
+        tokens = create_token_pair(user.id, {
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        })
 
-        tokens = create_token_pair(
-            uuid_val,
-            user_role,
+        return LoginResponse(
+            access_token=tokens["access_token"],
+            refresh_token=tokens["refresh_token"],
+            token_type="bearer",
+            expires_in=1800,  # 30 minutes
+            user=UserProfile(
+                id=user.id,
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                role=user.role,
+                is_verified=user.is_verified,
+            ),
         )
-        
-        logger.info(f"Token refreshed for user: {user_email}")
-        
-        return TokenResponse(**tokens.model_dump())
-        
-    except InvalidTokenError as e:
+
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
+            detail="Invalid refresh token",
         )
 
 
-@router.get("/me", response_model=MeResponse)
-async def get_me(
-    authorization: str = Depends(lambda: None),
-    supabase: Client = Depends(get_supabase)
-):
+@router.post("/logout")
+async def logout() -> Dict[str, str]:
     """
-    Get current authenticated user information.
-    
-    Requires: Authorization header with Bearer token
+    Logout endpoint (client-side token removal).
+    In a real implementation, you might want to blacklist tokens.
     """
-    user = await get_current_user(authorization, supabase)
-    
-    return MeResponse(user=UserResponse(**user))
+    return {"message": "Successfully logged out"}
 
 
-@router.post("/logout", response_model=LogoutResponse)
-async def logout(
-    authorization: str = Depends(lambda: None),
-    supabase: Client = Depends(get_supabase)
-):
+@router.post("/request-password-reset")
+async def request_password_reset(
+    email: str,
+    db: Session = Depends(get_db),
+) -> Dict[str, str]:
     """
-    Logout current user.
-    
-    Note: In this implementation, we don't maintain a token blacklist.
-    Client should simply delete the tokens.
-    For production, consider implementing a Redis-based token blacklist.
+    Request password reset.
+    In production, this would send an email with reset link.
     """
-    # Verify user is authenticated
-    user = await get_current_user(authorization, supabase)
-    
-    logger.info(f"User logged out: {user['email']}")
-    
-    return LogoutResponse(message="Logged out successfully")
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        # TODO: Generate reset token and send email
+        # For now, just return success to avoid email enumeration
+        pass
+
+    return {
+        "message": "If an account with this email exists, a password reset link has been sent."
+    }
 
 
-@router.post("/change-password")
-async def change_password(
-    password_data: PasswordChangeRequest,
-    authorization: str = Depends(lambda: None),
-    supabase: Client = Depends(get_supabase)
-):
+@router.get("/me", response_model=UserProfile)
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_active_user),
+) -> UserProfile:
     """
-    Change user password.
-    
-    - Validates old password
-    - Updates to new password
-    - Returns success message
+    Get current user profile.
     """
-    user = await get_current_user(authorization, supabase)
-    
-    # Verify old password
-    if not verify_password(password_data.old_password, user["password_hash"]):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
-        )
-    
-    # Hash new password
-    new_password_hash = hash_password(password_data.new_password)
-    
-    # Update password
-    await update_user(
-        supabase,
-        str(user["id"]),
-        {
-            "password_hash": new_password_hash,
-            "updated_at": datetime.utcnow().isoformat()
-        }
+    return UserProfile(
+        id=current_user.id,
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        role=current_user.role,
+        is_verified=current_user.is_verified,
+        company=current_user.company,
+        phone=current_user.phone,
+        avatar_url=current_user.avatar_url,
     )
-    
-    logger.info(f"Password changed for user: {user['email']}")
-    
-    return {"message": "Password changed successfully"}
 
 
-# ============================================================================
-# EXPORTS
-# ============================================================================
+@router.patch("/me", response_model=UserProfile)
+async def update_current_user_profile(
+    user_update: UserProfileUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+) -> UserProfile:
+    """
+    Update current user profile.
+    """
+    update_data = user_update.dict(exclude_unset=True)
 
+    # Don't allow email changes for now
+    if "email" in update_data:
+        del update_data["email"]
 
-__all__ = ["router", "get_current_user"]
+    # Update user fields
+    for field, value in update_data.items():
+        if hasattr(current_user, field):
+            setattr(current_user, field, value)
 
+    db.commit()
+    db.refresh(current_user)
+
+    return UserProfile(
+        id=current_user.id,
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        role=current_user.role,
+        is_verified=current_user.is_verified,
+        company=current_user.company,
+        phone=current_user.phone,
+        avatar_url=current_user.avatar_url,
+    )

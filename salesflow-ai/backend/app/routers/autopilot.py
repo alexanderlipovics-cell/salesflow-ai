@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 import logging
 
-from ..core.deps import get_current_user
+from ..core.security import get_current_user_dict
 from ..supabase_client import get_supabase_client, SupabaseNotConfiguredError
 from ..schemas.autopilot import (
     AutopilotMode,
@@ -32,7 +32,11 @@ from ..db.repositories.message_events import (
 from ..schemas.message_events import MessageEventStatusUpdate
 from ..services.autopilot_engine import process_pending_autopilot_events_for_user
 
-router = APIRouter(prefix="/autopilot", tags=["autopilot"])
+router = APIRouter(
+    prefix="/autopilot",
+    tags=["autopilot"],
+    dependencies=[Depends(get_current_user_dict)]
+)
 logger = logging.getLogger(__name__)
 
 

@@ -9,11 +9,12 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="auth-screen">
       <Text style={styles.title}>CloserClub 🚀</Text>
 
       <View style={styles.inputContainer}>
         <TextInput
+          testID="email-input"
           style={styles.input}
           placeholder="Email"
           placeholderTextColor="#666"
@@ -22,6 +23,7 @@ export default function AuthScreen() {
           autoCapitalize="none"
         />
         <TextInput
+          testID="password-input"
           style={styles.input}
           placeholder="Password"
           placeholderTextColor="#666"
@@ -32,6 +34,7 @@ export default function AuthScreen() {
       </View>
 
       <TouchableOpacity
+        testID="login-button"
         style={styles.button}
         onPress={() => signIn(email, password)}
         disabled={loading}

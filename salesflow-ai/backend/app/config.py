@@ -1,189 +1,313 @@
 """
-Konfigurationsmodul für das Sales Flow AI Backend.
-Lädt Umgebungsvariablen aus .env Datei.
+============================================
+⚙️ SALESFLOW AI - APPLICATION CONFIGURATION
+============================================
 
-Security-Settings gemäß SECURITY_AUDIT.md integriert.
+Central configuration with validation for:
+
+- Database settings
+- Redis/Cache settings
+- Security settings
+- Performance tuning
+- External services
 """
 
-import secrets
-from typing import List, Optional
-
-from dotenv import load_dotenv
-from pydantic import Field
-from pydantic_settings import BaseSettings
-
-load_dotenv()
-
-
-def _generate_default_key() -> str:
-    """Generiert einen sicheren Default-Key für Development."""
-    return secrets.token_urlsafe(32)
+from typing import Optional, List
+from functools import lru_cache
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Zentrale App-Einstellungen, geladen aus Environment-Variablen."""
+    """
+    Application settings loaded from environment variables.
 
-    # ============= Application =============
-    project_name: str = Field(default="Sales Flow AI Backend")
-    environment: str = Field(default="development")
-    debug: bool = Field(default=False)
-    
-    # ============= AI =============
-    openai_api_key: Optional[str] = Field(default=None)
-    openai_model: str = Field(default="gpt-4o-mini")
-    anthropic_api_key: Optional[str] = Field(default=None)
-    
-    # ============= Database =============
+    Uses Pydantic for validation and type coercion.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # ==================== APPLICATION ====================
+
+    app_name: str = "SalesFlow AI"
+    app_version: str = "1.0.0"
+    debug: bool = False
+    environment: str = Field(default="production", pattern="^(development|staging|production)$")
+    secret_key: str = Field(default="CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_USE_STRONG_RANDOM_STRING", min_length=32)
+
+    # API
+    api_prefix: str = "/api/v1"
+    docs_enabled: bool = False
+
+    # ==================== DATABASE ====================
+
+    # Supabase
     supabase_url: Optional[str] = Field(default=None)
+    supabase_anon_key: Optional[str] = Field(default=None)
     supabase_service_role_key: Optional[str] = Field(default=None)
-    database_url: Optional[str] = Field(default=None)
-    
-    # ============= User Defaults =============
-    default_org_id: Optional[str] = Field(default="demo-org")
-    default_user_id: Optional[str] = Field(default="demo-user")
-    default_user_name: Optional[str] = Field(default="Demo User")
 
-    # ============= Lead Assignment =============
-    default_lead_owner_id: Optional[str] = Field(default=None)
+    # Direct database connection (for SQLAlchemy)
+    database_url: Optional[str] = None
 
-    # ============= Facebook / Meta =============
-    facebook_verify_token: str = Field(default="change-me")
-    facebook_app_secret: str = Field(default="change-me")
-    facebook_page_access_token: str = Field(default="change-me")
-    facebook_webhook_ip_whitelist: List[str] = Field(default_factory=list)
+    # Pool settings
+    db_pool_size: int = Field(default=20, ge=5, le=100)
+    db_max_overflow: int = Field(default=30, ge=0, le=100)
+    db_pool_timeout: int = Field(default=30, ge=5, le=120)
+    db_pool_recycle: int = Field(default=3600, ge=300, le=7200)
+    db_echo: bool = False
 
-    # ============= LinkedIn =============
-    linkedin_client_id: str = Field(default="change-me")
-    linkedin_client_secret: str = Field(default="change-me")
-    linkedin_redirect_uri: str = Field(default="https://yourapp.com/webhooks/linkedin/oauth/callback")
-    linkedin_access_token: Optional[str] = Field(default=None)
-    linkedin_webhook_ip_whitelist: List[str] = Field(default_factory=list)
+    @model_validator(mode="after")
+    def build_database_url(self):
+        """Build database URL from Supabase if not provided."""
+        if not self.database_url and self.supabase_url:
+            # Extract project ref from Supabase URL
+            # https://xyz.supabase.co -> xyz
+            import re
+            match = re.search(r"https?://([^.]+)\.supabase\.co", self.supabase_url)
+            if match:
+                project_ref = match.group(1)
+                self.database_url = (
+                    f"postgresql://postgres.{project_ref}:"
+                    f"[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+                )
+        return self
 
-    # ============= Instagram =============
-    instagram_verify_token: str = Field(default="change-me")
-    instagram_app_secret: str = Field(default="change-me")
-    instagram_webhook_ip_whitelist: List[str] = Field(default_factory=list)
-    instagram_send_autoreply: bool = Field(default=False)
-    
-    # ============= JWT Settings =============
-    jwt_secret_key: str = Field(
-        default="CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_USE_STRONG_RANDOM_STRING",
-        description="Secret key for JWT token encoding/decoding"
-    )
-    jwt_refresh_secret_key: str = Field(
-        default="CHANGE_THIS_REFRESH_SECRET_KEY_IN_PRODUCTION",
-        description="Secret key for refresh token signing"
-    )
-    jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
-    jwt_access_token_expire_minutes: int = Field(default=30, description="Access token expiry in minutes")
-    jwt_refresh_token_expire_days: int = Field(default=7, description="Refresh token expiry in days")
-    
-    # Alias für Uppercase-Zugriff (Kompatibilität mit Security-Modulen)
-    @property
-    def JWT_SECRET_KEY(self) -> str:
-        return self.jwt_secret_key
-    
-    @property
-    def JWT_REFRESH_SECRET_KEY(self) -> str:
-        return self.jwt_refresh_secret_key
-    
-    @property
-    def JWT_ALGORITHM(self) -> str:
-        return self.jwt_algorithm
-    
-    @property
-    def JWT_ACCESS_TOKEN_EXPIRE_MINUTES(self) -> int:
-        return self.jwt_access_token_expire_minutes
-    
-    @property
-    def JWT_REFRESH_TOKEN_EXPIRE_DAYS(self) -> int:
-        return self.jwt_refresh_token_expire_days
-    
-    # ============= Password Policy =============
-    password_min_length: int = Field(default=12, description="Minimum password length")
-    password_require_uppercase: bool = Field(default=True)
-    password_require_lowercase: bool = Field(default=True)
-    password_require_digit: bool = Field(default=True)
-    password_require_special: bool = Field(default=True)
-    password_bcrypt_rounds: int = Field(default=12, description="bcrypt cost factor")
-    
-    @property
-    def PASSWORD_MIN_LENGTH(self) -> int:
-        return self.password_min_length
-    
-    @property
-    def PASSWORD_REQUIRE_UPPERCASE(self) -> bool:
-        return self.password_require_uppercase
-    
-    @property
-    def PASSWORD_REQUIRE_LOWERCASE(self) -> bool:
-        return self.password_require_lowercase
-    
-    @property
-    def PASSWORD_REQUIRE_DIGIT(self) -> bool:
-        return self.password_require_digit
-    
-    @property
-    def PASSWORD_REQUIRE_SPECIAL(self) -> bool:
-        return self.password_require_special
-    
-    @property
-    def PASSWORD_BCRYPT_ROUNDS(self) -> int:
-        return self.password_bcrypt_rounds
-    
-    # ============= Encryption =============
-    encryption_key: str = Field(
-        default_factory=_generate_default_key,
-        description="Key for field-level encryption (32 bytes base64)"
-    )
-    
-    @property
-    def ENCRYPTION_KEY(self) -> str:
-        return self.encryption_key
-    
-    # ============= Rate Limiting =============
-    rate_limit_enabled: bool = Field(default=True)
-    rate_limit_default_requests: int = Field(default=100)
-    rate_limit_default_window_seconds: int = Field(default=60)
-    rate_limit_auth_requests: int = Field(default=5)
-    rate_limit_auth_window_seconds: int = Field(default=300)
-    
-    # ============= CORS =============
-    cors_allowed_origins: List[str] = Field(
-        default=[
-            "https://aura-os-topaz.vercel.app",
-            "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
-            "https://*.vercel.app",
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000",
-        ]
-    )
+    # ==================== REDIS / CACHE ====================
 
-    model_config = {
-        "env_file": ".env",
-        "env_file_encoding": "utf-8",
-        "extra": "ignore",
-    }
+    redis_url: str = Field(default="redis://localhost:6379/0")
+    redis_max_connections: int = Field(default=50, ge=10, le=200)
 
+    # Cache TTLs (seconds)
+    cache_ttl_short: int = Field(default=60, ge=10, le=300)
+    cache_ttl_medium: int = Field(default=600, ge=60, le=3600)
+    cache_ttl_long: int = Field(default=3600, ge=300, le=86400)
 
-_settings_instance: Optional[Settings] = None
+    # Enable/disable caching
+    cache_enabled: bool = True
 
+    # ==================== RATE LIMITING ====================
 
+    rate_limit_enabled: bool = True
+    rate_limit_default_rpm: int = Field(default=100, ge=10, le=1000)  # requests per minute
+    rate_limit_auth_rpm: int = Field(default=5, ge=1, le=20)
+    rate_limit_api_read_rpm: int = Field(default=200, ge=50, le=1000)
+    rate_limit_api_write_rpm: int = Field(default=50, ge=10, le=200)
+
+    # ==================== SECURITY ====================
+
+    # JWT
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = Field(default=30, ge=5, le=1440)
+    jwt_refresh_token_expire_days: int = Field(default=7, ge=1, le=30)
+
+    # CORS
+    cors_origins: str = "https://salesflow.ai,https://www.salesflow.ai"
+    cors_allow_credentials: bool = True
+    cors_allow_methods: str = "*"
+    cors_allow_headers: str = "*"
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Parse CORS origins string to list."""
+        return [origin.strip() for origin in self.cors_origins.split(",")]
+
+    # ==================== SOCIAL MEDIA ====================
+
+    # Facebook
+    facebook_app_id: str = ""
+    facebook_app_secret: str = ""
+    facebook_verify_token: str = ""
+
+    # LinkedIn
+    linkedin_client_id: str = ""
+    linkedin_client_secret: str = ""
+
+    # Instagram
+    instagram_app_id: str = ""
+    instagram_app_secret: str = ""
+
+    # ==================== AI / ML ====================
+
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4-turbo-preview"
+    openai_max_tokens: int = Field(default=2000, ge=100, le=8000)
+    openai_temperature: float = Field(default=0.7, ge=0, le=2)
+
+    # ==================== MONITORING ====================
+
+    # Sentry
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = Field(default=0.1, ge=0, le=1)
+    sentry_profiles_sample_rate: float = Field(default=0.1, ge=0, le=1)
+
+    # Logging
+    log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
+    log_format: str = "json"  # json or text
+
+    # ==================== EMAIL ====================
+
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@salesflow.ai"
+    smtp_from_name: str = "SalesFlow AI"
+
+    # ==================== BACKGROUND TASKS ====================
+
+    # Celery
+    celery_broker_url: str = ""
+    celery_result_backend: str = ""
+
+    # Task settings
+    task_default_queue: str = "default"
+    task_high_priority_queue: str = "high"
+
+    # ==================== FEATURE FLAGS ====================
+
+    feature_ai_chat: bool = True
+    feature_voice_input: bool = True
+    feature_offline_mode: bool = True
+    feature_team_sharing: bool = True
+    feature_blueprints: bool = True
+
+    # ==================== VALIDATORS ====================
+
+    @field_validator("environment")
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        """Ensure environment is valid."""
+        allowed = ["development", "staging", "production"]
+        if v not in allowed:
+            raise ValueError(f"Environment must be one of: {allowed}")
+        return v
+
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        """Ensure log level is valid."""
+        allowed = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        v = v.upper()
+        if v not in allowed:
+            raise ValueError(f"Log level must be one of: {allowed}")
+        return v
+
+    # ==================== COMPUTED PROPERTIES ====================
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production."""
+        return self.environment == "production"
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development."""
+        return self.environment == "development"
+
+    @property
+    def sentry_enabled(self) -> bool:
+        """Check if Sentry is configured."""
+        return bool(self.sentry_dsn)
+
+    @property
+    def redis_enabled(self) -> bool:
+        """Check if Redis is configured."""
+        return bool(self.redis_url) and self.cache_enabled
+
+    @property
+    def celery_enabled(self) -> bool:
+        """Check if Celery is configured."""
+        return bool(self.celery_broker_url)
+
+@lru_cache()
 def get_settings() -> Settings:
     """
-    Liefert eine gecachte Settings-Instanz.
+    Get cached settings instance.
+
+    Uses LRU cache to avoid re-reading env vars.
     """
-    global _settings_instance
-    if _settings_instance is None:
-        _settings_instance = Settings()
-    return _settings_instance
+    return Settings()
 
+# Export singleton
+settings = get_settings()
 
-def clear_settings_cache() -> None:
-    """Löscht den Settings-Cache (nützlich für Tests)."""
-    global _settings_instance
-    _settings_instance = None
+# ==================== CONFIGURATION HELPERS ====================
 
+def get_database_config() -> dict:
+    """Get database configuration dictionary."""
+    return {
+        "url": settings.database_url,
+        "pool_size": settings.db_pool_size,
+        "max_overflow": settings.db_max_overflow,
+        "pool_timeout": settings.db_pool_timeout,
+        "pool_recycle": settings.db_pool_recycle,
+        "echo": settings.db_echo,
+    }
 
-__all__ = ["Settings", "get_settings", "clear_settings_cache"]
+def get_redis_config() -> dict:
+    """Get Redis configuration dictionary."""
+    return {
+        "url": settings.redis_url,
+        "max_connections": settings.redis_max_connections,
+        "enabled": settings.redis_enabled,
+    }
+
+def get_rate_limit_config() -> dict:
+    """Get rate limiting configuration."""
+    return {
+        "enabled": settings.rate_limit_enabled,
+        "default_rpm": settings.rate_limit_default_rpm,
+        "auth_rpm": settings.rate_limit_auth_rpm,
+        "api_read_rpm": settings.rate_limit_api_read_rpm,
+        "api_write_rpm": settings.rate_limit_api_write_rpm,
+    }
+
+def get_sentry_config() -> dict:
+    """Get Sentry configuration."""
+    return {
+        "dsn": settings.sentry_dsn,
+        "environment": settings.environment,
+        "release": settings.app_version,
+        "traces_sample_rate": settings.sentry_traces_sample_rate,
+        "profiles_sample_rate": settings.sentry_profiles_sample_rate,
+    }
+
+def print_config():
+    """Print current configuration (for debugging)."""
+    import json
+
+    # Safe config (no secrets)
+    safe_config = {
+        "app_name": settings.app_name,
+        "app_version": settings.app_version,
+        "environment": settings.environment,
+        "debug": settings.debug,
+        "database": {
+            "pool_size": settings.db_pool_size,
+            "max_overflow": settings.db_max_overflow,
+        },
+        "redis": {
+            "enabled": settings.redis_enabled,
+            "max_connections": settings.redis_max_connections,
+        },
+        "rate_limiting": {
+            "enabled": settings.rate_limit_enabled,
+            "default_rpm": settings.rate_limit_default_rpm,
+        },
+        "sentry": {
+            "enabled": settings.sentry_enabled,
+            "traces_sample_rate": settings.sentry_traces_sample_rate,
+        },
+        "features": {
+            "ai_chat": settings.feature_ai_chat,
+            "voice_input": settings.feature_voice_input,
+            "offline_mode": settings.feature_offline_mode,
+        }
+    }
+
+    print(json.dumps(safe_config, indent=2))

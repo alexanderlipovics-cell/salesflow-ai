@@ -10,18 +10,18 @@ from fastapi import Header, HTTPException
 from supabase import Client
 
 from ..config import get_settings
-from ..supabase_client import SupabaseNotConfiguredError, get_supabase_client
+from ..db.session import get_db_client
 
 
-def get_supabase() -> Client:
+async def get_supabase() -> Client:
     """
-    Liefert einen Supabase-Client und mapped Konfigurationsfehler auf HTTP-Fehler.
+    Liefert einen optimierten Supabase-Client mit Connection Pooling.
     """
 
     try:
-        return get_supabase_client()
-    except SupabaseNotConfiguredError as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return await get_db_client()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Database connection error: {str(exc)}") from exc
 
 
 async def get_current_user(

@@ -1,0 +1,14 @@
+{{ greeting }}
+
+{{ personal_message }}
+
+Deine nächsten Schritte:
+{% for step in next_steps %}
+- {{ step }}
+{% endfor %}
+
+Zum Dashboard: https://app.salesflow.ai
+
+---
+SalesFlow AI • Automate your Growth
+Unsubscribe: {{ unsubscribe_url }}

@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
 
 from app.ai_client import AIClient
@@ -25,8 +25,16 @@ from app.core.ai_prompts import (
     build_coach_prompt_with_action,
     detect_action_from_text,
 )
+from ..core.security import get_current_user_dict
+from ..services.ai_service import AiService
+from ..services.conversation_service import ConversationMemoryService
+from fastapi.responses import StreamingResponse
 
-router = APIRouter(prefix="/chat", tags=["chat"])
+router = APIRouter(
+    prefix="/chat",
+    tags=["chat"],
+    dependencies=[Depends(get_current_user_dict)]
+)
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
@@ -477,5 +485,82 @@ Sag mir einfach, wo du gerade steckst!"""
     # Default
     return "Verstehe! 🤔 Gib mir mehr Details, dann kann ich dir konkret helfen. Worum geht's genau?"
 
+
+# ============================================
+# NEW STREAMING CHAT ENDPOINT (Tag 2)
+# ============================================
+
+class ChatRequest(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+    lead_id: Optional[str] = None
+
+@router.post("/stream")
+async def stream_chat(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user_dict),
+):
+    """
+    Streaming-Endpoint:
+    - Holt Memory-Kontext
+    - streamt AI-Response
+    - speichert Interaction im Memory
+    """
+    memory_service = ConversationMemoryService(db=db)
+    ai_service = AiService(budget_constraint=True)
+
+    # Memory als context messages
+    context_messages = await memory_service.get_context_as_messages(
+        user_id=current_user["user_id"],
+        lead_id=payload.lead_id,
+        query=payload.message,
+        top_k=5,
+    )
+
+    async def event_generator():
+        async for chunk in ai_service.stream_chat(
+            user_message=payload.message,
+            conversation_history=context_messages,
+        ):
+            # SSE oder plain text – hier very simple:
+            yield chunk
+
+    # User-Interaction speichern (Fire-and-forget)
+    interaction_user = {
+        "role": "user",
+        "content": payload.message,
+        "type": "input",
+        "channel": "in_app",
+        "conversation_id": payload.conversation_id,
+    }
+    interaction_assistant = {
+        "role": "assistant",
+        "content": "[STREAMED_RESPONSE]",  # kannst du später ersetzen, wenn du alles gesammelt hast
+        "type": "ai_response",
+        "channel": "in_app",
+        "conversation_id": payload.conversation_id,
+    }
+
+    # hier nicht awaited, wenn du BackgroundTasks nutzen willst; für MVP kannst du sie normal awaiten
+    await memory_service.store_interaction(
+        user_id=current_user["user_id"],
+        lead_id=payload.lead_id,
+        interaction=interaction_user,
+        conversation_id=payload.conversation_id,
+    )
+    await memory_service.store_interaction(
+        user_id=current_user["user_id"],
+        lead_id=payload.lead_id,
+        interaction=interaction_assistant,
+        conversation_id=payload.conversation_id,
+    )
+
+    return StreamingResponse(event_generator(), media_type="text/plain")
+
+# Missing imports
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from ..db.session import get_db
 
 __all__ = ["router"]

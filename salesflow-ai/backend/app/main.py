@@ -4,6 +4,9 @@ from fastapi.responses import JSONResponse
 import logging
 import sys
 
+# Initialize Sentry (must be first)
+from .core import sentry
+
 # Logging Setup (ohne request_id da das nur mit Middleware funktioniert)
 logging.basicConfig(
     level=logging.INFO,
@@ -141,6 +144,11 @@ from .routers.ad_webhooks import router as ad_webhooks_router  # 🆕 Ad Platfor
 from .routers.facebook_webhook import router as facebook_webhook_router  # 🆕 Facebook Lead Ads Webhook
 from .routers.linkedin_webhook import router as linkedin_webhook_router  # 🆕 LinkedIn Lead Gen Webhook
 from .routers.instagram_webhook import router as instagram_webhook_router  # 🆕 Instagram DM Webhook
+from .routers.conversations import router as conversations_router  # 🆕 Conversation Memory
+from .routers.lead_suggestions import router as lead_suggestions_router  # 🆕 Smart Suggestions
+from .routers.ops_deployments import router as ops_deployments_router  # 🆕 AI Ops Deployment Management
+from .routers.consent import router as consent_router  # 🛡️ GDPR Consent Management
+from .routers.privacy import router as privacy_router  # 🛡️ GDPR Privacy Operations
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -165,6 +173,11 @@ app.include_router(ad_webhooks_router, prefix="/api")  # 🆕 Ad Platform Webhoo
 app.include_router(facebook_webhook_router)  # 🆕 Facebook Lead Ads Webhook
 app.include_router(linkedin_webhook_router)  # 🆕 LinkedIn Lead Gen Webhook
 app.include_router(instagram_webhook_router)  # 🆕 Instagram DM Webhook
+app.include_router(conversations_router, prefix="/api")  # 🆕 Conversation Memory
+app.include_router(lead_suggestions_router, prefix="/api")  # 🆕 Smart Suggestions
+app.include_router(ops_deployments_router, prefix="/api")  # 🆕 AI Ops Deployment Management
+app.include_router(consent_router, prefix="/api")  # 🛡️ GDPR Consent Management
+app.include_router(privacy_router, prefix="/api")  # 🛡️ GDPR Privacy Operations
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert
