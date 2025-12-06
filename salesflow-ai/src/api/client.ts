@@ -16,6 +16,8 @@ import * as MockAPI from './mock';
 
 class ApiClient {
   private baseURL: string;
+  // Verhindert Endlosschleifen nach hartem Auth-Fehler (401 nach Refresh)
+  private authHardFail = false;
 
   constructor() {
     this.baseURL = API_CONFIG.USE_MOCK_API
@@ -39,6 +41,11 @@ class ApiClient {
     // Use mock API if configured
     if (API_CONFIG.USE_MOCK_API || this.baseURL.startsWith('mock://')) {
       return this.handleMockRequest<T>(config);
+    }
+
+    // Wenn Auth hart gescheitert ist, nicht weiter spammen
+    if (!config.skipAuth && this.authHardFail) {
+      throw new ApiError('Unauthorized', 401);
     }
 
     // Check cache for GET requests
@@ -155,6 +162,9 @@ class ApiClient {
 
         // Handle 401 - try to refresh token
         if (error instanceof ApiError && error.isUnauthorized()) {
+          if (this.authHardFail) {
+            throw error;
+          }
           try {
             await authManager.refreshAccessToken();
             options.headers = await this.buildHeaders({}, false);
@@ -162,6 +172,7 @@ class ApiClient {
           } catch (refreshError) {
             // Refresh failed - clear auth and throw
             await authManager.clearToken();
+            this.authHardFail = true;
             throw error;
           }
         }
