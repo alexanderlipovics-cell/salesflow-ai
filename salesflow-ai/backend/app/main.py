@@ -83,7 +83,7 @@ app.add_middleware(
 # 3. Rate Limiting Middleware
 app.add_middleware(
     RateLimitMiddleware,
-    enabled=settings.rate_limit_enabled,
+    enabled=False,  # Temporär deaktiviert, um Auth-Calls nicht zu drosseln
     default_limit=settings.rate_limit_default_requests,
     default_window=settings.rate_limit_default_window_seconds,
     exclude_paths=[
