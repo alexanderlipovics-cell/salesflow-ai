@@ -8,7 +8,7 @@
  * - Quick Actions
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -23,7 +23,10 @@ import {
   Sparkles,
   TrendingUp,
   Heart,
+  Check,
+  Loader2,
 } from 'lucide-react';
+import { magicSend, Platform, ContactInfo } from '../../services/magicDeepLinkService';
 
 // Types
 interface HuntedLead {
@@ -117,6 +120,70 @@ const DEMO_LEADS: HuntedLead[] = [
   },
 ];
 
+// 🪄 Magic Contact Button für den Widget
+const MagicContactButton: React.FC<{
+  lead: HuntedLead;
+}> = ({ lead }) => {
+  const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle');
+  
+  const handleMagicSend = useCallback(async () => {
+    setState('loading');
+    
+    // Bestimme Plattform und Kontaktinfo
+    const platform: Platform = lead.platform as Platform || 'instagram';
+    const contact: ContactInfo = {
+      instagram: lead.handle?.replace('@', ''),
+      name: lead.name,
+    };
+    
+    try {
+      await magicSend({
+        platform,
+        contact,
+        message: lead.suggested_opener || `Hey ${lead.name.split(' ')[0]}! 👋`,
+        copyFirst: true,
+        showToast: true,
+      });
+      
+      setState('done');
+      setTimeout(() => setState('idle'), 2000);
+    } catch (error) {
+      console.error('Magic send error:', error);
+      setState('idle');
+    }
+  }, [lead]);
+  
+  return (
+    <button
+      onClick={handleMagicSend}
+      disabled={state === 'loading'}
+      className={`
+        flex-1 py-2 rounded-lg font-medium transition-colors text-sm 
+        flex items-center justify-center gap-1
+        ${state === 'done' 
+          ? 'bg-emerald-500 text-white' 
+          : 'bg-purple-500 hover:bg-purple-600 text-white'
+        }
+      `}
+    >
+      {state === 'loading' ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : state === 'done' ? (
+        <>
+          <Check className="w-4 h-4" />
+          Kopiert!
+        </>
+      ) : (
+        <>
+          <Sparkles className="w-4 h-4" />
+          Magic Send
+          <ChevronRight className="w-4 h-4" />
+        </>
+      )}
+    </button>
+  );
+};
+
 // Components
 const LeadCard: React.FC<{
   lead: HuntedLead;
@@ -206,7 +273,7 @@ const LeadCard: React.FC<{
         )}
       </AnimatePresence>
       
-      {/* Actions */}
+      {/* Actions - 🪄 Mit Magic Send */}
       <div className="border-t border-gray-100 px-4 py-3 flex gap-2">
         <button
           onClick={() => setShowOpener(!showOpener)}
@@ -214,12 +281,8 @@ const LeadCard: React.FC<{
         >
           {showOpener ? 'Verstecken' : '💬 Opener zeigen'}
         </button>
-        <button
-          onClick={onContact}
-          className="flex-1 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-1"
-        >
-          Kontaktieren <ChevronRight className="w-4 h-4" />
-        </button>
+        {/* 🪄 Magic Contact Button */}
+        <MagicContactButton lead={lead} />
       </div>
     </motion.div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   AlertTriangle,
   CalendarClock,
@@ -10,22 +10,22 @@ import {
   X,
   Instagram,
   Rocket,
+  Sparkles,
+  Mail,
 } from 'lucide-react';
 import { useHunterTasks } from '../hooks/useHunterTasks';
 import { SALES_SCRIPTS } from '../lib/salesScripts';
 import { startStandardFollowUpSequenceForLead } from '../services/followUpService';
+import { magicSend, Platform, ContactInfo } from '../services/magicDeepLinkService';
 // @ts-expect-error - UserContext is a JS file without type declarations
 import { useUser } from '../context/UserContext';
 
-// Hilfsfunktion für WhatsApp Link
-const buildWhatsAppUrl = (
-  phone: string | null,
+// 🪄 Magic Message Builder - Baut personalisierte Nachricht
+const buildMagicMessage = (
   vertical: string | null,
   leadName: string | null,
   userName: string | null
-) => {
-  if (!phone) return '#';
-  
+): string => {
   // 1. Text wählen basierend auf Vertical
   const safeVertical = (vertical?.toLowerCase() || 'generic') as keyof typeof SALES_SCRIPTS;
   const scriptObj = SALES_SCRIPTS[safeVertical] || SALES_SCRIPTS['generic'];
@@ -41,11 +41,68 @@ const buildWhatsAppUrl = (
     const userFirstName = userName.split(' ')[0];
     message = message.replace(/\[DeinName\]/g, userFirstName);
   }
-
-  // 3. Nummer säubern (nur Ziffern)
-  const cleanPhone = phone.replace(/[^0-9]/g, '');
   
-  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  return message;
+};
+
+// 🪄 Magic Button Component - 1-Klick Kontaktieren
+const MagicButton: React.FC<{
+  platform: Platform;
+  contact: ContactInfo;
+  message: string;
+  icon: React.ReactNode;
+  label: string;
+  color: string;
+}> = ({ platform, contact, message, icon, label, color }) => {
+  const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle');
+  
+  const handleClick = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setState('loading');
+    
+    try {
+      await magicSend({
+        platform,
+        contact,
+        message,
+        copyFirst: true,
+        showToast: true,
+      });
+      
+      setState('done');
+      setTimeout(() => setState('idle'), 2000);
+    } catch (error) {
+      console.error('Magic send error:', error);
+      setState('idle');
+    }
+  }, [platform, contact, message]);
+  
+  return (
+    <button
+      onClick={handleClick}
+      disabled={state === 'loading'}
+      className={`flex flex-col items-center justify-center rounded-lg py-2 transition group relative overflow-hidden ${color}`}
+    >
+      {/* Sparkle Overlay für "done" State */}
+      {state === 'done' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/90">
+          <Check className="h-5 w-5 text-white" />
+        </div>
+      )}
+      
+      {state === 'loading' ? (
+        <Loader2 className="h-4 w-4 mb-1 animate-spin text-white" />
+      ) : (
+        <>
+          {icon}
+          <span className="text-[10px] font-bold">{label}</span>
+        </>
+      )}
+      
+      {/* Magic Indicator */}
+      <Sparkles className="absolute top-1 right-1 w-2 h-2 text-yellow-300 opacity-0 group-hover:opacity-100 transition" />
+    </button>
+  );
 };
 
 const HunterPage = () => {
@@ -181,47 +238,81 @@ const HunterPage = () => {
                 Follow-up Sequenz starten
               </button>
 
-              {/* Middle Row: Contact Buttons */}
-              <div className="grid grid-cols-3 gap-2 mb-6">
-                {lead.phone ? (
+              {/* Middle Row: 🪄 MAGIC Contact Buttons */}
+              <div className="mb-6">
+                {/* Magic Badge */}
+                <div className="flex items-center gap-1 mb-2">
+                  <Sparkles className="w-3 h-3 text-yellow-400" />
+                  <span className="text-[10px] text-yellow-400 font-medium">Magic Send - 1 Klick & fertig!</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Phone / WhatsApp Buttons */}
+                  {lead.phone ? (
                     <>
-                        <a
+                      {/* Anrufen (bleibt normal) */}
+                      <a
                         href={`tel:${lead.phone}`}
                         className="flex flex-col items-center justify-center rounded-lg bg-slate-700 py-2 hover:bg-slate-600 transition"
-                        >
+                      >
                         <Phone className="h-4 w-4 mb-1 text-blue-400" />
                         <span className="text-[10px] font-bold">Anrufen</span>
-                        </a>
-                        <a
-                        href={buildWhatsAppUrl(lead.phone, lead.vertical, lead.name, user?.name ?? null)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex flex-col items-center justify-center rounded-lg bg-slate-700 py-2 hover:bg-slate-600 transition"
-                        >
-                        <MessageCircle className="h-4 w-4 mb-1 text-emerald-400" />
-                        <span className="text-[10px] font-bold">WhatsApp</span>
-                        </a>
+                      </a>
+                      
+                      {/* 🪄 MAGIC WhatsApp Button */}
+                      <MagicButton
+                        platform="whatsapp"
+                        contact={{ 
+                          phone: lead.phone ?? undefined, 
+                          name: lead.name ?? undefined,
+                          instagram: lead.instagram ?? undefined,
+                          email: lead.email ?? undefined,
+                        }}
+                        message={buildMagicMessage(lead.vertical, lead.name, user?.name ?? null)}
+                        icon={<MessageCircle className="h-4 w-4 mb-1 text-emerald-400" />}
+                        label="WhatsApp"
+                        color="bg-slate-700 hover:bg-emerald-600/30"
+                      />
                     </>
-                ) : (
-                    <div className="col-span-2 flex items-center justify-center text-xs text-slate-500 bg-slate-900/50 rounded-lg">
-                        Keine Nummer
+                  ) : (
+                    <div className="col-span-2 flex items-center justify-center text-xs text-slate-500 bg-slate-900/50 rounded-lg py-3">
+                      Keine Nummer
                     </div>
-                )}
+                  )}
+                  
+                  {/* 🪄 MAGIC Instagram Button */}
+                  {lead.instagram ? (
+                    <MagicButton
+                      platform="instagram"
+                      contact={{ 
+                        instagram: lead.instagram ?? undefined, 
+                        name: lead.name ?? undefined,
+                        phone: lead.phone ?? undefined,
+                      }}
+                      message={buildMagicMessage(lead.vertical, lead.name, user?.name ?? null)}
+                      icon={<Instagram className="h-4 w-4 mb-1 text-pink-500" />}
+                      label="Insta"
+                      color="bg-slate-700 hover:bg-pink-600/30"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center text-xs text-slate-500 bg-slate-900/50 rounded-lg py-3">
+                      Kein Insta
+                    </div>
+                  )}
+                </div>
                 
-                {lead.instagram ? (
-                    <a
-                    href={lead.instagram.startsWith('http') ? lead.instagram : `https://instagram.com/${lead.instagram.replace('@','')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex flex-col items-center justify-center rounded-lg bg-slate-700 py-2 hover:bg-slate-600 transition"
-                    >
-                    <Instagram className="h-4 w-4 mb-1 text-pink-500" />
-                    <span className="text-[10px] font-bold">Insta</span>
-                    </a>
-                ) : (
-                    <div className="flex items-center justify-center text-xs text-slate-500 bg-slate-900/50 rounded-lg">
-                        Kein Insta
-                    </div>
+                {/* Extra Buttons Row (Email) */}
+                {lead.email && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <MagicButton
+                      platform="email"
+                      contact={{ email: lead.email ?? undefined, name: lead.name ?? undefined }}
+                      message={buildMagicMessage(lead.vertical, lead.name, user?.name ?? null)}
+                      icon={<Mail className="h-4 w-4 mb-1 text-red-400" />}
+                      label="E-Mail"
+                      color="bg-slate-700 hover:bg-red-600/30"
+                    />
+                  </div>
                 )}
               </div>
 
