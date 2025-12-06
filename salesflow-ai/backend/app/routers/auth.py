@@ -216,20 +216,22 @@ async def signup(
     
     # Create user
     user_id = str(uuid4())
+    # Minimaler Datensatz, um Schema-Probleme (fehlende Spalten) zu vermeiden
     user_data = {
         "id": user_id,
         "email": signup_data.email,
         "password_hash": password_hash,
         "name": signup_data.name,
-        "role": "user",
-        "is_active": True,
         "created_at": datetime.utcnow().isoformat(),
     }
-    # Nur setzen, wenn vorhanden – vermeidet Schema-Fehler, falls Spalte fehlt
+    # Optional, nur wenn vorhanden (Spalte kann fehlen)
     if signup_data.company:
         user_data["company"] = signup_data.company
     
     created_user = await create_user(supabase, user_data)
+    # Fülle optionale Felder für die Response, auch wenn sie in der DB fehlen
+    created_user.setdefault("role", "user")
+    created_user.setdefault("is_active", True)
     
     # Generate tokens
     tokens = create_token_pair(
@@ -239,9 +241,6 @@ async def signup(
             "role": created_user["role"]
         }
     )
-    
-    # Update last_login
-    await update_user(supabase, user_id, {"last_login": datetime.utcnow().isoformat()})
     
     logger.info(f"User registered: {signup_data.email}")
     
@@ -295,13 +294,15 @@ async def login(
         }
     )
     
-    # Update last_login
-    await update_user(supabase, str(user["id"]), {"last_login": datetime.utcnow().isoformat()})
-    
     logger.info(f"User logged in: {login_data.email}")
     
+    # Response absichern mit Defaults
+    user_response = {**user}
+    user_response.setdefault("role", "user")
+    user_response.setdefault("is_active", True)
+
     return LoginResponse(
-        user=UserResponse(**user),
+        user=UserResponse(**user_response),
         tokens=TokenResponse(**tokens),
         message="Login successful"
     )
