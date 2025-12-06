@@ -156,6 +156,9 @@ const App = () => {
                     {/* Onboarding (can be public or protected based on your needs) */}
                     <Route path="/onboarding" element={<OnboardingWizardPage />} />
                     
+                    {/* Magic Send Demo (Public for testing) */}
+                    <Route path="/magic-send" element={<MagicSendDemo />} />
+                    
                     {/* Protected Routes - Main App */}
                     <Route element={
                       <ProtectedRoute>

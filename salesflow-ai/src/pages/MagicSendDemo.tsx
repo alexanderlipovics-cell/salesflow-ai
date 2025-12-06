@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Check,
   Copy,
+  Linkedin,
 } from 'lucide-react';
 import {
   magicSend,
@@ -32,15 +33,23 @@ import {
   Platform,
   ContactInfo,
 } from '../services/magicDeepLinkService';
+import {
+  InstagramMagicSend,
+  LinkedInMagicSend,
+  EmailMagicSend,
+} from '../components/magic';
 
-// Demo Kontakte
+// Demo Kontakte - mit allen Plattformen
 const DEMO_CONTACTS: Array<{ contact: ContactInfo; suggested_message: string }> = [
   {
     contact: {
       name: 'Julia Fischer',
       phone: '+491701234567',
       instagram: 'julia_coaching',
-      email: 'julia@example.com',
+      email: 'julia.fischer@example.com',
+      linkedin: 'julia-fischer-coaching',
+      company: 'JF Coaching GmbH',
+      vertical: 'Coaching',
     },
     suggested_message: 'Hey Julia! 👋 Dein Coaching-Content hat mich total inspiriert. Hast du Lust auf einen kurzen Austausch?',
   },
@@ -49,6 +58,9 @@ const DEMO_CONTACTS: Array<{ contact: ContactInfo; suggested_message: string }> 
       name: 'Max Müller',
       phone: '+491709876543',
       instagram: 'max_fitness',
+      linkedin: 'max-mueller-fitness',
+      email: 'max@fitness-pro.de',
+      vertical: 'Fitness',
     },
     suggested_message: 'Hey Max! 💪 Starker Content! Ich arbeite auch im Fitness-Bereich und würde mich gerne vernetzen.',
   },
@@ -56,7 +68,10 @@ const DEMO_CONTACTS: Array<{ contact: ContactInfo; suggested_message: string }> 
     contact: {
       name: 'Sarah Weber',
       instagram: 'sarah_lifestyle',
-      email: 'sarah@example.com',
+      email: 'sarah.weber@example.com',
+      linkedin: 'sarah-weber-lifestyle',
+      company: 'Lifestyle by Sarah',
+      vertical: 'Lifestyle',
     },
     suggested_message: 'Hi Sarah! ✨ Dein Feed ist mega inspirierend. Was ist dein Geheimnis für so authentischen Content?',
   },
@@ -310,11 +325,53 @@ const MagicSendDemo = () => {
           </p>
         </motion.div>
         
-        {/* Cost Comparison */}
+        {/* Plattform-spezifische Magic Send Komponenten */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
+          className="space-y-4"
+        >
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-yellow-400" />
+            Plattform-spezifische Magic Sender
+          </h2>
+          
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Instagram Magic */}
+            {selectedContact.contact.instagram && (
+              <InstagramMagicSend
+                contact={selectedContact.contact}
+                userName="Alex"
+                onSent={() => console.log('Instagram sent!')}
+              />
+            )}
+            
+            {/* LinkedIn Magic */}
+            {selectedContact.contact.linkedin && (
+              <LinkedInMagicSend
+                contact={selectedContact.contact}
+                userName="Alex"
+                onSent={() => console.log('LinkedIn sent!')}
+              />
+            )}
+            
+            {/* Email Magic */}
+            {selectedContact.contact.email && (
+              <EmailMagicSend
+                contact={selectedContact.contact}
+                userName="Alex"
+                onSent={() => console.log('Email sent!')}
+              />
+            )}
+          </div>
+        </motion.div>
+        
+        {/* Cost Comparison */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
           className="mt-8 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-2xl border border-emerald-500/30 p-6"
         >
           <h3 className="font-bold text-emerald-400 mb-3">💰 Kostenvergleich</h3>
@@ -337,6 +394,66 @@ const MagicSendDemo = () => {
             <span className="text-slate-300">200 Nachrichten/Monat = </span>
             <span className="text-red-400 line-through">26€</span>
             <span className="text-emerald-400 font-bold"> → 0€</span>
+          </div>
+        </motion.div>
+        
+        {/* Platform Deep-Link Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-6 bg-slate-800/50 rounded-2xl border border-slate-700 p-6"
+        >
+          <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-yellow-400" />
+            So funktionieren die Deep-Links
+          </h3>
+          
+          <div className="space-y-4">
+            {/* Instagram */}
+            <div className="flex items-start gap-4 p-4 bg-pink-500/10 rounded-xl border border-pink-500/30">
+              <Instagram className="w-8 h-8 text-pink-500 flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-pink-400">Instagram DM</h4>
+                <p className="text-sm text-slate-300 mt-1">
+                  📋 Nachricht wird kopiert → 📱 Instagram App öffnet sich beim Profil → 
+                  💬 User tippt auf "Nachricht" und fügt ein
+                </p>
+                <code className="text-xs text-pink-300 mt-2 block bg-black/30 p-2 rounded">
+                  instagram://user?username=xyz
+                </code>
+              </div>
+            </div>
+            
+            {/* LinkedIn */}
+            <div className="flex items-start gap-4 p-4 bg-blue-500/10 rounded-xl border border-blue-500/30">
+              <Linkedin className="w-8 h-8 text-blue-500 flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-blue-400">LinkedIn Message</h4>
+                <p className="text-sm text-slate-300 mt-1">
+                  📋 Professionelle Nachricht kopiert → 💼 LinkedIn öffnet Profil → 
+                  ✉️ User klickt "Nachricht senden" und fügt ein
+                </p>
+                <code className="text-xs text-blue-300 mt-2 block bg-black/30 p-2 rounded">
+                  linkedin://in/xyz (Mobile) / linkedin.com/in/xyz (Web)
+                </code>
+              </div>
+            </div>
+            
+            {/* Email */}
+            <div className="flex items-start gap-4 p-4 bg-red-500/10 rounded-xl border border-red-500/30">
+              <Mail className="w-8 h-8 text-red-500 flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-red-400">E-Mail</h4>
+                <p className="text-sm text-slate-300 mt-1">
+                  📧 Subject + Body werden vorausgefüllt → 📬 Standard Mail-App öffnet sich → 
+                  ✅ Nur noch "Senden" klicken
+                </p>
+                <code className="text-xs text-red-300 mt-2 block bg-black/30 p-2 rounded">
+                  mailto:xyz@email.com?subject=...&body=...
+                </code>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
