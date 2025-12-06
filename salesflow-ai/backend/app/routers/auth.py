@@ -287,7 +287,13 @@ async def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive. Please contact support."
         )
-    
+
+    # Response absichern mit Defaults (vor Token-Erstellung, damit auch bei Fehlern definiert)
+    user_response = {**user}
+    user_response.setdefault("role", "user")
+    user_response.setdefault("is_active", True)
+    user_response.setdefault("name", user.get("name", ""))
+
     # Generate tokens (JWT factory erwartet UUID + role)
     try:
         uuid_val = UUID(str(user["id"]))
@@ -299,12 +305,6 @@ async def login(
     )
     
     logger.info(f"User logged in: {login_data.email}")
-    
-    # Response absichern mit Defaults
-    user_response = {**user}
-    user_response.setdefault("role", "user")
-    user_response.setdefault("is_active", True)
-    user_response.setdefault("name", user.get("name", ""))
 
     return LoginResponse(
         user=UserResponse(**user_response),
