@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -40,6 +40,8 @@ class DeploymentRunRequest(BaseModel):
     dry_run: bool = True  # standardmäßig erst mal nur simulieren
 
 class DeploymentRunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
+    
     id: int
     version: str
     strategy: str
@@ -50,9 +52,6 @@ class DeploymentRunOut(BaseModel):
     results: Optional[Dict[str, Any]] = None
     created_at: datetime
     finished_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 class DeploymentRunList(BaseModel):
     items: List[DeploymentRunOut]
@@ -171,7 +170,7 @@ async def run_deployment(
     db.commit()
     db.refresh(run)
 
-    return DeploymentRunOut.from_orm(run)
+    return DeploymentRunOut.model_validate(run)
 
 @router.get("", response_model=DeploymentRunList)
 def list_deployments(
@@ -208,4 +207,4 @@ def get_deployment_run(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Deployment run not found",
         )
-    return DeploymentRunOut.from_orm(run)
+    return DeploymentRunOut.model_validate(run)

@@ -27,6 +27,9 @@ async def get_supabase() -> Client:
     """
     Liefert einen optimierten Supabase-Client mit Connection Pooling.
     Lädt Umgebungsvariablen direkt aus .env Datei.
+    
+    WICHTIG: Verwendet nur create_client(url, key) - keine zusätzlichen Parameter!
+    Die supabase-py Version 2.3.4 unterstützt KEINE proxy, options oder andere Parameter.
     """
     global _supabase_client
     
@@ -44,24 +47,49 @@ async def get_supabase() -> Client:
             detail="SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables or .env file"
         )
     
+    # Stelle sicher, dass URL und Key Strings sind (keine None-Werte)
+    url = str(url).strip()
+    key = str(key).strip()
+    
+    if not url or not key:
+        raise HTTPException(
+            status_code=500,
+            detail="SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must not be empty"
+        )
+    
     try:
         # KRITISCH: Nur URL und Key übergeben - KEINE zusätzlichen Parameter!
         # Die installierte supabase Version (2.3.4) unterstützt KEINE proxy, options, oder andere Parameter
         # Signatur: create_client(url: str, key: str) -> Client
+        # 
+        # EXPLIZIT: Keine kwargs, keine options, kein proxy, kein http_client
+        # Die Supabase-Bibliothek verwendet intern httpx, das automatisch Proxy-Umgebungsvariablen
+        # lesen könnte. Falls das ein Problem ist, müssen die Proxy-Umgebungsvariablen
+        # deaktiviert werden (NO_PROXY=* oder explizite Proxy-Deaktivierung).
         _supabase_client = create_client(url, key)
         return _supabase_client
     except TypeError as exc:
         # Spezifischer Fehler für falsche Parameter
-        if "proxy" in str(exc) or "unexpected keyword" in str(exc):
+        error_msg = str(exc)
+        if "proxy" in error_msg or "unexpected keyword" in error_msg:
+            # Cache löschen, falls vorhanden
+            _supabase_client = None
             raise HTTPException(
                 status_code=500,
-                detail=f"Supabase client creation failed: {str(exc)}. Please ensure you're using the correct supabase library version."
+                detail=(
+                    f"Supabase client creation failed: {error_msg}. "
+                    "This usually means the supabase-py library received an unsupported parameter. "
+                    "Please ensure you're using supabase==2.3.4 and that no proxy environment variables "
+                    "are interfering. Try setting NO_PROXY=* if needed."
+                )
             ) from exc
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to create Supabase client: {str(exc)}"
+            detail=f"Failed to create Supabase client: {error_msg}"
         ) from exc
     except Exception as exc:
+        # Cache löschen bei Fehler
+        _supabase_client = None
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create Supabase client: {str(exc)}"
