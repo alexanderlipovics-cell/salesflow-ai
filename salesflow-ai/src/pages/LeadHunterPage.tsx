@@ -1,6 +1,8 @@
 import { FormEvent, useState } from "react";
 import { useUser } from "../context/UserContext";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 export type LeadSuggestionCandidate = {
   id: string;
   name: string;
@@ -115,24 +117,20 @@ export function LeadHunterPage() {
     setCandidates([]);
 
     try {
-      const response = await fetch("/ai", {
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`${API_BASE_URL}/api/lead-hunter/hunt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          action: "lead_hunter",
-          data: {
-            industry,
-            user_name: userName || undefined,
-            lead_hunter: {
-              query: query || undefined,
-              industry,
-              region,
-              min_team_size: minTeamSize ?? undefined,
-              max_results: maxResults,
-            },
-          },
+          hashtags: query ? [query] : [industry],
+          bio_keywords: query ? [query] : [],
+          locations: [region],
+          min_followers: minTeamSize ?? 0,
+          max_followers: 50000,
+          limit: maxResults,
         }),
       });
 

@@ -224,9 +224,13 @@ const ChatPage = () => {
         content: msg.content,
       }));
 
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${API_BASE_URL}/api/chat/completion`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           message: messageText,
           history: history,
