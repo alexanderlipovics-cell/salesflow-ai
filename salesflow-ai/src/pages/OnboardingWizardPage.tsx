@@ -72,10 +72,11 @@ const OnboardingWizardPage: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<OnboardingStep>(1);
 
-  const { loading: personaLoading, persona, setPersona } = useSalesPersona();
+  const { loading: personaLoading, error: personaError, persona, setPersona } = useSalesPersona();
   const {
     loading: knowledgeLoading,
     saving: knowledgeSaving,
+    error: knowledgeError,
     knowledge,
     save: saveKnowledge,
   } = useCompanyKnowledge();
@@ -402,6 +403,15 @@ const OnboardingWizardPage: React.FC = () => {
           </div>
 
           <StepIndicator />
+
+          {/* Error Display */}
+          {(personaError || knowledgeError) && (
+            <div className="mt-4 p-3 rounded-lg border border-red-500/20 bg-red-500/10">
+              <p className="text-sm text-red-400">
+                {personaError || knowledgeError}
+              </p>
+            </div>
+          )}
 
           <div className="mt-6">{renderStepContent()}</div>
 
