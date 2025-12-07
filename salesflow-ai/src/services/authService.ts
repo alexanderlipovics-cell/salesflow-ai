@@ -266,7 +266,8 @@ class AuthService {
       }
 
       const data = await response.json();
-      return data.user;
+      // Backend returns the user object directly (not nested under "user")
+      return data.user ?? data;
     } catch (error) {
       console.error('Get current user failed:', error);
       this.clearTokens();
