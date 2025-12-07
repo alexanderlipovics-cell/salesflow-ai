@@ -28,7 +28,7 @@ def mock_settings():
         settings.PASSWORD_REQUIRE_LOWERCASE = True
         settings.PASSWORD_REQUIRE_DIGIT = True
         settings.PASSWORD_REQUIRE_SPECIAL = True
-        settings.PASSWORD_BCRYPT_ROUNDS = 4  # Fast for testing
+        settings.password_bcrypt_rounds = 4  # Fast for testing
         settings.ENCRYPTION_KEY = base64.urlsafe_b64encode(os.urandom(32)).decode()
         settings.ENVIRONMENT = "development"
         mock.return_value = settings

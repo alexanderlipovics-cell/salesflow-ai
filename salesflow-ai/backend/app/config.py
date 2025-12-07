@@ -100,10 +100,40 @@ class Settings(BaseSettings):
 
     # ==================== SECURITY ====================
 
+    # Password hashing
+    password_bcrypt_rounds: int = Field(default=12, ge=4, le=20, description="BCrypt rounds for password hashing")
+
     # JWT
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = Field(default=30, ge=5, le=1440)
     jwt_refresh_token_expire_days: int = Field(default=7, ge=1, le=30)
+    jwt_secret_key: str = Field(default="", description="Secret key for JWT access tokens. Uses secret_key if not set.")
+    jwt_refresh_secret_key: str = Field(default="", description="Secret key for JWT refresh tokens. Uses secret_key if not set.")
+    
+    @property
+    def JWT_ALGORITHM(self) -> str:
+        """Alias for jwt_algorithm (uppercase for compatibility)."""
+        return self.jwt_algorithm
+    
+    @property
+    def JWT_ACCESS_TOKEN_EXPIRE_MINUTES(self) -> int:
+        """Alias for jwt_access_token_expire_minutes (uppercase for compatibility)."""
+        return self.jwt_access_token_expire_minutes
+    
+    @property
+    def JWT_REFRESH_TOKEN_EXPIRE_DAYS(self) -> int:
+        """Alias for jwt_refresh_token_expire_days (uppercase for compatibility)."""
+        return self.jwt_refresh_token_expire_days
+    
+    @property
+    def JWT_SECRET_KEY(self) -> str:
+        """Alias for jwt_secret_key (uppercase for compatibility). Falls leer, wird secret_key verwendet."""
+        return self.jwt_secret_key or self.secret_key
+    
+    @property
+    def JWT_REFRESH_SECRET_KEY(self) -> str:
+        """Alias for jwt_refresh_secret_key (uppercase for compatibility). Falls leer, wird secret_key verwendet."""
+        return self.jwt_refresh_secret_key or self.secret_key
 
     # CORS
     cors_origins: str = "https://salesflow.ai,https://www.salesflow.ai"

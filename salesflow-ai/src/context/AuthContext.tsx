@@ -204,12 +204,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     async (email: string, password: string) => {
       setLoading(true);
       try {
+        // OAuth2PasswordRequestForm expects form-urlencoded with "username" field
+        const formData = new URLSearchParams();
+        formData.append('username', email);  // OAuth2 uses "username" not "email"
+        formData.append('password', password);
+
         const response = await fetch(`${API_URL}/auth/login`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: JSON.stringify({ email, password }),
+          body: formData.toString(),
         });
 
         if (!response.ok) {

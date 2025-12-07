@@ -24,6 +24,10 @@ def get_supabase_client() -> Client:
     
     WICHTIG: Verwendet nur create_client(url, key) - keine zusätzlichen Parameter!
     Die supabase-py Version 2.3.4 unterstützt KEINE proxy, options oder andere Parameter.
+    
+    HINWEIS: Proxy-Umgebungsvariablen (HTTP_PROXY, HTTPS_PROXY) werden automatisch
+    von httpx (intern von supabase-py verwendet) gelesen. Diese werden in main.py
+    deaktiviert, um Proxy-Fehler zu vermeiden.
     """
     global _supabase_client
     

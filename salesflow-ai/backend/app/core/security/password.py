@@ -310,7 +310,7 @@ def hash_password(password: str) -> str:
         Hashed password string
     """
     settings = get_settings()
-    salt = bcrypt.gensalt(rounds=settings.PASSWORD_BCRYPT_ROUNDS)
+    salt = bcrypt.gensalt(rounds=settings.password_bcrypt_rounds)
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed.decode("utf-8")
 

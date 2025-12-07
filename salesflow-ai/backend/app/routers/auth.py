@@ -5,10 +5,13 @@ Handles login, signup, token refresh, password reset, and user profile.
 
 from datetime import timedelta
 from typing import Any, Dict
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from supabase import Client
+
+logger = logging.getLogger(__name__)
 
 from ..core.security import (
     create_token_pair,
@@ -45,24 +48,34 @@ async def signup(
     - Returns JWT tokens
     """
     # Check if user already exists
-    existing_result = supabase.table("users").select("id, email").eq("email", user_data.email).maybe_single().execute()
-    if existing_result.data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        )
+    try:
+        existing_result = supabase.table("users").select("id, email").eq("email", user_data.email).maybe_single().execute()
+        
+        # Prüfe auf None oder fehlende data-Attribute
+        if existing_result is not None and existing_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+    except HTTPException:
+        # Email bereits registriert - weiterwerfen
+        raise
+    except Exception as e:
+        # Logge Fehler, aber fahre fort - User-Check fehlgeschlagen, aber wir können trotzdem versuchen zu erstellen
+        logger.warning(f"Could not check existing user for email {user_data.email}: {e}")
+        # Bei 406 Not Acceptable (Tabelle existiert nicht) oder anderen Fehlern:
+        # Versuche trotzdem, den User zu erstellen - die Datenbank wird den Fehler werfen, falls nötig
 
     # Hash password
     hashed_password = hash_password(user_data.password)
 
     # Create user in Supabase
-    user_id = user_data.email  # Using email as ID for simplicity, could be UUID
+    # Don't include "id" - let Supabase generate UUID automatically
     user_data_dict = {
-        "id": user_id,
         "email": user_data.email,
         "first_name": user_data.first_name,
         "last_name": user_data.last_name,
-        "hashed_password": hashed_password,
+        "password_hash": hashed_password,
         "is_active": True,
         "is_verified": False,
         "role": "user",
@@ -73,20 +86,24 @@ async def signup(
 
     result = supabase.table("users").insert(user_data_dict).execute()
     
-    if not result.data:
+    # Prüfe auf None oder fehlende data-Attribute
+    if not result or not result.data or len(result.data) == 0:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user",
         )
     
     user = result.data[0]
+    
+    # Get the auto-generated UUID from Supabase
+    user_id = user["id"]
 
     # Create tokens
     tokens = create_token_pair(user_id, user["email"])
 
     return SignupResponse(
-        access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
@@ -113,7 +130,8 @@ async def login(
     # Find user by email
     result = supabase.table("users").select("*").eq("email", form_data.username).maybe_single().execute()
     
-    if not result.data:
+    # Prüfe auf None oder fehlende data-Attribute
+    if not result or not result.data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -122,7 +140,7 @@ async def login(
 
     user = result.data
 
-    if not verify_password(form_data.password, user.get("hashed_password", "")):
+    if not verify_password(form_data.password, user.get("password_hash", "")):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -139,8 +157,8 @@ async def login(
     tokens = create_token_pair(user["id"], user["email"])
 
     return LoginResponse(
-        access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
@@ -177,7 +195,8 @@ async def refresh_token(
         # Find user in Supabase
         result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
         
-        if not result.data:
+        # Prüfe auf None oder fehlende data-Attribute
+        if not result or not result.data:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
@@ -195,8 +214,8 @@ async def refresh_token(
         tokens = create_token_pair(user["id"], user["email"])
 
         return LoginResponse(
-            access_token=tokens["access_token"],
-            refresh_token=tokens["refresh_token"],
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
             token_type="bearer",
             expires_in=1800,  # 30 minutes
             user=UserProfile(
@@ -237,7 +256,8 @@ async def request_password_reset(
     In production, this would send an email with reset link.
     """
     result = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
-    if result.data:
+    # Prüfe auf None oder fehlende data-Attribute
+    if result and result.data:
         # TODO: Generate reset token and send email
         # For now, just return success to avoid email enumeration
         pass
@@ -265,7 +285,8 @@ async def get_current_user_profile(
     # Fetch user from Supabase
     result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
     
-    if not result.data:
+    # Prüfe auf None oder fehlende data-Attribute
+    if not result or not result.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
@@ -311,7 +332,8 @@ async def update_current_user_profile(
     if update_data:
         result = supabase.table("users").update(update_data).eq("id", user_id).execute()
         
-        if not result.data:
+        # Prüfe auf None oder fehlende data-Attribute
+        if not result or not result.data or len(result.data) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
@@ -321,7 +343,8 @@ async def update_current_user_profile(
     else:
         # No updates, just fetch current user
         result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
-        if not result.data:
+        # Prüfe auf None oder fehlende data-Attribute
+        if not result or not result.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",

@@ -54,14 +54,20 @@ interface AuthResponse {
 class AuthService {
   /**
    * Login user with email and password
+   * Uses form-urlencoded format as required by OAuth2PasswordRequestForm
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    // OAuth2PasswordRequestForm expects form-urlencoded with "username" field
+    const formData = new URLSearchParams();
+    formData.append('username', credentials.email);  // OAuth2 uses "username" not "email"
+    formData.append('password', credentials.password);
+
     const response = await fetch(`${cleanBaseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify(credentials),
+      body: formData.toString(),
     });
 
     if (!response.ok) {
@@ -69,7 +75,28 @@ class AuthService {
       throw new Error(error.detail || 'Login fehlgeschlagen');
     }
 
-    const data: AuthResponse = await response.json();
+    // Backend returns: { access_token, refresh_token, token_type, expires_in, user }
+    const backendResponse = await response.json();
+
+    // Convert to frontend format: { user, tokens: { access_token, refresh_token, token_type, expires_in } }
+    const data: AuthResponse = {
+      user: {
+        id: backendResponse.user.id,
+        email: backendResponse.user.email,
+        name: `${backendResponse.user.first_name || ''} ${backendResponse.user.last_name || ''}`.trim(),
+        company: backendResponse.user.company,
+        role: backendResponse.user.role,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      tokens: {
+        access_token: backendResponse.access_token,
+        refresh_token: backendResponse.refresh_token,
+        token_type: backendResponse.token_type,
+        expires_in: backendResponse.expires_in,
+      },
+      message: 'Login erfolgreich',
+    };
 
     // Store tokens in localStorage
     this.setTokens(data.tokens);
