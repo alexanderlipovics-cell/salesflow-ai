@@ -10,14 +10,14 @@ import type {
   TodayCockpitItem,
 } from "@/types/analytics";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const API_BASE = `${API_BASE_URL}/api`;
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth_token");
+  const token = localStorage.getItem("access_token") || localStorage.getItem("auth_token");
   return {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 

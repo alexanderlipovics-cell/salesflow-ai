@@ -201,9 +201,13 @@ export function LeadHunterPage() {
         })),
       };
 
-      const response = await fetch("/leads/from-hunter", {
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`${API_BASE_URL}/api/leads/from-hunter`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(payload),
       });
 

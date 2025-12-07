@@ -138,9 +138,15 @@ const LeadDiscoveryPage: FC = () => {
   // Sources laden
   useEffect(() => {
     const fetchSources = async () => {
+      if (!accessToken) return;
       try {
         setSourcesLoading(true);
-        const res = await fetch("/api/lead-discovery/sources");
+        const res = await fetch("/api/lead-discovery/sources", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -155,7 +161,7 @@ const LeadDiscoveryPage: FC = () => {
     };
 
     fetchSources();
-  }, []);
+  }, [accessToken]);
 
   const apiFetch = async (path: string, options: RequestInit = {}) => {
     if (!accessToken) throw new Error("Kein Auth-Token vorhanden.");

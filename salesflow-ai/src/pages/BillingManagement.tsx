@@ -64,11 +64,14 @@ interface UsageData {
   users_limit: number;
 }
 
+// Token helper
+const getToken = () => localStorage.getItem('access_token');
+
 // API functions
 const api = {
   async getSubscription(): Promise<Subscription | null> {
     const res = await fetch('/api/billing/subscriptions/current', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) return null;
     return res.json();
@@ -76,7 +79,7 @@ const api = {
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const res = await fetch('/api/billing/payment-methods', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) return [];
     return res.json();
@@ -84,7 +87,7 @@ const api = {
 
   async getInvoices(): Promise<Invoice[]> {
     const res = await fetch('/api/billing/invoices?limit=5', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) return [];
     return res.json();
@@ -93,7 +96,7 @@ const api = {
   async cancelSubscription(subscriptionId: string): Promise<void> {
     const res = await fetch(`/api/billing/subscriptions/${subscriptionId}?immediately=false`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error('Failed to cancel subscription');
   },
@@ -101,7 +104,7 @@ const api = {
   async reactivateSubscription(subscriptionId: string): Promise<void> {
     const res = await fetch(`/api/billing/subscriptions/${subscriptionId}/reactivate`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error('Failed to reactivate subscription');
   },
@@ -111,7 +114,7 @@ const api = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify({
         return_url: window.location.href,
@@ -125,7 +128,7 @@ const api = {
   async removePaymentMethod(paymentMethodId: string): Promise<void> {
     const res = await fetch(`/api/billing/payment-methods/${paymentMethodId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error('Failed to remove payment method');
   },

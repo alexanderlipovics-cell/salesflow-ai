@@ -53,10 +53,13 @@ export async function fetchNextBestActions(
 ): Promise<NextBestAction[]> {
   if (!tasks.length) return [];
 
+  const token = localStorage.getItem("access_token");
+
   const response = await fetch(`${API_BASE_URL}/api/next-best-actions/suggest`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({
       user_id: userId ?? null,
