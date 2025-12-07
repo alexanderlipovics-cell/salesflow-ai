@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 def get_supabase():
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_ANON_KEY")
+    # WICHTIG: Nur URL und Key übergeben - keine zusätzlichen Optionen (proxy, etc.)
     return create_client(url, key)
 
 

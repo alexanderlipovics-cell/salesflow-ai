@@ -402,6 +402,7 @@ def _create_supabase_client() -> Optional["Client"]:
     key = os.getenv("SUPABASE_ANON_KEY", "")
     if url and key:
         try:
+            # WICHTIG: Nur URL und Key übergeben - keine zusätzlichen Optionen (proxy, etc.)
             return create_client(url, key)
         except Exception:
             return None

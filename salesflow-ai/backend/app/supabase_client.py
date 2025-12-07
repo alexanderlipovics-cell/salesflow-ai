@@ -31,6 +31,8 @@ def get_supabase_client() -> Client:
             "Supabase ist nicht konfiguriert. Bitte SUPABASE_URL und "
             "SUPABASE_SERVICE_ROLE_KEY setzen."
         )
+    # WICHTIG: Nur URL und Key übergeben - keine zusätzlichen Optionen (proxy, etc.)
+    # Die installierte supabase Version (2.3.4) unterstützt keine proxy Option
     _supabase_client = create_client(settings.supabase_url, settings.supabase_service_role_key)
     return _supabase_client
 
