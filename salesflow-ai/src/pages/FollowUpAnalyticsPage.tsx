@@ -48,7 +48,7 @@ export default function FollowUpAnalyticsPage() {
       setRefreshing(true);
       const response = await fetch('/api/followups/analytics?days=30', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
       });
       

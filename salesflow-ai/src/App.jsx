@@ -64,10 +64,12 @@ import MarketingLandingPage from "./pages/MarketingLandingPage";
 import CompactLandingPage from "./pages/CompactLandingPage";
 import VerticalLandingPage from "./pages/VerticalLandingPage";
 import AutopilotPage from "./pages/AutopilotPage";
+import BillingManagement from "./pages/BillingManagement";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import { ProtectedRoute } from "./components/auth";
 import MagicSendDemo from "./pages/MagicSendDemo";
+import FollowUpAnalyticsPage from "./pages/FollowUpAnalyticsPage";
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -196,6 +198,8 @@ const App = () => {
                       <Route path="choose-vertical" element={<ChooseVerticalPage />} />
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="billing" element={<BillingManagement />} />
+                      <Route path="follow-up-analytics" element={<FollowUpAnalyticsPage />} />
                       <Route path="commissions" element={<CommissionTrackerPage />} />
                       <Route path="cold-call" element={<ColdCallAssistantPage />} />
                       <Route path="closing-coach" element={<ClosingCoachPage />} />
