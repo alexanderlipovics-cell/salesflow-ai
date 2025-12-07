@@ -22,6 +22,37 @@ const DEFAULT_HEADERS: Record<string, string> = {
   Accept: "application/json",
 };
 
+/**
+ * Get access token from localStorage
+ * Supports both authService (access_token) and AuthContext (salesflow_auth_session) storage formats
+ */
+function getAccessToken(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  
+  // Try authService format first (direct access_token key)
+  const directToken = localStorage.getItem("access_token");
+  if (directToken) {
+    return directToken;
+  }
+  
+  // Try AuthContext format (JSON object in salesflow_auth_session)
+  try {
+    const sessionJson = localStorage.getItem("salesflow_auth_session");
+    if (sessionJson) {
+      const session = JSON.parse(sessionJson);
+      if (session?.accessToken) {
+        return session.accessToken;
+      }
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+  
+  return null;
+}
+
 function buildQueryString(query?: Record<string, QueryValue>): string {
   if (!query) {
     return "";
@@ -58,12 +89,20 @@ async function request<T>(path: string, options: ApiRequestOptions = {}): Promis
   const { method = "GET", data, query, headers, signal } = options;
   const url = `${API_BASE_URL}${normalizePath(path)}${buildQueryString(query)}`;
 
+  // Get access token and add Authorization header
+  const token = getAccessToken();
+  const requestHeaders: Record<string, string> = {
+    ...DEFAULT_HEADERS,
+    ...headers,
+  };
+
+  if (token) {
+    requestHeaders["Authorization"] = `Bearer ${token}`;
+  }
+
   const init: RequestInit = {
     method,
-    headers: {
-      ...DEFAULT_HEADERS,
-      ...headers,
-    },
+    headers: requestHeaders,
     credentials: "include",
     signal,
   };

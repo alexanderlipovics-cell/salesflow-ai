@@ -63,7 +63,11 @@ interface AuthResponse {
 
 const storeSession = (session: Session) => {
   try {
+    // Store full session object (for AuthContext)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    // Also store access_token directly (for compatibility with authService and api.ts)
+    localStorage.setItem("access_token", session.accessToken);
+    localStorage.setItem("refresh_token", session.refreshToken);
   } catch (e) {
     console.error("Failed to store session", e);
   }
@@ -87,6 +91,9 @@ const loadStoredSession = (): Session | null => {
 const clearStoredSession = () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    // Also clear direct token keys for compatibility
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
   } catch (e) {
     console.error("Failed to clear session", e);
   }
