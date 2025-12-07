@@ -94,29 +94,35 @@ export const getApiBaseUrl = () => {
     // expo-constants nicht verfügbar
   }
   
-  // 4. Production URL - Render.com Deployment
-  if (isProduction()) {
-    return 'https://salesflow-ai.onrender.com/api/v1';
+  // 4. Vite Environment Variable (höchste Priorität für Web)
+  if (typeof import !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+    return `${baseUrl}/api`;
   }
   
-  // 5. Development Fallback
+  // 5. Production URL - Render.com Deployment
+  if (isProduction()) {
+    return 'https://salesflow-ai.onrender.com/api';
+  }
+  
+  // 6. Development Fallback
   // Port 8000 für lokales Backend (uvicorn default)
   const DEV_PORT = 8000;
   
   // Web-Browser: Immer localhost verwenden
   if (typeof window !== 'undefined') {
-    return `http://localhost:${DEV_PORT}/api/v1`;
+    return `http://localhost:${DEV_PORT}/api`;
   }
   
   const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
   
   if (isAndroid) {
     // Android Emulator: 10.0.2.2 zeigt auf Host-Maschine
-    return `http://10.0.2.2:${DEV_PORT}/api/v1`;
+    return `http://10.0.2.2:${DEV_PORT}/api`;
   }
   
   // iOS Simulator: localhost
-  return `http://localhost:${DEV_PORT}/api/v1`;
+  return `http://localhost:${DEV_PORT}/api`;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

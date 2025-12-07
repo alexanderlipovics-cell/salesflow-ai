@@ -708,10 +708,16 @@ ALTER TABLE users ADD COLUMN vertical_id TEXT REFERENCES verticals(id);
 - `OPENAI_API_KEY`
 
 **Frontend:**
-- `VITE_API_BASE_URL`
-- `VITE_API_URL`
+- `VITE_API_BASE_URL` - Backend API Base URL (OHNE /api, z.B. `https://salesflow-ai.onrender.com`)
+- `VITE_API_URL` - Alternative API URL (wird von AuthContext verwendet)
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+
+**⚠️ WICHTIG für Production:**
+- In Vercel/Netlify Environment Variables setzen:
+  - `VITE_API_BASE_URL=https://salesflow-ai.onrender.com`
+  - `VITE_API_URL=https://salesflow-ai.onrender.com`
+- Fallback: Code verwendet automatisch `https://salesflow-ai.onrender.com` wenn `import.meta.env.PROD === true`
 
 ---
 

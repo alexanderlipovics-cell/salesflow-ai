@@ -10,7 +10,14 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Production: https://salesflow-ai.onrender.com
+// Development: http://localhost:8000
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? "https://salesflow-ai.onrender.com" : "http://localhost:8000");
+
+console.log('AuthContext: API URL configured:', API_URL);
+console.log('AuthContext: VITE_API_URL from env:', import.meta.env.VITE_API_URL);
+console.log('AuthContext: PROD mode:', import.meta.env.PROD);
 
 export interface User {
   id: string;

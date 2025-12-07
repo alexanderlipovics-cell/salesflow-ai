@@ -16,7 +16,15 @@ export interface ApiRequestOptions {
   signal?: AbortSignal;
 }
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
+// Production: https://salesflow-ai.onrender.com/api
+// Development: /api (proxied to http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+  ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, "")}/api`
+  : (import.meta.env.PROD ? "https://salesflow-ai.onrender.com/api" : "/api");
+
+console.log('lib/api: API Base URL configured:', API_BASE_URL);
+console.log('lib/api: VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
+console.log('lib/api: PROD mode:', import.meta.env.PROD);
 
 const DEFAULT_HEADERS: Record<string, string> = {
   Accept: "application/json",

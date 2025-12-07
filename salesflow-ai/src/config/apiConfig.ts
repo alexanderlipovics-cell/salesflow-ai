@@ -5,7 +5,13 @@
  */
 
 // Base URL aus Environment oder Fallback
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+// Production: https://salesflow-ai.onrender.com/api
+// Development: http://localhost:8000/api
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+  ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, "")}/api`
+  : (import.meta.env.PROD ? 'https://salesflow-ai.onrender.com/api' : 'http://localhost:8000/api');
+
+console.log('apiConfig: API Base URL configured:', API_BASE_URL);
 
 // API Endpoints nach Feature gruppiert
 export const API_ENDPOINTS = {

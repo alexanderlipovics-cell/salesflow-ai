@@ -11,7 +11,10 @@ export const API_CONFIG = {
   USE_MOCK_API: isDevelopment, // Auto: Mock in dev, Live in production
 
   // API Base URLs
-  LIVE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  // Production: https://salesflow-ai.onrender.com
+  // Development: http://localhost:8000
+  LIVE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 
+    (import.meta.env.PROD ? 'https://salesflow-ai.onrender.com' : 'http://localhost:8000'),
   MOCK_API_BASE_URL: 'mock://', // Special protocol for mock
 
   // Timeouts
