@@ -19,7 +19,8 @@ create table if not exists public.followup_tasks (
     updated_at timestamptz not null default now()
 );
 
-create index if not exists followup_tasks_due_at_idx on public.followup_tasks using btree (date(due_at));
+-- Index direkt auf due_at (ohne date() Funktion, da diese nicht IMMUTABLE ist)
+create index if not exists followup_tasks_due_at_idx on public.followup_tasks using btree (due_at);
 create index if not exists followup_tasks_status_idx on public.followup_tasks (status);
 
 create or replace function public.set_followup_tasks_updated_at()

@@ -25,7 +25,7 @@ class PromptTemplate(Base):
     is_active = Column(Boolean, nullable=False, default=True)
     system_prompt = Column(Text, nullable=False)
     user_template = Column(Text, nullable=False)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_metadata = Column(JSONB, name="metadata", nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
 
@@ -36,7 +36,7 @@ class PromptConfig(BaseModel):
     version: int
     system_prompt: str
     user_template: str
-    metadata: Dict[str, Any]
+    extra_metadata: Dict[str, Any]
 
     class Config:
         from_attributes = True

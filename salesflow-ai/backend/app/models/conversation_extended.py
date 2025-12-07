@@ -21,7 +21,7 @@ class ChannelIdentity(Base):
     channel_type = Column(String, nullable=False)  # whatsapp, linkedin, instagram, email
     identifier = Column(String, nullable=False, index=True)  # phone number, email, linkedin URN
     
-    metadata = Column(JSON, default={})  # Auth tokens, profile pic url
+    extra_metadata = Column(JSON, name="metadata", default={})  # Auth tokens, profile pic url
     last_active_at = Column(DateTime, default=datetime.utcnow)
 
 
