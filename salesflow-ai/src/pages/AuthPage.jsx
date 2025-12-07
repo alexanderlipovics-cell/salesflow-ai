@@ -39,19 +39,18 @@ const AuthPage = () => {
 
     try {
       if (mode === "login") {
-        const { error } = await signIn(formValues.email, formValues.password);
-        if (error) throw error;
+        await signIn(formValues.email, formValues.password);
         setStatus({
           type: "success",
           message: "Willkommen zurück. Du wirst gleich weitergeleitet.",
         });
+        // Redirect will be handled by AuthContext or router
       } else {
-        const { error } = await signUp(
+        await signUp(
           formValues.email,
           formValues.password,
-          formValues.fullName
+          { first_name: formValues.fullName }
         );
-        if (error) throw error;
         setStatus({
           type: "success",
           message: "Account angelegt. Bitte bestätige deine E-Mail.",
@@ -61,8 +60,8 @@ const AuthPage = () => {
       setStatus({
         type: "error",
         message:
-          error.message ??
-          "Supabase Auth konnte nicht erreicht werden. Bitte versuche es erneut.",
+          error?.message ??
+          "Login konnte nicht erreicht werden. Bitte versuche es erneut.",
       });
     } finally {
       setSubmitting(false);
