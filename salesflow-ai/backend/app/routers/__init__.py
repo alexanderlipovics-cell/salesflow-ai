@@ -1,10 +1,9 @@
 """
 Router-Modul für Sales Flow AI (App-Paket).
 """
-
 from . import (
     analytics,
-    autopilot,
+    # autopilot,  # Temporär deaktiviert - TODO: autopilot_engine.py vervollständigen
     channel_webhooks,
     chat,
     contacts,
@@ -22,7 +21,7 @@ from . import (
 
 __all__ = [
     "analytics",
-    "autopilot",
+    # "autopilot",
     "channel_webhooks",
     "chat",
     "contacts",

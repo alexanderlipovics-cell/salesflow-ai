@@ -25,6 +25,7 @@ from app.core.ai_prompts import (
     build_coach_prompt_with_action,
     detect_action_from_text,
 )
+from ..db.session import get_db  # added for dependency availability
 from ..core.security import get_current_user_dict
 from ..services.ai_service import AiService
 from ..services.conversation_service import ConversationMemoryService

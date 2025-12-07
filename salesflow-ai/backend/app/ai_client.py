@@ -121,3 +121,6 @@ async def get_embedding(text: str, model: Optional[str] = None) -> List[float]:
         input=text,
     )
     return resp.data[0].embedding
+
+# Alias für Kompatibilität
+AIClient = client

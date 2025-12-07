@@ -15,6 +15,13 @@ Optimized connection pooling for high concurrency:
 import asyncio
 from typing import AsyncGenerator, Optional
 from contextlib import asynccontextmanager
+import os
+
+try:
+    from supabase import Client, create_client
+except ImportError:  # supabase may not be installed in some environments
+    Client = None
+    create_client = None
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     AsyncSession,
@@ -366,3 +373,55 @@ async def init_database(database_url: str, echo: bool = False):
 async def close_database():
     """Close database connections."""
     await db.close()
+
+
+# ============== SYNC PLACEHOLDER DEPENDENCY (FastAPI compatibility) ==============
+def get_db():
+    """
+    Database session dependency for FastAPI.
+    Placeholder stub; replace with real DB session if needed.
+    """
+    try:
+        db_session = None  # TODO: wire up real session if required
+        yield db_session
+    finally:
+        # Close/cleanup goes here when a real session is used
+        pass
+
+
+# ==================== SUPABASE CLIENT (STUB) ====================
+_supabase_client: Optional["Client"] = None
+
+
+def _create_supabase_client() -> Optional["Client"]:
+    """Create Supabase client from env if available."""
+    if create_client is None:
+        return None
+    url = os.getenv("SUPABASE_URL", "")
+    key = os.getenv("SUPABASE_ANON_KEY", "")
+    if url and key:
+        try:
+            return create_client(url, key)
+        except Exception:
+            return None
+    return None
+
+
+def get_supabase_client() -> Optional["Client"]:
+    """Get or create Supabase client (singleton stub)."""
+    global _supabase_client
+    if _supabase_client is None:
+        _supabase_client = _create_supabase_client()
+    return _supabase_client
+
+
+async def get_db_client():
+    """
+    Async-compatible getter for DB/Supabase client.
+    Currently returns the Supabase client stub (or None).
+    """
+    return get_supabase_client()
+
+
+# Alias for compatibility
+supabase = get_supabase_client

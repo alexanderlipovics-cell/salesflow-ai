@@ -87,8 +87,8 @@ app.add_middleware(
 app.add_middleware(
     RateLimitMiddleware,
     enabled=False,  # Temporär deaktiviert, um Auth-Calls nicht zu drosseln
-    default_limit=settings.rate_limit_default_requests,
-    default_window=settings.rate_limit_default_window_seconds,
+    default_limit=settings.rate_limit_default_rpm,  # Anfragen pro Minute
+    default_window=60,  # Sekunden pro Fenster
     exclude_paths=[
         "/health",
         "/docs",
@@ -126,8 +126,9 @@ from .routers.auth import router as auth_router  # JWT Authentication
 from .routers.leads import router as leads_router
 from .routers.copilot import router as copilot_router
 from .routers.chat import router as chat_router
-from .routers.autopilot import router as autopilot_router
+# from .routers.autopilot import router as autopilot_router  # Temporär deaktiviert, Autopilot unvollständig
 from .routers.analytics import router as analytics_router
+from .routers.analytics_extended import router as analytics_extended_router
 from .routers.zero_input_crm import router as zero_input_crm_router
 from .routers.channel_webhooks import router as webhooks_router
 from .routers.collective_intelligence import router as ci_router
@@ -155,8 +156,9 @@ app.include_router(auth_router, prefix="/api")  # Authentication (public endpoin
 app.include_router(leads_router, prefix="/api")
 app.include_router(copilot_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
-app.include_router(autopilot_router, prefix="/api")
+# app.include_router(autopilot_router, prefix="/api")  # deaktiviert bis Autopilot stabil ist
 app.include_router(analytics_router, prefix="/api")
+app.include_router(analytics_extended_router, prefix="/api")  # Extended Analytics & Monitoring
 app.include_router(zero_input_crm_router, prefix="/api")
 app.include_router(webhooks_router, prefix="/api")
 app.include_router(ci_router)  # Collective Intelligence (Non Plus Ultra)

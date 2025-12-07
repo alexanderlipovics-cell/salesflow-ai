@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str
     supabase_anon_key: str
-    supabase_service_role_key: str
+    supabase_service_role_key: str = ""
     
     # Direct database connection (for SQLAlchemy)
     database_url: Optional[str] = None
@@ -64,16 +64,17 @@ class Settings(BaseSettings):
     def build_database_url(self):
         """Build database URL from Supabase if not provided."""
         if not self.database_url and self.supabase_url:
-            # Extract project ref from Supabase URL
-            # https://xyz.supabase.co -> xyz
             import re
             match = re.search(r"https?://([^.]+)\.supabase\.co", self.supabase_url)
             if match:
                 project_ref = match.group(1)
-                self.database_url = (
-                    f"postgresql://postgres.{project_ref}:"
-                    f"[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
-                )
+                # Use service role key as password fallback (override with DATABASE_PASSWORD if set)
+                db_password = getattr(self, "database_password", None) or self.supabase_service_role_key or ""
+                if db_password:
+                    self.database_url = (
+                        f"postgresql://postgres.{project_ref}:"
+                        f"{db_password}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+                    )
         return self
     
     # ==================== REDIS / CACHE ====================
@@ -184,13 +185,13 @@ class Settings(BaseSettings):
     # ==================== FEATURE FLAGS ====================
     
     feature_ai_chat: bool = True
-feature_voice_input: bool = True
-feature_offline_mode: bool = True
-feature_team_sharing: bool = True
-feature_blueprints: bool = True
+    feature_voice_input: bool = True
+    feature_offline_mode: bool = True
+    feature_team_sharing: bool = True
+    feature_blueprints: bool = True
 
-# ==================== GDPR & COMPLIANCE ====================
-privacy_policy_version: str = Field(default="1.0", description="Current privacy policy version for consent tracking")
+    # ==================== GDPR & COMPLIANCE ====================
+    privacy_policy_version: str = Field(default="1.0", description="Current privacy policy version for consent tracking")
     
     # ==================== VALIDATORS ====================
     

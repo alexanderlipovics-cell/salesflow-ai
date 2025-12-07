@@ -23,6 +23,6 @@ class ConversationMemory(Base):
     lead_id = Column(String(64), index=True, nullable=True)
     conversation_id = Column(String(64), index=True, nullable=True)
     content = Column(String, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
     embedding = Column(Vector(1536), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)

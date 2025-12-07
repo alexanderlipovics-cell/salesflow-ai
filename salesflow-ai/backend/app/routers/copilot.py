@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.core.ai_prompts import SALES_COACH_PROMPT, detect_action_from_text
+from ..core.security import get_current_user_dict
 
 router = APIRouter(
     prefix="/copilot",

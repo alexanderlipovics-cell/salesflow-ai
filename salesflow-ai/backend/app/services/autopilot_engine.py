@@ -1,410 +1,163 @@
-"""
-Autopilot Engine für SALESFLOW AI.
-
-Verarbeitet pending Message Events und generiert KI-Antwortvorschläge.
-
-Workflow:
-1. Pending Events laden
-2. Autopilot-Settings prüfen
-3. KI-Antwort generieren (wenn mode != 'off')
-4. Suggested Reply speichern
-5. Status auf 'suggested' setzen
-"""
-
 from __future__ import annotations
+from typing import Dict, List, Optional
 
-import logging
-from typing import Any, Dict, List, Optional
-
-from supabase import Client
-
-from ..config import get_settings
-from ..schemas import ChatMessage
-from ..schemas.message_events import MessageEvent
-from ..schemas.autopilot import AutopilotMode
-from ..db.repositories.message_events import (
-    get_pending_events_for_user,
-    set_event_suggested_reply,
-    set_event_status,
-)
-from ..core.ai_prompts import (
-    SALES_COACH_PROMPT,
-    build_coach_prompt_with_action,
-    detect_action_from_text,
-)
-
-logger = logging.getLogger(__name__)
-settings = get_settings()
+ChatMessage = Dict[str, str]
 
 
-# ============================================================================
-# A/B EXPERIMENT CONFIGURATION
-# ============================================================================
-
-# Aktuelle Experiment-Einstellungen (V1 - Defaults)
-CURRENT_TEMPLATE_VERSION = "v1.0"
-CURRENT_PERSONA_VARIANT = "default"
-
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-
-def detect_action_for_message(text: str) -> str:
+def get_chief_system_prompt() -> str:
     """
-    Ermittelt die passende AI-Action für eine Nachricht.
+    System-Prompt für CHIEF – Sales-Coach & KI-Vertriebsleiter.
+    """
+    return (
+        "Du bist CHIEF, ein hochspezialisierter KI-Vertriebsleiter für Network Marketing, "
+        "Immobilien, Finance und Coaching. "
+        "Deine Aufgabe: konkrete, praxisnahe Vorschläge für Nachrichten, Follow-Ups, "
+        "Einwandbehandlung und Next Best Actions geben. "
+        "Sprich klar, konkret, ohne Bullshit. Nutze du-Ansprache, wenn der Kontext deutsch ist."
+    )
+
+
+def build_chat_messages(
+    user_message: str,
+    history: List[ChatMessage] | None = None,
+    extra_system_prompt: str | None = None,
+) -> List[ChatMessage]:
+    """
+    Erzeugt ein konsistentes Message-Array.
+    """
+    messages: List[ChatMessage] = []
+    system_prompt = get_chief_system_prompt()
+    if extra_system_prompt:
+        system_prompt += "\n\n" + extra_system_prompt
+    messages.append({"role": "system", "content": system_prompt})
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_message})
+    return messages
+
+
+# ==================== PROMPTS ====================
+
+SALES_COACH_PROMPT = """Du bist ein erfahrener Sales Coach und hilfst bei der Optimierung von Verkaufsgesprächen und Lead-Qualifizierung.
+
+Deine Aufgaben:
+- Analysiere Leads und gib Handlungsempfehlungen
+- Schlage passende Follow-up Strategien vor
+- Hilf bei der Priorisierung von Verkaufschancen
+- Gib Tipps für effektive Kommunikation
+
+Antworte immer auf Deutsch, professionell aber freundlich.
+"""
+
+LEAD_QUALIFIER_PROMPT = """Du bist ein Lead-Qualifizierungs-Experte. Analysiere den Lead und bewerte:
+- Budget (1-10)
+- Authority (1-10)  
+- Need (1-10)
+- Timeline (1-10)
+
+Gib eine Gesamtbewertung und konkrete nächste Schritte.
+"""
+
+FOLLOW_UP_PROMPT = """Du erstellst personalisierte Follow-up Nachrichten basierend auf dem Lead-Profil und der Gesprächshistorie.
+Halte die Nachrichten kurz, persönlich und mit klarem Call-to-Action.
+"""
+
+OBJECTION_HANDLER_PROMPT = """Du bist Experte für Einwandbehandlung im Vertrieb.
+Analysiere den Einwand und liefere 2-3 professionelle Antwortmöglichkeiten.
+"""
+
+
+# ==================== ACTION DETECTION ====================
+
+ACTION_KEYWORDS = {
+    "follow_up": ["follow-up", "nachfassen", "melden", "kontaktieren", "anrufen"],
+    "qualify": ["qualifizieren", "bewerten", "einschätzen", "prüfen"],
+    "close": ["abschließen", "verkaufen", "deal", "vertrag"],
+    "nurture": ["pflegen", "warmhalten", "beziehung", "content"],
+    "objection": ["einwand", "bedenken", "aber", "problem", "teuer", "zeit"],
+}
+
+
+def detect_action_from_text(text: str) -> str:
+    """
+    Erkennt die wahrscheinlichste Aktion basierend auf dem Text.
     
-    Prüft auf bekannte Einwände und Keywords.
-    
-    Args:
-        text: Nachrichtentext
-        
     Returns:
-        Action-String für den AI-Prompt
+        Action type: 'follow_up', 'qualify', 'close', 'nurture', 'objection', oder 'general'
     """
     text_lower = text.lower()
     
-    # Einwand-Erkennung
-    objection_keywords = [
-        "zu teuer", "kein budget", "keine zeit", "nicht interessiert",
-        "hab schon", "kein interesse", "zu viel", "kein geld",
-        "muss überlegen", "später", "passt nicht", "nicht jetzt",
-        "too expensive", "no time", "not interested",
-    ]
+    for action, keywords in ACTION_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in text_lower:
+                return action
     
-    if any(keyword in text_lower for keyword in objection_keywords):
-        logger.info("Detected objection in message")
-        return "objection_handler"
-    
-    # Frage nach Preis/Kosten
-    price_keywords = ["was kostet", "preis", "kosten", "price", "cost"]
-    if any(keyword in text_lower for keyword in price_keywords):
-        return "offer_create"
-    
-    # Terminanfrage
-    meeting_keywords = ["termin", "treffen", "call", "meeting", "gespräch"]
-    if any(keyword in text_lower for keyword in meeting_keywords):
-        return "follow_up"
-    
-    # Allgemeine Intent-Erkennung aus dem Prompt-Hub
-    detected = detect_action_from_text(text)
-    if detected:
-        return detected
-    
-    # Default: Nachricht generieren
-    return "generate_message"
+    return "general"
 
 
-async def get_autopilot_settings_for_event(
-    db: Client,
-    user_id: str,
-    contact_id: Optional[str],
-) -> Optional[Dict[str, Any]]:
-    """
-    Lädt Autopilot-Settings für einen User/Contact.
-    
-    Reihenfolge:
-    1. Contact-spezifische Settings
-    2. Globale User-Settings
-    3. None (wenn nichts gefunden)
-    
-    Args:
-        db: Supabase Client
-        user_id: User-UUID
-        contact_id: Contact-UUID (optional)
-        
-    Returns:
-        Settings-Dict oder None
-    """
-    # 1. Contact-spezifische Settings versuchen
-    if contact_id:
-        result = (
-            db.table("autopilot_settings")
-            .select("*")
-            .eq("user_id", user_id)
-            .eq("contact_id", contact_id)
-            .limit(1)
-            .execute()
-        )
-        if result.data:
-            logger.debug(f"Found contact-specific settings for contact_id={contact_id}")
-            return result.data[0]
-    
-    # 2. Globale User-Settings
-    result = (
-        db.table("autopilot_settings")
-        .select("*")
-        .eq("user_id", user_id)
-        .is_("contact_id", "null")
-        .limit(1)
-        .execute()
-    )
-    
-    if result.data:
-        logger.debug(f"Found global settings for user_id={user_id}")
-        return result.data[0]
-    
-    return None
-
-
-def generate_ai_response(
-    message_text: str,
+def build_coach_prompt_with_action(
     action: str,
-    channel: str,
-    history: Optional[List[ChatMessage]] = None,
-) -> Dict[str, Any]:
+    lead_context: Optional[Dict] = None,
+    message_history: Optional[List[str]] = None,
+) -> str:
     """
-    Generiert eine KI-Antwort für eine eingehende Nachricht.
+    Baut einen spezifischen Prompt basierend auf der erkannten Aktion.
     
     Args:
-        message_text: Eingehende Nachricht
-        action: Erkannte Action (z.B. objection_handler)
-        channel: Kanal der Nachricht
-        history: Optionale Chat-History
-        
+        action: Die erkannte Aktion (follow_up, qualify, close, etc.)
+        lead_context: Optionale Lead-Informationen
+        message_history: Optionale Nachrichtenhistorie
+    
     Returns:
-        Dict mit reply_text und meta
+        Angepasster System-Prompt für die KI
     """
-    # Mock-Modus wenn kein API Key
-    if not settings.openai_api_key:
-        logger.warning("OPENAI_API_KEY nicht gesetzt - Mock-Modus für Autopilot")
-        return _generate_mock_response(message_text, action, channel)
+    base_prompt = SALES_COACH_PROMPT
     
-    # AI-Client importieren (lazy, um zirkuläre Imports zu vermeiden)
-    from ..ai_client import AIClient
-    
-    try:
-        ai_client = AIClient(
-            api_key=settings.openai_api_key,
-            model=settings.openai_model,
-        )
-        
-        # System-Prompt basierend auf Action
-        system_prompt = build_coach_prompt_with_action(action)
-        
-        # Autopilot-spezifischen Kontext hinzufügen
-        system_prompt += f"""
-
-═══════════════════════════════════════
-AUTOPILOT-KONTEXT:
-- Dies ist eine EINGEHENDE Nachricht über {channel}
-- Erstelle eine kurze, direkte Antwort (max. 4-5 Sätze)
-- Die Antwort wird dem User als VORSCHLAG gezeigt
-- Stil: Persönlich, professionell, WhatsApp-tauglich
-- KEINE Floskeln, KEIN "Sehr geehrte/r"
-"""
-        
-        # Messages aufbauen
-        messages = history or []
-        messages.append(ChatMessage(role="user", content=message_text))
-        
-        # AI-Antwort generieren
-        reply_text = ai_client.generate(system_prompt, messages)
-        
-        return {
-            "text": reply_text,
-            "model": settings.openai_model,
-            "action": action,
-        }
-        
-    except Exception as e:
-        logger.exception(f"Error generating AI response: {e}")
-        return _generate_mock_response(message_text, action, channel)
-
-
-def _generate_mock_response(
-    message_text: str,
-    action: str,
-    channel: str,
-) -> Dict[str, Any]:
-    """
-    Generiert Mock-Antworten wenn kein AI-API-Key verfügbar.
-    """
-    mock_responses = {
-        "objection_handler": (
-            "Verstehe ich total! 🤔 Lass mich kurz nachfragen: "
-            "Was wäre denn der ideale Zeitpunkt/Preis für dich? "
-            "Vielleicht finden wir eine Lösung."
-        ),
-        "generate_message": (
-            "Hey! Danke für deine Nachricht. "
-            "Ich melde mich gleich ausführlicher bei dir. 👋"
-        ),
-        "follow_up": (
-            "Hi! Wollte kurz nachhaken - "
-            "hast du dir das schon anschauen können? "
-            "Bin gespannt auf dein Feedback! 😊"
-        ),
-        "offer_create": (
-            "Gute Frage! Ich schick dir gleich alle Details. "
-            "Kurz vorab: Es gibt verschiedene Optionen je nach deinen Bedürfnissen."
-        ),
+    action_prompts = {
+        "follow_up": """
+Fokus: Follow-Up Nachricht erstellen
+- Beziehe dich auf vorherige Gespräche
+- Biete konkreten Mehrwert
+- Klarer nächster Schritt
+""",
+        "qualify": """
+Fokus: Lead-Qualifizierung
+- Stelle gezielte BANT-Fragen
+- Identifiziere Entscheidungskriterien
+- Bewerte die Verkaufschance
+""",
+        "close": """
+Fokus: Abschluss vorbereiten
+- Fasse Vorteile zusammen
+- Behandle letzte Einwände
+- Klarer Call-to-Action zum Abschluss
+""",
+        "nurture": """
+Fokus: Beziehungspflege
+- Teile relevanten Content
+- Baue Vertrauen auf
+- Halte den Kontakt warm ohne zu pushen
+""",
+        "objection": """
+Fokus: Einwandbehandlung
+- Höre den Einwand aktiv
+- Zeige Verständnis
+- Liefere überzeugende Gegenargumente
+""",
+        "general": """
+Fokus: Allgemeine Beratung
+- Analysiere die Situation
+- Gib konkrete Handlungsempfehlungen
+- Schlage nächste Schritte vor
+""",
     }
     
-    reply_text = mock_responses.get(
-        action,
-        mock_responses["generate_message"]
-    )
+    prompt = base_prompt + "\n" + action_prompts.get(action, action_prompts["general"])
     
-    return {
-        "text": reply_text,
-        "model": "mock",
-        "action": action,
-    }
-
-
-# ============================================================================
-# MAIN ENGINE FUNCTION
-# ============================================================================
-
-
-async def process_pending_autopilot_events_for_user(
-    db: Client,
-    user_id: str,
-    max_events: int = 20,
-) -> Dict[str, Any]:
-    """
-    Verarbeitet pending Events eines Users und erzeugt KI-Vorschläge.
+    if lead_context:
+        prompt += f"\n\nLead-Kontext:\n{lead_context}"
     
-    Workflow:
-    1. Pending Events laden
-    2. Für jedes Event:
-       - Settings prüfen
-       - Wenn mode=off → skip
-       - Sonst: AI-Antwort generieren
-       - Suggested Reply speichern
-    3. Summary zurückgeben
+    if message_history:
+        prompt += f"\n\nNachrichtenverlauf:\n" + "\n".join(message_history[-5:])
     
-    Args:
-        db: Supabase Client
-        user_id: User-UUID
-        max_events: Max. Anzahl zu verarbeitender Events
-        
-    Returns:
-        Summary-Dict mit Countern
-    """
-    logger.info(f"Starting autopilot processing: user_id={user_id}, max_events={max_events}")
-    
-    # Counters
-    processed = 0
-    suggested_count = 0
-    skipped_count = 0
-    error_count = 0
-    
-    # 1. Pending Events laden
-    try:
-        events = await get_pending_events_for_user(db, user_id, limit=max_events)
-    except Exception as e:
-        logger.exception(f"Error loading pending events: {e}")
-        return {
-            "processed": 0,
-            "suggested": 0,
-            "skipped": 0,
-            "errors": 1,
-            "error_details": str(e),
-        }
-    
-    if not events:
-        logger.info("No pending events found")
-        return {
-            "processed": 0,
-            "suggested": 0,
-            "skipped": 0,
-            "errors": 0,
-        }
-    
-    logger.info(f"Found {len(events)} pending events")
-    
-    # 2. Events verarbeiten
-    for event in events:
-        processed += 1
-        
-        try:
-            # Settings laden
-            settings_data = await get_autopilot_settings_for_event(
-                db, user_id, event.contact_id
-            )
-            
-            # Prüfen ob Autopilot aktiv
-            if not settings_data:
-                # Keine Settings → Skip
-                logger.info(f"No settings found for event {event.id} - skipping")
-                await set_event_status(db, event.id, "skipped")
-                skipped_count += 1
-                continue
-            
-            mode = settings_data.get("mode", "off")
-            is_active = settings_data.get("is_active", False)
-            
-            if mode == "off" or not is_active:
-                logger.info(f"Autopilot off/inactive for event {event.id} - skipping")
-                await set_event_status(db, event.id, "skipped")
-                skipped_count += 1
-                continue
-            
-            # Nur inbound-Nachrichten verarbeiten
-            if event.direction != "inbound":
-                logger.info(f"Event {event.id} is outbound - skipping")
-                await set_event_status(db, event.id, "skipped")
-                skipped_count += 1
-                continue
-            
-            # 3. Action ermitteln
-            action = detect_action_for_message(event.normalized_text)
-            logger.info(f"Detected action for event {event.id}: {action}")
-            
-            # 4. AI-Antwort generieren
-            ai_result = generate_ai_response(
-                message_text=event.normalized_text,
-                action=action,
-                channel=event.channel,
-            )
-            
-            # 5. Suggested Reply zusammenbauen (V1 Format) mit A/B Tracking
-            suggested_reply = {
-                "text": ai_result["text"],
-                "detected_action": ai_result.get("action", action),
-                "channel": event.channel,
-                "mode_used": mode,  # V1: Direkt im Reply, nicht unter meta
-                "model": ai_result.get("model", "unknown"),
-                # A/B Experiment Fields
-                "template_version": CURRENT_TEMPLATE_VERSION,
-                "persona_variant": CURRENT_PERSONA_VARIANT,
-            }
-            
-            # 6. In DB speichern
-            await set_event_suggested_reply(
-                db=db,
-                event_id=event.id,
-                suggested_reply=suggested_reply,
-                new_status="suggested",
-            )
-            
-            suggested_count += 1
-            logger.info(f"Suggested reply saved for event {event.id}")
-            
-        except Exception as e:
-            logger.exception(f"Error processing event {event.id}: {e}")
-            error_count += 1
-            # Event nicht auf error setzen, bleibt auf pending für Retry
-    
-    # 7. Summary
-    summary = {
-        "processed": processed,
-        "suggested": suggested_count,
-        "skipped": skipped_count,
-        "errors": error_count,
-    }
-    
-    logger.info(f"Autopilot processing complete: {summary}")
-    return summary
-
-
-__all__ = [
-    "process_pending_autopilot_events_for_user",
-    "detect_action_for_message",
-    "generate_ai_response",
-    "get_autopilot_settings_for_event",
-]
-
+    return prompt
