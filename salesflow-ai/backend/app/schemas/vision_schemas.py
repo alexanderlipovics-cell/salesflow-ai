@@ -5,7 +5,7 @@ Für die "Magic Screenshot-to-Lead" Pipeline.
 GPT-4o Vision analysiert Screenshots und gibt strukturierte Daten zurück.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from enum import Enum
 
@@ -137,8 +137,7 @@ class LeadFromImageSchema(BaseModel):
         description="Vorschlag für die erste Nachricht (kurz, nicht werblich)."
     )
 
-    class Config:
-        extra = "ignore"  # Ignoriert zusätzliche Felder von der AI
+    model_config = ConfigDict(extra="ignore", protected_namespaces=())  # Ignoriert zusätzliche Felder von der AI
 
 
 class ScreenshotUploadResponse(BaseModel):

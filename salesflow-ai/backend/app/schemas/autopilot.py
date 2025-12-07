@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ============================================================================
@@ -104,8 +104,7 @@ class AutopilotSettings(AutopilotSettingsBase):
     created_at: datetime = Field(description="Erstellungszeitpunkt")
     updated_at: datetime = Field(description="Letzte Aktualisierung")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================

@@ -45,8 +45,9 @@ async def get_supabase() -> Client:
         )
     
     try:
-        # Erstelle Supabase Client - nur mit url und key, keine zusätzlichen Optionen
-        # Die installierte supabase Version unterstützt keine proxy oder andere Optionen
+        # KRITISCH: Nur URL und Key übergeben - KEINE zusätzlichen Parameter!
+        # Die installierte supabase Version (2.3.4) unterstützt KEINE proxy, options, oder andere Parameter
+        # Signatur: create_client(url: str, key: str) -> Client
         _supabase_client = create_client(url, key)
         return _supabase_client
     except TypeError as exc:

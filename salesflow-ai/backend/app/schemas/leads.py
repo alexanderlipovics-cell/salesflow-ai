@@ -6,7 +6,7 @@ Pydantic models für Leads mit P-Score (Predictive Lead Scoring)
 
 from datetime import datetime
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ============================================================================
@@ -84,8 +84,7 @@ class Lead(LeadBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class LeadListItem(BaseModel):
@@ -101,8 +100,7 @@ class LeadListItem(BaseModel):
     tags: List[str] = Field(default_factory=list)
     next_follow_up: Optional[str] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================

@@ -14,7 +14,8 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
     raise RuntimeError("SUPABASE_URL und SUPABASE_SERVICE_KEY müssen gesetzt sein")
 
-# WICHTIG: Nur URL und Key übergeben - keine zusätzlichen Optionen (proxy, etc.)
+# KRITISCH: Nur URL und Key übergeben - KEINE zusätzlichen Parameter!
+# Signatur: create_client(url: str, key: str) -> Client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 router = APIRouter(prefix="/phoenix", tags=["phoenix"])

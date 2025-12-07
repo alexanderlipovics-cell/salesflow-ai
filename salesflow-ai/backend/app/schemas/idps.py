@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ============================================================================
@@ -119,8 +119,7 @@ class DMConversation(DMConversationBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================
@@ -166,8 +165,7 @@ class DMMessage(DMMessageBase):
     sent_at: datetime
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================
@@ -204,8 +202,7 @@ class UnifiedInboxItem(BaseModel):
     contact_email: Optional[str] = None
     contact_p_score: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class UnifiedInboxFilters(BaseModel):
@@ -260,8 +257,7 @@ class DMSequenceTemplate(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class SequenceTemplateCreate(BaseModel):
@@ -319,8 +315,7 @@ class DMAutomationRule(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================
@@ -357,8 +352,7 @@ class PlatformConnection(PlatformConnectionBase):
     
     # Tokens werden NICHT in Response zurückgegeben!
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class PlatformConnectionStatus(BaseModel):

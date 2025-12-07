@@ -11,7 +11,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Header
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..core.deps import get_supabase
 from ..services.collective_intelligence_engine import (
@@ -46,6 +46,8 @@ class GenerateRequest(BaseModel):
 
 
 class GenerateResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    
     response: str
     model_used: str
     latency_ms: int
@@ -110,6 +112,8 @@ class UpdateProfileRequest(BaseModel):
 
 
 class HealthResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    
     status: str
     ollama_available: bool
     rag_enabled: bool

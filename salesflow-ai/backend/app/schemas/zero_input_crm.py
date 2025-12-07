@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ============================================================================
@@ -117,8 +117,7 @@ class CRMNote(BaseModel):
     created_at: datetime = Field(description="Erstellungszeitpunkt")
     updated_at: datetime = Field(description="Letzte Aktualisierung")
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class SuggestedNextStep(BaseModel):
@@ -146,6 +145,8 @@ class ConversationSummary(BaseModel):
 
 class ZeroInputResponse(BaseModel):
     """Response für Zero-Input CRM Zusammenfassung"""
+    
+    model_config = ConfigDict(protected_namespaces=())
     
     success: bool = Field(default=True, description="Ob die Verarbeitung erfolgreich war")
     

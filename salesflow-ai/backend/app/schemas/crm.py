@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Optional, List, Any
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ============================================================================
@@ -276,8 +276,7 @@ class Contact(ContactBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class ContactListItem(BaseModel):
@@ -297,8 +296,7 @@ class ContactListItem(BaseModel):
     next_followup_at: Optional[datetime] = None
     owner_id: Optional[UUID] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class ContactFilter(BaseModel):
@@ -355,8 +353,7 @@ class Activity(ActivityBase):
     user_id: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class ActivityWithUser(Activity):
@@ -445,8 +442,7 @@ class Deal(DealBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class DealListItem(BaseModel):
@@ -464,8 +460,7 @@ class DealListItem(BaseModel):
     owner_id: Optional[UUID] = None
     stage_entered_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class DealFilter(BaseModel):
@@ -542,8 +537,7 @@ class Task(TaskBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class TaskWithContext(Task):
@@ -629,8 +623,7 @@ class Template(TemplateBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================
@@ -688,8 +681,7 @@ class Scenario(ScenarioBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ============================================================================
