@@ -2,15 +2,12 @@
 # KRITISCH: Proxy-Umgebungsvariablen deaktivieren - MUSS ERSTE ZEILEN SEIN!
 # ═══════════════════════════════════════════════════════════════════════════════
 # httpx (von supabase-py verwendet) liest automatisch HTTP_PROXY/HTTPS_PROXY
-# Umgebungsvariablen beim Import. Dies führt zu Fehlern, wenn die installierte
-# supabase-py Version (2.3.4) keinen Proxy-Parameter unterstützt.
+# Umgebungsvariablen beim Import. Dies führt zu Fehlern bei Render-Deployments.
 # Lösung: Deaktiviere Proxy-Umgebungsvariablen VOR ALLEN anderen Imports.
 import os
+for var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
+    os.environ.pop(var, None)
 os.environ["NO_PROXY"] = "*"
-os.environ.pop("HTTP_PROXY", None)
-os.environ.pop("HTTPS_PROXY", None)
-os.environ.pop("http_proxy", None)
-os.environ.pop("https_proxy", None)
 
 # Jetzt können andere Imports erfolgen
 from fastapi import FastAPI, Request

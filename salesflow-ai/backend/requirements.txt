@@ -9,8 +9,11 @@ pydantic==2.6.1
 pydantic-settings==2.1.0
 
 # Database & ORM
-supabase==2.3.4
-postgrest==0.13.0
+supabase==2.4.0
+gotrue==2.4.1
+postgrest==0.16.0
+storage3==0.7.7
+realtime==1.0.6
 asyncpg==0.29.0
 sqlalchemy==2.0.25
 
@@ -18,8 +21,8 @@ sqlalchemy==2.0.25
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 PyJWT>=2.8.0
-# httpx pinned to satisfy supabase (>=0.24,<0.26) and postgrest (>=0.24,<0.25)
-httpx>=0.24.0,<0.25.0
+# httpx pinned to satisfy supabase 2.4.0 (requires httpx>=0.24,<0.26)
+httpx>=0.24.0,<0.26.0
 
 # Background Tasks & Scheduling
 celery==5.3.6
