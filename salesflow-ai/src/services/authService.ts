@@ -105,7 +105,12 @@ class AuthService {
     };
 
     // Store tokens in localStorage
+    console.log('authService.login: Storing tokens in localStorage...');
     this.setTokens(data.tokens);
+    console.log('authService.login: Token stored. Verifying...');
+    const storedToken = this.getAccessToken();
+    console.log('authService.login: Stored token exists:', !!storedToken);
+    console.log('authService.login: Stored token length:', storedToken?.length || 0);
 
     return data;
   }
@@ -198,17 +203,22 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     const token = this.getAccessToken();
+    console.log('authService.getCurrentUser: Token from localStorage:', token ? `exists (length: ${token.length})` : 'NOT FOUND');
 
     if (!token) {
+      console.warn('authService.getCurrentUser: No token found in localStorage');
       return null;
     }
 
     try {
+      console.log('authService.getCurrentUser: Making request to:', `${cleanBaseUrl}/api/auth/me`);
+      console.log('authService.getCurrentUser: Authorization header:', `Bearer ${token.substring(0, 20)}...`);
       const response = await fetch(`${cleanBaseUrl}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+      console.log('authService.getCurrentUser: Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -302,8 +312,12 @@ class AuthService {
    * Store tokens in localStorage
    */
   private setTokens(tokens: AuthTokens): void {
+    console.log('authService.setTokens: Storing access_token (length:', tokens.access_token?.length || 0, ')');
     localStorage.setItem('access_token', tokens.access_token);
     localStorage.setItem('refresh_token', tokens.refresh_token);
+    console.log('authService.setTokens: Tokens stored. Verifying...');
+    const verifyToken = localStorage.getItem('access_token');
+    console.log('authService.setTokens: Verification - token exists:', !!verifyToken, 'length:', verifyToken?.length || 0);
   }
 
   /**

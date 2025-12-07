@@ -98,6 +98,9 @@ async function request<T>(path: string, options: ApiRequestOptions = {}): Promis
 
   if (token) {
     requestHeaders["Authorization"] = `Bearer ${token}`;
+    console.log(`api.request: Added Authorization header for ${path} (token length: ${token.length})`);
+  } else {
+    console.warn(`api.request: No token found for ${path}`);
   }
 
   const init: RequestInit = {
