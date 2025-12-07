@@ -17,7 +17,7 @@ sqlalchemy==2.0.25
 # Authentication
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-httpx==0.26.0
+httpx>=0.25.0
 
 # Background Tasks & Scheduling
 celery==5.3.6
@@ -57,7 +57,6 @@ email-validator==2.1.0
 pytest==8.0.0
 pytest-asyncio==0.23.4
 pytest-cov==4.1.0
-httpx==0.25.2
 
 # Type checking (dev)
 mypy==1.8.0

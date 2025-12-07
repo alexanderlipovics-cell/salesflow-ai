@@ -112,23 +112,22 @@ app.add_middleware(
     exclude_paths=["/docs", "/openapi.json", "/redoc"]
 )
 
-# 3. Rate Limiting Middleware
-app.add_middleware(
-    RateLimitMiddleware,
-    enabled=False,  # Temporär deaktiviert, um Auth-Calls nicht zu drosseln
-    default_limit=settings.rate_limit_default_rpm,  # Anfragen pro Minute
-    default_window=60,  # Sekunden pro Fenster
-    exclude_paths=[
-        "/health",
-        "/docs",
-        "/openapi.json",
-        "/redoc",
-        "/api/auth/signup",  # Signup darf nicht gedrosselt werden
-        "/api/auth/login",   # Login auch nicht drosseln
-        "/api/auth/refresh", # Refresh nicht drosseln
-        "/api/auth/me",      # Me nicht drosseln
-    ]
-)
+# 3. Rate Limiting Middleware (deaktiviert / fehlerhaftes Argument entfernt)
+# app.add_middleware(
+#     RateLimitMiddleware,
+#     enabled=False,  # Temporär deaktiviert, um Auth-Calls nicht zu drosseln
+#     default_window=60,  # Sekunden pro Fenster
+#     exclude_paths=[
+#         "/health",
+#         "/docs",
+#         "/openapi.json",
+#         "/redoc",
+#         "/api/auth/signup",  # Signup darf nicht gedrosselt werden
+#         "/api/auth/login",   # Login auch nicht drosseln
+#         "/api/auth/refresh", # Refresh nicht drosseln
+#         "/api/auth/me",      # Me nicht drosseln
+#     ]
+# )
 
 # 4. CORS Middleware
 # Erlaubt Frontend-Origins (Vercel + localhost). Previews über Regex *.vercel.app.
@@ -189,6 +188,8 @@ from .routers.closing_coach import router as closing_coach_router  # 🎯 Closin
 from .routers.cold_call_assistant import router as cold_call_router  # 📞 Kaltakquise-Assistent
 from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
 from .routers.gamification import router as gamification_router  # 🏆 Gamification
+from .routers.lead_qualifier import router as lead_qualifier_router  # 🧠 AI Lead Qualifier
+from .routers.lead_discovery import router as lead_discovery_router  # 🔍 Lead Discovery Engine
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -229,6 +230,8 @@ app.include_router(closing_coach_router, prefix="/api")  # 🎯 Closing Coach
 app.include_router(cold_call_router, prefix="/api")  # 📞 Kaltakquise-Assistent
 app.include_router(performance_insights_router, prefix="/api")  # 📈 Performance Insights
 app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
+app.include_router(lead_qualifier_router)  # 🧠 AI Lead Qualifier (hat bereits /api/lead-qualifier prefix)
+app.include_router(lead_discovery_router)  # 🔍 Lead Discovery Engine (hat bereits /api/lead-discovery prefix)
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

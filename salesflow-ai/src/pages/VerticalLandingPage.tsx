@@ -6,7 +6,7 @@
  */
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { getVerticalFromSlug, getLandingVerticals, VERTICALS } from '../utils/verticalUtils';
+import { getVerticalFromSlug, getLandingVerticals, VERTICALS_EXPORT as VERTICALS } from '../utils/verticalUtils';
 import { VerticalSelector } from '../components/landing/VerticalSelector';
 import '../styles/marketing-landing.css';
 

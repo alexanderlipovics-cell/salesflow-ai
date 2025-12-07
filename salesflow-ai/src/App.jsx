@@ -46,6 +46,8 @@ import ColdCallAssistantPage from "./pages/ColdCallAssistantPage";
 import PerformanceInsightsPage from "./pages/PerformanceInsightsPage";
 import GamificationPage from "./pages/GamificationPage";
 import ClosingCoachPage from "./pages/ClosingCoachPage";
+import LeadQualifierPage from "./pages/LeadQualifierPage";
+import LeadDiscoveryPage from "./pages/LeadDiscoveryPage";
 import { UserProvider } from "./context/UserContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
@@ -199,6 +201,8 @@ const App = () => {
                       <Route path="closing-coach" element={<ClosingCoachPage />} />
                       <Route path="performance" element={<PerformanceInsightsPage />} />
                       <Route path="gamification" element={<GamificationPage />} />
+                      <Route path="lead-qualifier" element={<LeadQualifierPage />} />
+                      <Route path="lead-discovery" element={<LeadDiscoveryPage />} />
                       <Route path="settings/ai" element={<SalesAiSettingsPage />} />
                       <Route path="gtm-copy" element={<GtmCopyAssistantPage />} />
                       <Route

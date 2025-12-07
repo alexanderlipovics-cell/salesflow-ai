@@ -7,6 +7,18 @@
 
 import { VERTICALS } from '../hooks/useVertical';
 
+// Fallback-Export, falls VERTICALS nicht aus useVertical kommt
+export const FALLBACK_VERTICALS = {
+  mlm: { name: 'Network Marketing', slug: 'mlm' },
+  insurance: { name: 'Versicherungen', slug: 'insurance' },
+  realestate: { name: 'Immobilien', slug: 'realestate' },
+  solar: { name: 'Solar/Energie', slug: 'solar' },
+  finance: { name: 'Finanzberatung', slug: 'finance' }
+};
+
+// Export VERTICALS (falls das importierte leer ist, nutze Fallback)
+export const VERTICALS_EXPORT = Object.keys(VERTICALS || {}).length > 0 ? VERTICALS : FALLBACK_VERTICALS;
+
 /**
  * Mapping: Vertical ID → URL Slug
  */
