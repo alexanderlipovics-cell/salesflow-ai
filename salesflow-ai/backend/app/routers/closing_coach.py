@@ -4,6 +4,9 @@ Sales Flow AI - Closing Coach Router
 KI-Analyse für Deal-Closing, Blocker-Erkennung, Closing-Strategien
 """
 
+import json
+import logging
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
@@ -13,9 +16,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from supabase import Client
 
+from app.ai_client import chat_completion
+from app.config import get_settings
 from app.core.deps import get_current_user, get_supabase
+from app.prompts.closing_coach_prompts import get_closing_coach_gpt_prompt
 
 router = APIRouter(prefix="/closing-coach", tags=["Closing Coach"])
+settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -209,7 +217,66 @@ async def analyze_deal(
         .execute()
     )
 
-    return ClosingInsight(**insight_result.data[0])
+    insight_data = insight_result.data[0]
+    
+    # Erweitere Response mit Deal- und Contact-Informationen für Mobile App
+    deal_info = deal.get("title") or "Unbenannter Deal"
+    account_info = "Unbekannt"
+    
+    # Hole Contact-Informationen falls vorhanden
+    if deal.get("contact_id"):
+        try:
+            contact_result = (
+                supabase.table("contacts")
+                .select("name, company")
+                .eq("id", str(deal.get("contact_id")))
+                .single()
+                .execute()
+            )
+            if contact_result.data:
+                account_info = contact_result.data.get("company") or contact_result.data.get("name") or "Unbekannt"
+        except Exception:
+            pass  # Fallback zu "Unbekannt"
+    
+    # Konvertiere closing_probability (string) zu probability (number 0-100)
+    probability_map = {
+        "low": 25,
+        "medium": 50,
+        "high": 75,
+        "very_high": 90,
+    }
+    probability_value = probability_map.get(insight_data.get("closing_probability", "medium"), 50)
+    
+    # Erweitere Insight-Daten für Mobile App
+    insight_data["deal_name"] = deal_info
+    insight_data["account"] = account_info
+    insight_data["probability"] = probability_value
+    
+    # Transformiere detected_blockers zu blockers (für Mobile App Format)
+    blockers = []
+    for blocker in insight_data.get("detected_blockers", []):
+        blockers.append({
+            "issue": blocker.get("type", "Unknown"),
+            "severity": blocker.get("severity", "medium"),
+            "context": blocker.get("context", ""),
+        })
+    insight_data["blockers"] = blockers
+    
+    # Transformiere recommended_strategies zu strategies (für Mobile App Format)
+    strategies = []
+    for strategy in insight_data.get("recommended_strategies", []):
+        strategies.append({
+            "name": strategy.get("strategy", "Unknown"),
+            "script": strategy.get("script", ""),
+            "focus": strategy.get("when_to_use", "General"),
+        })
+    insight_data["strategies"] = strategies
+    
+    # Transformiere last_analyzed_at zu last_analyzed
+    if insight_data.get("last_analyzed_at"):
+        insight_data["last_analyzed"] = insight_data["last_analyzed_at"]
+    
+    return insight_data
 
 
 @router.get("/deal/{deal_id}", response_model=ClosingInsight)

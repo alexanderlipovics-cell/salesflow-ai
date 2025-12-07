@@ -22,7 +22,7 @@ import Clipboard from "@react-native-clipboard/clipboard";
 import Collapsible from "react-native-collapsible";
 import BottomSheet, { BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { supabaseClient } from "../../config/supabase";
+import { mobileApi } from "../../services/api";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -136,7 +136,6 @@ function CallTimer({ isRunning, initialSeconds = 0, onTick }) {
 
 // --- Hauptscreen (verwaltet State für alle Tabs) ---
 export default function ColdCallAssistantScreen() {
-  const [accessToken, setAccessToken] = useState(null);
 
   // Kontakte
   const [contacts, setContacts] = useState([]);
@@ -172,29 +171,6 @@ export default function ColdCallAssistantScreen() {
   const [selectedObjectionAnswer, setSelectedObjectionAnswer] = useState("");
   const snapPoints = useMemo(() => ["25%", "50%"], []);
 
-  // --- Auth: Supabase Session laden ---
-  useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const { data, error } = await supabaseClient.auth.getSession();
-        if (error) {
-          console.error("Supabase getSession error:", error);
-          setToastMessage("Fehler beim Laden der Session.");
-          return;
-        }
-        const token = data.session?.access_token ?? null;
-        setAccessToken(token);
-        if (!token) {
-          setToastMessage("Nicht eingeloggt. Bitte wieder einloggen.");
-        }
-      } catch (err) {
-        console.error(err);
-        setToastMessage("Unerwarteter Fehler beim Auth-Check.");
-      }
-    };
-    loadSession();
-  }, []);
-
   // --- Snackbar / Toast Light ---
   useEffect(() => {
     if (!toastMessage) return;
@@ -202,35 +178,14 @@ export default function ColdCallAssistantScreen() {
     return () => clearTimeout(t);
   }, [toastMessage]);
 
-  // --- API Helper ---
-  const apiFetch = useCallback(
-    async (path, options = {}) => {
-      if (!accessToken) throw new Error("No access token");
-      const res = await fetch(path, {
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-          ...(options.headers || {}),
-        },
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      return res.json();
-    },
-    [accessToken]
-  );
-
   // --- Kontakte laden ---
   const loadContacts = useCallback(
     async (withLoading = true) => {
-      if (!accessToken) return;
       try {
         if (withLoading) setContactsLoading(true);
         setContactsError(null);
-        const data = await apiFetch("/api/contacts?per_page=100");
-        setContacts(data.items || []);
+        const contacts = await mobileApi.getColdCallContacts();
+        setContacts(contacts || []);
       } catch (err) {
         console.error(err);
         setContactsError("Kontakte konnten nicht geladen werden.");
@@ -239,18 +194,17 @@ export default function ColdCallAssistantScreen() {
         setContactsRefreshing(false);
       }
     },
-    [accessToken, apiFetch]
+    []
   );
 
-  // --- Sessions laden ---
+  // --- Sessions laden (TODO: Wenn Backend Sessions-Endpoint hat) ---
   const loadSessions = useCallback(
     async (withLoading = true) => {
-      if (!accessToken) return;
       try {
         if (withLoading) setSessionsLoading(true);
         setSessionsError(null);
-        const data = await apiFetch("/api/cold-call/sessions");
-        setSessions(data || []);
+        // TODO: Wenn Backend Sessions-Endpoint hat
+        setSessions([]);
       } catch (err) {
         console.error(err);
         setSessionsError("Sessions konnten nicht geladen werden.");
@@ -259,31 +213,31 @@ export default function ColdCallAssistantScreen() {
         setSessionsRefreshing(false);
       }
     },
-    [accessToken, apiFetch]
+    []
   );
 
   // Initial Load
   useEffect(() => {
-    if (!accessToken) return;
     loadContacts(true);
     loadSessions(true);
-  }, [accessToken, loadContacts, loadSessions]);
+  }, [loadContacts, loadSessions]);
 
   // --- Script generieren ---
   const generateScript = useCallback(
     async (contactId, callGoal) => {
-      if (!accessToken || !contactId) return;
+      if (!contactId) return;
       try {
         setScriptLoading(true);
         setScriptError(null);
         setActiveSectionIndex(null);
 
-        const data = await apiFetch(
-          `/api/cold-call/generate-script/${contactId}?goal=${callGoal}`,
-          {
-            method: "POST",
-          }
-        );
+        const contact = contacts.find(c => c.id === contactId);
+        const data = await mobileApi.generateColdCallScript({
+          contact_id: contactId,
+          contact_name: contact?.name,
+          company_name: contact?.company,
+          goal: callGoal,
+        });
         setScript(data);
         setToastMessage("Script aktualisiert.");
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -295,7 +249,7 @@ export default function ColdCallAssistantScreen() {
         setScriptLoading(false);
       }
     },
-    [accessToken, apiFetch]
+    [contacts]
   );
 
   const handleSelectContact = useCallback(
@@ -325,16 +279,12 @@ export default function ColdCallAssistantScreen() {
   // --- Session / Call Handling ---
   const createSession = useCallback(
     async (mode) => {
-      if (!accessToken || !selectedContact) return null;
+      if (!selectedContact) return null;
       try {
-        const body = {
+        const newSession = await mobileApi.startColdCallSession({
           contact_id: selectedContact.id,
-          goal,
-          mode,
-        };
-        const newSession = await apiFetch("/api/cold-call/session", {
-          method: "POST",
-          body: JSON.stringify(body),
+          goal: goal || 'book_meeting',
+          mode: mode,
         });
         setSessions((prev) => [newSession, ...prev]);
         return newSession;
@@ -344,34 +294,29 @@ export default function ColdCallAssistantScreen() {
         return null;
       }
     },
-    [accessToken, apiFetch, goal, selectedContact]
+    [goal, selectedContact]
   );
 
   const startSessionOnServer = useCallback(
     async (sessionId) => {
-      const updated = await apiFetch(`/api/cold-call/session/${sessionId}/start`, {
-        method: "POST",
+      const updated = await mobileApi.updateColdCallSession(sessionId, {
+        status: 'in_progress',
       });
       return updated;
     },
-    [apiFetch]
+    []
   );
 
   const completeSessionOnServer = useCallback(
     async (sessionId, duration, notesText) => {
-      const updated = await apiFetch(
-        `/api/cold-call/session/${sessionId}/complete`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            duration_seconds: duration,
-            notes: notesText,
-          }),
-        }
-      );
+      const updated = await mobileApi.updateColdCallSession(sessionId, {
+        status: 'completed',
+        duration_seconds: duration,
+        notes: notesText,
+      });
       return updated;
     },
-    [apiFetch]
+    []
   );
 
   const handleStartCall = useCallback(

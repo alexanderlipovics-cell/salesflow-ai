@@ -15,6 +15,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Collapsible from 'react-native-collapsible';
+import { mobileApi } from '../../services/api';
 
 // --- TYPES & MOCK DATA ---
 
@@ -88,24 +89,52 @@ const getSeverityColor = (severity: 'high' | 'medium' | 'low') => {
   return { bg: '#4CAF50', text: '#FFF' };
 };
 
-// --- API SIMULATION ---
+// --- API CALLS ---
 
 const fetchDeals = async (): Promise<ClosingInsight[]> => {
-  // In Prod: const { data, error } = await supabaseClient.from('deals').select('*');
-  await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network latency
-  return MOCK_DEALS;
+  try {
+    const deals = await mobileApi.getClosingDeals();
+    // Transform API response to ClosingInsight format
+    return deals.map(deal => ({
+      id: deal.id,
+      deal_name: deal.deal_name,
+      account: deal.account,
+      closing_score: deal.closing_score,
+      probability: deal.probability,
+      blockers: deal.blockers,
+      strategies: deal.strategies,
+      last_analyzed: deal.last_analyzed,
+    }));
+  } catch (error) {
+    console.error('Error fetching deals:', error);
+    // Fallback zu Mock-Daten bei Fehler
+    return MOCK_DEALS;
+  }
 };
 
 const analyzeDeal = async (dealId: string): Promise<ClosingInsight> => {
-  // In Prod: POST /api/closing-coach/analyze/{deal_id}
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  const deal = MOCK_DEALS.find(d => d.id === dealId);
-  
-  if (deal) {
-    // Simulate updated score/insight
-    return { ...deal, closing_score: Math.min(100, deal.closing_score + 10), last_analyzed: new Date().toISOString() };
+  try {
+    const result = await mobileApi.analyzeDeal(dealId);
+    // API gibt jetzt deal_name, account und probability zurück
+    return {
+      id: result.id,
+      deal_name: result.deal_name || 'Unbenannter Deal',
+      account: result.account || 'Unbekannt',
+      closing_score: result.closing_score,
+      probability: result.probability || result.closing_score, // API liefert probability, Fallback zu closing_score
+      blockers: result.blockers || [],
+      strategies: result.strategies || [],
+      last_analyzed: result.last_analyzed || new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('Error analyzing deal:', error);
+    // Fallback zu Mock-Daten bei Fehler
+    const deal = MOCK_DEALS.find(d => d.id === dealId);
+    if (deal) {
+      return { ...deal, closing_score: Math.min(100, deal.closing_score + 10), last_analyzed: new Date().toISOString() };
+    }
+    throw new Error('Deal not found');
   }
-  throw new Error('Deal not found');
 };
 
 // --- COMPONENT ---

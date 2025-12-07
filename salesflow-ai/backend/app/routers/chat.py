@@ -25,6 +25,7 @@ from app.core.ai_prompts import (
     build_coach_prompt_with_action,
     detect_action_from_text,
 )
+from app.core.vertical_prompts import build_vertical_prompt_addition
 from app.core.user_adaptive_prompts import (
     get_adaptive_chat_prompt,
     load_user_learning_context,
@@ -288,6 +289,19 @@ async def chat_completion(
         base_prompt = build_coach_prompt_with_action(detected_action)
     else:
         base_prompt = SALES_COACH_PROMPT
+    
+    # 2.5. Vertical Context injizieren
+    try:
+        from app.services.vertical_service import get_user_vertical_id, get_vertical_config
+        vertical_id = get_user_vertical_id(user_id)
+        vertical_config = get_vertical_config(vertical_id)
+        
+        # Erweitere System-Prompt mit Vertical Context
+        vertical_prompt_addition = build_vertical_prompt_addition(vertical_config)
+        base_prompt = base_prompt + "\n\n" + vertical_prompt_addition
+    except Exception as e:
+        logger.debug(f"Could not load vertical context (non-critical): {e}")
+        # Weiter mit base_prompt ohne Vertical Context
     
     # 3. User-Adaptive Prompt: Personalisiere basierend auf User-Learning-Profile
     try:

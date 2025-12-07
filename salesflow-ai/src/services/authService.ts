@@ -24,7 +24,7 @@ interface LoginCredentials {
 interface SignupData {
   email: string;
   password: string;
-  name: string;
+  name: string; // Wird in first_name und last_name aufgeteilt
   company?: string;
 }
 
@@ -81,12 +81,26 @@ class AuthService {
    * Register new user
    */
   async signup(signupData: SignupData): Promise<AuthResponse> {
+    // Teile name in first_name und last_name auf
+    const nameParts = signupData.name.trim().split(/\s+/);
+    const first_name = nameParts[0] || '';
+    const last_name = nameParts.slice(1).join(' ') || '';
+
+    // Backend erwartet: email, password, first_name, last_name, company
+    const backendData = {
+      email: signupData.email,
+      password: signupData.password,
+      first_name: first_name,
+      last_name: last_name,
+      ...(signupData.company && { company: signupData.company }),
+    };
+
     const response = await fetch(`${cleanBaseUrl}/api/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(signupData),
+      body: JSON.stringify(backendData),
     });
 
     if (!response.ok) {
@@ -94,7 +108,28 @@ class AuthService {
       throw new Error(error.detail || 'Registrierung fehlgeschlagen');
     }
 
-    const data: AuthResponse = await response.json();
+    const backendResponse = await response.json();
+
+    // Backend gibt zurück: { access_token, refresh_token, token_type, expires_in, user }
+    // Frontend erwartet: { user, tokens: { access_token, refresh_token, token_type, expires_in } }
+    const data: AuthResponse = {
+      user: {
+        id: backendResponse.user.id,
+        email: backendResponse.user.email,
+        name: `${backendResponse.user.first_name || ''} ${backendResponse.user.last_name || ''}`.trim(),
+        company: backendResponse.user.company,
+        role: backendResponse.user.role,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      tokens: {
+        access_token: backendResponse.access_token,
+        refresh_token: backendResponse.refresh_token,
+        token_type: backendResponse.token_type,
+        expires_in: backendResponse.expires_in,
+      },
+      message: 'Registrierung erfolgreich',
+    };
 
     // Store tokens in localStorage
     this.setTokens(data.tokens);

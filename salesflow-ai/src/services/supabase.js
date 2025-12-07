@@ -25,6 +25,9 @@ const webStorage = {
   },
 };
 
+// Erstelle Supabase Client - nur mit url und key, keine zusätzlichen Optionen
+// Die installierte @supabase/supabase-js Version unterstützt keine proxy Option
+// WICHTIG: Keine global, fetch, oder proxy Optionen verwenden - diese verursachen Fehler
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: webStorage,

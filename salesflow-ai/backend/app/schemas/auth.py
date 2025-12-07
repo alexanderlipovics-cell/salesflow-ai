@@ -42,6 +42,9 @@ class UserProfile(BaseModel):
     company: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    vertical_id: Optional[str] = Field(
+        None, description="ID des zugewiesenen Verticals (Branche)"
+    )
 
 
 class UserProfileUpdate(BaseModel):
@@ -52,6 +55,7 @@ class UserProfileUpdate(BaseModel):
     company: Optional[str] = Field(None)
     phone: Optional[str] = Field(None)
     avatar_url: Optional[str] = Field(None)
+    vertical_id: Optional[str] = Field(None, description="ID des zugewiesenen Verticals")
 
 
 class LoginResponse(BaseModel):

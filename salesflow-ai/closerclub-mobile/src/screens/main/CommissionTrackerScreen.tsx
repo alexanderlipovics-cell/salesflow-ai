@@ -15,7 +15,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
-import DateTimePicker from '@react-native-community/datetimepicker'; // Annahme: DatePicker installiert
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { mobileApi } from '../../services/api';
 
 // --- TYPES ---
 
@@ -76,31 +77,38 @@ export const CommissionTrackerScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [statusFilter, setStatusFilter] = useState<CommissionStatus | 'all'>('all');
 
-  // API Call Simulation
+  // API Call - Echte Daten vom Backend
   const fetchCommissions = useCallback(async () => {
     try {
-      // Logic: Build query params based on selectedDate and statusFilter
-      const monthStr = selectedDate.toISOString().slice(0, 7) + '-01'; // YYYY-MM-01
+      setLoading(true);
+      const monthStr = selectedDate.toISOString().slice(0, 7); // YYYY-MM
       
-      // Simulation: API Fetch List
-      // const response = await fetch(`/api/commissions?month=${monthStr}&status=${statusFilter}`, ...);
-      
-      // Simulation: API Fetch Summary
-      // const summaryRes = await fetch(`/api/commissions/summary?month=${monthStr}`, ...);
+      // API Calls parallel ausführen
+      const [commissionsData, summaryData] = await Promise.all([
+        mobileApi.getCommissions({
+          month: monthStr,
+          status: statusFilter === 'all' ? undefined : statusFilter,
+        }),
+        mobileApi.getCommissionSummary(monthStr),
+      ]);
 
-      // MOCK RESPONSE
-      setTimeout(() => {
-        setSummary({ gross: 12500, net: 10000, tax: 2500, openAmount: 3200 });
-        setCommissions([
-          { id: '1', dealName: 'Enterprise License - Siemens', dealValue: 50000, commissionRate: 10, commissionAmount: 5000, status: 'paid', date: '2023-10-05' },
-          { id: '2', dealName: 'SaaS Starter - TechCorp', dealValue: 12000, commissionRate: 15, commissionAmount: 1800, status: 'pending', date: '2023-10-12' },
-          { id: '3', dealName: 'Consulting - FinGroup', dealValue: 8500, commissionRate: 10, commissionAmount: 850, status: 'overdue', date: '2023-10-01' },
-        ]);
-        setLoading(false);
-        setRefreshing(false);
-      }, 800);
+      // Daten transformieren
+      const transformedCommissions: Commission[] = commissionsData.map((c) => ({
+        id: c.id,
+        dealName: c.deal_name,
+        dealValue: c.deal_value,
+        commissionRate: c.commission_rate,
+        commissionAmount: c.commission_amount,
+        status: c.status,
+        date: c.date,
+      }));
 
+      setCommissions(transformedCommissions);
+      setSummary(summaryData);
+      setLoading(false);
+      setRefreshing(false);
     } catch (error) {
+      console.error('Error fetching commissions:', error);
       Alert.alert('Fehler', 'Daten konnten nicht geladen werden.');
       setLoading(false);
       setRefreshing(false);
@@ -118,9 +126,14 @@ export const CommissionTrackerScreen = () => {
 
   // Actions
   const handleDownloadInvoice = async (id: string) => {
-    // API Call: GET /api/commissions/{id}/invoice
-    Alert.alert('Download', `Rechnung für #${id} wird heruntergeladen...`);
-    // Logic: fetch Blob -> Share.share({ url: localPath })
+    try {
+      const blob = await mobileApi.downloadCommissionInvoice(id);
+      // TODO: Blob zu Datei speichern und Share API nutzen
+      Alert.alert('Download', `Rechnung für #${id} wird heruntergeladen...`);
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      Alert.alert('Fehler', 'Rechnung konnte nicht heruntergeladen werden.');
+    }
   };
 
   const handleSendToAccounting = async (id: string) => {
@@ -131,9 +144,14 @@ export const CommissionTrackerScreen = () => {
         { text: 'Abbrechen', style: 'cancel' },
         { 
           text: 'Senden', 
-          onPress: () => {
-             // API Call: POST /api/commissions/{id}/send-to-accounting
-             Alert.alert('Erfolg', 'E-Mail wurde versendet.');
+          onPress: async () => {
+            try {
+              const result = await mobileApi.sendCommissionToAccounting(id);
+              Alert.alert('Erfolg', result.message || 'E-Mail wurde versendet.');
+            } catch (error) {
+              console.error('Error sending to accounting:', error);
+              Alert.alert('Fehler', 'E-Mail konnte nicht versendet werden.');
+            }
           } 
         }
       ]

@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from supabase import Client
 
 from ..core.security import (
     create_token_pair,
@@ -17,8 +17,7 @@ from ..core.security import (
     verify_password,
     verify_refresh_token,
 )
-from ..db.session import get_db
-from ..models.user import User
+from ..core.deps import get_supabase
 from ..schemas.auth import (
     LoginRequest,
     LoginResponse,
@@ -35,7 +34,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @router.post("/signup", response_model=SignupResponse)
 async def signup(
     user_data: SignupRequest,
-    db: Session = Depends(get_db),
+    supabase: Client = Depends(get_supabase),
 ) -> SignupResponse:
     """
     Create a new user account.
@@ -46,8 +45,8 @@ async def signup(
     - Returns JWT tokens
     """
     # Check if user already exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
+    existing_result = supabase.table("users").select("id, email").eq("email", user_data.email).maybe_single().execute()
+    if existing_result.data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
@@ -56,26 +55,34 @@ async def signup(
     # Hash password
     hashed_password = hash_password(user_data.password)
 
-    # Create user
-    user = User(
-        id=user_data.email,  # Using email as ID for simplicity, could be UUID
-        email=user_data.email,
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
-        hashed_password=hashed_password,
-        company=user_data.company,
-    )
+    # Create user in Supabase
+    user_id = user_data.email  # Using email as ID for simplicity, could be UUID
+    user_data_dict = {
+        "id": user_id,
+        "email": user_data.email,
+        "first_name": user_data.first_name,
+        "last_name": user_data.last_name,
+        "hashed_password": hashed_password,
+        "is_active": True,
+        "is_verified": False,
+        "role": "user",
+    }
+    
+    if user_data.company:
+        user_data_dict["company"] = user_data.company
 
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    result = supabase.table("users").insert(user_data_dict).execute()
+    
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user",
+        )
+    
+    user = result.data[0]
 
     # Create tokens
-    tokens = create_token_pair(user.id, {
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-    })
+    tokens = create_token_pair(user_id, user["email"])
 
     return SignupResponse(
         access_token=tokens["access_token"],
@@ -83,12 +90,12 @@ async def signup(
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role=user.role,
-            is_verified=user.is_verified,
+            id=user["id"],
+            email=user["email"],
+            first_name=user.get("first_name"),
+            last_name=user.get("last_name"),
+            role=user.get("role", "user"),
+            is_verified=user.get("is_verified", False),
         ),
     )
 
@@ -96,40 +103,40 @@ async def signup(
 @router.post("/login", response_model=LoginResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    supabase: Client = Depends(get_supabase),
 ) -> LoginResponse:
     """
     Authenticate user with email and password.
 
     Returns JWT access and refresh tokens.
     """
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user:
+    # Find user by email
+    result = supabase.table("users").select("*").eq("email", form_data.username).maybe_single().execute()
+    
+    if not result.data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not verify_password(form_data.password, user.hashed_password):
+    user = result.data
+
+    if not verify_password(form_data.password, user.get("hashed_password", "")):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not user.is_active:
+    if not user.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account is deactivated",
         )
 
     # Create tokens
-    tokens = create_token_pair(user.id, {
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-    })
+    tokens = create_token_pair(user["id"], user["email"])
 
     return LoginResponse(
         access_token=tokens["access_token"],
@@ -137,12 +144,12 @@ async def login(
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role=user.role,
-            is_verified=user.is_verified,
+            id=user["id"],
+            email=user["email"],
+            first_name=user.get("first_name"),
+            last_name=user.get("last_name"),
+            role=user.get("role", "user"),
+            is_verified=user.get("is_verified", False),
         ),
     )
 
@@ -150,7 +157,7 @@ async def login(
 @router.post("/refresh", response_model=LoginResponse)
 async def refresh_token(
     token_data: RefreshTokenRequest,
-    db: Session = Depends(get_db),
+    supabase: Client = Depends(get_supabase),
 ) -> LoginResponse:
     """
     Refresh access token using refresh token.
@@ -167,19 +174,25 @@ async def refresh_token(
                 detail="Invalid refresh token",
             )
 
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user or not user.is_active:
+        # Find user in Supabase
+        result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+        
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+            )
+
+        user = result.data
+        
+        if not user.get("is_active", True):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
             )
 
         # Create new tokens
-        tokens = create_token_pair(user.id, {
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-        })
+        tokens = create_token_pair(user["id"], user["email"])
 
         return LoginResponse(
             access_token=tokens["access_token"],
@@ -187,15 +200,17 @@ async def refresh_token(
             token_type="bearer",
             expires_in=1800,  # 30 minutes
             user=UserProfile(
-                id=user.id,
-                email=user.email,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                role=user.role,
-                is_verified=user.is_verified,
+                id=user["id"],
+                email=user["email"],
+                first_name=user.get("first_name"),
+                last_name=user.get("last_name"),
+                role=user.get("role", "user"),
+                is_verified=user.get("is_verified", False),
             ),
         )
 
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -215,14 +230,14 @@ async def logout() -> Dict[str, str]:
 @router.post("/request-password-reset")
 async def request_password_reset(
     email: str,
-    db: Session = Depends(get_db),
+    supabase: Client = Depends(get_supabase),
 ) -> Dict[str, str]:
     """
     Request password reset.
     In production, this would send an email with reset link.
     """
-    user = db.query(User).filter(User.email == email).first()
-    if user:
+    result = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
+    if result.data:
         # TODO: Generate reset token and send email
         # For now, just return success to avoid email enumeration
         pass
@@ -234,55 +249,93 @@ async def request_password_reset(
 
 @router.get("/me", response_model=UserProfile)
 async def get_current_user_profile(
-    current_user: User = Depends(get_current_active_user),
+    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    supabase: Client = Depends(get_supabase),
 ) -> UserProfile:
     """
     Get current user profile.
     """
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User ID not found in token",
+        )
+
+    # Fetch user from Supabase
+    result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+    
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    user = result.data
     return UserProfile(
-        id=current_user.id,
-        email=current_user.email,
-        first_name=current_user.first_name,
-        last_name=current_user.last_name,
-        role=current_user.role,
-        is_verified=current_user.is_verified,
-        company=current_user.company,
-        phone=current_user.phone,
-        avatar_url=current_user.avatar_url,
+        id=user["id"],
+        email=user["email"],
+        first_name=user.get("first_name"),
+        last_name=user.get("last_name"),
+        role=user.get("role", "user"),
+        is_verified=user.get("is_verified", False),
+        company=user.get("company"),
+        phone=user.get("phone"),
+        avatar_url=user.get("avatar_url"),
     )
 
 
 @router.patch("/me", response_model=UserProfile)
 async def update_current_user_profile(
     user_update: UserProfileUpdate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    supabase: Client = Depends(get_supabase),
 ) -> UserProfile:
     """
     Update current user profile.
     """
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User ID not found in token",
+        )
+
     update_data = user_update.dict(exclude_unset=True)
 
     # Don't allow email changes for now
     if "email" in update_data:
         del update_data["email"]
 
-    # Update user fields
-    for field, value in update_data.items():
-        if hasattr(current_user, field):
-            setattr(current_user, field, value)
-
-    db.commit()
-    db.refresh(current_user)
+    # Update user in Supabase
+    if update_data:
+        result = supabase.table("users").update(update_data).eq("id", user_id).execute()
+        
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        
+        user = result.data[0]
+    else:
+        # No updates, just fetch current user
+        result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        user = result.data
 
     return UserProfile(
-        id=current_user.id,
-        email=current_user.email,
-        first_name=current_user.first_name,
-        last_name=current_user.last_name,
-        role=current_user.role,
-        is_verified=current_user.is_verified,
-        company=current_user.company,
-        phone=current_user.phone,
-        avatar_url=current_user.avatar_url,
+        id=user["id"],
+        email=user["email"],
+        first_name=user.get("first_name"),
+        last_name=user.get("last_name"),
+        role=user.get("role", "user"),
+        is_verified=user.get("is_verified", False),
+        company=user.get("company"),
+        phone=user.get("phone"),
+        avatar_url=user.get("avatar_url"),
     )

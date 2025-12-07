@@ -134,6 +134,17 @@ app.add_middleware(
 allowed_origins = [
     "https://aura-n92sibt17-sales-flow-ais-projects.vercel.app",
     "http://localhost:3000",
+    # Vite Development Server (verschiedene Ports)
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+    "http://localhost:5177",
+    "http://localhost:5178",
+    "http://localhost:5179",
+    # Alternative localhost-Formate
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8003",
 ]
 app.add_middleware(
     CORSMiddleware,

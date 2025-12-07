@@ -16,7 +16,7 @@ import {
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
 import { LineChart } from "react-native-chart-kit";
 import * as Haptics from "expo-haptics";
-import { supabaseClient } from "../../config/supabase";
+import { mobileApi } from "../../services/api";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -64,8 +64,6 @@ function getPeriodRange(periodKey) {
 }
 
 export default function PerformanceInsightsScreen() {
-  const [accessToken, setAccessToken] = useState(null);
-
   const [period, setPeriod] = useState("month"); // 'month' | 'quarter' | 'year'
   const [insight, setInsight] = useState(null);
   const [history, setHistory] = useState([]); // optional: my-insights
@@ -82,50 +80,6 @@ export default function PerformanceInsightsScreen() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // --- Auth laden ---
-  useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const { data, error: authError } =
-          await supabaseClient.auth.getSession();
-        if (authError) {
-          console.error(authError);
-          setToast("Fehler beim Laden der Session.");
-          return;
-        }
-        const token = data.session?.access_token ?? null;
-        setAccessToken(token);
-        if (!token) {
-          setToast("Nicht eingeloggt – bitte neu einloggen.");
-        }
-      } catch (err) {
-        console.error(err);
-        setToast("Unerwarteter Auth-Fehler.");
-      }
-    };
-
-    loadSession();
-  }, []);
-
-  const apiFetch = async (path, options = {}) => {
-    if (!accessToken) throw new Error("Kein Auth-Token vorhanden.");
-
-    const res = await fetch(path, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        ...(options.headers || {}),
-      },
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || `HTTP ${res.status}`);
-    }
-    return res.json();
-  };
-
   // --- Insights laden ---
   const fetchInsight = async (periodKey, isRefresh = false) => {
     try {
@@ -135,16 +89,46 @@ export default function PerformanceInsightsScreen() {
       setError(null);
 
       const { start, end } = getPeriodRange(periodKey);
-      const qs = `?period_start=${start.toISOString()}&period_end=${end.toISOString()}`;
+      const periodStart = start.toISOString().split('T')[0]; // YYYY-MM-DD
+      const periodEnd = end.toISOString().split('T')[0]; // YYYY-MM-DD
 
-      const data = await apiFetch(
-        `/api/performance-insights/analyze${qs}`,
-        {
-          method: "POST",
-        }
-      );
+      const data = await mobileApi.getPerformanceInsights({
+        period_start: periodStart,
+        period_end: periodEnd,
+      });
 
-      setInsight(data);
+      // Transform API response to expected format
+      setInsight({
+        kpis: {
+          revenue: data.metrics.revenue,
+          calls: data.metrics.calls,
+          deals: data.metrics.deals,
+          conversion_rate: data.metrics.conversion_rate,
+          revenue_trend: data.trends.revenue,
+          calls_trend: data.trends.calls,
+          deals_trend: data.trends.deals,
+          conversion_trend: data.trends.conversion_rate,
+        },
+        time_series: {
+          labels: [], // TODO: Wenn Backend Zeitreihen liefert
+          calls: [],
+          deals: [],
+        },
+        issues: data.issues.map((issue, idx) => ({
+          id: `issue-${idx}`,
+          title: issue.issue,
+          severity: issue.severity,
+          description: issue.impact,
+        })),
+        recommendations: data.recommendations.map((rec, idx) => ({
+          id: `rec-${idx}`,
+          title: rec.title,
+          description: rec.description,
+          priority: 'high', // Fallback
+          action_items: rec.action_items,
+        })),
+      });
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (err) {
       console.error(err);
@@ -158,31 +142,28 @@ export default function PerformanceInsightsScreen() {
     }
   };
 
-  // Optional: History laden
+  // Optional: History laden (noch nicht im API Service)
   const fetchHistory = async () => {
     try {
-      const data = await apiFetch("/api/performance-insights/my-insights");
-      setHistory(data || []);
+      // TODO: Wenn Backend History-Endpoint hat
+      setHistory([]);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Wenn Token da: initial laden
+  // Initial laden
   useEffect(() => {
-    if (!accessToken) return;
     fetchInsight(period, false);
     fetchHistory();
-  }, [accessToken]);
+  }, []);
 
   // Wenn Zeitraum geändert wird
   useEffect(() => {
-    if (!accessToken) return;
     fetchInsight(period, false);
-  }, [period, accessToken]);
+  }, [period]);
 
   const onRefresh = () => {
-    if (!accessToken) return;
     fetchInsight(period, true);
   };
 

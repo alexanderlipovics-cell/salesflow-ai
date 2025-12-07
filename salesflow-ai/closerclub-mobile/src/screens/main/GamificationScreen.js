@@ -16,7 +16,7 @@ import {
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import * as Haptics from "expo-haptics";
 import ConfettiCannon from "react-native-confetti-cannon";
-import { supabaseClient } from "../../config/supabase";
+import { mobileApi } from "../../services/api";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -201,8 +201,6 @@ function DailyTasksTab({ tasks, refreshing, onRefresh, onToggle }) {
 }
 
 export default function GamificationScreen() {
-  const [accessToken, setAccessToken] = useState(null);
-
   const [streak, setStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
 
@@ -225,91 +223,52 @@ export default function GamificationScreen() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Auth
-  useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const { data, error } =
-          await supabaseClient.auth.getSession();
-        if (error) {
-          console.error(error);
-          setToast("Fehler beim Laden der Session.");
-          return;
-        }
-        const token = data.session?.access_token ?? null;
-        setAccessToken(token);
-        if (!token) {
-          setToast("Nicht eingeloggt – bitte neu einloggen.");
-        }
-      } catch (err) {
-        console.error(err);
-        setToast("Unerwarteter Auth-Fehler.");
-      }
-    };
-    loadSession();
-  }, []);
-
-  const apiFetch = async (path, options = {}) => {
-    if (!accessToken) throw new Error("Kein Auth-Token vorhanden.");
-
-    const res = await fetch(path, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        ...(options.headers || {}),
-      },
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || `HTTP ${res.status}`);
-    }
-    return res.json();
-  };
-
   const loadGamificationData = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Achievements (mit mobile=true für optimierte Response)
-      const ach = await apiFetch("/api/gamification/achievements?mobile=true");
-      setAchievements(ach || []);
+      // Alle Daten parallel laden
+      const data = await mobileApi.getGamificationData();
 
-      // Daily activities (letztes Woche, mit mobile=true)
-      const acts = await apiFetch(
-        "/api/gamification/daily-activities?days=7&mobile=true"
-      );
-      const activities = acts || [];
+      // Streaks
+      setStreak(data.streak.current || 0);
+      setLongestStreak(data.streak.longest || 0);
 
-      // Heute rausfiltern (angenommen: date im ISO-Format)
-      const today = new Date().toISOString().slice(0, 10);
-      const todaysTasks = activities.filter((a) =>
-        (a.date || "").startsWith(today)
-      );
-      setDailyTasks(todaysTasks);
+      // Achievements transformieren
+      const transformedAchievements = data.achievements.map((a) => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        emoji: a.icon || "⭐",
+        progress: a.progress,
+        target: a.max_progress,
+        xp: 0, // TODO: Wenn Backend XP liefert
+        unlocked: a.unlocked,
+        unlocked_at: a.unlocked_at,
+      }));
+      setAchievements(transformedAchievements);
 
-      // Streaks aus Aktivitäten ableiten (MVP)
-      const currentStreak =
-        activities[0]?.current_streak ??
-        activities.reduce(
-          (max, a) => Math.max(max, a.current_streak || 0),
-          0
-        );
-      const longest =
-        activities[0]?.longest_streak ??
-        activities.reduce(
-          (max, a) => Math.max(max, a.longest_streak || 0),
-          0
-        );
+      // Daily Tasks
+      const transformedTasks = data.daily_activities.map((task) => ({
+        id: task.id,
+        title: task.name,
+        description: task.description,
+        xp: task.xp_reward,
+        completed: task.completed,
+        date: new Date().toISOString().slice(0, 10), // Heute
+      }));
+      setDailyTasks(transformedTasks);
 
-      setStreak(currentStreak || 0);
-      setLongestStreak(longest || 0);
-
-      // Leaderboard (mit mobile=true)
-      const lb = await apiFetch("/api/gamification/leaderboard?mobile=true");
-      setLeaderboard(lb || []);
+      // Leaderboard transformieren
+      const transformedLeaderboard = data.leaderboard.map((entry) => ({
+        id: entry.user_id,
+        rank: entry.rank,
+        name: entry.user_name,
+        points: entry.total_xp,
+        trend: 0, // TODO: Wenn Backend Trend liefert
+      }));
+      setLeaderboard(transformedLeaderboard);
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       animateHero();
@@ -323,9 +282,8 @@ export default function GamificationScreen() {
   };
 
   useEffect(() => {
-    if (!accessToken) return;
     loadGamificationData(false);
-  }, [accessToken]);
+  }, []);
 
   const animateHero = () => {
     fadeAnim.setValue(0);
@@ -365,11 +323,10 @@ export default function GamificationScreen() {
   }, [streak]);
 
   const onRefresh = () => {
-    if (!accessToken) return;
     loadGamificationData(true);
   };
 
-  const handleToggleTask = async (task) => {
+  const handleCompleteTask = async (task) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       // Optimistisch updaten
@@ -379,22 +336,29 @@ export default function GamificationScreen() {
         )
       );
 
-      await apiFetch("/api/gamification/daily-activities/track", {
-        method: "POST",
-        body: JSON.stringify({
-          id: task.id,
-          completed: !task.completed,
-        }),
-      });
+      const result = await mobileApi.trackDailyActivity(task.id);
 
       // Wenn Task jetzt completed: XP-Feedback / Confetti
-      if (!task.completed) {
-        setToast(`+${task.xp ?? 0} XP gesammelt!`);
+      if (!task.completed && result.xp_gained > 0) {
+        setToast(`+${result.xp_gained} XP gesammelt!`);
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 2000);
         Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success
         );
+
+        // Neue Achievements anzeigen
+        if (result.new_achievements && result.new_achievements.length > 0) {
+          const achievementNames = result.new_achievements.map(a => a.name).join(', ');
+          setTimeout(() => {
+            setToast(`🎉 Neue Achievements: ${achievementNames}`);
+          }, 2500);
+        }
+      }
+
+      // Daten neu laden, um Achievements zu aktualisieren
+      if (!task.completed) {
+        loadGamificationData(false);
       }
     } catch (err) {
       console.error(err);
@@ -425,19 +389,6 @@ export default function GamificationScreen() {
     }
   };
 
-  if (!accessToken) {
-    return (
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.centered}
-      >
-        <Text style={styles.infoText}>
-          Du bist nicht eingeloggt. Bitte melde dich an, um die
-          Gamification-Features zu nutzen.
-        </Text>
-      </ScrollView>
-    );
-  }
 
   return (
     <View style={styles.container}>
