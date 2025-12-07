@@ -22,13 +22,16 @@ const LoginPage: React.FC = () => {
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   const handleLogin = async (email: string, password: string) => {
+    console.log('LoginPage: handleLogin called with email:', email);
     try {
+      console.log('LoginPage: Calling login function...');
       await login({ email, password });
+      console.log('LoginPage: Login successful, navigating to:', from);
       // Redirect to originally requested page or dashboard
       navigate(from, { replace: true });
     } catch (err) {
       // Error is handled by useAuth hook
-      console.error('Login failed:', err);
+      console.error('LoginPage: Login failed:', err);
     }
   };
 

@@ -57,11 +57,15 @@ class AuthService {
    * Uses form-urlencoded format as required by OAuth2PasswordRequestForm
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    console.log('authService.login: Starting login request for email:', credentials.email);
+    console.log('authService.login: API URL:', `${cleanBaseUrl}/api/auth/login`);
+    
     // OAuth2PasswordRequestForm expects form-urlencoded with "username" field
     const formData = new URLSearchParams();
     formData.append('username', credentials.email);  // OAuth2 uses "username" not "email"
     formData.append('password', credentials.password);
 
+    console.log('authService.login: Making fetch request...');
     const response = await fetch(`${cleanBaseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -69,6 +73,8 @@ class AuthService {
       },
       body: formData.toString(),
     });
+    
+    console.log('authService.login: Response status:', response.status, response.statusText);
 
     if (!response.ok) {
       const error = await response.json();

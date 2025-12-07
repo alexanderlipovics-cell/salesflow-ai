@@ -25,6 +25,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
     setValidationError('');
 
     // Validation
@@ -39,8 +40,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
     }
 
     try {
+      console.log('LoginForm: Calling onSubmit with email:', email);
       await onSubmit(email, password);
+      console.log('LoginForm: onSubmit completed successfully');
     } catch (err) {
+      console.error('LoginForm: onSubmit error:', err);
       // Error is handled by parent component
     }
   };
