@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, TrendingUp, Clock, MessageSquare, CheckCircle } from 'lucide-react';
 
@@ -130,15 +130,16 @@ export default function FollowUpAnalyticsPage() {
       {/* Channel Performance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {analytics.channel_performance.map((channel, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <span className="text-2xl">{getChannelIcon(channel.channel)}</span>
-                <span className="capitalize">{channel.channel}</span>
-              </CardTitle>
-              <CardDescription>Performance Übersicht</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <Card
+            key={index}
+            title={`${channel.channel.toUpperCase()} Performance`}
+            subtitle="Performance Übersicht"
+          >
+            <div className="flex items-center gap-2 text-lg mb-2">
+              <span className="text-2xl">{getChannelIcon(channel.channel)}</span>
+              <span className="capitalize">{channel.channel}</span>
+            </div>
+            <div className="space-y-4">
               {/* Total Sent */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Gesamt gesendet</span>
@@ -195,21 +196,21 @@ export default function FollowUpAnalyticsPage() {
                   {channel.avg_response_time_hours?.toFixed(1) || 0}h
                 </span>
               </div>
-            </CardContent>
+            </div>
           </Card>
         ))}
       </div>
 
       {/* Weekly Activity Trend */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Wöchentliche Aktivität
-          </CardTitle>
-          <CardDescription>Follow-up Messages der letzten Wochen</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card
+        title="Wöchentliche Aktivität"
+        subtitle="Follow-up Messages der letzten Wochen"
+      >
+        <div className="flex items-center gap-2 mb-4 text-slate-200">
+          <TrendingUp className="w-5 h-5" />
+          <span>Aktivität</span>
+        </div>
+        <div>
           {analytics.weekly_activity.length > 0 ? (
             <div className="space-y-4">
               {/* Group by week */}
@@ -245,20 +246,14 @@ export default function FollowUpAnalyticsPage() {
               Noch keine Aktivitätsdaten vorhanden
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
 
       {/* Response Heatmap Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            ⏰ Beste Response-Zeiten
-          </CardTitle>
-          <CardDescription>
-            Wann antworten Leads am häufigsten? (Coming Soon)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card
+        title="Beste Response-Zeiten"
+        subtitle="Wann antworten Leads am häufigsten? (Coming Soon)"
+      >
           {analytics.response_heatmap.length > 0 ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
@@ -294,45 +289,42 @@ export default function FollowUpAnalyticsPage() {
               Noch keine Heatmap-Daten vorhanden
             </div>
           )}
-        </CardContent>
       </Card>
 
       {/* Quick Stats Footer */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-3xl font-bold text-blue-600">
-                {analytics.channel_performance.reduce((sum, c) => sum + c.total_sent, 0)}
-              </div>
-              <div className="text-sm text-gray-500">Total Messages</div>
+      <Card title="Quick Stats" subtitle="Aggregierte Kennzahlen">
+        <div className="pt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div className="text-3xl font-bold text-blue-600">
+              {analytics.channel_performance.reduce((sum, c) => sum + c.total_sent, 0)}
             </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600">
-                {analytics.channel_performance.reduce((sum, c) => sum + c.responded_count, 0)}
-              </div>
-              <div className="text-sm text-gray-500">Responses</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600">
-                {(
-                  analytics.channel_performance.reduce((sum, c) => sum + c.response_rate_percent, 0) / 
-                  Math.max(analytics.channel_performance.length, 1)
-                ).toFixed(1)}%
-              </div>
-              <div className="text-sm text-gray-500">Ø Response Rate</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-600">
-                {(
-                  analytics.channel_performance.reduce((sum, c) => sum + (c.avg_response_time_hours || 0), 0) / 
-                  Math.max(analytics.channel_performance.filter(c => c.avg_response_time_hours > 0).length, 1)
-                ).toFixed(1)}h
-              </div>
-              <div className="text-sm text-gray-500">Ø Response Zeit</div>
-            </div>
+            <div className="text-sm text-gray-500">Total Messages</div>
           </div>
-        </CardContent>
+          <div>
+            <div className="text-3xl font-bold text-green-600">
+              {analytics.channel_performance.reduce((sum, c) => sum + c.responded_count, 0)}
+            </div>
+            <div className="text-sm text-gray-500">Responses</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-purple-600">
+              {(
+                analytics.channel_performance.reduce((sum, c) => sum + c.response_rate_percent, 0) / 
+                Math.max(analytics.channel_performance.length, 1)
+              ).toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-500">Ø Response Rate</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-orange-600">
+              {(
+                analytics.channel_performance.reduce((sum, c) => sum + (c.avg_response_time_hours || 0), 0) / 
+                Math.max(analytics.channel_performance.filter(c => c.avg_response_time_hours > 0).length, 1)
+              ).toFixed(1)}h
+            </div>
+            <div className="text-sm text-gray-500">Ø Response Zeit</div>
+          </div>
+        </div>
       </Card>
     </div>
   );

@@ -214,14 +214,14 @@ export function usePipeline() {
 export function useSequences() {
   return useQuery({
     queryKey: queryKeys.sequences,
-    queryFn: () => apiClient<FollowUpSequence[]>('/followups/sequences'),
+    queryFn: () => apiClient<FollowUpSequence[]>('/follow-ups/sequences'),
   });
 }
 
 export function useSequence(id: string) {
   return useQuery({
     queryKey: queryKeys.sequence(id),
-    queryFn: () => apiClient<FollowUpSequence>(`/followups/sequences/${id}`),
+    queryFn: () => apiClient<FollowUpSequence>(`/follow-ups/sequences/${id}`),
     enabled: !!id,
   });
 }
@@ -229,7 +229,7 @@ export function useSequence(id: string) {
 export function useScheduledFollowUps() {
   return useQuery({
     queryKey: queryKeys.scheduledFollowUps,
-    queryFn: () => apiClient<ScheduledFollowUp[]>('/followups/scheduled'),
+    queryFn: () => apiClient<ScheduledFollowUp[]>('/follow-ups/scheduled'),
     refetchInterval: 60 * 1000, // 1 minute
   });
 }
@@ -237,7 +237,7 @@ export function useScheduledFollowUps() {
 export function useOverdueFollowUps() {
   return useQuery({
     queryKey: queryKeys.overdueFollowUps,
-    queryFn: () => apiClient<ScheduledFollowUp[]>('/followups/overdue'),
+    queryFn: () => apiClient<ScheduledFollowUp[]>('/follow-ups/overdue'),
     refetchInterval: 60 * 1000,
   });
 }
@@ -247,7 +247,7 @@ export function useCreateSequence() {
 
   return useMutation({
     mutationFn: (data: Partial<FollowUpSequence>) =>
-      apiClient<FollowUpSequence>('/followups/sequences', {
+      apiClient<FollowUpSequence>('/follow-ups/sequences', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -262,7 +262,7 @@ export function useUpdateSequence() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<FollowUpSequence> }) =>
-      apiClient<FollowUpSequence>(`/followups/sequences/${id}`, {
+      apiClient<FollowUpSequence>(`/follow-ups/sequences/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -278,7 +278,7 @@ export function useEnrollInSequence() {
 
   return useMutation({
     mutationFn: ({ leadId, sequenceId }: { leadId: string; sequenceId: string }) =>
-      apiClient<void>(`/followups/sequences/${sequenceId}/enroll`, {
+      apiClient<void>(`/follow-ups/sequences/${sequenceId}/enroll`, {
         method: 'POST',
         body: JSON.stringify({ leadId }),
       }),

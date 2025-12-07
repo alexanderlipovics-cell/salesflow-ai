@@ -138,7 +138,16 @@ export function LeadHunterPage() {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const payload = (await response.json()) as { action: string; reply: string };
+      const raw = await response.text();
+      console.log("LeadHunter hunt raw response:", raw);
+
+      let payload: { action: string; reply: string };
+      try {
+        payload = JSON.parse(raw);
+      } catch (e) {
+        console.error("LeadHunter hunt: JSON parse failed", raw);
+        throw new Error("Backend returned invalid response");
+      }
 
       let parsed: unknown;
       try {
