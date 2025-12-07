@@ -105,8 +105,8 @@ async def signup(
     logger.debug(f"Signup: Token pair created. Type: {type(tokens)}")
 
     return SignupResponse(
-        access_token=tokens["access_token"],  # create_token_pair from main.py returns Dict[str, str]
-        refresh_token=tokens["refresh_token"],  # create_token_pair from main.py returns Dict[str, str]
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
@@ -161,12 +161,10 @@ async def login(
     
     # Debug: Log token creation
     logger.debug(f"Login: Token pair created. Type: {type(tokens)}")
-    logger.debug(f"Login: Tokens keys: {list(tokens.keys()) if isinstance(tokens, dict) else 'N/A'}")
-    logger.debug(f"Login: access_token exists: {bool(tokens.get('access_token'))}, refresh_token exists: {bool(tokens.get('refresh_token'))}")
 
     return LoginResponse(
-        access_token=tokens["access_token"],  # create_token_pair from main.py returns Dict[str, str]
-        refresh_token=tokens["refresh_token"],  # create_token_pair from main.py returns Dict[str, str]
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
@@ -225,8 +223,8 @@ async def refresh_token(
         logger.debug(f"Refresh: Token pair created. Type: {type(tokens)}")
 
         return LoginResponse(
-            access_token=tokens["access_token"],  # create_token_pair from main.py returns Dict[str, str]
-            refresh_token=tokens["refresh_token"],  # create_token_pair from main.py returns Dict[str, str]
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
             token_type="bearer",
             expires_in=1800,  # 30 minutes
             user=UserProfile(
