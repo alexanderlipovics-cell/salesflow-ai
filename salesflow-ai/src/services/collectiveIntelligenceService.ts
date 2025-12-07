@@ -381,10 +381,12 @@ export const CollectiveIntelligenceService = {
     limit: number = 10
   ): Promise<KnowledgeGraphNode[]> {
     try {
+      const token = localStorage.getItem('access_token');
       const response = await fetch('/api/v2/collective-intelligence/knowledge/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           query,
