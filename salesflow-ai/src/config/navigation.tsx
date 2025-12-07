@@ -6,13 +6,16 @@
  * @author Gemini 3 Ultra - Layout Architecture
  */
 
-import { LayoutDashboard, Users, BarChart3, Settings, Zap, MessageSquare, Target, TrendingUp, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, BarChart3, Settings, Zap, MessageSquare, Target, TrendingUp, CreditCard, Sparkles, Video, Trophy } from "lucide-react";
 
 export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leads & Kontakte', href: '/crm/leads', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Follow-up Analytics', href: '/follow-up-analytics', icon: TrendingUp },
+  { name: 'Meetings', href: '/meetings', icon: Video },
+  { name: 'AI Prompts', href: '/ai-prompts', icon: Sparkles },
+  { name: 'Challenges', href: '/challenges', icon: Trophy },
   { name: 'AI Autopilot', href: '/autopilot', icon: Zap },
   { name: 'Chat', href: '/chat', icon: MessageSquare },
   { name: 'Follow-ups', href: '/follow-ups', icon: Target },

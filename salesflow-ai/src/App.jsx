@@ -65,6 +65,12 @@ import CompactLandingPage from "./pages/CompactLandingPage";
 import VerticalLandingPage from "./pages/VerticalLandingPage";
 import AutopilotPage from "./pages/AutopilotPage";
 import BillingManagement from "./pages/BillingManagement";
+import AIPromptsPage from "./pages/AIPromptsPage";
+import NetworkMarketingDashboard from "./pages/NetworkMarketingDashboard";
+import VideoMeetingsPage from "./pages/VideoMeetingsPage";
+import SquadChallengeManager from "./pages/SquadChallengeManager";
+import SquadCoachPriorityPage from "./pages/SquadCoachPriorityPage";
+import SquadCoachPageV2 from "./pages/SquadCoachPageV2";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import { ProtectedRoute } from "./components/auth";
@@ -246,6 +252,12 @@ const App = () => {
                       <Route path="magic-send" element={<MagicSendDemo />} />
                       <Route path="compensation-simulator" element={<CompensationSimulatorPage />} />
                       <Route path="genealogy" element={<GenealogyTreePage />} />
+                      <Route path="ai-prompts" element={<AIPromptsPage />} />
+                      <Route path="mlm-dashboard" element={<NetworkMarketingDashboard />} />
+                      <Route path="meetings" element={<VideoMeetingsPage />} />
+                      <Route path="challenges" element={<SquadChallengeManager />} />
+                      <Route path="coach/priority" element={<SquadCoachPriorityPage />} />
+                      <Route path="coach/v2" element={<SquadCoachPageV2 />} />
                       {placeholderRoutes.map((route) => (
                         <Route
                           key={route.path}
