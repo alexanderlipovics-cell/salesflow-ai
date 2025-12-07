@@ -42,9 +42,9 @@ from .jwt import (
     TokenInvalidError,
     TokenBlacklistedError,
     TokenFamilyCompromisedError,
-    create_access_token,
-    create_refresh_token,
-    create_token_pair,
+    create_access_token as jwt_create_access_token,  # Renamed to avoid conflict
+    create_refresh_token as jwt_create_refresh_token,  # Renamed to avoid conflict
+    # create_token_pair - NOT imported, using main.py version instead
     decode_access_token,
     decode_refresh_token,
     rotate_refresh_token,
