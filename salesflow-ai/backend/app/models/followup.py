@@ -16,7 +16,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ─────────────────────────────────────
@@ -205,6 +205,8 @@ class AIMessage(BaseModel):
     
     Enthält den generierten Text plus Metadaten für Monitoring.
     """
+    model_config = ConfigDict(protected_namespaces=())
+    
     lead_id: UUID
     workspace_id: UUID
     owner_id: UUID
