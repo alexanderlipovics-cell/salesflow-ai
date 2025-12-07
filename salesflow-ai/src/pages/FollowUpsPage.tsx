@@ -28,6 +28,7 @@ import {
 } from '@/config/followupSequence';
 import { startStandardFollowUpSequenceForLead } from '@/services/followUpService';
 import { supabaseClient } from '@/lib/supabaseClient';
+import { generateDeepLink } from '@/services/magicDeepLinkService';
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -575,29 +576,19 @@ function FollowUpTaskCard({
     personalizedMessage = buildFollowUpMessage(template, lead?.name, lead?.vertical, task.note);
   }
   
-  // Telefonnummer bereinigen
-  const cleanedPhone = cleanPhoneNumber(lead?.phone);
-  const hasPhone = Boolean(cleanedPhone);
-
-  // WhatsApp öffnen Handler
-  const handleOpenWhatsApp = () => {
-    if (!cleanedPhone) {
-      alert('Keine Telefonnummer für diesen Lead hinterlegt.');
-      console.error('WhatsApp: Keine Telefonnummer vorhanden für Lead:', lead?.name || 'Unbekannt');
-      return;
-    }
-
-    try {
-      // Führendes + für wa.me URL entfernen (wa.me erwartet Nummer ohne +)
-      const phoneForUrl = cleanedPhone.startsWith('+') ? cleanedPhone.slice(1) : cleanedPhone;
-      const url = `https://wa.me/${phoneForUrl}?text=${encodeURIComponent(personalizedMessage)}`;
-      window.open(url, '_blank');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'WhatsApp konnte nicht geöffnet werden.';
-      console.error('WhatsApp öffnen fehlgeschlagen:', message);
-      alert(`Fehler: ${message}`);
-    }
+  const contact = {
+    phone: lead?.phone || undefined,
+    instagram: lead?.instagram || undefined,
+    facebook: lead?.facebook || undefined,
+    email: lead?.email || undefined,
+    name: lead?.name || undefined,
+    company: lead?.company || undefined,
+    vertical: lead?.vertical || undefined,
   };
+
+  const whatsappLink = generateDeepLink('whatsapp', contact, personalizedMessage);
+  const instagramLink = generateDeepLink('instagram', contact, personalizedMessage);
+  const emailLink = generateDeepLink('email', contact, personalizedMessage, { emailSubject: 'Follow-up' });
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-slate-700 bg-slate-800 p-5 shadow-lg transition-all hover:border-slate-600">
@@ -657,11 +648,11 @@ function FollowUpTaskCard({
             </p>
           </div>
           
-          {/* Copy & WhatsApp Buttons */}
-          <div className="mt-2 flex gap-2">
+          {/* Copy & Channel Buttons */}
+          <div className="mt-2 flex flex-wrap gap-2">
             <button
               onClick={() => onCopyMessage(task.id, personalizedMessage)}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium transition ${
+              className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition ${
                 isCopied
                   ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                   : 'border-slate-600 text-slate-300 hover:bg-slate-700'
@@ -679,20 +670,42 @@ function FollowUpTaskCard({
                 </>
               )}
             </button>
-            
-            <button
-              onClick={handleOpenWhatsApp}
-              disabled={!hasPhone}
-              title={hasPhone ? 'WhatsApp öffnen' : 'Keine Telefonnummer hinterlegt'}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${
-                hasPhone
-                  ? 'border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                  : 'cursor-not-allowed border border-slate-700 bg-slate-800 text-slate-500 opacity-50'
-              }`}
-            >
-              <Phone className="h-4 w-4" />
-              WhatsApp
-            </button>
+
+            {whatsappLink && (
+              <a
+                className="flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400 transition hover:bg-emerald-500/20"
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
+            )}
+
+            {instagramLink && (
+              <a
+                className="flex items-center gap-2 rounded-lg border border-pink-500/50 bg-pink-500/10 px-3 py-2 text-sm font-medium text-pink-200 transition hover:bg-pink-500/20"
+                href={instagramLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Instagram
+              </a>
+            )}
+
+            {emailLink && (
+              <a
+                className="flex items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-500/20"
+                href={emailLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Mail className="h-4 w-4" />
+                E-Mail
+              </a>
+            )}
           </div>
         </div>
       )}

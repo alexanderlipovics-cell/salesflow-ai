@@ -157,10 +157,10 @@ const App = () => {
   return (
     <AuthProvider>
       <CoreVerticalProvider>
-        <UserProvider initialUser={bootstrapUser}>
-          <SubscriptionProvider userId={bootstrapUser.id}>
-            <PricingModalProvider>
-              <FeatureGateProvider>
+      <UserProvider initialUser={bootstrapUser}>
+        <SubscriptionProvider userId={bootstrapUser.id}>
+          <PricingModalProvider>
+            <FeatureGateProvider>
                 <BrowserRouter>
                   <Routes>
                     {/* Public Routes - Auth Pages */}
@@ -279,10 +279,10 @@ const App = () => {
                   <PricingModal />
                   <FeatureGateModal />
                 </BrowserRouter>
-              </FeatureGateProvider>
-            </PricingModalProvider>
-          </SubscriptionProvider>
-        </UserProvider>
+            </FeatureGateProvider>
+          </PricingModalProvider>
+        </SubscriptionProvider>
+      </UserProvider>
       </CoreVerticalProvider>
     </AuthProvider>
   );

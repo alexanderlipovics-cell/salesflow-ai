@@ -545,3 +545,5 @@ export const SquadChallengeManager: React.FC = () => {
   );
 };
 
+export default SquadChallengeManager;
+
