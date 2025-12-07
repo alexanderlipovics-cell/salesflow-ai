@@ -328,9 +328,14 @@ export function useAIChat(initialLeadId?: string): UseAIChatReturn {
       ];
 
       // Call AI API
-      const response = await fetch('/.netlify/functions/ai', {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${apiBase}/api/ai`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           messages: conversationHistory,
           engine: 'gpt',

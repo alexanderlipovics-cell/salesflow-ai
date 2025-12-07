@@ -11,7 +11,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Collapsible from 'react-native-collapsible';
@@ -152,8 +152,8 @@ const BlockerTag: React.FC<{ blocker: Blocker }> = ({ blocker }) => {
 };
 
 const StrategyCard: React.FC<{ strategy: Strategy }> = ({ strategy }) => {
-  const handleCopy = () => {
-    Clipboard.setString(strategy.script);
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(strategy.script);
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert('Kopiert!', `Skript für '${strategy.name}' in die Zwischenablage kopiert.`);
   };

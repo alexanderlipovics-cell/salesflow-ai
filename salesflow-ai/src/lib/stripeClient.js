@@ -1,6 +1,6 @@
 import { loadStripe } from "@stripe/stripe-js";
 
-const STRIPE_ENDPOINT = "/.netlify/functions/stripe";
+const STRIPE_ENDPOINT = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/stripe`;
 const ENV =
   (typeof import.meta !== "undefined" && import.meta.env) || (typeof process !== "undefined" && process.env) || {};
 

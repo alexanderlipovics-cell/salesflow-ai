@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import * as Haptics from "expo-haptics";
-import Clipboard from "@react-native-clipboard/clipboard";
+import * as Clipboard from "expo-clipboard";
 import Collapsible from "react-native-collapsible";
 import BottomSheet, { BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -373,9 +373,9 @@ export default function ColdCallAssistantScreen() {
   }, [currentSession, callSeconds, notes, completeSessionOnServer]);
 
   // --- Clipboard ---
-  const copyToClipboard = useCallback((text) => {
+  const copyToClipboard = useCallback(async (text) => {
     if (!text) return;
-    Clipboard.setString(text);
+    await Clipboard.setStringAsync(text);
     setToastMessage("Script in Zwischenablage kopiert.");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);

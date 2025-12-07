@@ -7,7 +7,7 @@ export default function ChooseVerticalPage() {
 
   function selectVertical(v: Vertical) {
     setVertical(v);
-    navigate("/dashboard");
+    navigate("/onboarding");
   }
 
   return (
