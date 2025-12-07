@@ -57,8 +57,10 @@ class VerticalTerminology(BaseModel):
     enrollment: str = "Einschreibung"
     signup: str = "Anmeldung"
 
-    class Config:
-        extra = "allow"  # Erlaubt zusätzliche benutzerdefinierte Begriffe
+    model_config = {
+        "extra": "allow",  # Erlaubt zusätzliche benutzerdefinierte Begriffe
+        "protected_namespaces": (),  # Unterdrückt Warnungen für "model_" Felder
+    }
 
 
 class VerticalAIContext(BaseModel):

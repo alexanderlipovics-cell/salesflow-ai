@@ -4,11 +4,13 @@ Pydantic schemas for authentication endpoints.
 
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class SignupRequest(BaseModel):
     """Request schema for user signup."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., min_length=8, description="User password")
@@ -20,6 +22,8 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     """Request schema for user login."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., description="User password")
 
@@ -27,11 +31,15 @@ class LoginRequest(BaseModel):
 class RefreshTokenRequest(BaseModel):
     """Request schema for token refresh."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     refresh_token: str = Field(..., description="Valid refresh token")
 
 
 class UserProfile(BaseModel):
     """User profile response schema."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     id: str
     email: EmailStr
@@ -50,6 +58,8 @@ class UserProfile(BaseModel):
 class UserProfileUpdate(BaseModel):
     """User profile update schema."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
     company: Optional[str] = Field(None)
@@ -61,6 +71,8 @@ class UserProfileUpdate(BaseModel):
 class LoginResponse(BaseModel):
     """Response schema for login and refresh endpoints."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -70,6 +82,8 @@ class LoginResponse(BaseModel):
 
 class SignupResponse(BaseModel):
     """Response schema for signup endpoint."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     access_token: str
     refresh_token: str

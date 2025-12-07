@@ -102,8 +102,7 @@ export type CompanyEntry = typeof COMPANY_REGISTRY[CompanyKey];
 /**
  * Normalisiert einen Company-Key auf lowercase und mappt bekannte Varianten.
  * Gibt 'other' zurück, wenn der Key unbekannt ist.
- * 
- * @example
+ * * @example
  * normalizeCompanyKey('ZINZINO') // 'zinzino'
  * normalizeCompanyKey('Zinzino') // 'zinzino'
  * normalizeCompanyKey('LR') // 'lr-health'
@@ -130,8 +129,6 @@ export function normalizeCompanyKey(key: string): CompanyKey {
     'hbl': 'herbalife',
     
     // doTERRA Varianten
-    'doterra': 'doterra',
-    'doterra': 'doterra',
     'dōterra': 'doterra',
     
     // PM-International Varianten
@@ -199,4 +196,3 @@ export function getExternalPlanUrl(key: string): string | null {
 // ============================================
 
 export default COMPANY_REGISTRY;
-
