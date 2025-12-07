@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import Any, Dict
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from supabase import Client
 
@@ -100,10 +100,13 @@ async def signup(
 
     # Create tokens
     tokens = create_token_pair(user_id, user["email"])
+    
+    # Debug: Log token creation
+    logger.debug(f"Signup: Token pair created. Type: {type(tokens)}")
 
     return SignupResponse(
-        access_token=tokens.access_token,
-        refresh_token=tokens.refresh_token,
+        access_token=tokens["access_token"],  # Dictionary access, not attribute
+        refresh_token=tokens["refresh_token"],  # Dictionary access, not attribute
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
@@ -155,10 +158,14 @@ async def login(
 
     # Create tokens
     tokens = create_token_pair(user["id"], user["email"])
+    
+    # Debug: Log token creation
+    logger.debug(f"Login: Token pair created. Type: {type(tokens)}")
+    logger.debug(f"Login: Tokens keys: {list(tokens.keys()) if isinstance(tokens, dict) else 'N/A'}")
 
     return LoginResponse(
-        access_token=tokens.access_token,
-        refresh_token=tokens.refresh_token,
+        access_token=tokens["access_token"],  # Dictionary access, not attribute
+        refresh_token=tokens["refresh_token"],  # Dictionary access, not attribute
         token_type="bearer",
         expires_in=1800,  # 30 minutes
         user=UserProfile(
@@ -212,10 +219,13 @@ async def refresh_token(
 
         # Create new tokens
         tokens = create_token_pair(user["id"], user["email"])
+        
+        # Debug: Log token creation
+        logger.debug(f"Refresh: Token pair created. Type: {type(tokens)}")
 
         return LoginResponse(
-            access_token=tokens.access_token,
-            refresh_token=tokens.refresh_token,
+            access_token=tokens["access_token"],  # Dictionary access, not attribute
+            refresh_token=tokens["refresh_token"],  # Dictionary access, not attribute
             token_type="bearer",
             expires_in=1800,  # 30 minutes
             user=UserProfile(
@@ -269,14 +279,28 @@ async def request_password_reset(
 
 @router.get("/me", response_model=UserProfile)
 async def get_current_user_profile(
+    request: Request,
     current_user: Dict[str, Any] = Depends(get_current_active_user),
     supabase: Client = Depends(get_supabase),
 ) -> UserProfile:
     """
     Get current user profile.
     """
+    # Debug: Log Authorization header
+    auth_header = request.headers.get("Authorization")
+    logger.debug(f"/me endpoint: Auth header present: {auth_header is not None}")
+    if auth_header:
+        logger.debug(f"/me endpoint: Auth header (first 50 chars): {auth_header[:50]}...")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            logger.debug(f"/me endpoint: Token (first 50 chars): {token[:50]}...")
+    
+    # Debug: Log current_user payload
+    logger.debug(f"/me endpoint: current_user payload: {current_user}")
+    
     user_id = current_user.get("sub")
     if not user_id:
+        logger.warning(f"/me endpoint: User ID not found in token. Payload: {current_user}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User ID not found in token",

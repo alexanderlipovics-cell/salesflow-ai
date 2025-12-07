@@ -89,21 +89,65 @@ def create_refresh_token(
 
 
 def decode_token(token: str) -> Dict[str, Any]:
+    """
+    Decode a JWT token.
+    
+    Debug logging added to trace decode issues.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     secret_key = getattr(settings, "jwt_secret_key", settings.secret_key)
+    
+    logger.debug(f"decode_token: Secret key length: {len(secret_key) if secret_key else 0}")
+    logger.debug(f"decode_token: Algorithm: {ALGORITHM}")
+    logger.debug(f"decode_token: Token length: {len(token) if token else 0}")
+    
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
+        logger.debug(f"decode_token: Token decoded successfully. Payload keys: {list(payload.keys())}")
         return payload
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as e:
+        logger.warning(f"decode_token: Token expired: {str(e)}")
         raise InvalidTokenError("Token has expired")
+    except jwt.InvalidSignatureError as e:
+        logger.warning(f"decode_token: Invalid signature. Secret key mismatch? Error: {str(e)}")
+        logger.debug(f"decode_token: Using secret key (first 20 chars): {secret_key[:20] if secret_key else 'None'}...")
+        raise InvalidTokenError(f"Invalid token signature: {str(e)}")
     except PyJWTError as e:
+        logger.warning(f"decode_token: JWT decode error: {str(e)}")
         raise InvalidTokenError(f"Invalid token: {str(e)}")
+    except Exception as e:
+        logger.error(f"decode_token: Unexpected error: {str(e)}", exc_info=True)
+        raise InvalidTokenError(f"Token decode failed: {str(e)}")
 
 
 def verify_access_token(token: str) -> Dict[str, Any]:
-    payload = decode_token(token)
-    if payload.get("type") != "access":
-        raise InvalidTokenError("Invalid token type")
-    return payload
+    """
+    Verify and decode an access token.
+    
+    Debug logging added to trace validation issues.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.debug(f"verify_access_token: Starting token validation")
+    
+    try:
+        payload = decode_token(token)
+        logger.debug(f"verify_access_token: Token decoded. Type: {payload.get('type')}")
+        
+        if payload.get("type") != "access":
+            logger.warning(f"verify_access_token: Invalid token type. Expected 'access', got '{payload.get('type')}'")
+            raise InvalidTokenError("Invalid token type")
+        
+        logger.debug(f"verify_access_token: Token validated successfully")
+        return payload
+    except InvalidTokenError:
+        raise
+    except Exception as e:
+        logger.error(f"verify_access_token: Unexpected error: {str(e)}", exc_info=True)
+        raise InvalidTokenError(f"Token validation failed: {str(e)}")
 
 
 def verify_refresh_token(token: str) -> Dict[str, Any]:
@@ -137,13 +181,42 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    """
+    Get current user from JWT token.
+    
+    Debug logging added to trace token validation issues.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.debug(f"get_current_user: Token received (first 50 chars): {token[:50] if token else 'None'}...")
+    
     try:
+        # Debug: Log settings
+        from app.config import get_settings
+        settings = get_settings()
+        secret_key = getattr(settings, "jwt_secret_key", settings.secret_key)
+        logger.debug(f"get_current_user: Using secret key (first 20 chars): {secret_key[:20] if secret_key else 'None'}...")
+        logger.debug(f"get_current_user: Algorithm: {ALGORITHM}")
+        
         payload = verify_access_token(token)
+        logger.debug(f"get_current_user: Token decoded successfully. Payload keys: {list(payload.keys())}")
+        logger.debug(f"get_current_user: Payload 'sub': {payload.get('sub')}")
+        logger.debug(f"get_current_user: Payload 'type': {payload.get('type')}")
         return payload
     except InvalidTokenError as e:
+        logger.warning(f"get_current_user: Token validation failed: {str(e)}")
+        logger.debug(f"get_current_user: Token (first 50 chars): {token[:50] if token else 'None'}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"get_current_user: Unexpected error during token validation: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token validation failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
