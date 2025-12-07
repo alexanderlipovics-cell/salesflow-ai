@@ -32,3 +32,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// Alias für Kompatibilität mit Screens
+export const supabaseClient = supabase;
+

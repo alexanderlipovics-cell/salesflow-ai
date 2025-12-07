@@ -2,15 +2,9 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import AuthScreen from '../screens/AuthScreen';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../config/theme';
-
-// Placeholder für Dashboard (wird morgen ersetzt)
-const DashboardPlaceholder = () => (
-  <View style={{flex:1, justifyContent:'center', alignItems:'center', backgroundColor: COLORS.background}}>
-    <Text style={{color: '#fff', fontSize: 20}}>🎉 Eingeloggt! Dashboard kommt morgen.</Text>
-  </View>
-);
+import MainTabNavigator from './MainTabNavigator';
 
 export default function AppNavigator() {
   const { session, loading } = useAuth();
@@ -25,7 +19,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {session ? <DashboardPlaceholder /> : <AuthScreen />}
+      {session ? <MainTabNavigator /> : <AuthScreen />}
     </NavigationContainer>
   );
 }
