@@ -225,11 +225,13 @@ const ChatPage = () => {
       }));
 
       const token = localStorage.getItem("access_token");
+      console.log("Token exists:", !!token);
+      console.log("Token value:", token ? `${token.substring(0, 20)}...` : "missing");
       const response = await fetch(`${API_BASE_URL}/api/chat/completion`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: messageText,
@@ -270,7 +272,7 @@ const ChatPage = () => {
           id: `error-${Date.now()}`,
           role: "assistant",
           content:
-            "Ups, da ist was schiefgelaufen. Läuft das Backend? (Check: http://localhost:8000/health)",
+            "Ups, da ist was schiefgelaufen. Bitte prüfe, ob du eingeloggt bist und das Backend erreichbar ist.",
         },
       ]);
     } finally {
