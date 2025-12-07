@@ -53,8 +53,8 @@ import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
 import { FeatureGateProvider } from "./context/FeatureGateContext";
 import { AuthProvider } from "./context/AuthContext";
+import { VerticalProvider as CoreVerticalProvider } from "./core/VerticalContext";
 import { getBootstrapUser } from "./lib/user";
-import { VerticalProvider } from "./context/VerticalContext";
 import ChooseVerticalPage from "./pages/ChooseVerticalPage";
 import { useApiInitialization } from "./hooks/useApiInitialization";
 import DashboardRouterPage from "./pages/DashboardRouterPage";
@@ -148,11 +148,11 @@ const App = () => {
 
   return (
     <AuthProvider>
-      <UserProvider initialUser={bootstrapUser}>
-        <SubscriptionProvider userId={bootstrapUser.id}>
-          <PricingModalProvider>
-            <FeatureGateProvider>
-              <VerticalProvider>
+      <CoreVerticalProvider>
+        <UserProvider initialUser={bootstrapUser}>
+          <SubscriptionProvider userId={bootstrapUser.id}>
+            <PricingModalProvider>
+              <FeatureGateProvider>
                 <BrowserRouter>
                   <Routes>
                     {/* Public Routes - Auth Pages */}
@@ -263,11 +263,11 @@ const App = () => {
                   <PricingModal />
                   <FeatureGateModal />
                 </BrowserRouter>
-              </VerticalProvider>
-            </FeatureGateProvider>
-          </PricingModalProvider>
-        </SubscriptionProvider>
-      </UserProvider>
+              </FeatureGateProvider>
+            </PricingModalProvider>
+          </SubscriptionProvider>
+        </UserProvider>
+      </CoreVerticalProvider>
     </AuthProvider>
   );
 };
