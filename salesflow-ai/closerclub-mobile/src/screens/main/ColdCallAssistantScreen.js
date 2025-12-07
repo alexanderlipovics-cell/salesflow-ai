@@ -70,25 +70,25 @@ const Tab = createMaterialTopTabNavigator();
 const OBJECTION_LIBRARY = [
   {
     key: "too_expensive",
-    label: "„Das ist mir zu teuer"",
+    label: "„Das ist mir zu teuer“",
     response:
       "Verstehe ich total – genau deswegen ist es wichtig, dass sich jeder investierte Euro rechnet. Darf ich dir kurz zeigen, wie sich das in deinem Alltag wirklich auszahlt?",
   },
   {
     key: "no_time",
-    label: "„Ich habe gerade keine Zeit"",
+    label: "„Ich habe gerade keine Zeit“",
     response:
       "Absolut nachvollziehbar. Darum halten wir das Gespräch kurz und fokussiert. Wenn wir heute in 10 Minuten klären, ob es überhaupt Sinn macht, sparst du dir langfristig viel Zeit.",
   },
   {
     key: "send_info",
-    label: "„Schick mir Infos per Mail"",
+    label: "„Schick mir Infos per Mail“",
     response:
       "Sehr gerne – ich kann dir Infos schicken. Erfahrungsgemäß ist ein kurzes Gespräch wertvoller, weil wir direkt auf deine Situation eingehen können. Sollen wir 10 Minuten einplanen?",
   },
   {
     key: "already_have_solution",
-    label: "„Wir haben schon eine Lösung"",
+    label: "„Wir haben schon eine Lösung“",
     response:
       "Super, dass ihr bereits etwas im Einsatz habt. Genau dann macht ein kurzer Vergleich Sinn: Wenn es nicht besser ist, bleiben wir einfach bei deinem aktuellen Setup – fair?",
   },
