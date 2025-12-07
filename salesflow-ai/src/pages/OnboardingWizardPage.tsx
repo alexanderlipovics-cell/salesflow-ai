@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
 import { useSalesPersona } from "@/hooks/useSalesPersona";
 import { useCompanyKnowledge } from "@/hooks/useCompanyKnowledge";
+import { useAuth } from "@/context/AuthContext";
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -70,8 +71,10 @@ const personaDescriptions: Record<
 
 const OnboardingWizardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [step, setStep] = useState<OnboardingStep>(1);
 
+  // Only load hooks after authentication is ready
   const { loading: personaLoading, error: personaError, persona, setPersona } = useSalesPersona();
   const {
     loading: knowledgeLoading,
@@ -102,6 +105,24 @@ const OnboardingWizardPage: React.FC = () => {
   }, [knowledge]);
 
   const totalSteps: OnboardingStep = 4;
+
+  // Wait for authentication to be ready
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 px-4 py-8 text-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-emerald-500" />
+          <p className="text-slate-400">Authentifizierung wird überprüft...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user) {
+    navigate("/login");
+    return null;
+  }
 
   const handleNext = async () => {
     // Step-spezifische Saves

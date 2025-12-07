@@ -41,16 +41,16 @@ export type CompanyKnowledgeUpdatePayload = Partial<
  * Gibt null zurück, wenn noch keins existiert.
  */
 export async function getCurrentUserCompanyKnowledge(): Promise<CompanyKnowledge | null> {
-  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  const { data: { session }, error: authError } = await supabaseClient.auth.getSession();
 
-  if (authError || !user) {
+  if (authError || !session?.user) {
     throw new Error("Nicht authentifiziert. Bitte melde dich an.");
   }
 
   const { data, error } = await supabaseClient
     .from("sales_company_knowledge")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", session.user.id)
     .maybeSingle();
 
   if (error) {
@@ -70,9 +70,9 @@ export async function getCurrentUserCompanyKnowledge(): Promise<CompanyKnowledge
 export async function upsertCompanyKnowledge(
   payload: CompanyKnowledgeUpdatePayload
 ): Promise<CompanyKnowledge> {
-  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  const { data: { session }, error: authError } = await supabaseClient.auth.getSession();
 
-  if (authError || !user) {
+  if (authError || !session?.user) {
     throw new Error("Nicht authentifiziert. Bitte melde dich an.");
   }
 
@@ -82,7 +82,7 @@ export async function upsertCompanyKnowledge(
     .from("sales_company_knowledge")
     .upsert(
       {
-        user_id: user.id,
+        user_id: session.user.id,
         ...payload,
       },
       {

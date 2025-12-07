@@ -33,11 +33,11 @@ export type SalesAgentPersona = {
  */
 export async function getCurrentUserPersona(): Promise<PersonaKey> {
   const {
-    data: { user },
+    data: { session },
     error: authError,
-  } = await supabaseClient.auth.getUser();
+  } = await supabaseClient.auth.getSession();
 
-  if (authError || !user) {
+  if (authError || !session?.user) {
     console.warn("Keine User-Session gefunden, nutze Persona 'balanced'.");
     return "balanced";
   }
@@ -45,7 +45,7 @@ export async function getCurrentUserPersona(): Promise<PersonaKey> {
   const { data, error } = await supabaseClient
     .from("sales_agent_personas")
     .select("persona_key")
-    .eq("user_id", user.id)
+    .eq("user_id", session.user.id)
     .maybeSingle();
 
   if (error) {
@@ -73,11 +73,11 @@ export async function updateCurrentUserPersona(
   notes?: string | null
 ): Promise<SalesAgentPersona> {
   const {
-    data: { user },
+    data: { session },
     error: authError,
-  } = await supabaseClient.auth.getUser();
+  } = await supabaseClient.auth.getSession();
 
-  if (authError || !user) {
+  if (authError || !session?.user) {
     throw new Error("Kein eingeloggter User – Persona kann nicht gesetzt werden.");
   }
 
@@ -85,7 +85,7 @@ export async function updateCurrentUserPersona(
     .from("sales_agent_personas")
     .upsert(
       {
-        user_id: user.id,
+        user_id: session.user.id,
         persona_key: persona,
         notes: notes ?? null,
         updated_at: new Date().toISOString(),
