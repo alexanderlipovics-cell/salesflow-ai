@@ -291,9 +291,10 @@ async def update_achievement_progress(
         return Achievement(**result.data[0])
 
 
-@router.get("/daily-activities", response_model=List[DailyActivity])
+@router.get("/daily-activities")
 async def list_daily_activities(
     days: int = Query(7, ge=1, le=30),
+    mobile: bool = Query(False, description="Mobile-optimierte Response"),
     supabase: Client = Depends(get_supabase),
     current_user: dict = Depends(get_current_user),
 ):
@@ -313,12 +314,34 @@ async def list_daily_activities(
         .execute()
     )
     
+    # Mobile-optimierte Response
+    if mobile:
+        return [
+            {
+                "id": str(row["id"]),
+                "title": f"{row.get('calls_made', 0)} Calls, {row.get('deals_closed', 0)} Deals",
+                "date": row.get("activity_date", ""),
+                "completed": row.get("daily_goal_met", False),
+                "xp": (row.get("calls_made", 0) * 5) + (row.get("deals_closed", 0) * 50),
+                "current_streak": row.get("current_streak_days", 0),
+                "longest_streak": row.get("longest_streak_days", 0),
+            }
+            for row in result.data
+        ]
+    
+    # Standard Response
     return [DailyActivity(**row) for row in result.data]
+
+
+class DailyActivityTrackRequest(BaseModel):
+    id: Optional[str] = None
+    completed: Optional[bool] = None
+    activity_date: Optional[str] = None
 
 
 @router.post("/daily-activities/track")
 async def track_daily_activity(
-    body: Optional[dict] = None,
+    body: Optional[DailyActivityTrackRequest] = Body(None),
     activity_date: Optional[date] = Query(None),
     new_contacts: int = Query(0),
     followups_sent: int = Query(0),
@@ -330,6 +353,83 @@ async def track_daily_activity(
 ):
     """Tracke tägliche Aktivität und aktualisiere Streaks."""
     user_id = current_user.get("team_member_id") or current_user.get("id")
+    
+    # Unterstütze sowohl Query-Parameter als auch Body (für Mobile App)
+    if body and body.completed is not None:
+        # Mobile App sendet: { id, completed }
+        today = date.today()
+        existing = (
+            supabase.table("daily_activities")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("activity_date", today.isoformat())
+            .maybe_single()
+            .execute()
+        )
+        
+        # Vereinfachte Logik: Wenn Task completed, erhöhe entsprechende Metrik
+        update_data = {}
+        if body.completed:
+            # Beispiel: Task "20 Calls" → calls_made += 1
+            update_data["calls_made"] = (existing.data.get("calls_made", 0) if existing.data else 0) + 1
+        
+        # Berechne Streak (wie unten)
+        yesterday = today - timedelta(days=1)
+        yesterday_activity = (
+            supabase.table("daily_activities")
+            .select("current_streak_days")
+            .eq("user_id", user_id)
+            .eq("activity_date", yesterday.isoformat())
+            .maybe_single()
+            .execute()
+        )
+        
+        current_streak = 1
+        if yesterday_activity.data and yesterday_activity.data.get("current_streak_days"):
+            current_streak = yesterday_activity.data["current_streak_days"] + 1
+        
+        longest_result = (
+            supabase.table("daily_activities")
+            .select("longest_streak_days")
+            .eq("user_id", user_id)
+            .order("longest_streak_days", desc=True)
+            .limit(1)
+            .execute()
+        )
+        
+        longest_streak = current_streak
+        if longest_result.data and longest_result.data[0].get("longest_streak_days", 0) > current_streak:
+            longest_streak = longest_result.data[0]["longest_streak_days"]
+        
+        update_data.update({
+            "current_streak_days": current_streak,
+            "longest_streak_days": longest_streak,
+            "daily_goal_met": True,
+        })
+        
+        if existing.data:
+            result = (
+                supabase.table("daily_activities")
+                .update(update_data)
+                .eq("id", existing.data["id"])
+                .execute()
+            )
+        else:
+            data = {
+                "user_id": user_id,
+                "activity_date": today.isoformat(),
+                "new_contacts": 0,
+                "followups_sent": 0,
+                "calls_made": update_data.get("calls_made", 0),
+                "meetings_booked": 0,
+                "deals_closed": 0,
+                **update_data,
+            }
+            result = supabase.table("daily_activities").insert(data).execute()
+        
+        return DailyActivity(**result.data[0])
+    
+    # Original-Logik für Query-Parameter
     activity_date = activity_date or date.today()
     
     # Prüfe ob bereits existiert
@@ -407,14 +507,13 @@ async def track_daily_activity(
     return DailyActivity(**result.data[0])
 
 
-@router.get("/leaderboard", response_model=List[LeaderboardEntry])
-async def get_leaderboard(
-    period: str = Query("week", description="week, month, all_time"),
-    limit: int = Query(10, ge=1, le=100),
-    supabase: Client = Depends(get_supabase),
-    current_user: dict = Depends(get_current_user),
+async def get_leaderboard_internal(
+    period: str,
+    limit: int,
+    supabase: Client,
+    current_user: dict,
 ):
-    """Hole Leaderboard."""
+    """Interne Funktion für Leaderboard-Logik."""
     # Vereinfachte Version: Hole alle Users mit Achievements
     result = (
         supabase.table("user_achievements")
@@ -476,4 +575,32 @@ async def get_leaderboard(
         ))
     
     return leaderboard
+
+
+@router.get("/leaderboard")
+async def get_leaderboard(
+    period: str = Query("week", description="week, month, all_time"),
+    limit: int = Query(10, ge=1, le=100),
+    mobile: bool = Query(False, description="Mobile-optimierte Response"),
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """Hole Leaderboard."""
+    leaderboard_entries = await get_leaderboard_internal(period, limit, supabase, current_user)
+    
+    # Mobile-optimierte Response
+    if mobile:
+        return [
+            {
+                "id": str(entry.user_id),
+                "rank": entry.rank,
+                "name": entry.user_name or f"User {entry.rank}",
+                "points": entry.total_points,
+                "trend": 0,  # Kann aus historischen Daten berechnet werden
+            }
+            for entry in leaderboard_entries
+        ]
+    
+    # Standard Response
+    return leaderboard_entries
 

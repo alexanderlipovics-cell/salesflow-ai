@@ -100,9 +100,12 @@ Die Backend-Router wurden erweitert, um mobile-optimierte Response-Strukturen zu
 
 ## 🏆 Gamification
 
-### GET /api/gamification/achievements
+### GET /api/gamification/achievements?mobile=true
 
-**Response-Struktur:**
+**Query Parameter:**
+- `mobile=true` - Gibt mobile-optimierte Response zurück
+
+**Response-Struktur (mit mobile=true):**
 ```json
 [
   {
@@ -117,9 +120,13 @@ Die Backend-Router wurden erweitert, um mobile-optimierte Response-Strukturen zu
 ]
 ```
 
-### GET /api/gamification/daily-activities?days=7
+### GET /api/gamification/daily-activities?days=7&mobile=true
 
-**Response-Struktur:**
+**Query Parameter:**
+- `days=7` - Anzahl Tage (1-30)
+- `mobile=true` - Gibt mobile-optimierte Response zurück
+
+**Response-Struktur (mit mobile=true):**
 ```json
 [
   {
@@ -146,9 +153,12 @@ Die Backend-Router wurden erweitert, um mobile-optimierte Response-Strukturen zu
 
 **Response:** DailyActivity-Objekt
 
-### GET /api/gamification/leaderboard
+### GET /api/gamification/leaderboard?mobile=true
 
-**Response-Struktur:**
+**Query Parameter:**
+- `mobile=true` - Gibt mobile-optimierte Response zurück
+
+**Response-Struktur (mit mobile=true):**
 ```json
 [
   {
@@ -231,16 +241,16 @@ const fetchInsight = async (periodKey, isRefresh = false) => {
 ```typescript
 // In GamificationScreen.js:
 const loadGamificationData = async (isRefresh = false) => {
-  // Achievements
-  const ach = await apiFetch('/api/gamification/achievements');
+  // Achievements (mit mobile=true für optimierte Response)
+  const ach = await apiFetch('/api/gamification/achievements?mobile=true');
   setAchievements(ach || []);
 
-  // Daily activities
-  const acts = await apiFetch('/api/gamification/daily-activities?days=7');
+  // Daily activities (mit mobile=true)
+  const acts = await apiFetch('/api/gamification/daily-activities?days=7&mobile=true');
   const activities = acts || [];
 
-  // Leaderboard
-  const lb = await apiFetch('/api/gamification/leaderboard');
+  // Leaderboard (mit mobile=true)
+  const lb = await apiFetch('/api/gamification/leaderboard?mobile=true');
   setLeaderboard(lb || []);
 
   // Streaks aus Aktivitäten

@@ -273,13 +273,13 @@ export default function GamificationScreen() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Achievements
-      const ach = await apiFetch("/api/gamification/achievements");
+      // Achievements (mit mobile=true für optimierte Response)
+      const ach = await apiFetch("/api/gamification/achievements?mobile=true");
       setAchievements(ach || []);
 
-      // Daily activities (letztes Woche)
+      // Daily activities (letztes Woche, mit mobile=true)
       const acts = await apiFetch(
-        "/api/gamification/daily-activities?days=7"
+        "/api/gamification/daily-activities?days=7&mobile=true"
       );
       const activities = acts || [];
 
@@ -307,8 +307,8 @@ export default function GamificationScreen() {
       setStreak(currentStreak || 0);
       setLongestStreak(longest || 0);
 
-      // Leaderboard
-      const lb = await apiFetch("/api/gamification/leaderboard");
+      // Leaderboard (mit mobile=true)
+      const lb = await apiFetch("/api/gamification/leaderboard?mobile=true");
       setLeaderboard(lb || []);
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

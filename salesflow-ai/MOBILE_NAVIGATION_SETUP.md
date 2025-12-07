@@ -75,9 +75,21 @@ npm install react-native-vector-icons
 
 **Option A: Vollständige Variante**
 
-```typescript
-// In App.tsx oder deiner Root-Navigation:
-import { MainNavigator } from './navigation/MainNavigator';
+```javascript
+// In App.js oder deiner Root-Navigation:
+import AppNavigator from './navigation/AppNavigator';
+
+export default function App() {
+  return <AppNavigator />;
+}
+```
+
+**Option B: Direkt MainNavigator nutzen**
+
+```javascript
+// In App.js:
+import { NavigationContainer } from '@react-navigation/native';
+import MainNavigator from './navigation/MainNavigator';
 
 export default function App() {
   return (
@@ -88,11 +100,12 @@ export default function App() {
 }
 ```
 
-**Option B: Kompakte Variante (Empfohlen)**
+**Option C: Kompakte Variante (Empfohlen)**
 
-```typescript
-// In App.tsx oder deiner Root-Navigation:
-import { MainNavigatorCompact } from './navigation/MainNavigatorCompact';
+```javascript
+// In App.js:
+import { NavigationContainer } from '@react-navigation/native';
+import MainNavigatorCompact from './navigation/MainNavigatorCompact';
 
 export default function App() {
   return (
