@@ -1,0 +1,77 @@
+"""
+BEISPIEL: Closing Coach mit GPT-Integration
+
+Kopiere diesen Code in closing_coach.py und ersetze die analyze_deal_for_closing() Funktion
+"""
+
+import openai
+import json
+from typing import List, Dict
+from app.prompts.closing_coach_prompts import get_closing_coach_gpt_prompt
+from app.config import get_settings
+
+settings = get_settings()
+
+
+async def analyze_deal_for_closing(deal_data: dict, conversation_history: List[dict]) -> dict:
+    """
+    Analysiert Deal mit GPT.
+    
+    Ersetze die alte Funktion (Zeile 71-122) in closing_coach.py mit diesem Code.
+    """
+    # Prüfe ob API Key vorhanden
+    if not settings.openai_api_key:
+        # Fallback auf einfache Logik wenn kein Key
+        return {
+            "detected_blockers": [],
+            "closing_score": 50.0,
+            "closing_probability": "medium",
+            "recommended_strategies": [],
+            "suggested_next_action": "Follow-up planen",
+            "objection_count": 0,
+            "price_mentioned_count": 0,
+        }
+    
+    try:
+        # 1. Prompt generieren
+        prompt = get_closing_coach_gpt_prompt(deal_data, conversation_history)
+        
+        # 2. GPT aufrufen
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=prompt,
+            temperature=0.3,
+            max_tokens=2000,
+            api_key=settings.openai_api_key
+        )
+        
+        # 3. JSON parsen
+        result_text = response.choices[0].message.content
+        
+        # Versuche JSON zu parsen (manchmal gibt GPT zusätzlichen Text)
+        try:
+            result = json.loads(result_text)
+        except json.JSONDecodeError:
+            # Fallback: Versuche JSON aus Text zu extrahieren
+            import re
+            json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
+            if json_match:
+                result = json.loads(json_match.group())
+            else:
+                raise ValueError("No valid JSON found in GPT response")
+        
+        return result
+        
+    except Exception as e:
+        print(f"❌ LLM Error: {e}")
+        # Fallback auf einfache Logik
+        return {
+            "detected_blockers": [],
+            "closing_score": 50.0,
+            "closing_probability": "medium",
+            "recommended_strategies": [],
+            "suggested_next_action": "Follow-up planen",
+            "objection_count": 0,
+            "price_mentioned_count": 0,
+        }
+

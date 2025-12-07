@@ -184,6 +184,11 @@ from .routers.consent import router as consent_router  # 🛡️ GDPR Consent Ma
 from .routers.privacy import router as privacy_router  # 🛡️ GDPR Privacy Operations
 from .routers.user_learning import router as user_learning_router  # 🧠 User Learning & Personalization
 from .routers.genealogy import router as genealogy_router  # 🌳 Genealogy Tree & Downline
+from .routers.commissions import router as commissions_router  # 💰 Provisions-Tracker & Rechnungsgenerator
+from .routers.closing_coach import router as closing_coach_router  # 🎯 Closing Coach
+from .routers.cold_call_assistant import router as cold_call_router  # 📞 Kaltakquise-Assistent
+from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
+from .routers.gamification import router as gamification_router  # 🏆 Gamification
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -219,6 +224,11 @@ app.include_router(consent_router, prefix="/api")  # 🛡️ GDPR Consent Manage
 app.include_router(privacy_router, prefix="/api")  # 🛡️ GDPR Privacy Operations
 app.include_router(user_learning_router, prefix="/api")  # 🧠 User Learning & Personalization
 app.include_router(genealogy_router, prefix="/api")  # 🌳 Genealogy Tree & Downline
+app.include_router(commissions_router, prefix="/api")  # 💰 Provisions-Tracker & Rechnungsgenerator
+app.include_router(closing_coach_router, prefix="/api")  # 🎯 Closing Coach
+app.include_router(cold_call_router, prefix="/api")  # 📞 Kaltakquise-Assistent
+app.include_router(performance_insights_router, prefix="/api")  # 📈 Performance Insights
+app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

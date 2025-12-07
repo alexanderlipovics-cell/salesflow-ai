@@ -41,6 +41,11 @@ import { RoleplayDojoPage } from "./pages/RoleplayDojoPage";
 import TeamChiefDemoPage from "./pages/TeamChiefDemoPage";
 import CompensationSimulatorPage from "./pages/CompensationSimulatorPage";
 import GenealogyTreePage from "./pages/GenealogyTreePage";
+import CommissionTrackerPage from "./pages/CommissionTrackerPage";
+import ColdCallAssistantPage from "./pages/ColdCallAssistantPage";
+import PerformanceInsightsPage from "./pages/PerformanceInsightsPage";
+import GamificationPage from "./pages/GamificationPage";
+import ClosingCoachPage from "./pages/ClosingCoachPage";
 import { UserProvider } from "./context/UserContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
@@ -54,6 +59,8 @@ import DashboardRouterPage from "./pages/DashboardRouterPage";
 import DashboardPage from "./pages/DashboardPage.tsx";
 import SquadCoachPage from "./pages/SquadCoachPage.tsx";
 import MarketingLandingPage from "./pages/MarketingLandingPage";
+import CompactLandingPage from "./pages/CompactLandingPage";
+import VerticalLandingPage from "./pages/VerticalLandingPage";
 import AutopilotPage from "./pages/AutopilotPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -152,8 +159,20 @@ const App = () => {
                     <Route path="/auth" element={<AuthPage />} />
                     
                     {/* Marketing/Landing */}
-                    <Route path="/" element={<MarketingLandingPage />} />
+                    <Route path="/" element={<CompactLandingPage />} />
+                    <Route path="/full" element={<MarketingLandingPage />} />
                     <Route path="/app" element={<Navigate to="/chat" replace />} />
+                    
+                    {/* Vertical-specific Landing Pages */}
+                    <Route path="/networker" element={<VerticalLandingPage />} />
+                    <Route path="/immobilien" element={<VerticalLandingPage />} />
+                    <Route path="/coaching" element={<VerticalLandingPage />} />
+                    <Route path="/finanzvertrieb" element={<VerticalLandingPage />} />
+                    <Route path="/versicherung" element={<VerticalLandingPage />} />
+                    <Route path="/solar" element={<VerticalLandingPage />} />
+                    <Route path="/handelsvertreter" element={<VerticalLandingPage />} />
+                    <Route path="/aussendienst" element={<VerticalLandingPage />} />
+                    <Route path="/freelance" element={<VerticalLandingPage />} />
                     
                     {/* Onboarding (can be public or protected based on your needs) */}
                     <Route path="/onboarding" element={<OnboardingWizardPage />} />
@@ -175,6 +194,11 @@ const App = () => {
                       <Route path="choose-vertical" element={<ChooseVerticalPage />} />
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="commissions" element={<CommissionTrackerPage />} />
+                      <Route path="cold-call" element={<ColdCallAssistantPage />} />
+                      <Route path="closing-coach" element={<ClosingCoachPage />} />
+                      <Route path="performance" element={<PerformanceInsightsPage />} />
+                      <Route path="gamification" element={<GamificationPage />} />
                       <Route path="settings/ai" element={<SalesAiSettingsPage />} />
                       <Route path="gtm-copy" element={<GtmCopyAssistantPage />} />
                       <Route

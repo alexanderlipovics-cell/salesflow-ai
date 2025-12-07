@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { VerticalSelector } from "../components/landing/VerticalSelector";
 import "../styles/marketing-landing.css";
 
 type ItemWithIcon = {
@@ -421,6 +422,8 @@ const MarketingLandingPage = () => {
             </div>
           </div>
         </section>
+
+        <VerticalSelector />
 
         <section id="features" aria-labelledby="features-title">
           <div className="section-inner">

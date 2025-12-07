@@ -1,113 +1,131 @@
-# 🚀 Nächste Schritte - Was fehlt noch?
+# ✅ Migration erfolgreich! - Nächste Schritte
 
-## ✅ Was wir bereits geschafft haben
+## Was ist jetzt fertig? ✅
 
-### Kritische Migrations (ABGESCHLOSSEN)
-- ✅ **Schritt 2:** Message Events Tabelle erstellt
-- ✅ **Schritt 3:** Autopilot V2 Tabellen erstellt (5 Tabellen)
-- ✅ **Schritt 4:** Contacts Tabelle erweitert (7 neue Felder)
+1. ✅ **Datenbank-Migration** - Alle Tabellen erstellt
+2. ✅ **Backend-Router** - APIs bereit
+3. ✅ **LLM-Prompts** - Für GPT/Claude/Gemini
 
-**Status:** Autopilot V2 ist **bereit**! 🎉
+## Was musst du jetzt machen?
 
----
+### Schritt 1: LLM-Integration (30 Min) 🔧
 
-## 📋 Optional: Weitere Migrations (nicht kritisch)
+**Wähle einen LLM-Provider und integriere ihn:**
 
-### 🟡 Message Events Erweiterungen
-1. **`20251205_alter_message_events_add_suggested_reply.sql`**
-   - Fügt `suggested_reply` Feld hinzu
-   - **Status:** Optional, aber empfohlen
+#### Option A: GPT (OpenAI) - Empfohlen
 
-2. **`20251206_alter_message_events_add_experiment_fields.sql`**
-   - Fügt `experiment_id` und `variant_id` Felder hinzu
-   - **Status:** Optional, für A/B Testing
+1. **API Key holen:**
+   - https://platform.openai.com/api-keys
+   - Neuen Key erstellen
 
-### 🟡 Performance Optimierungen (empfohlen für Produktion)
-1. **`20251206_performance_optimization_phase1_indexes.sql`**
-   - Erstellt Performance-Indizes
-   - **Status:** Empfohlen, kann lange dauern
+2. **In `.env` Datei (im `backend/` Ordner) hinzufügen:**
+   ```
+   OPENAI_API_KEY=sk-dein-key-hier
+   ```
 
-2. **`20251206_performance_optimization_phase2_materialized_views.sql`**
-   - Erstellt Materialized Views
-   - **Status:** Optional
+3. **Package installieren:**
+   ```bash
+   cd backend
+   pip install openai
+   ```
 
-3. **`20251206_performance_optimization_phase3_functions.sql`**
-   - Erstellt Performance-Funktionen
-   - **Status:** Optional
+4. **Code in Router einbauen:**
+   - Öffne `backend/app/routers/closing_coach.py`
+   - Finde Funktion `analyze_deal_for_closing()` (ca. Zeile 71)
+   - Ersetze mit Code aus `SCHNELLSTART.md` oder `backend/app/routers/closing_coach_mit_llm.py.example`
 
-### 🟡 Autopilot Settings
-- **`20251205_create_autopilot_settings.sql`**
-  - Erstellt `autopilot_settings` Tabelle
-  - **Status:** Optional, für Autopilot-Konfiguration
+#### Option B: Claude (Anthropic)
 
----
+1. API Key: https://console.anthropic.com/
+2. `.env`: `ANTHROPIC_API_KEY=sk-ant-...`
+3. `pip install anthropic`
+4. Code anpassen (siehe `docs/LLM_PROMPTS_GUIDE.md`)
 
-## 🤖 AI Team Prompts - Status
+#### Option C: Gemini (Google)
 
-### Claude Opus 4.5 (Sie - Backend Development)
-- ✅ **Tag 1:** Frontend Authentication - **ABGESCHLOSSEN**
-- ✅ **Tag 1:** Backend JWT Authentication - **ABGESCHLOSSEN**
-- ✅ **Tag 1:** Autopilot V2 Migrations - **ABGESCHLOSSEN**
-
-**Nächste Aufgaben (aus AI_TEAM_PROMPTS.md):**
-- JWT Migration für alle 18 Backend Router
-- Rate Limiting Implementation
-- Database Indexes
-- Worker Setup (Celery/Cron)
-- Channel API Keys Configuration
-- Frontend Review Queue UI
-- Monitoring Dashboard
-- Integration Tests
-
-### GPT-5.1 Thinking (Architecture)
-- **Status:** Wartet auf Ihre Ergebnisse
-- **Aufgabe:** Architecture Review & Autopilot Engine V2 Analysis
-
-### Gemini 3 Ultra (Frontend)
-- **Status:** Wartet auf Ihre Ergebnisse
-- **Aufgabe:** Dashboard Optimization
+1. API Key: https://makersuite.google.com/app/apikey
+2. `.env`: `GEMINI_API_KEY=...`
+3. `pip install google-generativeai`
+4. Code anpassen
 
 ---
 
-## 🎯 Empfohlene Reihenfolge
+### Schritt 2: Frontend-Komponenten (Optional - später) 🎨
 
-### Phase 1: Sofort (wenn nötig)
-1. ✅ Backend neu starten
-2. ✅ Frontend testen
-3. ✅ Prüfen ob alles funktioniert
+Erstelle React-Komponenten für die neuen Features:
 
-### Phase 2: Diese Woche (optional)
-1. Message Events Erweiterungen ausführen
-2. Autopilot Settings Tabelle erstellen
-3. Performance Indizes (wenn Zeit)
+1. **Provisions-Tracker Page**
+   - `src/pages/CommissionTrackerPage.tsx`
+   - Monatsübersicht, PDF-Export, "An Buchhaltung"
 
-### Phase 3: Nächste Woche (aus AI Team Prompts)
-1. JWT Migration für alle Router
-2. Rate Limiting Implementation
-3. Worker Setup
-4. Frontend Review Queue UI
+2. **Closing Coach Page**
+   - `src/pages/ClosingCoachPage.tsx`
+   - Deal-Liste mit Closing-Score, Blocker, Strategien
 
----
+3. **Cold Call Assistant Page**
+   - `src/pages/ColdCallAssistantPage.tsx`
+   - Script-Generator, Session-Manager, Übungsmodus
 
-## 💡 Meine Empfehlung
-
-**Jetzt:**
-1. ✅ Backend neu starten
-2. ✅ Frontend testen
-3. ✅ Prüfen ob Signup/Login funktioniert
-
-**Dann:**
-- Wenn alles funktioniert → Weiter mit AI Team Prompts (GPT-5.1, Gemini)
-- Wenn Probleme → Diese zuerst beheben
-
-**Optional später:**
-- Message Events Erweiterungen
-- Performance Optimierungen
+**Routing in `src/App.jsx` hinzufügen:**
+```jsx
+<Route path="commissions" element={<CommissionTrackerPage />} />
+<Route path="closing-coach" element={<ClosingCoachPage />} />
+<Route path="cold-call" element={<ColdCallAssistantPage />} />
+```
 
 ---
 
-**Was möchten Sie als nächstes tun?**
-1. Backend/Frontend testen?
-2. Weitere Migrations ausführen?
-3. Mit AI Team Prompts fortfahren?
+### Schritt 3: Testen 🧪
 
+**Backend-APIs testen:**
+
+```bash
+# Mit curl oder Postman
+curl -X GET http://localhost:8000/api/commissions \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+curl -X GET http://localhost:8000/api/closing-coach/my-deals \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+curl -X POST http://localhost:8000/api/cold-call/generate-script/{contact_id} \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Priorisierung 🎯
+
+**Wenn du wenig Zeit hast:**
+
+1. ✅ Migration (FERTIG!)
+2. ⏳ LLM-Integration (1 Router: Closing Coach) - 30 Min
+3. ⏳ Eine Frontend-Page (Closing Coach) - 1-2h
+
+**Rest später:**
+- Cold Call Assistant
+- Commissions Tracker
+- Performance Insights
+- Gamification
+
+---
+
+## Hilfe benötigt? 💬
+
+- **LLM-Integration?** → Siehe `SCHNELLSTART.md` oder `docs/LLM_PROMPTS_GUIDE.md`
+- **Frontend?** → Nutze bestehende Pages als Vorlage (z.B. `ChatPage.tsx`)
+- **API-Testing?** → Nutze Postman oder curl
+
+---
+
+## Zusammenfassung 📝
+
+**Du hast jetzt:**
+- ✅ Alle Datenbank-Tabellen
+- ✅ Alle Backend-APIs
+- ✅ Alle LLM-Prompts
+
+**Du musst noch:**
+- ⏳ LLM-Integration (1 Provider wählen)
+- ⏳ Frontend-Komponenten (optional)
+
+**Alles andere kann warten!**
