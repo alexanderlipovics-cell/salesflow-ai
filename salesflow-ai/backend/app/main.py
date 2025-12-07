@@ -215,6 +215,7 @@ from .routers.genealogy import router as genealogy_router  # 🌳 Genealogy Tree
 from .routers.commissions import router as commissions_router  # 💰 Provisions-Tracker & Rechnungsgenerator
 from .routers.closing_coach import router as closing_coach_router  # 🎯 Closing Coach
 from .routers.cold_call_assistant import router as cold_call_router  # 📞 Kaltakquise-Assistent
+from .routers.vision import router as vision_router  # 🤖 Claude Vision für Screenshots
 from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
 from .routers.gamification import router as gamification_router  # 🏆 Gamification
 from .routers.lead_qualifier import router as lead_qualifier_router  # 🧠 AI Lead Qualifier
@@ -261,6 +262,7 @@ app.include_router(performance_insights_router, prefix="/api")  # 📈 Performan
 app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
 app.include_router(lead_qualifier_router)  # 🧠 AI Lead Qualifier (hat bereits /api/lead-qualifier prefix)
 app.include_router(lead_discovery_router)  # 🔍 Lead Discovery Engine (hat bereits /api/lead-discovery prefix)
+app.include_router(vision_router, prefix="/api")  # 🤖 Claude Vision für Screenshots
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

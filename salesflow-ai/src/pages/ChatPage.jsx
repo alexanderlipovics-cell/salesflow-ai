@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Sparkles, Upload, User, Volume2, VolumeX } from "lucide-react";
+import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Sparkles, Upload, User, Volume2, VolumeX, Camera } from "lucide-react";
 import { useVoice } from "../hooks/useVoice";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -115,6 +115,12 @@ const ChatPage = () => {
   const [contextPanel, setContextPanel] = useState("lead");
   const [isEditingLeadContext, setIsEditingLeadContext] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
+
+  // Image upload state
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [extractedContact, setExtractedContact] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Voice Hook für Spracheingabe & -ausgabe
   const {
@@ -284,6 +290,114 @@ const ChatPage = () => {
     handleSendMessage(null, action);
   };
 
+  // Image upload handler
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Preview
+    const reader = new FileReader();
+    reader.onload = (e) => setUploadedImage(e.target.result);
+    reader.readAsDataURL(file);
+
+    // Analyze
+    setIsAnalyzing(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/api/vision/analyze-screenshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.contact) {
+        setExtractedContact(data.contact);
+        // Add AI message with extracted info
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-vision-${Date.now()}`,
+            role: 'assistant',
+            content: `📸 Kontakt erkannt!\n\n**${data.contact.name || 'Unbekannt'}**\n${data.contact.platform ? `Platform: ${data.contact.platform}` : ''}\n${data.contact.phone ? `📱 ${data.contact.phone}` : ''}\n${data.contact.email ? `📧 ${data.contact.email}` : ''}\n${data.contact.instagram ? `📷 @${data.contact.instagram}` : ''}\n${data.contact.notes ? `\n💬 ${data.contact.notes}` : ''}`,
+            extractedContact: data.contact
+          }
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-vision-error-${Date.now()}`,
+            role: 'assistant',
+            content: '❌ Konnte keine Kontaktdaten im Screenshot finden. Bitte versuche ein deutlicheres Bild.'
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Screenshot analysis failed:', error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-vision-error-${Date.now()}`,
+          role: 'assistant',
+          content: '❌ Fehler beim Analysieren des Screenshots. Bitte versuche es erneut.'
+        }
+      ]);
+    } finally {
+      setIsAnalyzing(false);
+      setUploadedImage(null);
+    }
+  };
+
+  // Save lead handler
+  const handleSaveLead = async (contact) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/api/leads`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...contact,
+          status: 'new',
+          temperature: 'warm'
+        })
+      });
+
+      if (response.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-lead-saved-${Date.now()}`,
+            role: 'assistant',
+            content: `✅ **${contact.name}** wurde als Lead gespeichert!`
+          }
+        ]);
+        setExtractedContact(null);
+      } else {
+        throw new Error('Save failed');
+      }
+    } catch (error) {
+      console.error('Save lead failed:', error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-lead-error-${Date.now()}`,
+          role: 'assistant',
+          content: '❌ Fehler beim Speichern des Leads.'
+        }
+      ]);
+    }
+  };
+
   const handleSaveContext = (event) => {
     event.preventDefault();
     setContextSaved(true);
@@ -395,6 +509,38 @@ const ChatPage = () => {
               </div>
             ))}
 
+            {/* Extracted Contact Card */}
+            {extractedContact && (
+              <div className="my-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <h4 className="mb-3 font-semibold text-emerald-400">📸 Kontakt erkannt</h4>
+                <div className="space-y-2 text-sm">
+                  {extractedContact.name && <p><strong>Name:</strong> {extractedContact.name}</p>}
+                  {extractedContact.phone && <p><strong>Telefon:</strong> {extractedContact.phone}</p>}
+                  {extractedContact.email && <p><strong>Email:</strong> {extractedContact.email}</p>}
+                  {extractedContact.instagram && <p><strong>Instagram:</strong> @{extractedContact.instagram}</p>}
+                  {extractedContact.company && <p><strong>Firma:</strong> {extractedContact.company}</p>}
+                  {extractedContact.platform && <p><strong>Platform:</strong> {extractedContact.platform}</p>}
+                  {extractedContact.confidence && (
+                    <p><strong>Konfidenz:</strong> {Math.round(extractedContact.confidence * 100)}%</p>
+                  )}
+                </div>
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={() => handleSaveLead(extractedContact)}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+                  >
+                    ✓ Als Lead speichern
+                  </button>
+                  <button
+                    onClick={() => setExtractedContact(null)}
+                    className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-600 transition-colors"
+                  >
+                    ✗ Verwerfen
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Loading Indicator */}
             {isLoading && (
               <div className="flex items-start gap-3">
@@ -431,11 +577,28 @@ const ChatPage = () => {
               />
               <div className="flex items-center justify-between border-t border-slate-800 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-500/40 hover:text-slate-50">
-                    <Paperclip className="h-4 w-4" />
-                    <span>Anhang</span>
-                    <input type="file" className="hidden" />
-                  </label>
+                  {/* Image Upload Button */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isAnalyzing}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-500/40 hover:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Screenshot analysieren"
+                  >
+                    {isAnalyzing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                    <span>Screenshot</span>
+                  </button>
                   
                   {/* Voice Input Button */}
                   {voiceSupported && (
