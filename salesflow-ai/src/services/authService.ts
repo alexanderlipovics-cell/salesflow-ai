@@ -83,6 +83,20 @@ class AuthService {
 
     // Backend returns: { access_token, refresh_token, token_type, expires_in, user }
     const backendResponse = await response.json();
+    console.log('authService.login: Backend response structure:', JSON.stringify(backendResponse, null, 2));
+    console.log('authService.login: access_token exists:', !!backendResponse.access_token);
+    console.log('authService.login: refresh_token exists:', !!backendResponse.refresh_token);
+    console.log('authService.login: user exists:', !!backendResponse.user);
+
+    // Validate response structure
+    if (!backendResponse.access_token) {
+      console.error('authService.login: ERROR - access_token missing in response!');
+      throw new Error('Invalid login response: access_token missing');
+    }
+    if (!backendResponse.refresh_token) {
+      console.error('authService.login: ERROR - refresh_token missing in response!');
+      throw new Error('Invalid login response: refresh_token missing');
+    }
 
     // Convert to frontend format: { user, tokens: { access_token, refresh_token, token_type, expires_in } }
     const data: AuthResponse = {
@@ -106,11 +120,26 @@ class AuthService {
 
     // Store tokens in localStorage
     console.log('authService.login: Storing tokens in localStorage...');
+    console.log('authService.login: data.tokens structure:', JSON.stringify(data.tokens, null, 2));
+    console.log('authService.login: data.tokens.access_token exists:', !!data.tokens?.access_token);
+    console.log('authService.login: data.tokens.access_token length:', data.tokens?.access_token?.length || 0);
+    
+    if (!data.tokens?.access_token) {
+      console.error('authService.login: CRITICAL ERROR - data.tokens.access_token is missing!');
+      console.error('authService.login: Full data object:', JSON.stringify(data, null, 2));
+      throw new Error('Cannot save tokens: access_token is missing in data.tokens');
+    }
+    
     this.setTokens(data.tokens);
     console.log('authService.login: Token stored. Verifying...');
     const storedToken = this.getAccessToken();
     console.log('authService.login: Stored token exists:', !!storedToken);
     console.log('authService.login: Stored token length:', storedToken?.length || 0);
+    
+    if (!storedToken) {
+      console.error('authService.login: CRITICAL ERROR - Token was not saved to localStorage!');
+      console.error('authService.login: localStorage.getItem("access_token"):', localStorage.getItem('access_token'));
+    }
 
     return data;
   }
@@ -312,12 +341,48 @@ class AuthService {
    * Store tokens in localStorage
    */
   private setTokens(tokens: AuthTokens): void {
-    console.log('authService.setTokens: Storing access_token (length:', tokens.access_token?.length || 0, ')');
-    localStorage.setItem('access_token', tokens.access_token);
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-    console.log('authService.setTokens: Tokens stored. Verifying...');
-    const verifyToken = localStorage.getItem('access_token');
-    console.log('authService.setTokens: Verification - token exists:', !!verifyToken, 'length:', verifyToken?.length || 0);
+    console.log('authService.setTokens: Called with tokens:', JSON.stringify({
+      has_access_token: !!tokens?.access_token,
+      access_token_length: tokens?.access_token?.length || 0,
+      has_refresh_token: !!tokens?.refresh_token,
+      refresh_token_length: tokens?.refresh_token?.length || 0,
+    }, null, 2));
+    
+    if (!tokens) {
+      console.error('authService.setTokens: ERROR - tokens parameter is null/undefined!');
+      throw new Error('Cannot save tokens: tokens parameter is missing');
+    }
+    
+    if (!tokens.access_token) {
+      console.error('authService.setTokens: ERROR - tokens.access_token is missing!');
+      console.error('authService.setTokens: Full tokens object:', JSON.stringify(tokens, null, 2));
+      throw new Error('Cannot save tokens: access_token is missing');
+    }
+    
+    try {
+      console.log('authService.setTokens: Storing access_token (length:', tokens.access_token.length, ')');
+      localStorage.setItem('access_token', tokens.access_token);
+      
+      if (tokens.refresh_token) {
+        localStorage.setItem('refresh_token', tokens.refresh_token);
+      }
+      
+      console.log('authService.setTokens: Tokens stored. Verifying...');
+      const verifyToken = localStorage.getItem('access_token');
+      const verifyRefresh = localStorage.getItem('refresh_token');
+      
+      console.log('authService.setTokens: Verification - access_token exists:', !!verifyToken, 'length:', verifyToken?.length || 0);
+      console.log('authService.setTokens: Verification - refresh_token exists:', !!verifyRefresh, 'length:', verifyRefresh?.length || 0);
+      
+      if (!verifyToken) {
+        console.error('authService.setTokens: CRITICAL ERROR - Token was not saved to localStorage!');
+        console.error('authService.setTokens: localStorage.getItem("access_token"):', localStorage.getItem('access_token'));
+        throw new Error('Failed to save access_token to localStorage');
+      }
+    } catch (error) {
+      console.error('authService.setTokens: Exception while saving tokens:', error);
+      throw error;
+    }
   }
 
   /**
