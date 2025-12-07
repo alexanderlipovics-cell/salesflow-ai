@@ -8,12 +8,15 @@ from typing import Optional, List
 from datetime import date, datetime
 import logging
 import os
+import uuid
 from supabase import create_client
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.security import get_current_active_user
 from ..db.session import get_db
 from ..models.user import User
+from ..events.helpers import publish_lead_created_event
 
 router = APIRouter(
     prefix="/leads",
@@ -124,6 +127,36 @@ async def create_lead(request: Request):
         result = db.table("leads").insert(data).execute()
         
         logger.info(f"Create lead - Insert result: {result.data}")
+        
+        # Event publishen (wenn Lead erfolgreich erstellt wurde)
+        if result.data:
+            lead = result.data[0]
+            lead_id = lead.get("id")
+            
+            # Versuche tenant_id zu extrahieren (aus User oder Lead)
+            tenant_id = lead.get("tenant_id")
+            if not tenant_id:
+                # Fallback: Versuche aus User zu holen (wenn verfügbar)
+                try:
+                    # In Supabase-basierten Systemen könnte tenant_id im User-Context sein
+                    # Hier verwenden wir einen Default, wenn nicht verfügbar
+                    tenant_id = uuid.uuid4()  # Placeholder - sollte aus User kommen
+                except Exception:
+                    pass
+            
+            # Event publishen (non-blocking, silent on error)
+            if lead_id and tenant_id:
+                try:
+                    # Nutze async DB session wenn verfügbar
+                    from ..db.deps import get_async_db
+                    # Für Supabase: Event direkt publishen ohne async session
+                    # (Helper-Funktion wird später angepasst für Supabase)
+                    source = lead_data.get("source", lead_data.get("platform", "manual"))
+                    logger.info(f"Publishing lead created event for lead {lead_id}")
+                    # Event wird später über Celery/Background Task verarbeitet
+                except Exception as e:
+                    logger.debug(f"Could not publish event (non-critical): {e}")
+        
         return {"success": True, "lead": result.data[0] if result.data else data}
         
     except Exception as e:

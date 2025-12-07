@@ -1,24 +1,22 @@
-"""
-AI Module - Vision & Prompts
+"""SalesFlow AI - AI Orchestrator System"""
 
-Enthält alle AI-bezogenen Komponenten:
-- Vision Prompts für GPT-4o
-- Text Generation Prompts
-"""
-
-from .prompts.vision_prompts import (
-    VISION_SCREENSHOT_PROMPT,
-    VISION_WHATSAPP_PROMPT,
-    VISION_INSTAGRAM_PROMPT,
-    VISION_LINKEDIN_PROMPT,
-    VISION_FALLBACK_PROMPT,
-)
+from .scenarios import ScenarioId, ScenarioDefinition, SCENARIOS
+from .prompt_store import PromptStore, PromptConfig
+from .router import ModelRouter, MODEL_PRICES_USD
+from .tracker import AiCallTracker, AiCallLog
+from .fallback import get_fallback_models
+from .orchestrator import AIOrchestrator
 
 __all__ = [
-    "VISION_SCREENSHOT_PROMPT",
-    "VISION_WHATSAPP_PROMPT",
-    "VISION_INSTAGRAM_PROMPT",
-    "VISION_LINKEDIN_PROMPT",
-    "VISION_FALLBACK_PROMPT",
+    "ScenarioId",
+    "ScenarioDefinition",
+    "SCENARIOS",
+    "PromptStore",
+    "PromptConfig",
+    "ModelRouter",
+    "MODEL_PRICES_USD",
+    "AiCallTracker",
+    "AiCallLog",
+    "get_fallback_models",
+    "AIOrchestrator",
 ]
-

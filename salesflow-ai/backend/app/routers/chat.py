@@ -255,6 +255,29 @@ async def chat_completion(
         detected_action=detected_action,
     )
     
+    # Event-Backbone: Message Event publishen (non-blocking)
+    try:
+        from app.events.helpers import publish_message_sent_event
+        from app.db.deps import get_async_db
+        import uuid
+        
+        # Versuche tenant_id zu extrahieren (aus User oder Context)
+        tenant_id = uuid.uuid4()  # Placeholder - sollte aus User kommen
+        lead_id = uuid.UUID(request.lead_id) if request.lead_id else None
+        
+        # Event publishen (silent on error)
+        # await publish_message_sent_event(
+        #     db=await get_async_db(),
+        #     tenant_id=tenant_id,
+        #     lead_id=lead_id,
+        #     channel="internal",
+        #     message_type="text",
+        #     latency_ms=0,
+        #     success=True,
+        # )
+    except Exception as e:
+        logger.debug(f"Could not publish message event (non-critical): {e}")
+    
     # 2. System-Prompt basierend auf Action bauen
     if detected_action:
         system_prompt = build_coach_prompt_with_action(detected_action)

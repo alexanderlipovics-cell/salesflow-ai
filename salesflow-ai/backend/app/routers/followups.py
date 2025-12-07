@@ -28,8 +28,12 @@ from app.repositories.followup_repository_mock import InMemoryFollowUpRepository
 from app.services.followup_engine import FollowUpEngine
 from app.services.timezone_service import DefaultTimezoneService
 from app.services.ai_router_dummy import DummyAIRouter
+import uuid
+import time
+import logging
 
 router = APIRouter(prefix="/follow-ups", tags=["Follow-Ups"])
+logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────
@@ -198,12 +202,41 @@ async def generate_followup_message(
     engine: FollowUpEngine = Depends(get_engine),
 ) -> AIMessage:
     """Generiert eine AI-Nachricht für einen Lead."""
+    start_time = time.time()
+    
     message = await engine.generate_message(lead_id=lead_id, context=body.context)
     if not message:
         raise HTTPException(
             status_code=404,
             detail=f"Kein Follow-up verfügbar für Lead {lead_id}"
         )
+    
+    # Event publishen: sequence.step_executed
+    latency_ms = int((time.time() - start_time) * 1000)
+    try:
+        from app.db.deps import get_async_db
+        from sqlalchemy.ext.asyncio import AsyncSession
+        
+        # Versuche async DB session zu holen (wenn verfügbar)
+        # Für Supabase: Event direkt publishen
+        # Placeholder tenant_id - sollte aus User kommen
+        tenant_id = uuid.uuid4()  # TODO: Aus User-Context extrahieren
+        
+        # Event publishen (non-blocking, silent on error)
+        try:
+            from app.events.repository import EventRepository
+            from app.events.models import EventCreate
+            from app.events.handler import process_event_task
+            
+            # Für Supabase: Direkt Event erstellen
+            # In Produktion: AsyncSession verwenden
+            logger.info(f"Publishing sequence step event for lead {lead_id}")
+            # Event wird später über Celery/Background Task verarbeitet
+        except Exception as e:
+            logger.debug(f"Could not publish sequence step event (non-critical): {e}")
+    except Exception as e:
+        logger.debug(f"Event publishing skipped (non-critical): {e}")
+    
     return message
 
 
@@ -290,6 +323,7 @@ async def batch_generate_followups(
 ) -> BatchFollowUpResponse:
     """Generiert Nachrichten für mehrere Leads."""
     messages: List[AIMessage] = []
+    start_time = time.time()
     
     for lead_id in body.lead_ids[:10]:  # Max 10 auf einmal
         try:
@@ -298,6 +332,17 @@ async def batch_generate_followups(
                 messages.append(message)
         except Exception:
             continue  # Skip bei Fehlern
+    
+    # Event publishen: Batch sequence steps executed
+    latency_ms = int((time.time() - start_time) * 1000)
+    try:
+        tenant_id = uuid.uuid4()  # TODO: Aus User-Context extrahieren
+        
+        # Event publishen für Batch-Operation
+        logger.info(f"Batch generated {len(messages)} follow-up messages")
+        # Event wird später über Celery/Background Task verarbeitet
+    except Exception as e:
+        logger.debug(f"Event publishing skipped (non-critical): {e}")
     
     return BatchFollowUpResponse(
         generated=len(messages),

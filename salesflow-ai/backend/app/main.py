@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 import logging
 import sys
 
@@ -16,11 +17,39 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Event Handler registrieren (beim Import)
+# Dies muss VOR der App-Erstellung passieren, damit Handler registriert sind
+try:
+    from .events.handlers import lead_handlers  # noqa: F401
+    logging.info("Event handlers imported and registered")
+except ImportError as e:
+    logging.warning(f"Could not import event handlers: {e}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager für Startup/Shutdown Events."""
+    # Startup
+    logging.info("🚀 SalesFlow AI starting up...")
+    
+    # Event Handler sind bereits beim Import registriert
+    # Hier könnten weitere Startup-Tasks laufen:
+    # - Health Checks
+    # - Cache Warming
+    # - Background Tasks starten
+    
+    yield
+    
+    # Shutdown
+    logging.info("🛑 SalesFlow AI shutting down...")
+
+
 # App erstellen
 app = FastAPI(
     title="SalesFlow AI API",
     description="Backend für SalesFlow AI - Network Marketing CRM",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 # EARLY Health Check (vor allen Imports)
@@ -146,6 +175,9 @@ from .routers.facebook_webhook import router as facebook_webhook_router  # 🆕 
 from .routers.linkedin_webhook import router as linkedin_webhook_router  # 🆕 LinkedIn Lead Gen Webhook
 from .routers.instagram_webhook import router as instagram_webhook_router  # 🆕 Instagram DM Webhook
 from .routers.conversations import router as conversations_router  # 🆕 Conversation Memory
+from .routers.conversation_webhooks import router as conversation_webhooks_router  # 🆕 Conversation Engine 2.0 Webhooks
+from .domain.leads.api import router as domain_leads_router  # 🆕 Domain Architecture - Leads
+from .routers.events import router as events_router  # 🆕 Event Management API
 from .routers.lead_suggestions import router as lead_suggestions_router  # 🆕 Smart Suggestions
 from .routers.ops_deployments import router as ops_deployments_router  # 🆕 AI Ops Deployment Management
 from .routers.consent import router as consent_router  # 🛡️ GDPR Consent Management
@@ -176,6 +208,9 @@ app.include_router(facebook_webhook_router)  # 🆕 Facebook Lead Ads Webhook
 app.include_router(linkedin_webhook_router)  # 🆕 LinkedIn Lead Gen Webhook
 app.include_router(instagram_webhook_router)  # 🆕 Instagram DM Webhook
 app.include_router(conversations_router, prefix="/api")  # 🆕 Conversation Memory
+app.include_router(conversation_webhooks_router)  # 🆕 Conversation Engine 2.0 Webhooks
+app.include_router(domain_leads_router, prefix="/api")  # 🆕 Domain Architecture - Leads
+app.include_router(events_router, prefix="/api")  # 🆕 Event Management API
 app.include_router(lead_suggestions_router, prefix="/api")  # 🆕 Smart Suggestions
 app.include_router(ops_deployments_router, prefix="/api")  # 🆕 AI Ops Deployment Management
 app.include_router(consent_router, prefix="/api")  # 🛡️ GDPR Consent Management

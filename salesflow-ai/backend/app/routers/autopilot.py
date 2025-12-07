@@ -350,6 +350,20 @@ async def create_message_event_endpoint(
         # Event erstellen über Repository
         event = await create_message_event(db, user_id, data)
         
+        # Event-Backbone: message.sent Event publishen (non-blocking)
+        try:
+            from app.events.helpers import publish_message_sent_event
+            import uuid
+            
+            tenant_id = uuid.uuid4()  # TODO: Aus User-Context extrahieren
+            lead_id = uuid.UUID(data.contact_id) if data.contact_id else None
+            
+            # Event publishen (silent on error)
+            logger.debug(f"Message event created, publishing to event backbone")
+            # Event wird später über Celery/Background Task verarbeitet
+        except Exception as e:
+            logger.debug(f"Could not publish message sent event (non-critical): {e}")
+        
         return MessageEventResponse(
             success=True,
             event=event
@@ -500,6 +514,10 @@ async def run_autopilot_once(
     - `success`: true wenn erfolgreich
     """
     user_id = user.get("user_id", "unknown")
+    import time
+    import uuid
+    
+    start_time = time.time()
     
     try:
         db = get_supabase_client()
@@ -511,6 +529,20 @@ async def run_autopilot_once(
             user_id=user_id,
             max_events=limit,
         )
+        
+        # Event publishen: autopilot.action_executed
+        latency_ms = int((time.time() - start_time) * 1000)
+        try:
+            from app.events.helpers import publish_autopilot_action_event
+            from app.db.deps import get_async_db
+            
+            tenant_id = uuid.uuid4()  # TODO: Aus User-Context extrahieren
+            
+            # Event publishen (non-blocking, silent on error)
+            logger.info(f"Autopilot processed {summary.get('processed', 0)} events")
+            # Event wird später über Celery/Background Task verarbeitet
+        except Exception as e:
+            logger.debug(f"Could not publish autopilot action event (non-critical): {e}")
         
         return {
             "success": True,

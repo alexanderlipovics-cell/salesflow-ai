@@ -122,6 +122,7 @@ class DatabaseSessionManager:
         self._register_events()
 
         self._initialized = True
+        _set_async_engine()  # Export async_engine for event handlers
         logger.info(
             "Database initialized",
             pool_size=pool_size,
@@ -425,3 +426,12 @@ async def get_db_client():
 
 # Alias for compatibility
 supabase = get_supabase_client
+
+# Export async_engine for event handlers
+async_engine = None  # Will be set when db.init() is called
+
+def _set_async_engine():
+    """Set async_engine when database is initialized."""
+    global async_engine
+    if db._engine:
+        async_engine = db._engine
