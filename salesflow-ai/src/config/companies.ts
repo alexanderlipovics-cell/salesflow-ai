@@ -119,33 +119,30 @@ export function normalizeCompanyKey(key: string): CompanyKey {
   }
   
   // Alias-Mapping für häufige Varianten
+  // HINWEIS: Keys, die bereits direkt im COMPANY_REGISTRY existieren, werden nicht hier aufgelistet
+  // (werden bereits in Zeile 117 abgefangen)
   const aliases: Record<string, CompanyKey> = {
     // Zinzino Varianten
-    'zinzino': 'zinzino',
     'zz': 'zinzino',
     
     // Herbalife Varianten
-    'herbalife': 'herbalife',
     'hbl': 'herbalife',
     
     // doTERRA Varianten
     'dōterra': 'doterra',
     
     // PM-International Varianten
-    'pm-international': 'pm-international',
     'pm': 'pm-international',
     'pmi': 'pm-international',
     'fitline': 'pm-international',
     
     // LR Health Varianten
-    'lr-health': 'lr-health',
     'lr': 'lr-health',
     'lr-health-beauty': 'lr-health',
     'lr health': 'lr-health',
     'lr health & beauty': 'lr-health',
     
     // General/Other Varianten
-    'other': 'other',
     'general': 'other',
     'andere': 'other',
   };

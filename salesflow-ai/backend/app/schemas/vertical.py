@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class VerticalFeatures(BaseModel):
     """Feature-Flags für verschiedene Funktionsbereiche."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     crm: bool = True
     finance: bool = True
@@ -57,14 +59,16 @@ class VerticalTerminology(BaseModel):
     enrollment: str = "Einschreibung"
     signup: str = "Anmeldung"
 
-    model_config = {
-        "extra": "allow",  # Erlaubt zusätzliche benutzerdefinierte Begriffe
-        "protected_namespaces": (),  # Unterdrückt Warnungen für "model_" Felder
-    }
+    model_config = ConfigDict(
+        extra="allow",  # Erlaubt zusätzliche benutzerdefinierte Begriffe
+        protected_namespaces=(),  # Unterdrückt Warnungen für "model_" Felder
+    )
 
 
 class VerticalAIContext(BaseModel):
     """AI-Kontext für branchenspezifische Prompts."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     persona: str = Field(
         ...,
@@ -95,6 +99,8 @@ class VerticalAIContext(BaseModel):
 class VerticalRoutes(BaseModel):
     """Route-Konfiguration."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     hidden: List[str] = Field(
         default_factory=list,
         description="Routes, die ausgeblendet werden sollen",
@@ -112,6 +118,8 @@ class VerticalRoutes(BaseModel):
 class VerticalConfig(BaseModel):
     """Vollständige Vertical-Config."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     features: VerticalFeatures
     terminology: VerticalTerminology
     ai_context: VerticalAIContext
@@ -120,6 +128,8 @@ class VerticalConfig(BaseModel):
 
 class Vertical(BaseModel):
     """Vertical-Metadaten."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     id: str
     key: str = Field(..., description="z.B. 'mlm', 'real_estate', 'finance'")
