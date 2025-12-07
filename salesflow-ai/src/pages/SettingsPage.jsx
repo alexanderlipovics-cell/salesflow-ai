@@ -7,6 +7,8 @@ import { usePricingModal } from "../context/PricingModalContext";
 import { createPortalSession } from "../lib/stripeClient";
 import FeatureGateButton from "../components/FeatureGateButton";
 import { formatCurrency, getBillingPrice } from "../lib/plans";
+import AIPreferencesPanel from "../components/settings/AIPreferencesPanel";
+import PersonalizationMetrics from "../components/settings/PersonalizationMetrics";
 
 const SettingsPage = () => {
   const location = useLocation();
@@ -178,6 +180,12 @@ const SettingsPage = () => {
           />
         </div>
       </section>
+
+      {/* AI-Präferenzen */}
+      <AIPreferencesPanel />
+
+      {/* Personalisierungs-Metriken */}
+      <PersonalizationMetrics />
     </div>
   );
 };

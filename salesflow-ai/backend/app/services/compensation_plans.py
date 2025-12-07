@@ -993,26 +993,273 @@ class LRHealthCompensationPlan(BaseCompensationPlan):
 
 # ============= Factory =============
 
+# ============= Party Plan Compensation Plan =============
+
+class PartyPlanCompensationPlan(BaseCompensationPlan):
+    """
+    Party Plan Compensation (z.B. Tupperware, Scentsy, Partylite).
+    
+    Features:
+    - Host Bonuses (Party-Volumen)
+    - Booking Bonuses (neue Parties buchen)
+    - Team Bonuses (Downline-Parties)
+    """
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.ranks = [
+            "Consultant",
+            "Senior Consultant",
+            "Team Leader",
+            "Director",
+            "Executive Director",
+            "National Director"
+        ]
+        
+        # Host Bonus: % vom Party-Volumen
+        self.host_bonus_rate = Decimal("0.15")  # 15%
+        
+        # Booking Bonus: Fixbetrag pro gebuchter Party
+        self.booking_bonus = Decimal("25")
+        
+        # Team Bonus: % vom Downline-Party-Volumen
+        self.team_bonus_rate = Decimal("0.05")  # 5%
+    
+    def calculate_commissions(
+        self,
+        user: TeamMember,
+        team: list[TeamMember],
+        period_start: datetime,
+        period_end: datetime
+    ) -> CommissionStatement:
+        """Calculate Party Plan commissions."""
+        statement = CommissionStatement(
+            user_id=user.id,
+            period_start=period_start,
+            period_end=period_end,
+            rank=user.rank,
+            personal_volume=user.personal_volume,
+            group_volume=user.group_volume,
+            total_volume=user.total_volume
+        )
+        
+        # 1. Host Bonus (15% vom eigenen Party-Volumen)
+        host_bonus = (user.personal_volume * self.host_bonus_rate).quantize(Decimal("0.01"))
+        if host_bonus > 0:
+            statement.commissions.append(Commission(
+                type=CommissionType.RETAIL_PROFIT,
+                amount=host_bonus,
+                volume=user.personal_volume,
+                rate=self.host_bonus_rate,
+                description=f"Host Bonus ({self.host_bonus_rate:.0%} vom Party-Volumen)"
+            ))
+        
+        # 2. Booking Bonus (vereinfacht: 1 Party = 1 Booking)
+        # Annahme: Jede 100 PV = 1 Party
+        parties_hosted = int(user.personal_volume / Decimal("100"))
+        booking_bonus = Decimal(parties_hosted) * self.booking_bonus
+        if booking_bonus > 0:
+            statement.commissions.append(Commission(
+                type=CommissionType.FAST_START,
+                amount=booking_bonus,
+                description=f"Booking Bonus ({parties_hosted} Parties)"
+            ))
+        
+        # 3. Team Bonus (5% vom Downline-Party-Volumen)
+        downline = self.get_downline(user.id, team)
+        team_party_volume = sum(m.personal_volume for m in downline)
+        team_bonus = (team_party_volume * self.team_bonus_rate).quantize(Decimal("0.01"))
+        if team_bonus > 0:
+            statement.commissions.append(Commission(
+                type=CommissionType.UNILEVEL,
+                amount=team_bonus,
+                volume=team_party_volume,
+                rate=self.team_bonus_rate,
+                description=f"Team Bonus ({self.team_bonus_rate:.0%} vom Downline-Volumen)"
+            ))
+        
+        statement.calculate_total()
+        return statement
+    
+    def determine_rank(
+        self,
+        user: TeamMember,
+        team: list[TeamMember]
+    ) -> str:
+        """Determine Party Plan rank."""
+        downline = self.get_downline(user.id, team)
+        total_volume = sum(m.personal_volume for m in downline) + user.personal_volume
+        
+        if total_volume >= Decimal("50000"):
+            return "National Director"
+        elif total_volume >= Decimal("25000"):
+            return "Executive Director"
+        elif total_volume >= Decimal("10000"):
+            return "Director"
+        elif total_volume >= Decimal("5000"):
+            return "Team Leader"
+        elif total_volume >= Decimal("2000"):
+            return "Senior Consultant"
+        
+        return "Consultant"
+
+
+# ============= Generation Plan Compensation Plan =============
+
+class GenerationPlanCompensationPlan(BaseCompensationPlan):
+    """
+    Generation Plan Compensation (mehrere Generationen mit abnehmenden Prozentsätzen).
+    
+    Features:
+    - Generation 1: Höchster Prozentsatz
+    - Generation 2-6: Abnehmende Prozentsätze
+    - Max. Generationen-Limit
+    """
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.ranks = [
+            "Distributor",
+            "Senior Distributor",
+            "Team Leader",
+            "Manager",
+            "Director",
+            "Executive Director"
+        ]
+        
+        # Generation Rates (abnehmend)
+        self.generation_rates = [
+            Decimal("0.25"),  # Gen 1: 25%
+            Decimal("0.10"),  # Gen 2: 10%
+            Decimal("0.05"),  # Gen 3: 5%
+            Decimal("0.03"),  # Gen 4: 3%
+            Decimal("0.02"),  # Gen 5: 2%
+            Decimal("0.01"),  # Gen 6: 1%
+        ]
+        
+        self.max_generations = 6
+    
+    def calculate_commissions(
+        self,
+        user: TeamMember,
+        team: list[TeamMember],
+        period_start: datetime,
+        period_end: datetime
+    ) -> CommissionStatement:
+        """Calculate Generation Plan commissions."""
+        statement = CommissionStatement(
+            user_id=user.id,
+            period_start=period_start,
+            period_end=period_end,
+            rank=user.rank,
+            personal_volume=user.personal_volume,
+            group_volume=user.group_volume,
+            total_volume=user.total_volume
+        )
+        
+        # Berechne Generation Commissions
+        for gen in range(1, self.max_generations + 1):
+            if gen > len(self.generation_rates):
+                break
+            
+            rate = self.generation_rates[gen - 1]
+            gen_members = self._get_generation_members(user.id, team, gen)
+            gen_volume = sum(m.personal_volume for m in gen_members)
+            
+            if gen_volume > 0:
+                commission = (gen_volume * rate).quantize(Decimal("0.01"))
+                statement.commissions.append(Commission(
+                    type=CommissionType.UNILEVEL,
+                    amount=commission,
+                    level=gen,
+                    volume=gen_volume,
+                    rate=rate,
+                    description=f"Generation {gen} ({rate:.0%})"
+                ))
+        
+        statement.calculate_total()
+        return statement
+    
+    def _get_generation_members(
+        self,
+        user_id: UUID,
+        team: list[TeamMember],
+        generation: int
+    ) -> list[TeamMember]:
+        """Get all members in a specific generation."""
+        if generation == 1:
+            return [m for m in team if m.sponsor_id == user_id]
+        
+        # Rekursiv für höhere Generationen
+        gen_members = []
+        prev_gen = self._get_generation_members(user_id, team, generation - 1)
+        
+        for member in prev_gen:
+            gen_members.extend([m for m in team if m.sponsor_id == member.id])
+        
+        return gen_members
+    
+    def determine_rank(
+        self,
+        user: TeamMember,
+        team: list[TeamMember]
+    ) -> str:
+        """Determine Generation Plan rank."""
+        downline = self.get_downline(user.id, team)
+        total_volume = sum(m.personal_volume for m in downline) + user.personal_volume
+        active_legs = len([m for m in downline if m.is_active and m.personal_volume >= Decimal("100")])
+        
+        if total_volume >= Decimal("100000") and active_legs >= 10:
+            return "Executive Director"
+        elif total_volume >= Decimal("50000") and active_legs >= 5:
+            return "Director"
+        elif total_volume >= Decimal("20000") and active_legs >= 3:
+            return "Manager"
+        elif total_volume >= Decimal("10000") and active_legs >= 2:
+            return "Team Leader"
+        elif total_volume >= Decimal("5000"):
+            return "Senior Distributor"
+        
+        return "Distributor"
+
+
 class CompensationPlanFactory:
     """Factory for creating compensation plan instances."""
     
     _plans = {
         "herbalife": HerbalifeCompensationPlan,
         "pm_international": PMInternationalCompensationPlan,
+        "pm-international": PMInternationalCompensationPlan,
         "doterra": DoterraCompensationPlan,
         "lr_health": LRHealthCompensationPlan,
+        "lr-health": LRHealthCompensationPlan,
+        "party-plan": PartyPlanCompensationPlan,
+        "party_plan": PartyPlanCompensationPlan,
+        "generation-plan": GenerationPlanCompensationPlan,
+        "generation_plan": GenerationPlanCompensationPlan,
     }
     
     @classmethod
     def get_plan(cls, company_id: str) -> BaseCompensationPlan:
         """Get compensation plan for a company."""
-        plan_class = cls._plans.get(company_id.lower())
+        company_id_lower = company_id.lower().replace(" ", "-").replace("_", "-")
+        plan_class = cls._plans.get(company_id_lower)
+        
+        # Fallback: Try partial match
         if not plan_class:
-            raise ValueError(f"Unknown company: {company_id}")
+            for key, plan in cls._plans.items():
+                if key in company_id_lower or company_id_lower in key:
+                    plan_class = plan
+                    break
+        
+        if not plan_class:
+            raise ValueError(f"Unknown company: {company_id}. Supported: {list(cls._plans.keys())}")
         return plan_class()
     
     @classmethod
     def list_supported(cls) -> list[str]:
         """List supported company IDs."""
-        return list(cls._plans.keys())
+        return list(set(cls._plans.keys()))  # Remove duplicates
 

@@ -19,7 +19,8 @@ import {
   AlertTriangle,
   Network,
   Shield,
-  Sparkles
+  Sparkles,
+  Calculator
 } from 'lucide-react';
 
 export const AppShell: React.FC = () => {
@@ -47,9 +48,11 @@ export const AppShell: React.FC = () => {
     { 
       category: 'TOOLS', 
       items: [
+        { name: 'Compensation Simulator', href: '/compensation-simulator', icon: Calculator, color: 'text-cyan-500' },
         { name: 'Power Hour', href: '/power-hour', icon: Zap, color: 'text-purple-500' },
         { name: 'Churn Radar', href: '/churn-radar', icon: AlertTriangle, color: 'text-orange-500' },
         { name: 'Network Graph', href: '/network-graph', icon: Network, color: 'text-blue-500' },
+        { name: 'Genealogy Tree', href: '/genealogy', icon: Network, color: 'text-cyan-500' },
         { name: 'Roleplay Dojo', href: '/roleplay-dojo', icon: MessageSquare, color: 'text-green-500' },
         { name: 'Außendienst', href: '/field-ops', icon: MapPin },
         { name: 'Objection Brain', href: '/objections', icon: Brain },

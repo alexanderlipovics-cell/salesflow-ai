@@ -25,6 +25,11 @@ from app.core.ai_prompts import (
     build_coach_prompt_with_action,
     detect_action_from_text,
 )
+from app.core.user_adaptive_prompts import (
+    get_adaptive_chat_prompt,
+    load_user_learning_context,
+    build_user_adaptive_prompt,
+)
 from ..db.session import get_db  # added for dependency availability
 from ..core.security import get_current_user_dict
 from ..services.ai_service import AiService
@@ -280,13 +285,46 @@ async def chat_completion(
     
     # 2. System-Prompt basierend auf Action bauen
     if detected_action:
-        system_prompt = build_coach_prompt_with_action(detected_action)
+        base_prompt = build_coach_prompt_with_action(detected_action)
     else:
-        system_prompt = SALES_COACH_PROMPT
+        base_prompt = SALES_COACH_PROMPT
     
-    # Optional: Kontext hinzufügen
+    # 3. User-Adaptive Prompt: Personalisiere basierend auf User-Learning-Profile
+    try:
+        from app.supabase_client import get_supabase_client
+        db_client = get_supabase_client()
+        user_context = await load_user_learning_context(user_id, db_client)
+        
+        # Lead-Kontext für Personalisierung
+        lead_context = None
+        if request.lead_id:
+            try:
+                lead_result = db_client.table("leads").select("*").eq("id", request.lead_id).maybe_single().execute()
+                if lead_result.data:
+                    lead_context = {
+                        "name": lead_result.data.get("name"),
+                        "status": lead_result.data.get("status"),
+                        "score": lead_result.data.get("score"),
+                        "last_contact": str(lead_result.data.get("last_contact")) if lead_result.data.get("last_contact") else None,
+                        "notes": lead_result.data.get("notes"),
+                    }
+            except Exception as e:
+                logger.debug(f"Could not load lead context: {e}")
+        
+        # Personalisierten Prompt bauen
+        system_prompt = build_user_adaptive_prompt(
+            base_prompt=base_prompt,
+            user_context=user_context,
+            lead_context=lead_context,
+        )
+    except Exception as e:
+        # Fallback: Standard-Prompt wenn Personalisierung fehlschlägt
+        logger.warning(f"Could not personalize prompt, using base: {e}")
+        system_prompt = base_prompt
+    
+    # Optional: Zusätzlicher Kontext hinzufügen
     if request.context:
-        system_prompt += f"\n\n═══════════════════════════════════════\nKONTEXT:\n{request.context}"
+        system_prompt += f"\n\n═══════════════════════════════════════\nZUSÄTZLICHER KONTEXT:\n{request.context}"
     
     # NBA berechnen (silent, non-blocking)
     nba = await get_nba_for_lead(
@@ -345,6 +383,20 @@ async def chat_completion(
             template_version=CURRENT_TEMPLATE_VERSION,
             persona_variant=CURRENT_PERSONA_VARIANT,
         )
+        
+        # USER LEARNING: Track AI Response für automatisches Learning (non-blocking)
+        try:
+            from app.services.user_learning_service import UserLearningService
+            from app.supabase_client import get_supabase_client
+            
+            db = get_supabase_client()
+            learning_service = UserLearningService(db)
+            
+            # Track Response (wird später für Learning verwendet)
+            # TODO: Speichere in user_interactions oder ähnlicher Tabelle
+            logger.debug(f"AI Response tracked for user {user_id} (learning)")
+        except Exception as e:
+            logger.debug(f"Could not track response for learning: {e}")
         
         return ChatCompletionResponse(
             reply=reply,

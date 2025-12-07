@@ -5,8 +5,19 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, Optional
 from sqlalchemy.orm import Session
-from app.models.lead import Lead
-from app.models.lead_intent import LeadIntent
+
+# Lead/LeadIntent liegen mittlerweile im Domain-Modul. Fallback-Stub, falls nicht vorhanden.
+try:
+    from app.domain.leads.models import Lead  # neues Domain-Modell
+except ImportError:  # pragma: no cover - Fallback
+    class Lead:  # type: ignore
+        pass
+
+try:
+    # LeadIntent existiert aktuell nicht im neuen Domain-Modul – Stub für Abwärtskompatibilität
+    from app.domain.leads.intent import LeadIntent  # type: ignore  # pragma: no cover
+except Exception:  # pragma: no cover - Fallback
+    LeadIntent = None  # type: ignore
 
 class SmartSuggestionEngine:
     """
@@ -21,12 +32,14 @@ class SmartSuggestionEngine:
         if not lead:
             raise ValueError("Lead not found")
 
-        last_intent: Optional[LeadIntent] = (
-            self.db.query(LeadIntent)
-            .filter(LeadIntent.lead_id == lead_id)
-            .order_by(LeadIntent.created_at.desc())
-            .first()
-        )
+        last_intent: Optional[LeadIntent] = None
+        if LeadIntent:
+            last_intent = (
+                self.db.query(LeadIntent)
+                .filter(LeadIntent.lead_id == lead_id)
+                .order_by(LeadIntent.created_at.desc())
+                .first()
+            )
         return lead, last_intent
 
     def _days_since(self, dt: Optional[datetime]) -> Optional[float]:

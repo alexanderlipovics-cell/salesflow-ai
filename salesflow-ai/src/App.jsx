@@ -39,6 +39,8 @@ import { ChurnRadarPage } from "./pages/ChurnRadarPage";
 import { NetworkGraphPage } from "./pages/NetworkGraphPage";
 import { RoleplayDojoPage } from "./pages/RoleplayDojoPage";
 import TeamChiefDemoPage from "./pages/TeamChiefDemoPage";
+import CompensationSimulatorPage from "./pages/CompensationSimulatorPage";
+import GenealogyTreePage from "./pages/GenealogyTreePage";
 import { UserProvider } from "./context/UserContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
@@ -210,6 +212,8 @@ const App = () => {
                       <Route path="network-graph" element={<NetworkGraphPage />} />
                       <Route path="roleplay-dojo" element={<RoleplayDojoPage />} />
                       <Route path="magic-send" element={<MagicSendDemo />} />
+                      <Route path="compensation-simulator" element={<CompensationSimulatorPage />} />
+                      <Route path="genealogy" element={<GenealogyTreePage />} />
                       {placeholderRoutes.map((route) => (
                         <Route
                           key={route.path}

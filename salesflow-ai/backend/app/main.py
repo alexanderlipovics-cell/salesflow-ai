@@ -182,6 +182,8 @@ from .routers.lead_suggestions import router as lead_suggestions_router  # 🆕 
 from .routers.ops_deployments import router as ops_deployments_router  # 🆕 AI Ops Deployment Management
 from .routers.consent import router as consent_router  # 🛡️ GDPR Consent Management
 from .routers.privacy import router as privacy_router  # 🛡️ GDPR Privacy Operations
+from .routers.user_learning import router as user_learning_router  # 🧠 User Learning & Personalization
+from .routers.genealogy import router as genealogy_router  # 🌳 Genealogy Tree & Downline
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -215,6 +217,8 @@ app.include_router(lead_suggestions_router, prefix="/api")  # 🆕 Smart Suggest
 app.include_router(ops_deployments_router, prefix="/api")  # 🆕 AI Ops Deployment Management
 app.include_router(consent_router, prefix="/api")  # 🛡️ GDPR Consent Management
 app.include_router(privacy_router, prefix="/api")  # 🛡️ GDPR Privacy Operations
+app.include_router(user_learning_router, prefix="/api")  # 🧠 User Learning & Personalization
+app.include_router(genealogy_router, prefix="/api")  # 🌳 Genealogy Tree & Downline
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert
