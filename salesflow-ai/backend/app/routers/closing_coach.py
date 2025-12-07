@@ -258,3 +258,87 @@ async def list_my_closing_insights(
 
     return [ClosingInsight(**row) for row in result.data]
 
+
+@router.get("/deals", response_model=List[dict])
+async def list_deals_for_mobile(
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Liste alle Deals mit Closing-Insights für Mobile App.
+    Gibt eine vereinfachte Struktur zurück, die der Mobile App entspricht.
+    """
+    user_id = current_user.get("team_member_id") or current_user.get("id")
+
+    # Hole alle Deals des Users
+    deals_result = (
+        supabase.table("deals")
+        .select("id, title, contact_id, value, stage, created_at")
+        .eq("owner_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    deals = deals_result.data or []
+
+    # Hole zugehörige Closing-Insights
+    deal_ids = [str(d["id"]) for d in deals]
+    
+    insights_result = (
+        supabase.table("closing_insights")
+        .select("*")
+        .eq("user_id", user_id)
+        .in_("deal_id", deal_ids)
+        .execute()
+    )
+
+    insights_map = {str(ins["deal_id"]): ins for ins in (insights_result.data or [])}
+
+    # Hole Kontakt-Informationen
+    contact_ids = [str(d.get("contact_id")) for d in deals if d.get("contact_id")]
+    contacts_result = (
+        supabase.table("contacts")
+        .select("id, name, company")
+        .in_("id", contact_ids)
+        .execute()
+    ) if contact_ids else type('obj', (object,), {'data': []})()
+
+    contacts_map = {str(c["id"]): c for c in (contacts_result.data or [])}
+
+    # Kombiniere Daten
+    result = []
+    for deal in deals:
+        deal_id = str(deal["id"])
+        insight = insights_map.get(deal_id)
+        contact = contacts_map.get(str(deal.get("contact_id", "")))
+
+        # Formatiere für Mobile App
+        closing_insight = {
+            "id": deal_id,
+            "deal_name": deal.get("title") or "Unbenannter Deal",
+            "account": contact.get("company") if contact else "Unbekannt",
+            "closing_score": float(insight.get("closing_score", 50)) if insight else 50,
+            "probability": 0,  # Kann aus closing_probability abgeleitet werden
+            "blockers": [
+                {
+                    "issue": b.get("type", "Unknown"),
+                    "severity": b.get("severity", "medium"),
+                    "context": b.get("context", ""),
+                }
+                for b in (insight.get("detected_blockers", []) if insight else [])
+            ],
+            "strategies": [
+                {
+                    "name": s.get("strategy", "Unknown"),
+                    "script": s.get("script", ""),
+                    "focus": s.get("when_to_use", "General"),
+                }
+                for s in (insight.get("recommended_strategies", []) if insight else [])
+            ],
+            "last_analyzed": insight.get("last_analyzed_at", deal.get("created_at")) if insight else deal.get("created_at"),
+        }
+
+        result.append(closing_insight)
+
+    return result
+

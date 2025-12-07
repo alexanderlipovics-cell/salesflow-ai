@@ -17,7 +17,8 @@ sqlalchemy==2.0.25
 # Authentication
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-httpx>=0.25.0
+# httpx pinned to satisfy supabase (>=0.24,<0.26) and postgrest (>=0.24,<0.25)
+httpx>=0.24.0,<0.25.0
 
 # Background Tasks & Scheduling
 celery==5.3.6

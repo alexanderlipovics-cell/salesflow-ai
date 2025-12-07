@@ -333,3 +333,133 @@ async def list_my_insights(
     
     return [PerformanceInsight(**row) for row in result.data]
 
+
+@router.post("/analyze", response_model=dict)
+async def analyze_performance_mobile(
+    period_start: str = Query(..., description="Start date (ISO format)"),
+    period_end: str = Query(..., description="End date (ISO format)"),
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Analysiere Performance für Mobile App.
+    Gibt eine vereinfachte Struktur zurück, die der Mobile App entspricht.
+    """
+    from datetime import datetime
+    
+    user_id = current_user.get("team_member_id") or current_user.get("id")
+    
+    # Parse dates
+    start_date = datetime.fromisoformat(period_start.replace('Z', '+00:00')).date()
+    end_date = datetime.fromisoformat(period_end.replace('Z', '+00:00')).date()
+    
+    # Metriken sammeln
+    metrics = await collect_performance_metrics(user_id, start_date, end_date, supabase)
+    
+    # Vergleich mit vorheriger Periode
+    prev_period_days = (end_date - start_date).days
+    prev_period_start = start_date - timedelta(days=prev_period_days + 1)
+    prev_period_end = start_date - timedelta(days=1)
+    
+    prev_metrics = await collect_performance_metrics(user_id, prev_period_start, prev_period_end, supabase)
+    
+    # Berechne Trends
+    revenue_trend = (
+        ((metrics["revenue"] - prev_metrics.get("revenue", 0)) / prev_metrics.get("revenue", 1)) * 100
+        if prev_metrics.get("revenue", 0) > 0 else 0
+    )
+    calls_trend = (
+        ((metrics["calls_made"] - prev_metrics.get("calls_made", 0)) / prev_metrics.get("calls_made", 1)) * 100
+        if prev_metrics.get("calls_made", 0) > 0 else 0
+    )
+    deals_trend = (
+        ((metrics["deals_won"] - prev_metrics.get("deals_won", 0)) / prev_metrics.get("deals_won", 1)) * 100
+        if prev_metrics.get("deals_won", 0) > 0 else 0
+    )
+    conversion_trend = (
+        metrics["conversion_rate"] - prev_metrics.get("conversion_rate", 0)
+    )
+    
+    # Hole Zeitreihen-Daten (vereinfacht: wöchentlich)
+    time_series_labels = []
+    time_series_calls = []
+    time_series_deals = []
+    
+    # Vereinfachte Zeitreihe (4 Wochen)
+    current = start_date
+    week_count = 0
+    while current <= end_date and week_count < 4:
+        week_end = min(current + timedelta(days=6), end_date)
+        week_metrics = await collect_performance_metrics(user_id, current, week_end, supabase)
+        
+        time_series_labels.append(f"Woche {week_count + 1}")
+        time_series_calls.append(week_metrics["calls_made"])
+        time_series_deals.append(week_metrics["deals_won"])
+        
+        current = week_end + timedelta(days=1)
+        week_count += 1
+    
+    # Verlorene Deals für Issue-Detection
+    lost_deals_result = (
+        supabase.table("deals")
+        .select("id, title, value, stage, lost_reason, notes")
+        .eq("owner_id", user_id)
+        .eq("won", False)
+        .gte("created_at", start_date.isoformat())
+        .lte("created_at", end_date.isoformat())
+        .execute()
+    )
+    lost_deals = lost_deals_result.data or []
+    
+    # LLM-Analyse
+    comparison = {
+        "prev_calls_made": prev_metrics.get("calls_made", 0),
+        "calls_change_percent": calls_trend,
+        "prev_deals_won": prev_metrics.get("deals_won", 0),
+        "deals_change_percent": deals_trend,
+        "prev_conversion_rate": prev_metrics.get("conversion_rate", 0),
+        "conversion_change_percent": conversion_trend,
+    }
+    
+    analysis = await analyze_performance_with_llm(metrics, comparison, lost_deals)
+    
+    # Formatiere für Mobile App
+    return {
+        "id": "mobile-insight",
+        "period_start": start_date.isoformat(),
+        "period_end": end_date.isoformat(),
+        "kpis": {
+            "revenue": metrics["revenue"],
+            "calls": metrics["calls_made"],
+            "deals": metrics["deals_won"],
+            "conversion_rate": metrics["conversion_rate"] / 100,  # Als Dezimal (0-1)
+            "revenue_trend": revenue_trend,
+            "calls_trend": calls_trend,
+            "deals_trend": deals_trend,
+            "conversion_trend": conversion_trend,
+        },
+        "time_series": {
+            "labels": time_series_labels,
+            "calls": time_series_calls,
+            "deals": time_series_deals,
+        },
+        "issues": [
+            {
+                "id": f"issue_{idx}",
+                "title": issue.get("type", "Unknown Issue"),
+                "severity": issue.get("severity", "medium"),
+                "description": issue.get("recommendation", ""),
+            }
+            for idx, issue in enumerate(analysis.get("detected_issues", []))
+        ],
+        "recommendations": [
+            {
+                "id": f"rec_{idx}",
+                "title": rec.get("title", "Recommendation"),
+                "description": rec.get("description", ""),
+                "priority": "high" if rec.get("priority", 0) > 7 else "medium" if rec.get("priority", 0) > 4 else "low",
+            }
+            for idx, rec in enumerate(analysis.get("recommendations", []))
+        ],
+    }
+

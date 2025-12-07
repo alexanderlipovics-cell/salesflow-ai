@@ -318,6 +318,7 @@ async def list_daily_activities(
 
 @router.post("/daily-activities/track")
 async def track_daily_activity(
+    body: Optional[dict] = None,
     activity_date: Optional[date] = Query(None),
     new_contacts: int = Query(0),
     followups_sent: int = Query(0),

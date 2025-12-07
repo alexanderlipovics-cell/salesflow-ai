@@ -179,12 +179,20 @@ const analyzeDeal = async (dealId: string): Promise<ClosingInsight> => {
 
 ## 📱 Navigation Integration
 
-### 1. React Navigation
+### 1. Navigation bereits integriert
 
-Füge den Screen zur Navigation hinzu:
+Der Screen ist bereits in den Navigatoren integriert:
+
+- **MainNavigator.tsx:** Direkt als Tab "Coach"
+- **MainNavigatorCompact.tsx:** Im Sales Tools Stack
+- **SalesToolsNavigator.tsx:** Im Tools Menu verfügbar
+
+### 2. Manuelle Integration (falls nötig)
+
+Falls du eine eigene Navigation-Struktur hast:
 
 ```typescript
-// In deiner Navigation-Datei (z.B. AppNavigator.tsx):
+// In deiner Navigation-Datei:
 import ClosingCoachScreen from './screens/main/ClosingCoachScreen';
 
 // In deinem Stack Navigator:
@@ -195,7 +203,7 @@ import ClosingCoachScreen from './screens/main/ClosingCoachScreen';
 />
 ```
 
-### 2. Tab Navigation (Optional)
+### 3. Tab Navigation (Optional)
 
 Falls du Tabs verwendest:
 
@@ -205,7 +213,7 @@ Falls du Tabs verwendest:
   component={ClosingCoachScreen}
   options={{
     tabBarIcon: ({ color, size }) => (
-      <Icon name="target" size={size} color={color} />
+      <Icon name="handshake" size={size} color={color} />
     ),
   }}
 />
