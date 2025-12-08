@@ -75,7 +75,7 @@ class ModelRouter:
 
         # 1. Check tool calls first (most accurate signal)
         if tool_calls:
-            tool_names = [call.get("function", {}).get("name", "") for call in tool_calls]
+            tool_names = [call.function.name for call in tool_calls] if tool_calls else []
             if any(tool in self.COMPLEX_TOOLS for tool in tool_names):
                 return ModelTier.STANDARD
             if any(tool in self.SIMPLE_TOOLS for tool in tool_names):

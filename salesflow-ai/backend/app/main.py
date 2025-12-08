@@ -45,17 +45,24 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager für Startup/Shutdown Events."""
     # Startup
     logging.info("🚀 SalesFlow AI starting up...")
-    
+
+    # Start background scheduler
+    from .services.scheduler import setup_scheduler, shutdown_scheduler
+    setup_scheduler()
+    logging.info("📅 Background scheduler started")
+
     # Event Handler sind bereits beim Import registriert
     # Hier könnten weitere Startup-Tasks laufen:
     # - Health Checks
     # - Cache Warming
     # - Background Tasks starten
-    
+
     yield
-    
+
     # Shutdown
     logging.info("🛑 SalesFlow AI shutting down...")
+    shutdown_scheduler()
+    logging.info("📅 Background scheduler stopped")
 
 
 # App erstellen
@@ -240,6 +247,7 @@ from .routers.vision import router as vision_router  # 🤖 Claude Vision für S
 from .routers.smart_import import router as smart_import_router  # 🧠 Smart Chat Import
 from .routers.csv_import import router as csv_import_router  # 🧠 CSV/VCF Import
 from .routers.magic_send import router as magic_send_router  # 🔗 Magic Send Deep Links
+from .routers.notifications import router as notifications_router  # 🔔 Background Notifications
 from .routers.stakeholder import router as stakeholder_router  # 🧭 Stakeholder Mapping
 from .routers.finance import router as finance_router  # 💰 Finance Module
 from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
@@ -312,6 +320,7 @@ app.include_router(csv_import_router, prefix="/api")  # 🧠 CSV/VCF Import
 app.include_router(finance_router, prefix="/api")  # 💰 Finance Module
 app.include_router(income_predictor_router, prefix="/api")  # 📈 Income Predictor
 app.include_router(magic_send_router, prefix="/api")  # 🔗 Magic Send Deep Links
+app.include_router(notifications_router)  # 🔔 Background Notifications (has own prefix)
 app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mapping
 app.include_router(voice_router, prefix="/api")  # 🗣️ Voice Transcription
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
