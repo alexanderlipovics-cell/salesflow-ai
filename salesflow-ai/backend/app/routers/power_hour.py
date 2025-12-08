@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, date
 
 router = APIRouter(prefix="/power-hour", tags=["power-hour"])
 
-from ..dependencies import get_current_user
+from app.core.deps import get_current_user
 from app.supabase_client import get_supabase_client
 
 
