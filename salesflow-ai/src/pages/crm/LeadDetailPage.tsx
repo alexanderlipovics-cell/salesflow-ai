@@ -24,6 +24,7 @@ import {
   NBA_ACTION_ICONS,
 } from "@/types/lead";
 import { cn } from "@/lib/utils";
+import EmailComposer from "@/components/EmailComposer";
 
 const LeadDetailPage = () => {
   const { leadId } = useParams<{ leadId: string }>();
@@ -37,6 +38,9 @@ const LeadDetailPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<Partial<LeadFormData>>({});
   const [zeroInputSummary, setZeroInputSummary] = useState<string | null>(null);
+  const [emails, setEmails] = useState<Array<Record<string, any>>>([]);
+  const [emailsLoading, setEmailsLoading] = useState(false);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
 
   useEffect(() => {
     if (lead && !isEditing) {
@@ -51,6 +55,12 @@ const LeadDetailPage = () => {
       });
     }
   }, [lead, isEditing]);
+
+  useEffect(() => {
+    if (leadId) {
+      void loadEmails();
+    }
+  }, [leadId]);
 
   const handleSave = async () => {
     if (!leadId) return;
@@ -82,6 +92,20 @@ const LeadDetailPage = () => {
     const result = await summarize(leadId, false);
     if (result) {
       setZeroInputSummary(result.summary);
+    }
+  };
+
+  const loadEmails = async () => {
+    if (!leadId) return;
+    setEmailsLoading(true);
+    try {
+      const res = await fetch(`/api/emails/?lead_id=${leadId}`, { credentials: "include" });
+      const data = await res.json();
+      setEmails(data.emails || []);
+    } catch (err) {
+      console.error("E-Mails konnten nicht geladen werden", err);
+    } finally {
+      setEmailsLoading(false);
     }
   };
 
@@ -130,6 +154,12 @@ const LeadDetailPage = () => {
         <div className="flex gap-2">
           {!isEditing ? (
             <>
+              <button
+                onClick={() => setShowEmailComposer(true)}
+                className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white hover:border-white/40"
+              >
+                ✉️ E-Mail senden
+              </button>
               <button
                 onClick={() => setIsEditing(true)}
                 className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white hover:border-white/40"
@@ -323,6 +353,62 @@ const LeadDetailPage = () => {
               </div>
             )}
           </div>
+
+          {/* Emails */}
+          <div className="rounded-3xl border border-white/5 bg-black/30 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">E-Mails</h2>
+              <div className="flex gap-2 text-sm">
+                <button
+                  onClick={() => setShowEmailComposer(true)}
+                  className="rounded-lg border border-white/10 px-3 py-1 text-white hover:border-white/40"
+                >
+                  Schreiben
+                </button>
+                <button
+                  onClick={loadEmails}
+                  disabled={emailsLoading}
+                  className="rounded-lg border border-white/10 px-3 py-1 text-gray-200 hover:border-white/40 disabled:opacity-50"
+                >
+                  {emailsLoading ? "Lädt..." : "Aktualisieren"}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {emails.map((mail) => (
+                <div key={mail.id} className="rounded-2xl border border-white/5 bg-white/5 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-white">
+                        {mail.subject || "(Kein Betreff)"}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {mail.direction === "outbound" ? "Gesendet" : "Eingang"} · {mail.from_email}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-emerald-200">
+                        Opens: {mail.open_count || 0}
+                      </span>
+                      <span className="rounded-full bg-blue-500/10 px-2 py-1 text-blue-200">
+                        Clicks: {mail.click_count || 0}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2 line-clamp-2 text-sm text-gray-300">
+                    {mail.snippet || mail.body_html || ""}
+                  </div>
+                </div>
+              ))}
+
+              {!emails.length && !emailsLoading && (
+                <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-gray-400">
+                  Noch keine E-Mails für diesen Lead. Sende die erste Nachricht oben.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -446,6 +532,14 @@ const LeadDetailPage = () => {
           </div>
         </div>
       </div>
+      <EmailComposer
+        isOpen={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+        defaultTo={lead.email}
+        leadId={leadId || undefined}
+        lead={lead}
+        onSent={loadEmails}
+      />
     </div>
   );
 };

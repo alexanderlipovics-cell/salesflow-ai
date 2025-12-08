@@ -15,6 +15,7 @@ import { ProtectedRoute } from "./components/auth";
 import { ToastProvider } from "./components/Toast";
 import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage.tsx";
+import FinancePage from "./pages/FinancePage";
 
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -27,6 +28,7 @@ const PageLoader = () => (
 
 const PricingPage = lazy(() => import("./components/PricingPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const IntegrationsPage = lazy(() => import("./pages/IntegrationsPage"));
 const DailyCommandPage = lazy(() =>
   import("./pages/DailyCommandPage").then((m) => ({ default: m.DailyCommandPage }))
 );
@@ -101,6 +103,8 @@ const MagicSendDemo = lazy(() => import("./pages/MagicSendDemo"));
 const FollowUpAnalyticsPage = lazy(() => import("./pages/FollowUpAnalyticsPage"));
 const SequencesPage = lazy(() => import("./pages/SequencesPage"));
 const ProposalsPage = lazy(() => import("./pages/ProposalsPage"));
+const EmailsPage = lazy(() => import("./pages/EmailsPage"));
+const SettingsEmailPage = lazy(() => import("./pages/SettingsEmailPage"));
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -231,7 +235,10 @@ const App = () => {
                       <Route path="choose-vertical" element={<ChooseVerticalPage />} />
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="integrations" element={<IntegrationsPage />} />
+                      <Route path="settings/email" element={<SettingsEmailPage />} />
                       <Route path="billing" element={<BillingManagement />} />
+                      <Route path="finance" element={<FinancePage />} />
                       <Route path="follow-up-analytics" element={<FollowUpAnalyticsPage />} />
                       <Route path="commissions" element={<CommissionTrackerPage />} />
                       <Route path="cold-call" element={<ColdCallAssistantPage />} />
@@ -256,6 +263,7 @@ const App = () => {
                       <Route path="follow-ups" element={<FollowUpsPage />} />
                       <Route path="sequences" element={<SequencesPage />} />
                       <Route path="proposals" element={<ProposalsPage />} />
+                      <Route path="emails" element={<EmailsPage />} />
                       <Route path="objections" element={<ObjectionsPage />} />
                       <Route path="objection-brain" element={<ObjectionBrainPage />} />
                       <Route path="next-best-actions" element={<NextBestActionsPage />} />

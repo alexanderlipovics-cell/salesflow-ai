@@ -13,6 +13,7 @@ from supabase import create_client
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.zapier import dispatch_webhook
 from ..core.security import get_current_active_user
 from ..db.session import get_db
 from ..models.user import User
@@ -32,6 +33,17 @@ def get_supabase():
     # KRITISCH: Nur URL und Key übergeben - KEINE zusätzlichen Parameter!
     # Signatur: create_client(url: str, key: str) -> Client
     return create_client(url, key)
+
+
+def _extract_user_id(current_user: User) -> Optional[str]:
+    """Ermittle die User-ID aus verschiedenen Strukturen."""
+    if current_user is None:
+        return None
+    if isinstance(current_user, dict):
+        user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
+    else:
+        user_id = getattr(current_user, "id", None) or getattr(current_user, "user_id", None)
+    return str(user_id) if user_id else None
 
 
 class LeadCreate(BaseModel):
@@ -78,7 +90,7 @@ async def get_pending_leads():
 
 @router.post("/")
 @router.post("")
-async def create_lead(request: Request):
+async def create_lead(request: Request, current_user: User = Depends(get_current_active_user)):
     """
     Create a new lead - flexible schema.
     POST /api/leads oder POST /api/leads/
@@ -134,6 +146,7 @@ async def create_lead(request: Request):
         if result.data:
             lead = result.data[0]
             lead_id = lead.get("id")
+            user_id = _extract_user_id(current_user)
             
             # Versuche tenant_id zu extrahieren (aus User oder Lead)
             tenant_id = lead.get("tenant_id")
@@ -158,6 +171,12 @@ async def create_lead(request: Request):
                     # Event wird später über Celery/Background Task verarbeitet
                 except Exception as e:
                     logger.debug(f"Could not publish event (non-critical): {e}")
+
+            # Zapier Webhook triggern
+            if user_id:
+                payload = dict(lead)
+                payload.setdefault("user_id", user_id)
+                await dispatch_webhook(user_id, "new_lead", payload)
         
         return {"success": True, "lead": result.data[0] if result.data else data}
         
@@ -167,15 +186,32 @@ async def create_lead(request: Request):
 
 
 @router.put("/{lead_id}")
-async def update_lead(lead_id: str, request: Request):
+async def update_lead(lead_id: str, request: Request, current_user: User = Depends(get_current_active_user)):
     import json
     try:
         body = await request.body()
         lead = json.loads(body)
         
         db = get_supabase()
+        existing = db.table("leads").select("id,status").eq("id", lead_id).maybe_single().execute()
+        old_status = existing.data.get("status") if existing and existing.data else None
         lead["updated_at"] = datetime.now().isoformat()
         result = db.table("leads").update(lead).eq("id", lead_id).execute()
+
+        # Webhook für Statuswechsel
+        user_id = _extract_user_id(current_user)
+        new_status = result.data[0].get("status") if result and result.data else None
+        if user_id and old_status and new_status and old_status != new_status:
+            await dispatch_webhook(
+                user_id,
+                "lead_status_changed",
+                {
+                    "id": lead_id,
+                    "old_status": old_status,
+                    "new_status": new_status,
+                    "changed_at": datetime.utcnow().isoformat(),
+                },
+            )
         return {"lead": result.data[0], "success": True}
     except Exception as e:
         logger.exception(f"Update lead error: {e}")
