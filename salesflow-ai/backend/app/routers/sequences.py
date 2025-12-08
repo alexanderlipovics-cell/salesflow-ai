@@ -1,7 +1,8 @@
 from datetime import date, datetime, timedelta
+import urllib.parse
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from app.core.deps import get_current_user
@@ -319,6 +320,167 @@ async def get_sequence_enrollments(sequence_id: str, current_user=Depends(get_cu
         .execute()
     )
     return {"enrollments": result.data or []}
+
+
+@router.get("/turbo-today")
+async def get_turbo_today(
+    current_user=Depends(get_current_user),
+):
+    """Get all due actions with pre-generated messages for turbo mode."""
+    supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
+    today = date.today().isoformat()
+
+    enrollments = (
+        supabase.table("sequence_enrollments")
+        .select("*, leads(*), follow_up_sequences(name, total_steps)")
+        .eq("user_id", user_id)
+        .eq("status", "active")
+        .lte("next_action_date", today)
+        .execute()
+    )
+
+    if not enrollments.data:
+        return {"actions": [], "count": 0, "message": "Keine Follow-ups heute! 🎉"}
+
+    sequence_ids = list({e["sequence_id"] for e in enrollments.data})
+    steps = supabase.table("sequence_steps").select("*").in_("sequence_id", sequence_ids).execute()
+
+    steps_lookup = {}
+    for step in steps.data or []:
+        key = (step["sequence_id"], step["step_number"])
+        steps_lookup[key] = step
+
+    actions = []
+    for enrollment in enrollments.data:
+        lead = enrollment.get("leads") or {}
+        sequence = enrollment.get("follow_up_sequences") or {}
+        step_key = (enrollment["sequence_id"], enrollment.get("current_step", 1))
+        step = steps_lookup.get(step_key)
+
+        if not step:
+            continue
+
+        message = step.get("message_template", "")
+        message = message.replace("{name}", lead.get("name") or "")
+        message = message.replace(
+            "{vorname}",
+            lead.get("first_name")
+            or (lead.get("name", "").split()[0] if lead.get("name") else ""),
+        )
+        message = message.replace("{nachname}", lead.get("last_name") or "")
+        message = message.replace("{firma}", lead.get("company") or "")
+
+        channel = step.get("channel", "whatsapp")
+        phone = (lead.get("phone") or "").replace(" ", "").replace("+", "")
+        email = lead.get("email", "")
+        instagram = (lead.get("instagram") or "").replace("@", "")
+
+        if channel == "whatsapp" and phone:
+            deep_link = f"https://wa.me/{phone}?text={urllib.parse.quote(message)}"
+        elif channel == "email" and email:
+            subject = urllib.parse.quote(step.get("subject") or "Follow-up")
+            deep_link = f"mailto:{email}?subject={subject}&body={urllib.parse.quote(message)}"
+        elif channel == "instagram" and instagram:
+            deep_link = f"https://instagram.com/{instagram}"
+        else:
+            deep_link = None
+
+        actions.append(
+            {
+                "enrollment_id": enrollment["id"],
+                "lead_id": lead.get("id"),
+                "lead_name": lead.get("name"),
+                "lead_phone": phone,
+                "lead_email": email,
+                "lead_company": lead.get("company"),
+                "sequence_name": sequence.get("name"),
+                "step_number": enrollment.get("current_step", 1),
+                "total_steps": sequence.get("total_steps", 1),
+                "channel": channel,
+                "message": message,
+                "deep_link": deep_link,
+                "can_send": deep_link is not None,
+            }
+        )
+
+    actions.sort(key=lambda x: x.get("lead_name") or "")
+
+    return {"actions": actions, "count": len(actions), "message": f"🔥 {len(actions)} Follow-ups heute!"}
+
+
+@router.post("/turbo-complete")
+async def turbo_complete_action(
+    enrollment_id: str = Body(..., embed=True),
+    current_user=Depends(get_current_user),
+):
+    """Mark action as done and advance to next step (turbo mode)."""
+    supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
+
+    enrollment = (
+        supabase.table("sequence_enrollments")
+        .select("*, follow_up_sequences(total_steps)")
+        .eq("id", enrollment_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+
+    if not enrollment.data:
+        raise HTTPException(404, "Enrollment nicht gefunden")
+
+    current_step = enrollment.data.get("current_step", 1)
+    total_steps = (enrollment.data.get("follow_up_sequences") or {}).get("total_steps", 1)
+
+    if current_step >= total_steps:
+        supabase.table("sequence_enrollments").update(
+            {"status": "completed", "current_step": current_step}
+        ).eq("id", enrollment_id).execute()
+
+        return {"success": True, "completed": True, "message": "Sequence abgeschlossen! 🎉"}
+
+    next_step_data = (
+        supabase.table("sequence_steps")
+        .select("delay_days")
+        .eq("sequence_id", enrollment.data["sequence_id"])
+        .eq("step_number", current_step + 1)
+        .single()
+        .execute()
+    )
+
+    delay_days = next_step_data.data.get("delay_days", 1) if next_step_data.data else 1
+    next_date = (date.today() + timedelta(days=delay_days)).isoformat()
+
+    supabase.table("sequence_enrollments").update(
+        {"current_step": current_step + 1, "next_action_date": next_date}
+    ).eq("id", enrollment_id).execute()
+
+    return {
+        "success": True,
+        "completed": False,
+        "next_step": current_step + 1,
+        "next_date": next_date,
+        "message": f"Weiter zu Step {current_step + 1}",
+    }
+
+
+@router.post("/turbo-complete-bulk")
+async def turbo_complete_bulk(
+    enrollment_ids: List[str] = Body(..., embed=True),
+    current_user=Depends(get_current_user),
+):
+    """Mark multiple actions as done."""
+    results = []
+    for eid in enrollment_ids:
+        try:
+            result = await turbo_complete_action(eid, current_user)
+            results.append({"id": eid, **result})
+        except Exception as exc:
+            results.append({"id": eid, "success": False, "error": str(exc)})
+
+    completed = sum(1 for r in results if r.get("success"))
+    return {"success": True, "completed_count": completed, "total": len(enrollment_ids), "results": results}
 
 
 __all__ = ["router"]

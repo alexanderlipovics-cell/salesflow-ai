@@ -194,9 +194,11 @@ Regeln:
 - Erkenne auch informelle Sprache ("leg an", "mach ne Notiz", "ruf an")
 - Bei Unsicherheit: NORMAL_CHAT mit der Frage"""
 
+    model = get_model_for_task("detect_intent")
+    max_tokens = get_max_tokens_for_task("detect_intent")
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=500,
+        model=model,
+        max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
 

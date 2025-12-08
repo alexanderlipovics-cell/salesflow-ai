@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.core.deps import get_current_user
 from app.supabase_client import get_supabase_client
+from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
 
 router = APIRouter(prefix="/stakeholder", tags=["stakeholder"])
@@ -95,9 +96,11 @@ Antworte NUR mit JSON:
 
 Wenn wenig Info vorhanden, niedrige confidence setzen."""
 
+            model = get_model_for_task("stakeholder_inference")
+            max_tokens = get_max_tokens_for_task("stakeholder_inference")
             message = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=500,
+                model=model,
+                max_tokens=max_tokens,
                 messages=[{"role": "user", "content": prompt}],
             )
 

@@ -23,6 +23,7 @@ from app.core.ai_prompts import SALES_COACH_PROMPT, detect_action_from_text
 from app.core.deps import get_current_user
 from app.supabase_client import get_supabase_client
 from ..core.security import get_current_user_dict
+from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
 router = APIRouter(
     prefix="/copilot",
@@ -466,9 +467,11 @@ async def generate_ai_response(message: str, context: Dict[str, Any]) -> Dict[st
             import anthropic
             client = anthropic.Anthropic(api_key=anthropic_key)
             
+            model = get_model_for_task("generate_response")
+            max_tokens = get_max_tokens_for_task("generate_response")
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1500,
+                model=model,
+                max_tokens=max_tokens,
                 system=COPILOT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": f"""
 Anfrage: {message}
@@ -600,9 +603,11 @@ Sei knapp und präzise - der User ist LIVE beim Kunden!"""
         from anthropic import Anthropic
 
         client = Anthropic(api_key=anthropic_key)
+        model = get_model_for_task("generate_response")
+        max_tokens = min(get_max_tokens_for_task("generate_response"), 300)
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=300,
+            model=model,
+            max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
         assistance_text = message.content[0].text if message and message.content else ""
@@ -795,9 +800,11 @@ async def analyze_screenshot(request: dict):
             raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY nicht konfiguriert")
         
         client = anthropic.Anthropic(api_key=anthropic_key)
+        model = get_model_for_task("vision_extraction")
+        max_tokens = min(get_max_tokens_for_task("vision_extraction"), 1000)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1000,
+            model=model,
+            max_tokens=max_tokens,
             messages=[{
                 "role": "user",
                 "content": [

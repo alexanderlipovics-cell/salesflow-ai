@@ -1,54 +1,8 @@
-import { useMemo } from "react";
+import React, { useMemo, lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import PricingPage from "./components/PricingPage";
 import PricingModal from "./components/PricingModal";
 import FeatureGateModal from "./components/FeatureGateModal";
-import SettingsPage from "./pages/SettingsPage";
-import ChatPage from "./pages/ChatPage";
-import { DailyCommandPage } from "./pages/DailyCommandPage";
-import LeadsProspectsPage from "./pages/LeadsProspectsPage";
-import LeadsCustomersPage from "./pages/LeadsCustomersPage";
-import LeadHunterPage from "./pages/LeadHunterPage";
-import HunterPage from "./pages/HunterPage";
-import DelayMasterPage from "./pages/DelayMasterPage";
-import ImportPage from "./pages/ImportPage";
-import PhoenixPage from "./pages/PhoenixPage";
-import FieldOpsPage from "./pages/FieldOpsPage";
-import FollowUpsPage from "./pages/FollowUpsPage";
-import ObjectionsPage from "./pages/ObjectionsPage";
-import ObjectionBrainPage from "./pages/ObjectionBrainPage";
-import ObjectionAnalyticsPage from "./pages/ObjectionAnalyticsPage";
-import FollowUpTemplateManagerPage from "./pages/FollowUpTemplateManagerPage";
-import CompanyKnowledgeSettingsPage from "./pages/CompanyKnowledgeSettingsPage";
-import NextBestActionsPage from "./pages/NextBestActionsPage";
-import SalesAiSettingsPage from "./pages/SalesAiSettingsPage";
-import OnboardingWizardPage from "./pages/OnboardingWizardPage";
-import PagePlaceholder from "./pages/PagePlaceholder";
-import GtmCopyAssistantPage from "./pages/GtmCopyAssistantPage";
-import AuthPage from "./pages/AuthPage";
 import AppShell from "./layout/AppShell";
-import ContactsPage from "@/pages/crm/ContactsPage";
-import ContactDetailPage from "@/pages/crm/ContactDetailPage";
-import PipelinePage from "@/pages/crm/PipelinePage";
-import LeadsPage from "@/pages/crm/LeadsPage";
-import LeadDetailPage from "@/pages/crm/LeadDetailPage";
-import TemplateLeaderboardPage from "./pages/TemplateLeaderboardPage";
-import AICoachPage from "./pages/AICoachPage";
-import { AnalyticsDashboard } from "./pages/AnalyticsDashboard";
-import PowerHourPage from "./pages/PowerHourPage";
-import { ChurnRadarPage } from "./pages/ChurnRadarPage";
-import { NetworkGraphPage } from "./pages/NetworkGraphPage";
-import { RoleplayDojoPage } from "./pages/RoleplayDojoPage";
-import TeamChiefDemoPage from "./pages/TeamChiefDemoPage";
-import CompensationSimulatorPage from "./pages/CompensationSimulatorPage";
-import GenealogyTreePage from "./pages/GenealogyTreePage";
-import CommissionTrackerPage from "./pages/CommissionTrackerPage";
-import ColdCallAssistantPage from "./pages/ColdCallAssistantPage";
-import PerformanceInsightsPage from "./pages/PerformanceInsightsPage";
-import GamificationPage from "./pages/GamificationPage";
-import ClosingCoachPage from "./pages/ClosingCoachPage";
-import LeadQualifierPage from "./pages/LeadQualifierPage";
-import LeadDiscoveryPage from "./pages/LeadDiscoveryPage";
 import { UserProvider } from "./context/UserContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { PricingModalProvider } from "./context/PricingModalContext";
@@ -56,29 +10,97 @@ import { FeatureGateProvider } from "./context/FeatureGateContext";
 import { AuthProvider } from "./context/AuthContext";
 import { VerticalProvider as CoreVerticalProvider } from "./core/VerticalContext";
 import { getBootstrapUser } from "./lib/user";
-import ChooseVerticalPage from "./pages/ChooseVerticalPage";
 import { useApiInitialization } from "./hooks/useApiInitialization";
-import DashboardRouterPage from "./pages/DashboardRouterPage";
-import DashboardPage from "./pages/DashboardPage.tsx";
-import SquadCoachPage from "./pages/SquadCoachPage.tsx";
-import MarketingLandingPage from "./pages/MarketingLandingPage";
-import CompactLandingPage from "./pages/CompactLandingPage";
-import VerticalLandingPage from "./pages/VerticalLandingPage";
-import AutopilotPage from "./pages/AutopilotPage";
-import BillingManagement from "./pages/BillingManagement";
-import AIPromptsPage from "./pages/AIPromptsPage";
-import NetworkMarketingDashboard from "./pages/NetworkMarketingDashboard";
-import VideoMeetingsPage from "./pages/VideoMeetingsPage";
-import SquadChallengeManager from "./pages/SquadChallengeManager";
-import SquadCoachPriorityPage from "./pages/SquadCoachPriorityPage";
-import SquadCoachPageV2 from "./pages/SquadCoachPageV2";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
 import { ProtectedRoute } from "./components/auth";
-import MagicSendDemo from "./pages/MagicSendDemo";
-import FollowUpAnalyticsPage from "./pages/FollowUpAnalyticsPage";
-import SequencesPage from "./pages/SequencesPage";
-import ProposalsPage from "./pages/ProposalsPage";
+import { ToastProvider } from "./components/Toast";
+import ChatPage from "./pages/ChatPage";
+import DashboardPage from "./pages/DashboardPage.tsx";
+
+const PageLoader = () => (
+  <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <p className="text-gray-400">Laden...</p>
+    </div>
+  </div>
+);
+
+const PricingPage = lazy(() => import("./components/PricingPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const DailyCommandPage = lazy(() =>
+  import("./pages/DailyCommandPage").then((m) => ({ default: m.DailyCommandPage }))
+);
+const LeadsProspectsPage = lazy(() => import("./pages/LeadsProspectsPage"));
+const LeadsCustomersPage = lazy(() => import("./pages/LeadsCustomersPage"));
+const LeadHunterPage = lazy(() => import("./pages/LeadHunterPage"));
+const HunterPage = lazy(() => import("./pages/HunterPage"));
+const DelayMasterPage = lazy(() => import("./pages/DelayMasterPage"));
+const ImportPage = lazy(() => import("./pages/ImportPage"));
+const PhoenixPage = lazy(() => import("./pages/PhoenixPage"));
+const FieldOpsPage = lazy(() => import("./pages/FieldOpsPage"));
+const FollowUpsPage = lazy(() => import("./pages/FollowUpsPage"));
+const ObjectionsPage = lazy(() => import("./pages/ObjectionsPage"));
+const ObjectionBrainPage = lazy(() => import("./pages/ObjectionBrainPage"));
+const ObjectionAnalyticsPage = lazy(() => import("./pages/ObjectionAnalyticsPage"));
+const FollowUpTemplateManagerPage = lazy(() => import("./pages/FollowUpTemplateManagerPage"));
+const CompanyKnowledgeSettingsPage = lazy(() => import("./pages/CompanyKnowledgeSettingsPage"));
+const NextBestActionsPage = lazy(() => import("./pages/NextBestActionsPage"));
+const SalesAiSettingsPage = lazy(() => import("./pages/SalesAiSettingsPage"));
+const OnboardingWizardPage = lazy(() => import("./pages/OnboardingWizardPage"));
+const PagePlaceholder = lazy(() => import("./pages/PagePlaceholder"));
+const GtmCopyAssistantPage = lazy(() => import("./pages/GtmCopyAssistantPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const ContactsPage = lazy(() => import("@/pages/crm/ContactsPage"));
+const ContactDetailPage = lazy(() => import("@/pages/crm/ContactDetailPage"));
+const PipelinePage = lazy(() => import("@/pages/crm/PipelinePage"));
+const LeadsPage = lazy(() => import("@/pages/crm/LeadsPage"));
+const LeadDetailPage = lazy(() => import("@/pages/crm/LeadDetailPage"));
+const TemplateLeaderboardPage = lazy(() => import("./pages/TemplateLeaderboardPage"));
+const AICoachPage = lazy(() => import("./pages/AICoachPage"));
+const AnalyticsDashboard = lazy(() =>
+  import("./pages/AnalyticsDashboard").then((m) => ({ default: m.AnalyticsDashboard }))
+);
+const PowerHourPage = lazy(() => import("./pages/PowerHourPage"));
+const ChurnRadarPage = lazy(() =>
+  import("./pages/ChurnRadarPage").then((m) => ({ default: m.ChurnRadarPage }))
+);
+const NetworkDashboard = lazy(() => import("./pages/NetworkDashboard"));
+const NetworkGraphPage = lazy(() =>
+  import("./pages/NetworkGraphPage").then((m) => ({ default: m.NetworkGraphPage }))
+);
+const RoleplayDojoPage = lazy(() =>
+  import("./pages/RoleplayDojoPage").then((m) => ({ default: m.RoleplayDojoPage }))
+);
+const TeamChiefDemoPage = lazy(() => import("./pages/TeamChiefDemoPage"));
+const CompensationSimulatorPage = lazy(() => import("./pages/CompensationSimulatorPage"));
+const GenealogyTreePage = lazy(() => import("./pages/GenealogyTreePage"));
+const CommissionTrackerPage = lazy(() => import("./pages/CommissionTrackerPage"));
+const ColdCallAssistantPage = lazy(() => import("./pages/ColdCallAssistantPage"));
+const PerformanceInsightsPage = lazy(() => import("./pages/PerformanceInsightsPage"));
+const GamificationPage = lazy(() => import("./pages/GamificationPage"));
+const ClosingCoachPage = lazy(() => import("./pages/ClosingCoachPage"));
+const LeadQualifierPage = lazy(() => import("./pages/LeadQualifierPage"));
+const LeadDiscoveryPage = lazy(() => import("./pages/LeadDiscoveryPage"));
+const ChooseVerticalPage = lazy(() => import("./pages/ChooseVerticalPage"));
+const DashboardRouterPage = lazy(() => import("./pages/DashboardRouterPage"));
+const SquadCoachPage = lazy(() => import("./pages/SquadCoachPage.tsx"));
+const MarketingLandingPage = lazy(() => import("./pages/MarketingLandingPage"));
+const CompactLandingPage = lazy(() => import("./pages/CompactLandingPage"));
+const VerticalLandingPage = lazy(() => import("./pages/VerticalLandingPage"));
+const AutopilotPage = lazy(() => import("./pages/AutopilotPage"));
+const BillingManagement = lazy(() => import("./pages/BillingManagement"));
+const AIPromptsPage = lazy(() => import("./pages/AIPromptsPage"));
+const NetworkMarketingDashboard = lazy(() => import("./pages/NetworkMarketingDashboard"));
+const VideoMeetingsPage = lazy(() => import("./pages/VideoMeetingsPage"));
+const SquadChallengeManager = lazy(() => import("./pages/SquadChallengeManager"));
+const SquadCoachPriorityPage = lazy(() => import("./pages/SquadCoachPriorityPage"));
+const SquadCoachPageV2 = lazy(() => import("./pages/SquadCoachPageV2"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignupPage = lazy(() => import("./pages/SignupPage"));
+const MagicSendDemo = lazy(() => import("./pages/MagicSendDemo"));
+const FollowUpAnalyticsPage = lazy(() => import("./pages/FollowUpAnalyticsPage"));
+const SequencesPage = lazy(() => import("./pages/SequencesPage"));
+const ProposalsPage = lazy(() => import("./pages/ProposalsPage"));
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -165,6 +187,8 @@ const App = () => {
           <PricingModalProvider>
             <FeatureGateProvider>
                 <BrowserRouter>
+                  <ToastProvider />
+                  <Suspense fallback={<PageLoader />}>
                   <Routes>
                     {/* Public Routes - Auth Pages */}
                     <Route path="/login" element={<LoginPage />} />
@@ -254,6 +278,7 @@ const App = () => {
                       <Route path="power-hour" element={<PowerHourPage />} />
                       <Route path="churn-radar" element={<ChurnRadarPage />} />
                       <Route path="network-graph" element={<NetworkGraphPage />} />
+                      <Route path="network" element={<NetworkDashboard />} />
                       <Route path="roleplay-dojo" element={<RoleplayDojoPage />} />
                       <Route path="magic-send" element={<MagicSendDemo />} />
                       <Route path="compensation-simulator" element={<CompensationSimulatorPage />} />
@@ -282,6 +307,7 @@ const App = () => {
                     {/* Fallback - Redirect to login if not authenticated */}
                     <Route path="*" element={<Navigate to="/login" replace />} />
                   </Routes>
+                  </Suspense>
                   <PricingModal />
                   <FeatureGateModal />
                 </BrowserRouter>

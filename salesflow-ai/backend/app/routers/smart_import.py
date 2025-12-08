@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from anthropic import Anthropic
+from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 import json
 import os
 from datetime import datetime, timedelta
@@ -222,9 +223,11 @@ Regeln:
 - Wenn nur Vornamen: trotzdem aufnehmen
 - Nummerierung/Bullets entfernen"""
 
+    model = get_model_for_task("parse_contact_list")
+    max_tokens = get_max_tokens_for_task("parse_contact_list")
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=2000,
+        model=model,
+        max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
 
@@ -326,9 +329,11 @@ Regeln:
 - follow_up_days: hot=2, warm=3, cold=5
 """
 
+        model = get_model_for_task("analyze_conversation")
+        max_tokens = get_max_tokens_for_task("analyze_conversation")
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=2000,
+            model=model,
+            max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
 

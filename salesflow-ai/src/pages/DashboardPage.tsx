@@ -35,6 +35,8 @@ import {
 import DealHealthCard from '../components/DealHealthCard';
 import IncomePredictorCard from '../components/IncomePredictorCard';
 import LeadContextSidebar from '../components/LeadContextSidebar';
+import TurboWidget from '../components/TurboWidget';
+import TurboMode from '../components/TurboMode';
 
 // 1. Performance: Code Splitting für schwere Komponenten
 // Diese werden nur geladen, wenn sie im Viewport benötigt werden
@@ -174,6 +176,7 @@ const DashboardPage: React.FC = () => {
   const { stats, charts, activities, isLoading, isError, refetchAll } = useDashboardData();
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showTurbo, setShowTurbo] = useState(false);
   const navigate = useNavigate();
 
   const hotLeads = useMemo<HunterLead[]>(
@@ -340,6 +343,10 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="mb-6">
+          <TurboWidget onOpenTurbo={() => setShowTurbo(true)} />
+        </div>
+
         <ActivityTicker activities={tickerItems} />
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -430,6 +437,19 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </main>
+      {showTurbo && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl">
+            <TurboMode onClose={() => setShowTurbo(false)} />
+            <button
+              onClick={() => setShowTurbo(false)}
+              className="mt-4 w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-lg"
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

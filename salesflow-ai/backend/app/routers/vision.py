@@ -13,6 +13,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 from app.core.deps import get_current_user
 from app.routers.smart_import import BULK_LIST_PROMPT, is_bulk_list as detect_bulk_list
+from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
 router = APIRouter(prefix="/vision", tags=["vision"])
 
@@ -177,9 +178,11 @@ async def analyze_screenshot(
 
         client = Anthropic()
 
+        model = get_model_for_task("vision_extraction")
+        max_tokens = get_max_tokens_for_task("vision_extraction")
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=2048,
+            model=model,
+            max_tokens=max_tokens,
             messages=[
                 {
                     "role": "user",

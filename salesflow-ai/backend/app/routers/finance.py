@@ -9,6 +9,7 @@ import json
 import base64
 
 from anthropic import Anthropic
+from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
 from app.core.deps import get_current_user
 from app.supabase_client import get_supabase_client
@@ -242,9 +243,11 @@ async def scan_receipt(
     content_type = file.content_type or "image/jpeg"
 
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    model = get_model_for_task("receipt_vision")
+    max_tokens = min(get_max_tokens_for_task("receipt_vision"), 1000)
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=1000,
+        model=model,
+        max_tokens=max_tokens,
         messages=[
             {
                 "role": "user",

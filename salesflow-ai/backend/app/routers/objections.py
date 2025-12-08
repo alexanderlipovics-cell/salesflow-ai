@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 import json
 from anthropic import Anthropic
+from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
+from ..core.cache import cache_key, get_cached, set_cached
 
 router = APIRouter(prefix="/objections", tags=["objections"])
 
@@ -33,19 +35,40 @@ class SaveObjectionRequest(BaseModel):
     notes: Optional[str] = None
 
 
+def _extract_user_id(current_user) -> str:
+    """User-ID unabhängig von Objektstruktur extrahieren."""
+    if current_user is None:
+        raise ValueError("Kein Benutzerkontext gefunden")
+    if isinstance(current_user, dict):
+        user_id = current_user.get("user_id") or current_user.get("id")
+    else:
+        user_id = getattr(current_user, "id", None) or getattr(current_user, "user_id", None)
+    if not user_id:
+        raise ValueError("Kein Benutzerkontext gefunden")
+    return str(user_id)
+
+
 @router.get("/templates")
-async def get_objection_templates():
-    """Get all predefined objection templates."""
+async def get_objection_templates(current_user=Depends(get_current_user)):
+    """Get all predefined objection templates (mit Caching)."""
     supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
+
+    key = cache_key("objection_templates", user_id)
+    cached = get_cached(key)
+    if cached is not None:
+        return {"templates": cached, "cached": True}
 
     result = (
         supabase.table("objection_templates")
         .select("*")
+        .or_(f"user_id.eq.{user_id},is_system.eq.true")
         .order("times_used", desc=True)
         .execute()
     )
 
-    return {"templates": result.data or []}
+    set_cached(key, result.data or [], ttl_seconds=3600)
+    return {"templates": result.data or [], "cached": False}
 
 
 @router.post("/handle", response_model=ObjectionResponse)
@@ -55,6 +78,7 @@ async def handle_objection(
 ):
     """Get responses for an objection - matches templates + AI suggestion."""
     supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
 
     objection = query.objection_text.lower().strip()
 
@@ -71,7 +95,7 @@ async def handle_objection(
     user_objections = (
         supabase.table("user_objections")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", user_id)
         .execute()
     )
 
@@ -97,9 +121,11 @@ Gib eine empathische, professionelle Antwort die:
 
 Antworte NUR mit dem Antwort-Text, keine Erklärung."""
 
+    model = get_model_for_task("generate_response")
+    max_tokens = get_max_tokens_for_task("generate_response")
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=200,
+        model=model,
+        max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
 
@@ -148,9 +174,10 @@ async def save_custom_objection(
 ):
     """Save a custom objection with response."""
     supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
 
     objection_data = {
-        "user_id": str(current_user.id),
+        "user_id": user_id,
         "objection_text": data.objection_text,
         "best_response": data.best_response,
         "category": data.category or "other",
@@ -169,11 +196,12 @@ async def get_my_objections(
 ):
     """Get user's saved objections."""
     supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
 
     result = (
         supabase.table("user_objections")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", user_id)
         .order("success_count", desc=True)
         .execute()
     )

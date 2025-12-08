@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
+  Users,
   Zap, 
   Crosshair, 
   MapPin, 
@@ -22,10 +23,12 @@ import {
   Sparkles,
   Calculator
 } from 'lucide-react';
+import { useFeatures } from '../hooks/useFeatures';
 
 export const AppShell: React.FC = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { hasFeature } = useFeatures();
 
   // Die bereinigte Navigations-Struktur
   const navigation = [
@@ -33,6 +36,7 @@ export const AppShell: React.FC = () => {
       category: 'OPERATIONS', 
       items: [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Mein Team', href: '/network', icon: Users, feature: 'network_dashboard' },
         { name: 'Daily Command', href: '/daily-command', icon: Zap },
         { name: 'Nächste beste Aktionen', href: '/next-best-actions', icon: Target },
         { name: 'Hunter Board', href: '/hunter', icon: Crosshair },
@@ -104,35 +108,42 @@ export const AppShell: React.FC = () => {
 
           {/* NAV LINKS */}
           <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-8">
-            {navigation.map((group) => (
-              <div key={group.category}>
-                <h3 className="mb-2 px-3 text-xs font-bold uppercase tracking-wider text-slate-500">
-                  {group.category}
-                </h3>
-                <div className="space-y-1">
-                  {group.items.map((item) => {
-                    const active = isActive(item.href);
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`
+            {navigation.map((group) => {
+              const visibleItems = group.items.filter(
+                (item) => !item.feature || hasFeature(item.feature)
+              );
+              if (visibleItems.length === 0) return null;
+
+              return (
+                <div key={group.category}>
+                  <h3 className="mb-2 px-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    {group.category}
+                  </h3>
+                  <div className="space-y-1">
+                    {visibleItems.map((item) => {
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`
                           group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200
                           ${active 
                             ? 'bg-emerald-500/10 text-emerald-400 border-l-2 border-emerald-500' 
                             : 'text-slate-400 hover:bg-slate-800 hover:text-slate-50 border-l-2 border-transparent'
                           }
                         `}
-                      >
-                        <item.icon className={`mr-3 h-5 w-5 ${active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
+                        >
+                          <item.icon className={`mr-3 h-5 w-5 ${active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </nav>
 
           {/* USER FOOTER */}
