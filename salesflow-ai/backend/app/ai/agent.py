@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import os
 
 from openai import AsyncOpenAI
 
@@ -7,7 +8,7 @@ from .tools import SALES_AGENT_TOOLS
 from .tool_executor import ToolExecutor
 from .system_prompt import build_system_prompt
 
-client = AsyncOpenAI()
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 async def run_sales_agent(
