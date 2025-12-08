@@ -32,12 +32,17 @@ class Settings(BaseSettings):
     )
     
     # ==================== APPLICATION ====================
-    
+
     app_name: str = "SalesFlow AI"
     app_version: str = "1.0.0"
     debug: bool = False
     environment: str = Field(default="production", pattern="^(development|staging|production)$")
     secret_key: str = Field(..., min_length=32)
+
+    # Default values for user context
+    default_org_id: str = "00000000-0000-0000-0000-000000000000"
+    default_user_id: str = "00000000-0000-0000-0000-000000000001"
+    default_user_name: str = "Default User"
     
     # API
     api_prefix: str = "/api/v1"
