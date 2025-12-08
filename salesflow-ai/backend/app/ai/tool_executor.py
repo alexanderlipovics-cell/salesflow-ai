@@ -103,7 +103,7 @@ class ToolExecutor:
 
         resolved_lead_id = lead_id
         if lead_name and not resolved_lead_id:
-        search = (
+            search = (
             self.db.table("leads")
                 .select("id")
                 .eq("user_id", self.user_id)
