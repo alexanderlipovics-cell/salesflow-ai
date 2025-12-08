@@ -43,7 +43,6 @@ class Settings(BaseSettings):
     default_org_id: str = "00000000-0000-0000-0000-000000000000"
     default_user_id: str = "00000000-0000-0000-0000-000000000001"
     default_user_name: str = "Default User"
-    default_org_id: str = "default"
     
     # API
     api_prefix: str = "/api/v1"
