@@ -231,7 +231,7 @@ const App = () => {
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="integrations" element={<IntegrationsPage />} />
-                      <Route path="settings/email" element={<SettingsEmailPage />} />
+                      <Route path="settings/email" element={<Navigate to="/settings?tab=email" replace />} />
                       <Route path="billing" element={<BillingManagement />} />
                       <Route path="finance" element={<FinancePage />} />
                       <Route path="follow-up-analytics" element={<FollowUpAnalyticsPage />} />
@@ -242,7 +242,7 @@ const App = () => {
                       <Route path="gamification" element={<GamificationPage />} />
                       <Route path="lead-qualifier" element={<Navigate to="/leads?view=qualifier" replace />} />
                       <Route path="lead-discovery" element={<Navigate to="/leads?view=discovery" replace />} />
-                      <Route path="settings/ai" element={<SalesAiSettingsPage />} />
+                      <Route path="settings/ai" element={<Navigate to="/settings?tab=ai" replace />} />
                       <Route path="gtm-copy" element={<GtmCopyAssistantPage />} />
                       <Route
                         path="leads/prospects"
@@ -265,7 +265,7 @@ const App = () => {
                       <Route path="demo/team-chief" element={<Navigate to="/team-coach?tab=performance" replace />} />
                       <Route path="manager/objections" element={<Navigate to="/objections?tab=analytics" replace />} />
                       <Route path="manager/followup-templates" element={<FollowUpTemplateManagerPage />} />
-                      <Route path="settings/knowledge" element={<CompanyKnowledgeSettingsPage />} />
+                      <Route path="settings/knowledge" element={<Navigate to="/settings?tab=company" replace />} />
                       <Route path="phoenix" element={<PhoenixPage />} />
                       <Route path="field-ops" element={<FieldOpsPage />} />
                       <Route path="crm/contacts" element={<ContactsPage />} />
@@ -289,7 +289,7 @@ const App = () => {
                       <Route path="magic-send" element={<MagicSendDemo />} />
                       <Route path="compensation-simulator" element={<CompensationSimulatorPage />} />
                       <Route path="genealogy" element={<GenealogyTreePage />} />
-                      <Route path="ai-prompts" element={<AIPromptsPage />} />
+                      <Route path="ai-prompts" element={<Navigate to="/settings?tab=prompts" replace />} />
                       <Route path="mlm-dashboard" element={<NetworkMarketingDashboard />} />
                       <Route path="meetings" element={<VideoMeetingsPage />} />
                       <Route path="challenges" element={<SquadChallengeManager />} />
