@@ -79,9 +79,10 @@ export default function ObjectionsPage() {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
       });
       const data = await res.json();
-      setObjections(data || []);
+      setObjections(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Objections laden fehlgeschlagen', err);
+      setObjections([]);
     }
   };
 
@@ -91,11 +92,14 @@ export default function ObjectionsPage() {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
       });
       const data = await res.json();
-      setObjectionStats(data?.stats || []);
-      setSuccessRates(data?.success_rates || []);
-      setTrendData(data?.trend_data || []);
+      setObjectionStats(Array.isArray(data?.stats) ? data.stats : []);
+      setSuccessRates(Array.isArray(data?.success_rates) ? data.success_rates : []);
+      setTrendData(Array.isArray(data?.trend_data) ? data.trend_data : []);
     } catch (err) {
       console.error('Analytics laden fehlgeschlagen', err);
+      setObjectionStats([]);
+      setSuccessRates([]);
+      setTrendData([]);
     }
   };
 
@@ -139,7 +143,7 @@ export default function ObjectionsPage() {
 
   const filteredObjections = useMemo(
     () =>
-      objections.filter(
+      (objections || []).filter(
         (o) =>
           o.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           o.response?.toLowerCase().includes(searchQuery.toLowerCase())
