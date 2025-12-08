@@ -11,7 +11,7 @@ from ..core.cache import cache_key, get_cached, set_cached
 router = APIRouter(prefix="/objections", tags=["objections"])
 
 from ..dependencies import get_current_user
-from ..core.supabase import get_supabase_client
+from app.supabase_client import get_supabase_client
 
 
 class ObjectionQuery(BaseModel):

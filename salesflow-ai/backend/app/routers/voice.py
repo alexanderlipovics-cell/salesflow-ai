@@ -9,7 +9,7 @@ from anthropic import Anthropic
 from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
 from ..dependencies import get_current_user
-from ..core.supabase import get_supabase_client
+from app.supabase_client import get_supabase_client
 from .smart_import import analyze_input, AnalyzeRequest
 
 router = APIRouter(prefix="/voice", tags=["voice"])

@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from ..core.supabase import get_supabase_client
+from app.supabase_client import get_supabase_client
 from ..dependencies import get_current_user
 
 router = APIRouter(prefix="/hunter-board", tags=["hunter-board"])

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, date
 router = APIRouter(prefix="/power-hour", tags=["power-hour"])
 
 from ..dependencies import get_current_user
-from ..core.supabase import get_supabase_client
+from app.supabase_client import get_supabase_client
 
 
 class PowerHourSession(BaseModel):
