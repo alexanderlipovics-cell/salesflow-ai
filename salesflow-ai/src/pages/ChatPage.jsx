@@ -142,6 +142,7 @@ const ChatPage = () => {
   const [isImportingList, setIsImportingList] = useState(false);
   const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
 
   const showSuggestions = messages.length <= 1 && !isLoading;
 
@@ -503,13 +504,13 @@ const ChatPage = () => {
       const response = await fetch(
         isLiveRequest
           ? `${API_BASE_URL}/api/copilot/live-assist`
-          : `${API_BASE_URL}/api/chat/completion`,
+          : `${API_BASE_URL}/api/ai/chat`,
         {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(
             isLiveRequest
               ? {
@@ -518,9 +519,7 @@ const ChatPage = () => {
                 }
               : {
                   message: messageText,
-                  history: history,
-                  context: leadContext,
-                  lead_id: leadIdForLive,
+                  session_id: sessionId || undefined,
                 }
           ),
         }
@@ -533,9 +532,13 @@ const ChatPage = () => {
       const data = await response.json();
       console.log("API Response:", data);
 
+      if (!isLiveRequest && data?.session_id) {
+        setSessionId(data.session_id);
+      }
+
       const reply = isLiveRequest
         ? data?.assistance || data?.reply
-        : data?.reply || data?.response || data?.message;
+        : data?.message || data?.reply || data?.response;
       if (!reply) {
         throw new Error("No reply from backend");
       }
