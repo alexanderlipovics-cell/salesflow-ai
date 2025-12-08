@@ -22,7 +22,7 @@ const LeadQuickActions: React.FC<LeadQuickActionsProps> = ({
     if (phone) {
       const message = `Hallo ${leadName}, wie geht es Ihnen?`;
       // Use the WhatsApp utility function
-      import('../utils/whatsapp').then(({ openWhatsApp }) => {
+      import('../../utils/whatsapp').then(({ openWhatsApp }) => {
         openWhatsApp(phone, message);
       });
     }
