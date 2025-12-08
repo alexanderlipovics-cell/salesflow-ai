@@ -235,7 +235,8 @@ const App = () => {
                       <Route path="billing" element={<BillingManagement />} />
                       <Route path="finance" element={<FinancePage />} />
                       <Route path="follow-up-analytics" element={<FollowUpAnalyticsPage />} />
-                      <Route path="commissions" element={<CommissionTrackerPage />} />
+                      <Route path="commissions" element={<Navigate to="/finance?tab=commissions" replace />} />
+                      <Route path="commission-tracker" element={<Navigate to="/finance?tab=commissions" replace />} />
                       <Route path="cold-call" element={<ColdCallAssistantPage />} />
                       <Route path="closing-coach" element={<ClosingCoachPage />} />
                       <Route path="performance" element={<PerformanceInsightsPage />} />
