@@ -8,8 +8,13 @@ from .tools import SALES_AGENT_TOOLS
 from .tool_executor import ToolExecutor
 from .system_prompt import build_system_prompt
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = None
 
+def get_client():
+    global client
+    if client is None:
+        client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return client
 
 async def run_sales_agent(
     message: str,
@@ -66,8 +71,9 @@ async def run_sales_agent(
     messages.append({"role": "user", "content": message})
 
     tool_executor = ToolExecutor(db, user_id, user_context)
+    client_instance = get_client()
 
-    response = await client.chat.completions.create(
+    response = await client_instance.chat.completions.create(
         model="gpt-4o",
         messages=messages,
         tools=SALES_AGENT_TOOLS,
@@ -111,7 +117,7 @@ async def run_sales_agent(
                 }
             )
 
-        response = await client.chat.completions.create(
+        response = await client_instance.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             tools=SALES_AGENT_TOOLS,
