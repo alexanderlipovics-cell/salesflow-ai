@@ -156,6 +156,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://aura-os-topaz.vercel.app",
+        "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
         "https://salesflow.ai",
         "https://www.salesflow.ai",
         "http://localhost:3000",
@@ -163,6 +164,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel preview URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -110,7 +110,7 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = Field(default=7, ge=1, le=30)
     
     # CORS
-    cors_origins: str = "https://salesflow.ai,https://www.salesflow.ai"
+    cors_origins: str = "https://aura-os-topaz.vercel.app,https://aura-os-git-main-sales-flow-ais-projects.vercel.app,https://salesflow.ai,https://www.salesflow.ai,http://localhost:3000,http://localhost:5173"
     cors_allow_credentials: bool = True
     cors_allow_methods: str = "*"
     cors_allow_headers: str = "*"
