@@ -42,8 +42,6 @@ const PhoenixPage = lazy(() => import("./pages/PhoenixPage"));
 const FieldOpsPage = lazy(() => import("./pages/FieldOpsPage"));
 const FollowUpsPage = lazy(() => import("./pages/FollowUpsPage"));
 const ObjectionsPage = lazy(() => import("./pages/ObjectionsPage"));
-const ObjectionBrainPage = lazy(() => import("./pages/ObjectionBrainPage"));
-const ObjectionAnalyticsPage = lazy(() => import("./pages/ObjectionAnalyticsPage"));
 const FollowUpTemplateManagerPage = lazy(() => import("./pages/FollowUpTemplateManagerPage"));
 const CompanyKnowledgeSettingsPage = lazy(() => import("./pages/CompanyKnowledgeSettingsPage"));
 const NextBestActionsPage = lazy(() => import("./pages/NextBestActionsPage"));
@@ -265,10 +263,10 @@ const App = () => {
                       <Route path="proposals" element={<ProposalsPage />} />
                       <Route path="emails" element={<EmailsPage />} />
                       <Route path="objections" element={<ObjectionsPage />} />
-                      <Route path="objection-brain" element={<ObjectionBrainPage />} />
+                      <Route path="objection-brain" element={<Navigate to="/objections?tab=brain" replace />} />
                       <Route path="next-best-actions" element={<NextBestActionsPage />} />
                       <Route path="demo/team-chief" element={<TeamChiefDemoPage />} />
-                      <Route path="manager/objections" element={<ObjectionAnalyticsPage />} />
+                      <Route path="manager/objections" element={<Navigate to="/objections?tab=analytics" replace />} />
                       <Route path="manager/followup-templates" element={<FollowUpTemplateManagerPage />} />
                       <Route path="settings/knowledge" element={<CompanyKnowledgeSettingsPage />} />
                       <Route path="phoenix" element={<PhoenixPage />} />
