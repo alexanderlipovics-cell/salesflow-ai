@@ -253,7 +253,7 @@ const App = () => {
                         element={<LeadsCustomersPage />}
                       />
                       <Route path="import" element={<ImportPage />} />
-                      <Route path="lead-hunter" element={<LeadHunterPage />} />
+                      <Route path="lead-hunter" element={<Navigate to="/leads?view=hunter" replace />} />
                       <Route path="delay-master" element={<DelayMasterPage />} />
                       <Route path="follow-ups" element={<FollowUpsPage />} />
                       <Route path="sequences" element={<SequencesPage />} />

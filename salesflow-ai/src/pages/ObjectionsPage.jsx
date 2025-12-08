@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ObjectionCard = ({ objection, onPractice, onEdit }) => (
@@ -75,10 +76,12 @@ export default function ObjectionsPage() {
 
   const fetchObjections = async () => {
     try {
-      const res = await fetch('/api/objections', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-      });
-      const data = await res.json();
+      const { data, error } = await supabaseClient
+        .from('objections')
+        .select('*')
+        .order('category', { ascending: true });
+
+      if (error) throw error;
       setObjections(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Objections laden fehlgeschlagen', err);
@@ -87,20 +90,10 @@ export default function ObjectionsPage() {
   };
 
   const fetchAnalytics = async () => {
-    try {
-      const res = await fetch('/api/objections/analytics', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-      });
-      const data = await res.json();
-      setObjectionStats(Array.isArray(data?.stats) ? data.stats : []);
-      setSuccessRates(Array.isArray(data?.success_rates) ? data.success_rates : []);
-      setTrendData(Array.isArray(data?.trend_data) ? data.trend_data : []);
-    } catch (err) {
-      console.error('Analytics laden fehlgeschlagen', err);
-      setObjectionStats([]);
-      setSuccessRates([]);
-      setTrendData([]);
-    }
+    // Kein Analytics-Endpoint vorhanden – leer lassen
+    setObjectionStats([]);
+    setSuccessRates([]);
+    setTrendData([]);
   };
 
   const handleAskBrain = async () => {

@@ -12,7 +12,7 @@ export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Mein Team', href: '/network', icon: Users },
   { name: 'Team Coach', href: '/team-coach', icon: Users },
-  { name: 'Leads & Kontakte', href: '/crm/leads', icon: Users },
+  { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Follow-up Analytics', href: '/follow-up-analytics', icon: TrendingUp },
   { name: 'Meetings', href: '/meetings', icon: Video },
