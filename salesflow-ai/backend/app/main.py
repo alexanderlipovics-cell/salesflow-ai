@@ -254,6 +254,7 @@ from .routers.meeting_prep import router as meeting_prep_router  # 🧠 Meeting 
 from .routers.voice import router as voice_router  # 🗣️ Voice Transcription
 from .routers.proposals import router as proposals_router  # 📄 Angebots-PDFs
 from .routers.email_sync import router as email_sync_router  # 📧 Email Sync & Tracking
+from .routers.interactions import router as interactions_router  # 📊 User Interactions Tracking
 from .api.zapier import router as zapier_router  # 🔌 Zapier Integration
 
 # Router registrieren
@@ -317,6 +318,7 @@ app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mappin
 app.include_router(voice_router, prefix="/api")  # 🗣️ Voice Transcription
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
 app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracking
+app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking
 app.include_router(zapier_router)  # 🔌 Zapier Integration (Router bringt eigenes Prefix mit)
 
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail, Phone, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import LeadQuickActions from './LeadQuickActions';
+import WhatsAppButton from '../WhatsAppButton';
 
 interface Lead {
   id: string;

@@ -8,6 +8,7 @@ import { useSmartImport } from '../hooks/useSmartImport';
 import MeetingPrepCard from "../components/chat/MeetingPrepCard";
 import StakeholderCard from "../components/StakeholderCard";
 import VoiceRecorder from "../components/VoiceRecorder";
+import WhatsAppMessageActions from "../components/chat/WhatsAppMessageActions";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -1020,6 +1021,13 @@ const ChatPage = () => {
                     </span>
                   )}
                   {message.content}
+                  {message.role === "assistant" && (
+                    <WhatsAppMessageActions
+                      message={message.content}
+                      leadPhone={parsedLeadContext?.phone}
+                      leadName={parsedLeadContext?.name}
+                    />
+                  )}
                 </div>
 
                 {/* Avatar User */}

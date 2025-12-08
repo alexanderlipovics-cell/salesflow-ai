@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MessageSquare, Phone, Edit, MoreVertical } from 'lucide-react';
 import { Button } from '../ui/button';
+import WhatsAppButton from '../WhatsAppButton';
 
 interface LeadQuickActionsProps {
   leadId: string;
@@ -20,8 +21,10 @@ const LeadQuickActions: React.FC<LeadQuickActionsProps> = ({
   const handleWhatsApp = () => {
     if (phone) {
       const message = `Hallo ${leadName}, wie geht es Ihnen?`;
-      const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      // Use the WhatsApp utility function
+      import('../utils/whatsapp').then(({ openWhatsApp }) => {
+        openWhatsApp(phone, message);
+      });
     }
   };
 
@@ -49,19 +52,15 @@ const LeadQuickActions: React.FC<LeadQuickActionsProps> = ({
       {/* Primary Actions */}
       <div className="flex gap-2">
         {phone && (
-          <Button
+          <WhatsAppButton
+            phone={phone}
+            message={`Hallo ${leadName}, wie geht es Ihnen?`}
+            variant="button"
             size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleWhatsApp();
-            }}
             className="flex items-center gap-1"
-            title="WhatsApp Nachricht"
           >
-            <MessageSquare className="w-4 h-4" />
             <span className="hidden sm:inline">WhatsApp</span>
-          </Button>
+          </WhatsAppButton>
         )}
 
         {phone && (
