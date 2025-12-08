@@ -210,6 +210,7 @@ from .routers.auth import router as auth_router  # JWT Authentication
 from .routers.leads import router as leads_router
 from .routers.copilot import router as copilot_router
 from .routers.chat import router as chat_router
+from .routers.ai_chat import router as ai_chat_router
 # from .routers.autopilot import router as autopilot_router  # Temporär deaktiviert, Autopilot unvollständig
 from .routers.analytics import router as analytics_router
 from .routers.analytics_extended import router as analytics_extended_router
@@ -272,6 +273,7 @@ app.include_router(auth_router, prefix="/api")  # Authentication (public endpoin
 app.include_router(leads_router, prefix="/api")
 app.include_router(copilot_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(ai_chat_router)
 # app.include_router(autopilot_router, prefix="/api")  # deaktiviert bis Autopilot stabil ist
 app.include_router(analytics_router, prefix="/api")
 app.include_router(analytics_extended_router, prefix="/api")  # Extended Analytics & Monitoring
