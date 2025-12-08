@@ -71,7 +71,6 @@ const NetworkGraphPage = lazy(() =>
 const RoleplayDojoPage = lazy(() =>
   import("./pages/RoleplayDojoPage").then((m) => ({ default: m.RoleplayDojoPage }))
 );
-const TeamChiefDemoPage = lazy(() => import("./pages/TeamChiefDemoPage"));
 const CompensationSimulatorPage = lazy(() => import("./pages/CompensationSimulatorPage"));
 const GenealogyTreePage = lazy(() => import("./pages/GenealogyTreePage"));
 const CommissionTrackerPage = lazy(() => import("./pages/CommissionTrackerPage"));
@@ -83,7 +82,7 @@ const LeadQualifierPage = lazy(() => import("./pages/LeadQualifierPage"));
 const LeadDiscoveryPage = lazy(() => import("./pages/LeadDiscoveryPage"));
 const ChooseVerticalPage = lazy(() => import("./pages/ChooseVerticalPage"));
 const DashboardRouterPage = lazy(() => import("./pages/DashboardRouterPage"));
-const SquadCoachPage = lazy(() => import("./pages/SquadCoachPage.tsx"));
+const TeamCoachPage = lazy(() => import("./pages/TeamCoachPage"));
 const MarketingLandingPage = lazy(() => import("./pages/MarketingLandingPage"));
 const CompactLandingPage = lazy(() => import("./pages/CompactLandingPage"));
 const VerticalLandingPage = lazy(() => import("./pages/VerticalLandingPage"));
@@ -93,8 +92,6 @@ const AIPromptsPage = lazy(() => import("./pages/AIPromptsPage"));
 const NetworkMarketingDashboard = lazy(() => import("./pages/NetworkMarketingDashboard"));
 const VideoMeetingsPage = lazy(() => import("./pages/VideoMeetingsPage"));
 const SquadChallengeManager = lazy(() => import("./pages/SquadChallengeManager"));
-const SquadCoachPriorityPage = lazy(() => import("./pages/SquadCoachPriorityPage"));
-const SquadCoachPageV2 = lazy(() => import("./pages/SquadCoachPageV2"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
 const MagicSendDemo = lazy(() => import("./pages/MagicSendDemo"));
@@ -265,7 +262,7 @@ const App = () => {
                       <Route path="objections" element={<ObjectionsPage />} />
                       <Route path="objection-brain" element={<Navigate to="/objections?tab=brain" replace />} />
                       <Route path="next-best-actions" element={<NextBestActionsPage />} />
-                      <Route path="demo/team-chief" element={<TeamChiefDemoPage />} />
+                      <Route path="demo/team-chief" element={<Navigate to="/team-coach?tab=performance" replace />} />
                       <Route path="manager/objections" element={<Navigate to="/objections?tab=analytics" replace />} />
                       <Route path="manager/followup-templates" element={<FollowUpTemplateManagerPage />} />
                       <Route path="settings/knowledge" element={<CompanyKnowledgeSettingsPage />} />
@@ -278,7 +275,8 @@ const App = () => {
                       <Route path="crm/leads/:leadId" element={<LeadDetailPage />} />
                       <Route path="templates" element={<TemplateLeaderboardPage />} />
                       <Route path="coach" element={<AICoachPage />} />
-                      <Route path="coach/squad" element={<SquadCoachPage />} />
+                      <Route path="team-coach" element={<TeamCoachPage />} />
+                      <Route path="coach/squad" element={<Navigate to="/team-coach" replace />} />
                       <Route path="analytics" element={<AnalyticsDashboard />} />
                       <Route path="autopilot" element={<AutopilotPage />} />
                       <Route path="power-hour" element={<PowerHourPage />} />
@@ -293,8 +291,8 @@ const App = () => {
                       <Route path="mlm-dashboard" element={<NetworkMarketingDashboard />} />
                       <Route path="meetings" element={<VideoMeetingsPage />} />
                       <Route path="challenges" element={<SquadChallengeManager />} />
-                      <Route path="coach/priority" element={<SquadCoachPriorityPage />} />
-                      <Route path="coach/v2" element={<SquadCoachPageV2 />} />
+                      <Route path="coach/priority" element={<Navigate to="/team-coach?tab=priorities" replace />} />
+                      <Route path="coach/v2" element={<Navigate to="/team-coach" replace />} />
                       {placeholderRoutes.map((route) => (
                         <Route
                           key={route.path}
