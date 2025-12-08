@@ -240,17 +240,17 @@ const App = () => {
                       <Route path="closing-coach" element={<ClosingCoachPage />} />
                       <Route path="performance" element={<PerformanceInsightsPage />} />
                       <Route path="gamification" element={<GamificationPage />} />
-                      <Route path="lead-qualifier" element={<LeadQualifierPage />} />
-                      <Route path="lead-discovery" element={<LeadDiscoveryPage />} />
+                      <Route path="lead-qualifier" element={<Navigate to="/leads?view=qualifier" replace />} />
+                      <Route path="lead-discovery" element={<Navigate to="/leads?view=discovery" replace />} />
                       <Route path="settings/ai" element={<SalesAiSettingsPage />} />
                       <Route path="gtm-copy" element={<GtmCopyAssistantPage />} />
                       <Route
                         path="leads/prospects"
-                        element={<LeadsProspectsPage />}
+                        element={<Navigate to="/leads?view=prospects" replace />}
                       />
                       <Route
                         path="leads/customers"
-                        element={<LeadsCustomersPage />}
+                        element={<Navigate to="/leads?view=customers" replace />}
                       />
                       <Route path="import" element={<ImportPage />} />
                       <Route path="lead-hunter" element={<Navigate to="/leads?view=hunter" replace />} />
@@ -271,8 +271,10 @@ const App = () => {
                       <Route path="crm/contacts" element={<ContactsPage />} />
                       <Route path="crm/contacts/:id" element={<ContactDetailPage />} />
                       <Route path="crm/pipeline" element={<PipelinePage />} />
-                      <Route path="crm/leads" element={<LeadsPage />} />
-                      <Route path="crm/leads/:leadId" element={<LeadDetailPage />} />
+                      <Route path="crm/leads" element={<Navigate to="/leads" replace />} />
+                      <Route path="crm/leads/:leadId" element={<Navigate to="/leads/:leadId" replace />} />
+                      <Route path="leads" element={<LeadsPage />} />
+                      <Route path="leads/:leadId" element={<LeadDetailPage />} />
                       <Route path="templates" element={<TemplateLeaderboardPage />} />
                       <Route path="coach" element={<AICoachPage />} />
                       <Route path="team-coach" element={<TeamCoachPage />} />
