@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Clock, Flame, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, Clock, Flame, AlertTriangle, Loader2, Upload } from 'lucide-react';
 import LeadFilters from '../components/leads/LeadFilters';
 import LeadCard from '../components/leads/LeadCard';
+import { Button } from '../components/ui/button';
 
 interface Lead {
   id: string;
@@ -66,12 +67,23 @@ const LeadList = () => {
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Meine Leads
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Verwalte deine Verkaufschancen einfach und effektiv
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Meine Leads
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Verwalte deine Verkaufschancen einfach und effektiv
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate('/lead-list/import')}
+              className="flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Kontakte importieren
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

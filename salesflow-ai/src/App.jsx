@@ -55,6 +55,7 @@ const ContactDetailPage = lazy(() => import("@/pages/crm/ContactDetailPage"));
 const PipelinePage = lazy(() => import("@/pages/crm/PipelinePage"));
 const LeadsPage = lazy(() => import("@/pages/crm/LeadsPage"));
 const LeadList = lazy(() => import("@/pages/LeadList"));
+const LeadImport = lazy(() => import("@/pages/LeadImport"));
 const LeadDetailPage = lazy(() => import("@/pages/crm/LeadDetailPage"));
 const TemplateLeaderboardPage = lazy(() => import("./pages/TemplateLeaderboardPage"));
 const AICoachPage = lazy(() => import("./pages/AICoachPage"));
@@ -276,6 +277,7 @@ const App = () => {
                       <Route path="crm/leads" element={<Navigate to="/leads" replace />} />
                       <Route path="crm/leads/:leadId" element={<Navigate to="/leads/:leadId" replace />} />
                       <Route path="lead-list" element={<LeadList />} />
+                      <Route path="lead-list/import" element={<LeadImport />} />
                       <Route path="leads" element={<LeadsPage />} />
                       <Route path="leads/:leadId" element={<LeadDetailPage />} />
                       <Route path="templates" element={<TemplateLeaderboardPage />} />

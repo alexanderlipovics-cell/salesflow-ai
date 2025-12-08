@@ -2,13 +2,14 @@
 Leads Router für SalesFlow AI - Lead Management mit Follow-up System.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime, timedelta
 import logging
 import os
 import uuid
+import json
 from supabase import create_client
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,7 @@ from ..core.security import get_current_active_user
 from ..db.session import get_db
 from ..models.user import User
 from ..events.helpers import publish_lead_created_event
+from ..services.csv_import import CSVImportService
 
 router = APIRouter(
     prefix="/leads",
@@ -242,6 +244,156 @@ async def delete_lead(lead_id: str):
         return {"message": "Lead gelöscht"}
     except Exception as e:
         logger.exception(f"Delete lead error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/import")
+async def import_leads_csv(
+    file: UploadFile = File(...),
+    mapping: str = Form(...),
+    skip_duplicates: bool = Form(True),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Import leads from CSV file.
+    POST /api/leads/import
+    Form data: file (CSV), mapping (JSON string), skip_duplicates (boolean)
+    """
+    try:
+        # Parse mapping
+        try:
+            column_mapping = json.loads(mapping)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
+        # Validate file type
+        if not file.filename.lower().endswith(('.csv', '.xlsx', '.xls')):
+            raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+
+        # Read file content
+        file_content = await file.read()
+
+        # Get user ID
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+
+        # Get database client
+        db = get_supabase()
+
+        # Create import service
+        import_service = CSVImportService(db)
+
+        # Import the data
+        result = import_service.import_from_csv(
+            file_content=file_content,
+            filename=file.filename,
+            mapping=column_mapping,
+            user_id=user_id,
+            skip_duplicates=skip_duplicates
+        )
+
+        return {
+            "success": True,
+            "imported": result.imported,
+            "duplicates": result.duplicates,
+            "errors": result.errors,
+            "total_rows": result.total_rows
+        }
+
+    except Exception as e:
+        logger.exception(f"Import error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/import/preview")
+async def preview_csv_import(
+    file: UploadFile = File(...),
+    mapping: str = Form(...),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Preview CSV import before actual import.
+    POST /api/leads/import/preview
+    Returns first 5 rows transformed according to mapping
+    """
+    try:
+        # Parse mapping
+        try:
+            column_mapping = json.loads(mapping)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
+        # Read file content
+        file_content = await file.read()
+
+        # Get database client
+        db = get_supabase()
+
+        # Create import service
+        import_service = CSVImportService(db)
+
+        # Parse file
+        data, csv_columns = import_service.parse_csv_file(file_content, file.filename)
+
+        # Validate mapping
+        missing_required = import_service.validate_mapping(column_mapping, csv_columns)
+        if missing_required:
+            return {
+                "success": False,
+                "error": f"Missing required fields: {', '.join(missing_required)}",
+                "missing_fields": missing_required
+            }
+
+        # Get preview
+        preview = import_service.preview_data(data, column_mapping, limit=5)
+
+        return {
+            "success": True,
+            "preview": preview,
+            "total_rows": len(data),
+            "columns": csv_columns
+        }
+
+    except Exception as e:
+        logger.exception(f"Preview error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/import/columns")
+async def detect_csv_columns(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Detect columns in CSV file and suggest mapping.
+    GET /api/leads/import/columns
+    """
+    try:
+        # Read file content
+        file_content = await file.read()
+
+        # Get database client
+        db = get_supabase()
+
+        # Create import service
+        import_service = CSVImportService(db)
+
+        # Parse file
+        data, csv_columns = import_service.parse_csv_file(file_content, file.filename)
+
+        # Auto-detect mapping
+        suggested_mapping = import_service.auto_detect_mapping(csv_columns)
+
+        return {
+            "success": True,
+            "columns": csv_columns,
+            "suggested_mapping": suggested_mapping,
+            "row_count": len(data)
+        }
+
+    except Exception as e:
+        logger.exception(f"Column detection error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
