@@ -216,10 +216,13 @@ from .routers.commissions import router as commissions_router  # 💰 Provisions
 from .routers.closing_coach import router as closing_coach_router  # 🎯 Closing Coach
 from .routers.cold_call_assistant import router as cold_call_router  # 📞 Kaltakquise-Assistent
 from .routers.vision import router as vision_router  # 🤖 Claude Vision für Screenshots
+from .routers.smart_import import router as smart_import_router  # 🧠 Smart Chat Import
+from .routers.magic_send import router as magic_send_router  # 🔗 Magic Send Deep Links
 from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
 from .routers.gamification import router as gamification_router  # 🏆 Gamification
 from .routers.lead_qualifier import router as lead_qualifier_router  # 🧠 AI Lead Qualifier
 from .routers.lead_discovery import router as lead_discovery_router  # 🔍 Lead Discovery Engine
+from .routers.meeting_prep import router as meeting_prep_router  # 🧠 Meeting Prep
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -256,6 +259,7 @@ app.include_router(privacy_router, prefix="/api")  # 🛡️ GDPR Privacy Operat
 app.include_router(user_learning_router, prefix="/api")  # 🧠 User Learning & Personalization
 app.include_router(genealogy_router, prefix="/api")  # 🌳 Genealogy Tree & Downline
 app.include_router(commissions_router, prefix="/api")  # 💰 Provisions-Tracker & Rechnungsgenerator
+app.include_router(meeting_prep_router, prefix="/api")  # 🧠 Meeting Prep
 app.include_router(closing_coach_router, prefix="/api")  # 🎯 Closing Coach
 app.include_router(cold_call_router, prefix="/api")  # 📞 Kaltakquise-Assistent
 app.include_router(performance_insights_router, prefix="/api")  # 📈 Performance Insights
@@ -263,6 +267,8 @@ app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
 app.include_router(lead_qualifier_router)  # 🧠 AI Lead Qualifier (hat bereits /api/lead-qualifier prefix)
 app.include_router(lead_discovery_router)  # 🔍 Lead Discovery Engine (hat bereits /api/lead-discovery prefix)
 app.include_router(vision_router, prefix="/api")  # 🤖 Claude Vision für Screenshots
+app.include_router(smart_import_router, prefix="/api")  # 🧠 Smart Chat Import
+app.include_router(magic_send_router, prefix="/api")  # 🔗 Magic Send Deep Links
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

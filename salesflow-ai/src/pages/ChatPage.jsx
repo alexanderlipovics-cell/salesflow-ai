@@ -1,8 +1,11 @@
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Sparkles, Upload, User, Volume2, VolumeX, Camera } from "lucide-react";
 import { useVoice } from "../hooks/useVoice";
+import AnalysisCard from '../components/chat/AnalysisCard';
+import { useSmartImport } from '../hooks/useSmartImport';
+import MeetingPrepCard from "../components/chat/MeetingPrepCard";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -101,6 +104,7 @@ const LeadContextSummary = ({ entries, hasError, onEdit, className = "" }) => {
 };
 
 const ChatPage = () => {
+  const navigate = useNavigate();
   // URL-Parameter für vorgefüllten Text (z.B. aus Follow-ups Seite)
   const [searchParams, setSearchParams] = useSearchParams();
   const prefillText = searchParams.get("prefill") ?? "";
@@ -115,11 +119,11 @@ const ChatPage = () => {
   const [contextPanel, setContextPanel] = useState("lead");
   const [isEditingLeadContext, setIsEditingLeadContext] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [meetingPrep, setMeetingPrep] = useState(null);
+  const [isPreparingMeeting, setIsPreparingMeeting] = useState(false);
 
-  // Image upload state
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [extractedContact, setExtractedContact] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // File input ref for screenshots
   const fileInputRef = useRef(null);
 
   // Voice Hook für Spracheingabe & -ausgabe
@@ -139,6 +143,17 @@ const ChatPage = () => {
       setInput((prev) => prev + (prev ? ' ' : '') + text);
     },
   });
+
+  // Smart Import Hook
+  const {
+    isAnalyzing,
+    analysisResult,
+    shouldAnalyze,
+    analyzeText,
+    saveLead,
+    getMagicLink,
+    clearAnalysis
+  } = useSmartImport();
 
   // Ref für Auto-Scroll
   const messagesEndRef = useRef(null);
@@ -205,6 +220,23 @@ const ChatPage = () => {
     return [...prioritized, ...additional];
   }, [parsedLeadContext]);
 
+  const detectMeetingPrep = (text) => {
+    if (!text) return null;
+    const patterns = [
+      /bereite mich auf gespr\u00e4ch mit\s+(.+)/i,
+      /meeting prep f\u00fcr\s+(.+)/i,
+      /gespr\u00e4chsvorbereitung\s+(.+)/i,
+      /was wei\u00df ich \u00fcber\s+(.+)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match?.[1]) {
+        return match[1].replace(/[?.!]+$/, "").trim();
+      }
+    }
+    return null;
+  };
+
   const handleSendMessage = async (event, customMessage = null) => {
     if (event) {
       event.preventDefault();
@@ -213,6 +245,54 @@ const ChatPage = () => {
     const messageText = customMessage || input.trim();
     if (!messageText) return;
 
+    // Detect meeting prep intent
+    const meetingTarget = detectMeetingPrep(messageText);
+    if (meetingTarget) {
+      setIsPreparingMeeting(true);
+      try {
+        const token = localStorage.getItem("access_token");
+        const response = await fetch(`${API_BASE_URL}/api/meeting-prep`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: meetingTarget }),
+        });
+        const data = await response.json();
+        if (data?.success) {
+          setMeetingPrep(data);
+          setInput("");
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `prep-${Date.now()}`,
+              role: "assistant",
+              content: `🗂️ Gesprächsvorbereitung für **${meetingTarget}** erstellt.`,
+            },
+          ]);
+          setIsPreparingMeeting(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Meeting prep failed:", err);
+      } finally {
+        setIsPreparingMeeting(false);
+      }
+      // On failure, continue with normal flow
+    }
+
+    // Check if should analyze
+    const analysisType = shouldAnalyze(messageText);
+    if (analysisType) {
+      const result = await analyzeText(messageText);
+      if (result) {
+        setInput('');
+        return; // Don't send as chat, show analysis card instead
+      }
+    }
+
+    // ... rest of existing chat logic
     const humanMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -265,7 +345,7 @@ const ChatPage = () => {
           content: reply,
         },
       ]);
-      
+
       // Auto-Speak AI response if enabled
       if (autoSpeak && isTTSSupported) {
         speak(reply);
@@ -285,6 +365,7 @@ const ChatPage = () => {
       setIsLoading(false);
     }
   };
+
 
   const handleQuickAction = (action) => {
     handleSendMessage(null, action);
@@ -355,8 +436,8 @@ const ChatPage = () => {
     }
   };
 
-  // Save lead handler
-  const handleSaveLead = async (contact) => {
+  // Save lead handler for extracted contacts (screenshots)
+  const handleSaveExtractedLead = async (contact) => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(`${API_BASE_URL}/api/leads`, {
@@ -398,10 +479,50 @@ const ChatPage = () => {
     }
   };
 
+
+
+
+  // Copy to clipboard utility
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Could add a toast notification here
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
   const handleSaveContext = (event) => {
     event.preventDefault();
     setContextSaved(true);
     setTimeout(() => setContextSaved(false), 1800);
+  };
+
+  // New handlers for AnalysisCard
+  const handleSaveLead = async (analysis) => {
+    try {
+      const result = await saveLead(analysis);
+      // Add success message to chat
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `✅ **${analysis.lead.name}** wurde als Lead gespeichert!\n\n📅 Follow-up in ${analysis.follow_up_days} Tagen eingestellt.`
+      }]);
+    } catch (err) {
+      console.error('Save failed:', err);
+    }
+  };
+
+  const handleMagicSend = async (platform, message, lead) => {
+    try {
+      await getMagicLink(platform, message, lead);
+      // Optionally mark as contacted
+    } catch (err) {
+      console.error('Magic send failed:', err);
+    }
+  };
+
+  const handleOpenLead = (leadId) => {
+    window.location.href = `/leads/${leadId}`;
   };
 
   const handleImport = async (event) => {
@@ -509,6 +630,33 @@ const ChatPage = () => {
               </div>
             ))}
 
+            {/* Meeting Prep Card */}
+            {meetingPrep && (
+              <MeetingPrepCard
+                prep={meetingPrep}
+                onClose={() => setMeetingPrep(null)}
+              />
+            )}
+
+            {isPreparingMeeting && (
+              <div className="flex items-center gap-2 text-amber-300 text-sm px-4 py-2">
+                <div className="animate-spin w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full" />
+                Gesprächsvorbereitung läuft...
+              </div>
+            )}
+
+            {/* Analysis Card */}
+            {analysisResult && (
+              <AnalysisCard
+                analysis={analysisResult}
+                onSaveLead={handleSaveLead}
+                onClose={clearAnalysis}
+                onCopy={(text, field) => console.log('Copied:', field)}
+                onMagicSend={handleMagicSend}
+                onOpenLead={handleOpenLead}
+              />
+            )}
+
             {/* Extracted Contact Card */}
             {extractedContact && (
               <div className="my-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
@@ -526,7 +674,7 @@ const ChatPage = () => {
                 </div>
                 <div className="mt-4 flex gap-3">
                   <button
-                    onClick={() => handleSaveLead(extractedContact)}
+                    onClick={() => handleSaveExtractedLead(extractedContact)}
                     className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
                   >
                     ✓ Als Lead speichern
@@ -642,10 +790,10 @@ const ChatPage = () => {
                 
                 <button
                   type="submit"
-                  disabled={isLoading || !input.trim()}
+                  disabled={isLoading || isAnalyzing || isPreparingMeeting || !input.trim()}
                   className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Sende..." : "Senden"}
+                  {isPreparingMeeting ? "Bereite vor..." : isAnalyzing ? "Analysiere..." : isLoading ? "Verarbeite..." : "Senden"}
                   <Send className="h-4 w-4" />
                 </button>
               </div>

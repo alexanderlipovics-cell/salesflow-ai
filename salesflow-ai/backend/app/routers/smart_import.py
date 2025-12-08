@@ -1,0 +1,296 @@
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Optional, List
+from anthropic import Anthropic
+import json
+import os
+from datetime import datetime, timedelta
+
+from app.core.deps import get_current_user
+from app.supabase_client import get_supabase_client
+
+
+router = APIRouter(prefix="/smart-import", tags=["smart-import"])
+
+
+# ============ MODELS ============
+
+
+class LeadData(BaseModel):
+    name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    instagram: Optional[str] = None
+    linkedin: Optional[str] = None
+    whatsapp: Optional[str] = None
+    facebook: Optional[str] = None
+    company: Optional[str] = None
+    position: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    platform: Optional[str] = None
+    notes: Optional[str] = None
+    follower_count: Optional[int] = None
+    topics: Optional[List[str]] = []
+
+
+class AnalyzeRequest(BaseModel):
+    text: str
+
+
+class AnalysisResult(BaseModel):
+    input_type: str  # conversation, meeting_notes, question
+    lead: Optional[LeadData] = None
+
+    # Status
+    status: Optional[str] = None  # cold, warm, hot
+    waiting_for: Optional[str] = None  # lead_response, my_response
+    last_contact_summary: Optional[str] = None
+
+    # Generated content
+    conversation_summary: Optional[str] = None
+    suggested_next_action: Optional[str] = None
+    follow_up_days: int = 3
+    customer_message: Optional[str] = None
+    crm_note: Optional[str] = None
+    follow_up_draft: Optional[str] = None
+    key_points: Optional[List[str]] = []
+
+    # Lead check
+    lead_exists: bool = False
+    existing_lead_id: Optional[str] = None
+
+
+class AnalyzeResponse(BaseModel):
+    success: bool
+    result: Optional[AnalysisResult] = None
+    error: Optional[str] = None
+
+
+class SaveLeadRequest(BaseModel):
+    lead: LeadData
+    notes: Optional[str] = None
+    follow_up_days: int = 3
+    status: str = "cold"
+    first_message: Optional[str] = None
+    channel: Optional[str] = None
+
+
+# ============ ENDPOINTS ============
+
+
+@router.post("/analyze", response_model=AnalyzeResponse)
+async def analyze_input(
+    request: AnalyzeRequest,
+    current_user=Depends(get_current_user),
+):
+    """Smart analyzer - detects input type and processes accordingly."""
+    try:
+        client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+        prompt = f"""Analysiere diesen Input und bestimme den Typ.
+
+
+INPUT:
+{request.text}
+
+
+Bestimme den Typ:
+- "conversation" = Kopierter Chat-Verlauf (Zeitstempel, mehrere Nachrichten, "Du hast gesendet")
+- "meeting_notes" = Kurze Stichpunkte nach Termin (< 500 Zeichen, "Termin", "Budget", "Nächster Schritt")
+- "question" = Normale Frage an den AI-Assistenten
+
+Antworte NUR mit validem JSON (kein Markdown):
+{{
+    "input_type": "conversation|meeting_notes|question",
+
+    "lead": {{
+        "name": "Name der ANDEREN Person (nicht mein Name!)",
+        "first_name": "Vorname",
+        "last_name": "Nachname",
+        "phone": "Telefon",
+        "email": "Email",
+        "instagram": "handle ohne @",
+        "whatsapp": "Nummer",
+        "company": "Firma",
+        "position": "Position",
+        "city": "Stadt",
+        "platform": "whatsapp|instagram|linkedin|email"
+    }},
+
+    "status": "cold|warm|hot",
+    "waiting_for": "lead_response|my_response|nothing",
+    "last_contact_summary": "Letzte Nachricht kurz",
+
+    "conversation_summary": "2-3 Sätze Zusammenfassung",
+    "suggested_next_action": "Konkrete nächste Aktion",
+    "follow_up_days": 3,
+
+    "customer_message": "Fertige Nachricht an Kunden (copy-ready, Du-Form, freundlich)",
+    "crm_note": "Strukturierte CRM-Notiz mit allen Fakten",
+    "follow_up_draft": "Nachfass-Nachricht falls keine Antwort",
+    "key_points": ["Punkt 1", "Punkt 2"]
+}}
+
+
+Regeln:
+- Bei "question": Nur input_type, Rest null/leer
+- Mein Name ist NICHT der Lead - erkenne wer ICH bin vs LEAD
+- customer_message soll direkt versendbar sein
+- follow_up_days: hot=2, warm=3, cold=5
+"""
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        response_text = message.content[0].text.strip()
+
+        # Clean markdown
+        if "```" in response_text:
+            parts = response_text.split("```")
+            response_text = parts[1] if len(parts) > 1 else parts[0]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+        response_text = response_text.strip()
+
+        data = json.loads(response_text)
+
+        # Check if lead exists
+        lead_exists = False
+        existing_lead_id = None
+
+        if data.get("lead", {}).get("name"):
+            supabase = get_supabase_client()
+            search_name = data["lead"]["name"]
+            result = (
+                supabase.table("leads")
+                .select("id, name")
+                .eq("user_id", str(current_user.id))
+                .ilike("name", f"%{search_name}%")
+                .limit(1)
+                .execute()
+            )
+
+        return AnalyzeResponse(
+            success=True,
+            result=AnalysisResult(
+                input_type=data.get("input_type", "question"),
+                lead=LeadData(**data.get("lead", {})) if data.get("lead") else None,
+                status=data.get("status"),
+                waiting_for=data.get("waiting_for"),
+                last_contact_summary=data.get("last_contact_summary"),
+                conversation_summary=data.get("conversation_summary"),
+                suggested_next_action=data.get("suggested_next_action"),
+                follow_up_days=data.get("follow_up_days", 3),
+                customer_message=data.get("customer_message"),
+                crm_note=data.get("crm_note"),
+                follow_up_draft=data.get("follow_up_draft"),
+                key_points=data.get("key_points", []),
+                lead_exists=bool(
+                    result.data and len(result.data) > 0 if "result" in locals() else False
+                ),
+                existing_lead_id=(
+                    result.data[0]["id"] if "result" in locals() and result.data else None
+                ),
+            ),
+        )
+
+    except json.JSONDecodeError as e:
+        return AnalyzeResponse(success=False, error=f"Parse error: {str(e)}")
+    except Exception as e:
+        return AnalyzeResponse(success=False, error=str(e))
+
+
+@router.post("/save-lead")
+async def save_lead_from_analysis(
+    request: SaveLeadRequest,
+    current_user=Depends(get_current_user),
+):
+    """Save analyzed lead to database with all context."""
+    try:
+        supabase = get_supabase_client()
+
+        lead_data = {
+            "user_id": str(current_user.id),
+            "name": request.lead.name,
+            "first_name": request.lead.first_name,
+            "last_name": request.lead.last_name,
+            "email": request.lead.email,
+            "phone": request.lead.phone,
+            "instagram": request.lead.instagram,
+            "linkedin": request.lead.linkedin,
+            "whatsapp": request.lead.whatsapp or request.lead.phone,
+            "facebook": request.lead.facebook,
+            "company": request.lead.company,
+            "position": request.lead.position,
+            "city": request.lead.city,
+            "country": request.lead.country,
+            "platform": request.lead.platform,
+            "source": "smart_import",
+            "status": "active",
+            "temperature": request.status,
+            "notes": request.notes,
+            "last_message": request.first_message,
+            "channel": request.channel,
+            "last_contact": datetime.now().isoformat(),
+            "next_follow_up": (
+                datetime.now() + timedelta(days=request.follow_up_days)
+            )
+            .date()
+            .isoformat(),
+            "follow_up_reason": "Follow-up nach erstem Kontakt",
+        }
+
+        # Remove None values
+        lead_data = {k: v for k, v in lead_data.items() if v is not None}
+
+        result = supabase.table("leads").insert(lead_data).execute()
+
+        return {
+            "success": True,
+            "lead_id": result.data[0]["id"],
+            "lead": result.data[0],
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update-lead-status")
+async def update_lead_from_reply(
+    lead_id: str,
+    new_status: str,
+    last_message: Optional[str] = None,
+    current_user=Depends(get_current_user),
+):
+    """Update lead status when they reply."""
+    try:
+        supabase = get_supabase_client()
+
+        update_data = {
+            "temperature": new_status,
+            "last_contact": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+        }
+
+        if last_message:
+            update_data["last_message"] = last_message
+
+        result = (
+            supabase.table("leads")
+            .update(update_data)
+            .eq("id", lead_id)
+            .eq("user_id", str(current_user.id))
+            .execute()
+        )
+
+        return {"success": True, "lead": result.data[0] if result.data else None}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
