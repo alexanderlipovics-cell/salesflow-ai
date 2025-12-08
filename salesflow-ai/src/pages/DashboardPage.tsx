@@ -37,6 +37,7 @@ import IncomePredictorCard from '../components/IncomePredictorCard';
 import LeadContextSidebar from '../components/LeadContextSidebar';
 import TurboWidget from '../components/TurboWidget';
 import TurboMode from '../components/TurboMode';
+import TodayWidget from '../components/dashboard/TodayWidget';
 
 // 1. Performance: Code Splitting für schwere Komponenten
 // Diese werden nur geladen, wenn sie im Viewport benötigt werden
@@ -345,6 +346,11 @@ const DashboardPage: React.FC = () => {
 
         <div className="mb-6">
           <TurboWidget onOpenTurbo={() => setShowTurbo(true)} />
+        </div>
+
+        {/* Heute dran Widget */}
+        <div className="mb-6">
+          <TodayWidget onLeadClick={(leadId) => navigate(`/leads/${leadId}`)} />
         </div>
 
         <ActivityTicker activities={tickerItems} />

@@ -1,14 +1,21 @@
 from datetime import datetime
 import json
 import os
+import logging
 
 from openai import AsyncOpenAI
 
 from .tools import SALES_AGENT_TOOLS
 from .tool_executor import ToolExecutor
 from .system_prompt import build_system_prompt
+from .model_router import ModelRouter, ModelTier
+from .intent_detector import IntentDetector
+from .cost_tracker import CostTracker
+
+logger = logging.getLogger(__name__)
 
 client = None
+router = ModelRouter()
 
 def get_client():
     global client
@@ -73,8 +80,16 @@ async def run_sales_agent(
     tool_executor = ToolExecutor(db, user_id, user_context)
     client_instance = get_client()
 
+    # Initialize AI services for model routing and cost tracking
+    intent_detector = IntentDetector(client_instance)
+    cost_tracker = CostTracker(db)
+
+    # Step 1: Detect intent and route to appropriate model
+    detected_intent, selected_model = await intent_detector.classify_with_fallback(message)
+    logger.info(f"User {user_id}: Intent '{detected_intent}' -> Model {selected_model.value}")
+
     response = await client_instance.chat.completions.create(
-        model="gpt-4o",
+        model=selected_model.value,
         messages=messages,
         tools=SALES_AGENT_TOOLS,
         tool_choice="auto",
@@ -82,6 +97,20 @@ async def run_sales_agent(
 
     assistant_message = response.choices[0].message
     tools_used = []
+
+    # Track cost for initial response
+    initial_input_tokens = response.usage.prompt_tokens if response.usage else 0
+    initial_output_tokens = response.usage.completion_tokens if response.usage else 0
+
+    await cost_tracker.log_usage(
+        user_id=user_id,
+        org_id=user_context.get("org_id"),
+        model=selected_model.value,
+        input_tokens=initial_input_tokens,
+        output_tokens=initial_output_tokens,
+        intent=detected_intent,
+        session_id=session_id
+    )
 
     while assistant_message.tool_calls:
         messages.append(
@@ -117,14 +146,34 @@ async def run_sales_agent(
                 }
             )
 
+        # Route follow-up calls (may use different model based on tool context)
+        followup_model = router.route(message, detected_intent, assistant_message.tool_calls)
+        if followup_model != selected_model:
+            logger.info(f"Follow-up call routed to {followup_model.value} (was {selected_model.value})")
+
         response = await client_instance.chat.completions.create(
-            model="gpt-4o",
+            model=followup_model.value,
             messages=messages,
             tools=SALES_AGENT_TOOLS,
             tool_choice="auto",
         )
 
         assistant_message = response.choices[0].message
+
+        # Track cost for follow-up call
+        followup_input_tokens = response.usage.prompt_tokens if response.usage else 0
+        followup_output_tokens = response.usage.completion_tokens if response.usage else 0
+
+        await cost_tracker.log_usage(
+            user_id=user_id,
+            org_id=user_context.get("org_id"),
+            model=followup_model.value,
+            input_tokens=followup_input_tokens,
+            output_tokens=followup_output_tokens,
+            intent=f"{detected_intent}_followup",
+            session_id=session_id,
+            tool_calls=assistant_message.tool_calls
+        )
 
     db.table("ai_chat_messages").insert(
         {
