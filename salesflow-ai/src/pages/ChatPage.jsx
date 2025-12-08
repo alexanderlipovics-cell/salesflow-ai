@@ -27,6 +27,13 @@ const quickActions = [
   "Abschluss-Strategie",
 ];
 
+const quickSuggestions = [
+  { label: "Was soll ich tun?", icon: "🎯" },
+  { label: "Meine Performance", icon: "📊" },
+  { label: "Gefährdete Leads", icon: "⚠️" },
+  { label: "Gespräch üben", icon: "🎭" },
+];
+
 const defaultLeadContext = `{
   "name": "Sebastian Krüger",
   "company": "Flowmatic",
@@ -135,6 +142,8 @@ const ChatPage = () => {
   const [isImportingList, setIsImportingList] = useState(false);
   const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
+
+  const showSuggestions = messages.length <= 1 && !isLoading;
 
   const lastParsedListRef = useRef("");
 
@@ -510,6 +519,8 @@ const ChatPage = () => {
               : {
                   message: messageText,
                   history: history,
+                  context: leadContext,
+                  lead_id: leadIdForLive,
                 }
           ),
         }
@@ -522,10 +533,14 @@ const ChatPage = () => {
       const data = await response.json();
       console.log("API Response:", data);
 
-      const reply = isLiveRequest ? data?.assistance || data?.reply : data?.reply;
+      const reply = isLiveRequest
+        ? data?.assistance || data?.reply
+        : data?.reply || data?.response || data?.message;
       if (!reply) {
         throw new Error("No reply from backend");
       }
+      const intentDetected = data?.intent_detected || data?.detected_intent || null;
+      const intentDescription = data?.intent_description || data?.intent || null;
 
       const stakeholderDetection = detectNewStakeholder(reply);
       if (stakeholderDetection?.name) {
@@ -551,6 +566,8 @@ const ChatPage = () => {
           id: `ai-${Date.now()}`,
           role: "assistant",
           content: reply,
+          intentDetected,
+          intentDescription,
         },
       ]);
 
@@ -948,6 +965,22 @@ const ChatPage = () => {
             </div>
           )}
 
+          {showSuggestions && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {quickSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion.label}
+                  onClick={() => handleSendMessage(null, suggestion.label)}
+                  className="px-3 py-1.5 bg-slate-800 text-slate-100 rounded-full text-sm hover:bg-slate-700 transition"
+                  type="button"
+                  disabled={isLoading}
+                >
+                  {suggestion.icon} {suggestion.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Chat-Nachrichten */}
           <div
             ref={messagesContainerRef}
@@ -978,6 +1011,11 @@ const ChatPage = () => {
                       : "border border-slate-800 bg-slate-900/80 text-slate-100"
                   )}
                 >
+                  {message.role === "assistant" && message.intentDetected && (
+                    <span className="mb-2 inline-block rounded-full bg-purple-500/10 px-2 py-1 text-[11px] font-semibold text-purple-300">
+                      🧠 {message.intentDescription || message.intentDetected}
+                    </span>
+                  )}
                   {message.content}
                 </div>
 

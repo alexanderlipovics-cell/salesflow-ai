@@ -31,6 +31,7 @@ from app.core.user_adaptive_prompts import (
     load_user_learning_context,
     build_user_adaptive_prompt,
 )
+from app.services.chat_intents import ChatIntentHandler, CHAT_INTENTS
 from ..db.session import get_db  # added for dependency availability
 from ..core.security import get_current_user_dict
 from ..services.ai_service import AiService
@@ -155,6 +156,9 @@ class ChatCompletionResponse(BaseModel):
         default=None,
         description="NBA Empfehlung basierend auf P-Score und Events"
     )
+    # Intent-Erkennung (Smart Intents)
+    intent_detected: Optional[str] = None
+    intent_description: Optional[str] = None
 
 
 # ============================================
@@ -237,9 +241,13 @@ async def chat_completion(
     
     # User-ID aus Header oder DEV fallback
     user_id = x_user_id or DEV_USER_ID
+    context_payload = {"lead_id": request.lead_id, "contact_id": request.contact_id}
+    message_lower = request.message.lower()
     
     # 1. Action bestimmen (explizit oder auto-detected)
     detected_action: Optional[str] = None
+    intent_detected: Optional[str] = None
+    intent_description: Optional[str] = None
     
     # Nutze effective_action für Kompatibilität mit action UND mode
     effective_action = request.effective_action
@@ -260,6 +268,52 @@ async def chat_completion(
         direction="inbound",
         detected_action=detected_action,
     )
+
+    # 1.5 Smart Intents (Intent-Handler)
+    intent_reply: Optional[str] = None
+    try:
+        from app.supabase_client import get_supabase_client
+
+        db = get_supabase_client()
+        intent_handler = ChatIntentHandler(db=db, user_id=str(user_id))
+
+        for intent_name, intent_config in CHAT_INTENTS.items():
+            if any(trigger in message_lower for trigger in intent_config["triggers"]):
+                handler_method = getattr(intent_handler, intent_config["handler"], None)
+                if handler_method:
+                    intent_reply = await handler_method(request.message, context_payload)
+                    intent_detected = intent_name
+                    intent_description = intent_config.get("description")
+                break
+    except Exception as e:
+        logger.debug(f"Intent-Erkennung übersprungen: {e}")
+
+    # Kurzschluss, wenn Intent bedient wurde
+    if intent_reply:
+        # NBA optional laden, damit Frontend weiterhin Tipps erhält
+        nba = await get_nba_for_lead(
+            user_id=user_id,
+            lead_id=request.lead_id,
+            contact_id=request.contact_id,
+        )
+        # Outbound loggen
+        await log_message_event(
+            user_id=user_id,
+            text=intent_reply,
+            direction="outbound",
+            detected_action=intent_detected,
+            template_version=CURRENT_TEMPLATE_VERSION,
+            persona_variant=CURRENT_PERSONA_VARIANT,
+        )
+        return ChatCompletionResponse(
+            reply=intent_reply,
+            response=intent_reply,
+            message=intent_reply,
+            detected_action=intent_detected,
+            next_best_action=nba,
+            intent_detected=intent_detected,
+            intent_description=intent_description,
+        )
     
     # Event-Backbone: Message Event publishen (non-blocking)
     try:
@@ -368,6 +422,8 @@ async def chat_completion(
             message=mock_reply,   # Weiterer Alias
             detected_action=detected_action,
             next_best_action=nba,
+            intent_detected=intent_detected,
+            intent_description=intent_description,
         )
     
     # Normaler Modus: OpenAI API nutzen
@@ -418,6 +474,8 @@ async def chat_completion(
             message=reply,   # Weiterer Alias
             detected_action=detected_action,
             next_best_action=nba,
+            intent_detected=intent_detected,
+            intent_description=intent_description,
         )
         
     except Exception as exc:
