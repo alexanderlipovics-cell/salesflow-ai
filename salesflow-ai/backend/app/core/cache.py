@@ -578,8 +578,8 @@ async def get_cache_service() -> CacheService:
     """Get or create cache service singleton."""
     global _cache_service
     if _cache_service is None:
-        from app.core.config import settings
-        _cache_service = CacheService(settings.redis_url)
+        from app.core.config import get_settings
+        _cache_service = CacheService(get_settings().redis_url)
         await _cache_service.connect()
     return _cache_service
 

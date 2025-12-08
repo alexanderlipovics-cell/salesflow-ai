@@ -7,12 +7,12 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from openai import AsyncOpenAI
 
-from app.core.config import settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 # Zentrale AI-Client-Instanz
-client = AsyncOpenAI(api_key=settings.openai_api_key)
+client = AsyncOpenAI(api_key=get_settings().openai_api_key)
 
 ChatMessage = Dict[str, str]  # {"role": "system|user|assistant", "content": "..."}
 

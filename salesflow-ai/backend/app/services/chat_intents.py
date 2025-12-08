@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict, Optional
 
 from app.ai_client import chat_completion
-from app.core.config import settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -370,7 +370,7 @@ class ChatIntentHandler:
             return {}
 
     async def _generate_response(self, prompt: str) -> str:
-        if not settings.openai_api_key:
+        if not get_settings().openai_api_key:
             return (
                 "⚡️ (Mock) Intent-Antwort:\n\n"
                 f"{prompt[:800]}\n\n"
@@ -390,7 +390,7 @@ class ChatIntentHandler:
             ]
             return await chat_completion(
                 messages=messages,
-                model=settings.openai_model or "gpt-4o-mini",
+                model=get_settings().openai_model or "gpt-4o-mini",
                 max_tokens=600,
                 temperature=0.7,
             )

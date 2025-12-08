@@ -521,11 +521,11 @@ def add_performance_measurement(name: str, value: float, unit: str = "ms") -> No
     sentry_sdk.metrics.distribution(name, value, unit=unit)
 
 # Initialize Sentry on import if configured
-from app.config import settings
-if settings.sentry_enabled:
+from app.config import get_settings
+if get_settings().sentry_enabled:
     init_sentry(
-        dsn=settings.sentry_dsn,
-        environment=settings.environment,
-        release=settings.app_version,
-        debug=settings.debug
+        dsn=get_settings().sentry_dsn,
+        environment=get_settings().environment,
+        release=get_settings().app_version,
+        debug=get_settings().debug
     )
