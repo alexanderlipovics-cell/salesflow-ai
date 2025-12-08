@@ -1,5 +1,4 @@
-import { useState, useCallback, useRef } from "react";
-import Papa from "papaparse";
+import { useCallback, useRef, useState } from "react";
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -9,234 +8,230 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import { supabaseClient } from "@/lib/supabaseClient";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8000";
 
-type CsvRow = Record<string, string>;
+type ParsedContact = {
+  name: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  position?: string | null;
+  notes?: string | null;
+  source?: string | null;
+  warm_score?: number;
+};
 
-type FieldMapping = {
-  name: string | null;
-  phone: string | null;
-  instagram: string | null;
-  company: string | null;
-  vertical: string | null;
+type ParseResponse = {
+  success: boolean;
+  total_rows: number;
+  columns_detected?: Record<string, string>;
+  preview: ParsedContact[];
+  all_contacts: ParsedContact[];
+  message?: string;
+};
+
+type ImportError = { contact?: string; error: string };
+
+type ImportResponse = {
+  success: boolean;
+  imported: number;
+  skipped: number;
+  errors: ImportError[];
+  message?: string;
 };
 
 type ImportState = "idle" | "preview" | "importing" | "done" | "error";
 
-const VERTICAL_OPTIONS = [
-  { value: "generic", label: "Generic (Standard)" },
-  { value: "network", label: "Network Marketing" },
-  { value: "immo", label: "Immobilien" },
-  { value: "finance", label: "Finanzen" },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
-
 const ImportPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
-  // CSV Data
-  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [csvData, setCsvData] = useState<CsvRow[]>([]);
-  const [fileName, setFileName] = useState<string | null>(null);
-
-  // Mapping
-  const [mapping, setMapping] = useState<FieldMapping>({
-    name: null,
-    phone: null,
-    instagram: null,
-    company: null,
-    vertical: null,
-  });
-  const [defaultVertical, setDefaultVertical] = useState<string>("generic");
-
-  // Import State
   const [state, setState] = useState<ImportState>("idle");
-  const [progress, setProgress] = useState(0);
-  const [importedCount, setImportedCount] = useState(0);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [parseResult, setParseResult] = useState<ParseResponse | null>(null);
+  const [selectedContacts, setSelectedContacts] = useState<ParsedContact[]>([]);
+  const [temperature, setTemperature] = useState<string>("cold");
+  const [skipDuplicates, setSkipDuplicates] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importedCount, setImportedCount] = useState<number>(0);
+  const [importErrors, setImportErrors] = useState<ImportError[]>([]);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // File Handling
-  // ───────────────────────────────────────────────────────────────────────────
-
-  const handleFile = useCallback((file: File) => {
-    if (!file.name.endsWith(".csv")) {
-      setErrorMessage("Bitte nur .csv Dateien hochladen.");
-      setState("error");
-      return;
-    }
-
-    setFileName(file.name);
+  const resetImport = () => {
+    setParseResult(null);
+    setSelectedContacts([]);
+    setFileName(null);
+    setState("idle");
     setErrorMessage(null);
+    setImportMessage(null);
+    setImportedCount(0);
+    setImportErrors([]);
+    setIsLoading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-    Papa.parse<CsvRow>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          setErrorMessage(`CSV Fehler: ${results.errors[0].message}`);
-          setState("error");
-          return;
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!token) {
+        setErrorMessage("Kein Token gefunden. Bitte erneut einloggen.");
+        setState("error");
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage(null);
+      setImportMessage(null);
+      setImportErrors([]);
+      setImportedCount(0);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const endpoint = file.name.toLowerCase().endsWith(".vcf")
+        ? "/api/csv-import/parse-vcf"
+        : "/api/csv-import/parse";
+
+      try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        const data: ParseResponse = await res.json();
+
+        if (!res.ok || data.success === false) {
+          throw new Error(
+            (data as any)?.detail ||
+              (data as any)?.message ||
+              "Konnte Datei nicht parsen"
+          );
         }
 
-        const headers = results.meta.fields || [];
-        setCsvHeaders(headers);
-        setCsvData(results.data);
-
-        // Auto-detect mapping based on common column names
-        const autoMapping: FieldMapping = {
-          name: headers.find((h) =>
-            /^(name|vorname|nachname|kontakt|full.?name)$/i.test(h)
-          ) || null,
-          phone: headers.find((h) =>
-            /^(phone|telefon|tel|handy|mobile|nummer)$/i.test(h)
-          ) || null,
-          instagram: headers.find((h) =>
-            /^(instagram|insta|ig|social)$/i.test(h)
-          ) || null,
-          company: headers.find((h) =>
-            /^(company|firma|unternehmen|business)$/i.test(h)
-          ) || null,
-          vertical: headers.find((h) =>
-            /^(vertical|branche|kategorie|type)$/i.test(h)
-          ) || null,
-        };
-
-        setMapping(autoMapping);
+        setFileName(file.name);
+        setParseResult(data);
+        setSelectedContacts(data.all_contacts || []);
         setState("preview");
-      },
-      error: (error) => {
-        setErrorMessage(`Fehler beim Lesen: ${error.message}`);
+      } catch (err: any) {
+        setErrorMessage(err?.message || "Fehler beim Parsen der Datei");
         setState("error");
-      },
-    });
-  }, []);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token]
+  );
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  };
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      if (file) handleFileUpload(file);
     },
-    [handleFile]
+    [handleFileUpload]
   );
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
+  const handleImport = async () => {
+    if (!parseResult || selectedContacts.length === 0) {
+      setErrorMessage("Keine Kontakte zum Importieren vorhanden.");
+      setState("error");
+      return;
+    }
 
-  const resetImport = () => {
-    setCsvHeaders([]);
-    setCsvData([]);
-    setFileName(null);
-    setMapping({ name: null, phone: null, instagram: null, company: null, vertical: null });
-    setProgress(0);
-    setImportedCount(0);
-    setErrorMessage(null);
-    setState("idle");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Import Logic
-  // ───────────────────────────────────────────────────────────────────────────
-
-  const startImport = async () => {
-    if (!mapping.name) {
-      setErrorMessage("Bitte mindestens das Feld 'Name' zuordnen.");
+    if (!token) {
+      setErrorMessage("Kein Token gefunden. Bitte erneut einloggen.");
+      setState("error");
       return;
     }
 
     setState("importing");
-    setProgress(0);
-    setImportedCount(0);
     setErrorMessage(null);
+    setIsLoading(true);
+    setImportErrors([]);
+    setImportMessage(null);
 
-    const total = csvData.length;
-    let successCount = 0;
+    try {
+      const res = await fetch(`${API_URL}/api/csv-import/import`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contacts: selectedContacts,
+          default_temperature: temperature,
+          skip_duplicates: skipDuplicates,
+        }),
+      });
 
-    for (let i = 0; i < total; i++) {
-      const row = csvData[i];
+      const data: ImportResponse = await res.json();
 
-      // Extract values from CSV row based on mapping
-      const leadData = {
-        name: mapping.name ? row[mapping.name]?.trim() || null : null,
-        phone: mapping.phone ? row[mapping.phone]?.trim() || null : null,
-        instagram: mapping.instagram ? row[mapping.instagram]?.trim() || null : null,
-        company: mapping.company ? row[mapping.company]?.trim() || null : null,
-        vertical: mapping.vertical
-          ? row[mapping.vertical]?.trim()?.toLowerCase() || defaultVertical
-          : defaultVertical,
-        status: "new",
-        source: "csv_import",
-      };
-
-      // Skip rows without name
-      if (!leadData.name) {
-        setProgress(Math.round(((i + 1) / total) * 100));
-        continue;
+      if (!res.ok || data.success === false) {
+        throw new Error(
+          (data as any)?.detail ||
+            (data as any)?.message ||
+            "Import fehlgeschlagen"
+        );
       }
 
-      try {
-        // 1. Insert Lead
-        const { data: newLead, error: leadError } = await supabaseClient
-          .from("leads")
-          .insert(leadData)
-          .select("id")
-          .single();
-
-        if (leadError) {
-          console.error("Lead insert error:", leadError);
-          continue;
-        }
-
-        // 2. Create Hunter Task for this Lead
-        if (newLead?.id) {
-          const { error: taskError } = await supabaseClient
-            .from("lead_tasks")
-            .insert({
-              lead_id: newLead.id,
-              task_type: "hunter",
-              status: "open",
-              note: `Importiert aus ${fileName}`,
-            });
-
-          if (taskError) {
-            console.error("Task insert error:", taskError);
-          }
-        }
-
-        successCount++;
-      } catch (err) {
-        console.error("Import error for row:", row, err);
-      }
-
-      setProgress(Math.round(((i + 1) / total) * 100));
-      setImportedCount(successCount);
+      setImportedCount(data.imported || 0);
+      setImportMessage(
+        data.message || `Import abgeschlossen (${data.imported} Kontakte).`
+      );
+      setImportErrors(data.errors || []);
+      setState("done");
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Import fehlgeschlagen");
+      setState("error");
+    } finally {
+      setIsLoading(false);
     }
-
-    setState("done");
   };
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Render
-  // ───────────────────────────────────────────────────────────────────────────
+  const previewHeaders = [
+    "name",
+    "first_name",
+    "last_name",
+    "email",
+    "phone",
+    "company",
+    "position",
+    "warm_score",
+    "notes",
+  ];
+
+  const headerLabels: Record<string, string> = {
+    name: "Name",
+    first_name: "Vorname",
+    last_name: "Nachname",
+    email: "E-Mail",
+    phone: "Telefon",
+    company: "Firma",
+    position: "Position",
+    warm_score: "Warm Score",
+    notes: "Notizen",
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-50">
-      <div className="mx-auto max-w-4xl space-y-6 p-4 pb-24">
+      <div className="mx-auto max-w-5xl space-y-6 p-4 pb-24">
         {/* Header */}
         <header className="rounded-2xl border border-white/5 bg-slate-950/70 p-6">
           <p className="text-xs uppercase tracking-[0.4em] text-emerald-400">
@@ -247,9 +242,12 @@ const ImportPage = () => {
               <UploadCloud className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-white">CSV Lead Import</h1>
+              <h1 className="text-2xl font-semibold text-white">
+                CSV / VCF Lead Import
+              </h1>
               <p className="text-sm text-slate-400">
-                Importiere Leads aus einer CSV-Datei direkt ins Hunter-Board.
+                Lade eine CSV- oder VCF-Datei hoch, prüfe die Vorschau und
+                importiere die Leads gesammelt.
               </p>
             </div>
           </div>
@@ -269,8 +267,8 @@ const ImportPage = () => {
           </div>
         )}
 
-        {/* State: Idle - Drag & Drop Zone */}
-        {state === "idle" && (
+        {/* Idle / Retry State */}
+        {(state === "idle" || state === "error") && (
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -280,138 +278,170 @@ const ImportPage = () => {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv"
+              accept=".csv,.vcf"
               onChange={handleFileSelect}
               className="hidden"
             />
             <UploadCloud className="mx-auto h-12 w-12 text-slate-500" />
             <p className="mt-4 text-lg font-medium text-slate-300">
-              CSV-Datei hierher ziehen
+              Datei hierher ziehen oder klicken zum Auswählen
             </p>
             <p className="mt-1 text-sm text-slate-500">
-              oder klicken zum Auswählen
+              Unterstützt: .csv (UTF-8 empfohlen) und .vcf (vCard)
             </p>
             <p className="mt-4 text-xs text-slate-600">
-              Unterstützt: .csv mit Kopfzeile
+              Automatische Spaltenerkennung, Vorschau & Duplikat-Check
             </p>
           </div>
         )}
 
-        {/* State: Preview - Show Data & Mapping */}
-        {state === "preview" && (
+        {/* Preview State */}
+        {state === "preview" && parseResult && (
           <>
-            {/* File Info */}
-            <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
                 <div>
                   <p className="font-medium text-white">{fileName}</p>
-                  <p className="text-xs text-slate-400">{csvData.length} Zeilen gefunden</p>
+                  <p className="text-xs text-slate-400">
+                    {parseResult.total_rows} Zeilen erkannt
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={resetImport}
-                className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300 hover:bg-slate-800"
-              >
-                Andere Datei
-              </button>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  Vorschau bereit
+                </div>
+                <button
+                  onClick={resetImport}
+                  className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                >
+                  Andere Datei
+                </button>
+              </div>
             </div>
 
-            {/* Mapping Interface */}
-            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
-              <h2 className="text-lg font-semibold text-white">Spalten zuordnen</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Ordne die CSV-Spalten den Datenbank-Feldern zu.
-              </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <h2 className="text-sm font-semibold text-white">
+                  Erkannte Spalten
+                </h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Automatische Zuordnung basierend auf Spaltennamen.
+                </p>
+                <div className="mt-3 space-y-2">
+                  {parseResult.columns_detected &&
+                  Object.keys(parseResult.columns_detected).length > 0 ? (
+                    Object.entries(parseResult.columns_detected).map(
+                      ([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-200"
+                        >
+                          <span className="font-medium text-slate-300">
+                            {headerLabels[key] || key}
+                          </span>
+                          <span className="text-slate-400">{value}</span>
+                        </div>
+                      )
+                    )
+                  ) : (
+                    <p className="text-sm text-slate-400">
+                      Keine Zuordnung erkannt. Wir verwenden Standardfelder.
+                    </p>
+                  )}
+                </div>
+              </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {/* Name (Required) */}
-                <MappingSelect
-                  label="Name"
-                  required
-                  value={mapping.name}
-                  options={csvHeaders}
-                  onChange={(v) => setMapping((m) => ({ ...m, name: v }))}
-                />
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <h2 className="text-sm font-semibold text-white">
+                  Import-Einstellungen
+                </h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Temperatur & Duplikat-Handling vor dem Import wählen.
+                </p>
 
-                {/* Phone */}
-                <MappingSelect
-                  label="Telefon"
-                  value={mapping.phone}
-                  options={csvHeaders}
-                  onChange={(v) => setMapping((m) => ({ ...m, phone: v }))}
-                />
-
-                {/* Instagram */}
-                <MappingSelect
-                  label="Instagram"
-                  value={mapping.instagram}
-                  options={csvHeaders}
-                  onChange={(v) => setMapping((m) => ({ ...m, instagram: v }))}
-                />
-
-                {/* Company */}
-                <MappingSelect
-                  label="Firma"
-                  value={mapping.company}
-                  options={csvHeaders}
-                  onChange={(v) => setMapping((m) => ({ ...m, company: v }))}
-                />
-
-                {/* Vertical from CSV */}
-                <MappingSelect
-                  label="Vertical (aus CSV)"
-                  value={mapping.vertical}
-                  options={csvHeaders}
-                  onChange={(v) => setMapping((m) => ({ ...m, vertical: v }))}
-                />
-
-                {/* Default Vertical */}
-                <div>
-                  <label className="block text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Standard-Vertical
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      value={defaultVertical}
-                      onChange={(e) => setDefaultVertical(e.target.value)}
-                      className="w-full appearance-none rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 pr-10 text-sm text-white focus:border-emerald-500 focus:outline-none"
-                    >
-                      {VERTICAL_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+                      Temperatur
+                    </label>
+                    <div className="relative mt-2">
+                      <select
+                        value={temperature}
+                        onChange={(e) => setTemperature(e.target.value)}
+                        className="w-full appearance-none rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 pr-10 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                      >
+                        <option value="cold">Cold</option>
+                        <option value="warm">Warm</option>
+                        <option value="hot">Hot</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    </div>
                   </div>
+
+                  <label className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-200">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500"
+                      checked={skipDuplicates}
+                      onChange={(e) => setSkipDuplicates(e.target.checked)}
+                    />
+                    <div>
+                      <p className="font-medium text-white">
+                        Duplikate überspringen
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Prüft E-Mail & Telefonnummer (letzte 8 Ziffern).
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
 
-            {/* Preview Table */}
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
-              <h2 className="text-lg font-semibold text-white">Vorschau (erste 5 Zeilen)</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Vorschau (erste {Math.min(10, parseResult.preview.length)}{" "}
+                    Kontakte)
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Warm Score wird automatisch anhand der vorhandenen Felder
+                    berechnet.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs text-slate-300">
+                  {parseResult.total_rows} insgesamt
+                </div>
+              </div>
+
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-800">
-                      {csvHeaders.slice(0, 6).map((header) => (
+                      {previewHeaders.map((header) => (
                         <th
                           key={header}
                           className="whitespace-nowrap px-3 py-2 text-xs font-medium uppercase tracking-wide text-slate-500"
                         >
-                          {header}
+                          {headerLabels[header] || header}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {csvData.slice(0, 5).map((row, idx) => (
+                    {parseResult.preview.map((row, idx) => (
                       <tr key={idx} className="border-b border-slate-800/50">
-                        {csvHeaders.slice(0, 6).map((header) => (
-                          <td key={header} className="whitespace-nowrap px-3 py-2 text-slate-300">
-                            {row[header] || <span className="text-slate-600">–</span>}
+                        {previewHeaders.map((header) => (
+                          <td
+                            key={header}
+                            className="whitespace-nowrap px-3 py-2 text-slate-300"
+                          >
+                            {(row as any)?.[header] ?? (
+                              <span className="text-slate-600">–</span>
+                            )}
                           </td>
                         ))}
                       </tr>
@@ -421,50 +451,65 @@ const ImportPage = () => {
               </div>
             </div>
 
-            {/* Import Button */}
             <button
-              onClick={startImport}
-              disabled={!mapping.name}
+              onClick={handleImport}
+              disabled={isLoading}
               className="w-full rounded-xl bg-emerald-500 py-4 text-lg font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Import starten ({csvData.length} Leads)
+              {isLoading ? "Wird gestartet..." : `Import starten (${parseResult.total_rows} Leads)`}
             </button>
           </>
         )}
 
-        {/* State: Importing - Progress */}
+        {/* Importing */}
         {state === "importing" && (
           <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-8 text-center">
             <Loader2 className="mx-auto h-12 w-12 animate-spin text-emerald-400" />
-            <p className="mt-4 text-lg font-medium text-white">Import läuft...</p>
-            <p className="mt-1 text-sm text-slate-400">
-              {importedCount} von {csvData.length} Leads importiert
+            <p className="mt-4 text-lg font-medium text-white">
+              Import läuft...
             </p>
-
-            {/* Progress Bar */}
-            <div className="mx-auto mt-6 h-3 max-w-md overflow-hidden rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="mt-2 text-sm font-medium text-emerald-400">{progress}%</p>
+            {parseResult && (
+              <p className="mt-1 text-sm text-slate-400">
+                {parseResult.total_rows} Kontakte in Warteschlange
+              </p>
+            )}
+            <p className="mt-2 text-xs text-slate-500">
+              Duplikate werden übersprungen, fehlende Felder automatisch
+              ergänzt.
+            </p>
           </div>
         )}
 
-        {/* State: Done - Success */}
+        {/* Done */}
         {state === "done" && (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center">
+          <div className="space-y-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center">
             <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-400" />
-            <h2 className="mt-4 text-2xl font-bold text-white">Import abgeschlossen!</h2>
+            <h2 className="mt-4 text-2xl font-bold text-white">
+              Import abgeschlossen!
+            </h2>
             <p className="mt-2 text-lg text-emerald-200">
               {importedCount} Leads erfolgreich importiert
             </p>
-            <p className="mt-1 text-sm text-slate-400">
-              Die Leads sind jetzt im Hunter-Board verfügbar.
-            </p>
+            {importMessage && (
+              <p className="text-sm text-slate-300">{importMessage}</p>
+            )}
+            {importErrors.length > 0 && (
+              <div className="mx-auto max-w-3xl rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-left">
+                <p className="text-sm font-semibold text-amber-200">
+                  Einige Kontakte konnten nicht importiert werden:
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-amber-100">
+                  {importErrors.map((err, idx) => (
+                    <li key={idx}>
+                      {err.contact ? `${err.contact}: ` : ""}
+                      {err.error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            <div className="mt-8 flex justify-center gap-4">
+            <div className="mt-6 flex justify-center gap-4">
               <button
                 onClick={resetImport}
                 className="rounded-xl border border-slate-700 px-6 py-3 font-semibold text-slate-300 transition hover:bg-slate-800"
@@ -485,39 +530,5 @@ const ImportPage = () => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mapping Select Component
-// ─────────────────────────────────────────────────────────────────────────────
-
-type MappingSelectProps = {
-  label: string;
-  value: string | null;
-  options: string[];
-  onChange: (value: string | null) => void;
-  required?: boolean;
-};
-
-const MappingSelect = ({ label, value, options, onChange, required }: MappingSelectProps) => (
-  <div>
-    <label className="block text-xs font-medium uppercase tracking-wide text-slate-400">
-      {label} {required && <span className="text-red-400">*</span>}
-    </label>
-    <div className="relative mt-2">
-      <select
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value || null)}
-        className="w-full appearance-none rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 pr-10 text-sm text-white focus:border-emerald-500 focus:outline-none"
-      >
-        <option value="">– Nicht zuordnen –</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-    </div>
-  </div>
-);
-
 export default ImportPage;
+

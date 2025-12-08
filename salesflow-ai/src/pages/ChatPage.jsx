@@ -1,11 +1,13 @@
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Sparkles, Upload, User, Volume2, VolumeX, Camera } from "lucide-react";
+import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Shield, Sparkles, Upload, User, Volume2, VolumeX, Camera } from "lucide-react";
 import { useVoice } from "../hooks/useVoice";
 import AnalysisCard from '../components/chat/AnalysisCard';
 import { useSmartImport } from '../hooks/useSmartImport';
 import MeetingPrepCard from "../components/chat/MeetingPrepCard";
+import StakeholderCard from "../components/StakeholderCard";
+import VoiceRecorder from "../components/VoiceRecorder";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -121,7 +123,20 @@ const ChatPage = () => {
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [meetingPrep, setMeetingPrep] = useState(null);
   const [isPreparingMeeting, setIsPreparingMeeting] = useState(false);
+  const [extractedContact, setExtractedContact] = useState(null);
+  const [, setUploadedImage] = useState(null);
+  const [stakeholderCandidate, setStakeholderCandidate] = useState(null);
+  const [lastStakeholderName, setLastStakeholderName] = useState(null);
+  const [listDetected, setListDetected] = useState(false);
+  const [parsedContacts, setParsedContacts] = useState([]);
+  const [selectedForImport, setSelectedForImport] = useState([]);
+  const [isParsingList, setIsParsingList] = useState(false);
+  const [listError, setListError] = useState(null);
+  const [isImportingList, setIsImportingList] = useState(false);
+  const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
+  const [isLiveMode, setIsLiveMode] = useState(false);
 
+  const lastParsedListRef = useRef("");
 
   // File input ref for screenshots
   const fileInputRef = useRef(null);
@@ -152,7 +167,8 @@ const ChatPage = () => {
     analyzeText,
     saveLead,
     getMagicLink,
-    clearAnalysis
+    clearAnalysis,
+    setAnalysisResult
   } = useSmartImport();
 
   // Ref für Auto-Scroll
@@ -220,6 +236,43 @@ const ChatPage = () => {
     return [...prioritized, ...additional];
   }, [parsedLeadContext]);
 
+  const detectNewStakeholder = (text) => {
+    if (!text) return null;
+
+    const patterns = [
+      /(?:Herr|Frau|Hr\.|Fr\.)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?)/g,
+      /(?:mit|von|bei)\s+([A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+)/g,
+    ];
+    const matches = patterns.flatMap((pattern) => Array.from(text.matchAll(pattern)));
+    let detectedName = matches.length ? matches[0][1].trim() : null;
+
+    if (!detectedName) {
+      const fallbackMatch = text.match(/([A-ZÄÖÜ][a-zäöüß]+)\s+([A-ZÄÖÜ][a-zäöüß]+)/);
+      if (fallbackMatch) {
+        detectedName = `${fallbackMatch[1]} ${fallbackMatch[2]}`.trim();
+      }
+    }
+
+    if (!detectedName) return null;
+
+    const normalizedLeadName = (parsedLeadContext?.name || "").toLowerCase();
+    if (normalizedLeadName && detectedName.toLowerCase().includes(normalizedLeadName)) {
+      return null;
+    }
+
+    const lower = text.toLowerCase();
+    let inferredContext = null;
+    if (lower.includes("einkauf")) inferredContext = "Einkauf";
+    else if (lower.includes("it-leiter") || lower.includes("it leiter")) inferredContext = "IT-Leitung";
+    else if (lower.includes("geschäftsführung") || lower.includes("geschaeftsfuehrung")) inferredContext = "Geschäftsführung";
+
+    return {
+      name: detectedName,
+      company: parsedLeadContext?.company,
+      context: inferredContext,
+    };
+  };
+
   const detectMeetingPrep = (text) => {
     if (!text) return null;
     const patterns = [
@@ -237,6 +290,122 @@ const ChatPage = () => {
     return null;
   };
 
+  const detectListInput = (text) => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 3) return false;
+
+    let nameCount = 0;
+    for (const line of lines.slice(0, 10)) {
+      const cleaned = line.replace(/^[\d\.\-\*\u2022]\s*/, '').trim();
+      if (cleaned && cleaned.split(' ').length <= 5 && /^[A-ZÄÖÜ]/.test(cleaned)) {
+        nameCount++;
+      }
+    }
+
+    return nameCount >= lines.length * 0.5;
+  };
+
+  const resetListDetection = () => {
+    setListDetected(false);
+    setParsedContacts([]);
+    setSelectedForImport([]);
+    setListError(null);
+    lastParsedListRef.current = "";
+  };
+
+  const parseContactList = async (text) => {
+    setIsParsingList(true);
+    setListError(null);
+    try {
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`${API_BASE_URL}/api/smart-import/parse-list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.contacts)) {
+        setParsedContacts(data.contacts);
+        setSelectedForImport(data.contacts.map((_, idx) => idx));
+        setListDetected(true);
+        lastParsedListRef.current = text.trim();
+      } else {
+        resetListDetection();
+        setListError(data.error || "Konnte Liste nicht parsen.");
+      }
+    } catch (error) {
+      console.error("List parse failed:", error);
+      resetListDetection();
+      setListError("Fehler beim Parsen der Liste.");
+    } finally {
+      setIsParsingList(false);
+    }
+  };
+
+  useEffect(() => {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      resetListDetection();
+      return;
+    }
+
+    const looksLikeList = detectListInput(trimmed);
+    if (!looksLikeList) {
+      resetListDetection();
+      return;
+    }
+
+    // Vermeide erneute Analyse derselben Liste
+    if (lastParsedListRef.current === trimmed || isParsingList) return;
+    parseContactList(trimmed);
+  }, [input]);
+
+  useEffect(() => {
+    const liveKeywords = ['bin beim kunden', 'bin im gespräch', 'bin gerade bei', 'live call', 'im meeting', 'kunde fragt'];
+    const normalized = (input || '').toLowerCase();
+    const isLive = liveKeywords.some((kw) => normalized.includes(kw));
+    setIsLiveMode(isLive);
+  }, [input]);
+
+  const checkCompetitor = async (text) => {
+    const normalized = (text || "").trim();
+    if (!normalized) {
+      setActiveCompetitorCard(null);
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/competitors/match?text=${encodeURIComponent(normalized)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Match request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data?.found) {
+        setActiveCompetitorCard(data.card);
+      } else {
+        setActiveCompetitorCard(null);
+      }
+    } catch (error) {
+      console.error("Competitor match failed:", error);
+    }
+  };
+
   const handleSendMessage = async (event, customMessage = null) => {
     if (event) {
       event.preventDefault();
@@ -244,6 +413,8 @@ const ChatPage = () => {
 
     const messageText = customMessage || input.trim();
     if (!messageText) return;
+
+    setActiveCompetitorCard(null);
 
     // Detect meeting prep intent
     const meetingTarget = detectMeetingPrep(messageText);
@@ -313,17 +484,36 @@ const ChatPage = () => {
       const token = localStorage.getItem("access_token");
       console.log("Token exists:", !!token);
       console.log("Token value:", token ? `${token.substring(0, 20)}...` : "missing");
-      const response = await fetch(`${API_BASE_URL}/api/chat/completion`, {
+      const leadIdForLive =
+        parsedLeadContext?.id ||
+        parsedLeadContext?.lead_id ||
+        parsedLeadContext?.leadId ||
+        null;
+      const isLiveRequest = isLiveMode;
+
+      const response = await fetch(
+        isLiveRequest
+          ? `${API_BASE_URL}/api/copilot/live-assist`
+          : `${API_BASE_URL}/api/chat/completion`,
+        {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          message: messageText,
-          history: history,
-        }),
-      });
+          body: JSON.stringify(
+            isLiveRequest
+              ? {
+                  text: messageText,
+                  lead_id: leadIdForLive,
+                }
+              : {
+                  message: messageText,
+                  history: history,
+                }
+          ),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Backend returned ${response.status}`);
@@ -332,9 +522,27 @@ const ChatPage = () => {
       const data = await response.json();
       console.log("API Response:", data);
 
-      const reply = data?.reply;
+      const reply = isLiveRequest ? data?.assistance || data?.reply : data?.reply;
       if (!reply) {
         throw new Error("No reply from backend");
+      }
+
+      const stakeholderDetection = detectNewStakeholder(reply);
+      if (stakeholderDetection?.name) {
+        const normalizedName = stakeholderDetection.name.toLowerCase();
+        if (!lastStakeholderName || lastStakeholderName !== normalizedName) {
+          setLastStakeholderName(normalizedName);
+          setStakeholderCandidate({
+            name: stakeholderDetection.name,
+            company: stakeholderDetection.company || parsedLeadContext?.company || "",
+            context: stakeholderDetection.context,
+            leadId:
+              parsedLeadContext?.id ||
+              parsedLeadContext?.lead_id ||
+              parsedLeadContext?.leadId ||
+              null,
+          });
+        }
       }
 
       setMessages((prev) => [
@@ -345,6 +553,8 @@ const ChatPage = () => {
           content: reply,
         },
       ]);
+
+      checkCompetitor(`${messageText}\n${reply}`);
 
       // Auto-Speak AI response if enabled
       if (autoSpeak && isTTSSupported) {
@@ -479,8 +689,92 @@ const ChatPage = () => {
     }
   };
 
+  const handleStakeholderSaved = (contact) => {
+    setStakeholderCandidate(null);
+    if (contact?.name) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `stakeholder-saved-${Date.now()}`,
+          role: "assistant",
+          content: `✅ **${contact.name}** wurde als Stakeholder gespeichert.`,
+        },
+      ]);
+    }
+  };
 
+  const toggleSelect = (index) => {
+    setSelectedForImport((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
 
+  const handleImportSelected = async () => {
+    if (!selectedForImport.length || !parsedContacts.length) return;
+    setIsImportingList(true);
+    setListError(null);
+    try {
+      const token = localStorage.getItem("access_token");
+      let successCount = 0;
+
+      for (const idx of selectedForImport) {
+        const contact = parsedContacts[idx];
+        if (!contact) continue;
+
+        const name =
+          contact.name ||
+          [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim();
+
+        const payload = {
+          name: name || "Unbekannt",
+          first_name: contact.first_name,
+          last_name: contact.last_name,
+          email: contact.email,
+          phone: contact.phone,
+          company: contact.company,
+          position: contact.position,
+          notes: contact.notes,
+          temperature: contact.warm_score >= 60 ? "warm" : "cold",
+          status: "new",
+          source: "contact_list",
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/leads`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          successCount += 1;
+        }
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `list-import-${Date.now()}`,
+          role: "assistant",
+          content: `📋 ${successCount}/${selectedForImport.length} Kontakte importiert.`,
+        },
+      ]);
+
+      if (successCount > 0) {
+        resetListDetection();
+        setInput("");
+      } else {
+        setListError("Keine Kontakte importiert.");
+      }
+    } catch (error) {
+      console.error("Import failed:", error);
+      setListError("Fehler beim Importieren der Kontakte.");
+    } finally {
+      setIsImportingList(false);
+    }
+  };
 
   // Copy to clipboard utility
   const copyToClipboard = async (text) => {
@@ -588,6 +882,72 @@ const ChatPage = () => {
             ))}
           </div>
 
+          {isLiveMode && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-red-400 text-sm font-medium">Live-Modus aktiv</span>
+              <span className="text-gray-400 text-xs">Schnelle, präzise Antworten</span>
+            </div>
+          )}
+
+          {isParsingList && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-200 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Liste erkannt – KI extrahiert Kontakte...
+            </div>
+          )}
+
+          {listError && (
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-sm text-rose-100">
+              {listError}
+            </div>
+          )}
+
+          {listDetected && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <p className="text-blue-400 mb-2">
+                📋 Liste erkannt! {parsedContacts.length} Kontakte gefunden.
+              </p>
+
+              <div className="max-h-40 overflow-y-auto space-y-1 mb-4">
+                {parsedContacts.map((c, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedForImport.includes(i)}
+                      onChange={() => toggleSelect(i)}
+                    />
+                    <span>{c.name || [c.first_name, c.last_name].filter(Boolean).join(" ") || "Ohne Namen"}</span>
+                    {c.company && <span className="text-gray-500">({c.company})</span>}
+                    <span
+                      className={`ml-auto ${c.warm_score > 60 ? "text-green-400" : "text-gray-400"}`}
+                    >
+                      {(c.warm_score ?? 0)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleImportSelected}
+                  disabled={!selectedForImport.length || isImportingList}
+                  className="px-4 py-2 bg-green-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isImportingList
+                    ? "Importiere..."
+                    : `${selectedForImport.length} Kontakte importieren`}
+                </button>
+                <button
+                  onClick={resetListDetection}
+                  className="px-4 py-2 bg-gray-700 rounded-lg"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Chat-Nachrichten */}
           <div
             ref={messagesContainerRef}
@@ -631,6 +991,36 @@ const ChatPage = () => {
             ))}
 
             {/* Meeting Prep Card */}
+            {activeCompetitorCard && (
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 my-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="w-5 h-5 text-orange-400" />
+                  <span className="font-bold text-orange-400">
+                    Battle Card: {activeCompetitorCard.competitor_name}
+                  </span>
+                </div>
+                {activeCompetitorCard.quick_response && (
+                  <p className="text-white font-medium mb-3">
+                    "{activeCompetitorCard.quick_response}"
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase mb-2">Ihre Schwächen</p>
+                    {activeCompetitorCard.weaknesses?.map((w, i) => (
+                      <p key={i} className="text-sm text-gray-300">• {w.title}</p>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase mb-2">Unsere Stärken</p>
+                    {activeCompetitorCard.our_advantages?.map((a, i) => (
+                      <p key={i} className="text-sm text-green-300">✓ {a.title}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {meetingPrep && (
               <MeetingPrepCard
                 prep={meetingPrep}
@@ -654,6 +1044,20 @@ const ChatPage = () => {
                 onCopy={(text, field) => console.log('Copied:', field)}
                 onMagicSend={handleMagicSend}
                 onOpenLead={handleOpenLead}
+              />
+            )}
+
+            {stakeholderCandidate && (
+              <StakeholderCard
+                name={stakeholderCandidate.name}
+                company={stakeholderCandidate.company}
+                context={stakeholderCandidate.context}
+                leadId={stakeholderCandidate.leadId}
+                onSaved={handleStakeholderSaved}
+                onClose={() => {
+                  setStakeholderCandidate(null);
+                  setLastStakeholderName(null);
+                }}
               />
             )}
 
@@ -788,14 +1192,42 @@ const ChatPage = () => {
                   )}
                 </div>
                 
-                <button
-                  type="submit"
-                  disabled={isLoading || isAnalyzing || isPreparingMeeting || !input.trim()}
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isPreparingMeeting ? "Bereite vor..." : isAnalyzing ? "Analysiere..." : isLoading ? "Verarbeite..." : "Senden"}
-                  <Send className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-3">
+                  <VoiceRecorder
+                    analyzeAfter={true}
+                    onAnalysis={(analysis, text) => {
+                      if (text) {
+                        setInput(text);
+                      }
+                      if (analysis?.result) {
+                        setAnalysisResult(analysis.result);
+                      }
+                    }}
+                    onTranscription={(text) => {
+                      if (text) {
+                        setInput(text);
+                      }
+                    }}
+                    onCommandExecuted={(data) => {
+                      if (data?.message) {
+                        setMessages(prev => [...prev, { id: `voice-cmd-${Date.now()}`, role: "assistant", content: data.message }]);
+                      }
+                    }}
+                    onMeetingPrep={(leadName) => {
+                      if (leadName) {
+                        handleSendMessage(null, `Gesprächsvorbereitung ${leadName}`);
+                      }
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading || isAnalyzing || isPreparingMeeting || !input.trim()}
+                    className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isPreparingMeeting ? "Bereite vor..." : isAnalyzing ? "Analysiere..." : isLoading ? "Verarbeite..." : "Senden"}
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               
               {/* Voice Status Indicator */}

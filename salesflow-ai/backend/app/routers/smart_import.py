@@ -13,6 +13,65 @@ from app.supabase_client import get_supabase_client
 router = APIRouter(prefix="/smart-import", tags=["smart-import"])
 
 
+# Prompt für Bulk-Listen (Instagram/WhatsApp/LinkedIn/Telefonkontakte)
+BULK_LIST_PROMPT = """Analysiere dieses Bild. Es zeigt eine LISTE von Kontakten.
+
+
+Erkenne ALLE sichtbaren Kontakte und extrahiere für jeden:
+- name: Vollständiger Name
+- username: @username falls sichtbar (Instagram/Twitter)
+- title: Jobtitel falls sichtbar
+- company: Firma falls sichtbar
+- phone: Telefonnummer falls sichtbar
+- location: Ort falls sichtbar
+- bio: Bio/Status falls sichtbar
+- platform: instagram|whatsapp|linkedin|phone_contacts
+- warm_score: 1-100 (basierend auf: hat Bio=+20, hat Firma=+30, hat Titel=+20, persönlicher Name=+30)
+
+
+Antworte NUR mit JSON:
+{
+    "is_bulk_list": true,
+    "platform": "instagram|whatsapp|linkedin|phone_contacts",
+    "contacts": [
+        {
+            "name": "Max Mustermann",
+            "username": "@max.muster",
+            "title": "CEO",
+            "company": "ABC GmbH",
+            "bio": "Entrepreneur | Coach",
+            "warm_score": 85,
+            "import_priority": "high"
+        },
+        ...
+    ],
+    "total_found": 12,
+    "scroll_hint": "Mehr Kontakte sichtbar - scrolle für weitere"
+}
+"""
+
+
+def is_bulk_list(
+    image_text: str,
+    multiple_profile_pics_detected: bool = False,
+    list_layout_detected: bool = False,
+) -> bool:
+    """
+    Heuristik, um Bulk-Listen in Bildanalysen zu erkennen.
+    Nutzt Textindikatoren + einfache Layout-Hints.
+    """
+    text = (image_text or "").lower()
+    indicators = [
+        "follower" in text,
+        "following" in text,
+        "kontakte" in text,
+        "connections" in text,
+        multiple_profile_pics_detected,
+        list_layout_detected,
+    ]
+    return sum(1 for flag in indicators if flag) >= 2
+
+
 # ============ MODELS ============
 
 
@@ -78,6 +137,124 @@ class SaveLeadRequest(BaseModel):
     channel: Optional[str] = None
 
 
+class ContactListRequest(BaseModel):
+    text: str
+
+
+# ============ HELPERS ============
+
+
+def detect_list_input(text: str) -> bool:
+    """Erkennt, ob der Input eine Liste von Kontakten ist."""
+    if not text:
+        return False
+
+    lines = text.strip().split("\n")
+    indicators = 0
+
+    # Mehrere Zeilen
+    if len(lines) >= 3:
+        indicators += 1
+
+    # Namen-Muster
+    name_pattern_count = 0
+    for line in lines[:10]:
+        line = line.strip()
+        if line and len(line.split()) <= 5:
+            if line[0].isupper() and not any(c in line for c in ["http", "@", "#", "€", "$"]):
+                name_pattern_count += 1
+    if lines and name_pattern_count >= len(lines) * 0.6:
+        indicators += 2
+
+    # Nummerierte Liste
+    if any(line.strip().startswith(str(i)) for i, line in enumerate(lines, 1)):
+        indicators += 1
+
+    # Bullet Points
+    if any(line.strip().startswith(("-", "•", "*")) for line in lines):
+        indicators += 1
+
+    return indicators >= 2
+
+
+def parse_contacts_from_text(text: str):
+    """Ruft Claude auf, um eine Kontaktliste zu parsen und anzureichern."""
+    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    prompt = f"""Analysiere diese Liste und extrahiere alle Kontakte/Personen.
+
+LISTE:
+{text}
+
+Für jeden erkannten Kontakt extrahiere:
+- name: Vollständiger Name
+- first_name: Vorname
+- last_name: Nachname  
+- email: E-Mail falls vorhanden
+- phone: Telefon falls vorhanden
+- company: Firma falls vorhanden
+- position: Position falls vorhanden
+- notes: Zusätzliche Infos
+
+Antworte NUR mit JSON:
+{{
+    "contacts": [
+        {{
+            "name": "Max Mustermann",
+            "first_name": "Max",
+            "last_name": "Mustermann",
+            "email": null,
+            "phone": "+43 123 456789",
+            "company": "ABC GmbH",
+            "position": "CEO",
+            "notes": "Kontakt von Event"
+        }}
+    ],
+    "total": 5,
+    "parsing_notes": "5 Namen erkannt, 2 mit Telefonnummer"
+}}
+
+Regeln:
+- Erkenne verschiedene Formate (Name, Email, Telefon gemischt)
+- Trenne Vor- und Nachname intelligent
+- Erkenne Firmeninfos in Klammern: "Max Müller (ABC GmbH)"
+- Erkenne Telefonnummern in verschiedenen Formaten
+- Wenn nur Vornamen: trotzdem aufnehmen
+- Nummerierung/Bullets entfernen"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    response_text = message.content[0].text.strip()
+
+    # Clean JSON aus Markdown-Blöcken
+    if "```" in response_text:
+        parts = response_text.split("```")
+        response_text = parts[1] if len(parts) > 1 else parts[0]
+        if response_text.startswith("json"):
+            response_text = response_text[4:]
+
+    data = json.loads(response_text.strip())
+
+    # Warm Scores ergänzen
+    for contact in data.get("contacts", []):
+        score = 30
+        if contact.get("phone"):
+            score += 25
+        if contact.get("email"):
+            score += 15
+        if contact.get("company"):
+            score += 20
+        if contact.get("position"):
+            score += 10
+        contact["warm_score"] = min(100, score)
+
+    return data
+
+
 # ============ ENDPOINTS ============
 
 
@@ -87,6 +264,13 @@ async def analyze_input(
     current_user=Depends(get_current_user),
 ):
     """Smart analyzer - detects input type and processes accordingly."""
+    # Früh erkennen, ob eine Namens-/Kontaktliste eingegeben wurde
+    if detect_list_input(request.text):
+        return AnalyzeResponse(
+            success=True,
+            result=AnalysisResult(input_type="contact_list"),
+        )
+
     try:
         client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -204,6 +388,26 @@ Regeln:
         return AnalyzeResponse(success=False, error=f"Parse error: {str(e)}")
     except Exception as e:
         return AnalyzeResponse(success=False, error=str(e))
+
+
+@router.post("/parse-list")
+async def parse_contact_list(
+    request: ContactListRequest,
+    current_user=Depends(get_current_user),
+):
+    """Parse eine eingefügte Kontaktliste in strukturierte Kontakte."""
+    if not request.text or not request.text.strip():
+        return {"success": False, "error": "Kein Text übergeben"}
+
+    # Optional: nur parsen, wenn es wirklich wie eine Liste aussieht
+    if not detect_list_input(request.text):
+        return {"success": False, "error": "Keine Liste erkannt"}
+
+    try:
+        data = parse_contacts_from_text(request.text)
+        return {"success": True, "input_type": "contact_list", **data}
+    except Exception:
+        return {"success": False, "error": "Konnte Liste nicht parsen"}
 
 
 @router.post("/save-lead")

@@ -15,6 +15,7 @@ import ImportPage from "./pages/ImportPage";
 import PhoenixPage from "./pages/PhoenixPage";
 import FieldOpsPage from "./pages/FieldOpsPage";
 import FollowUpsPage from "./pages/FollowUpsPage";
+import ObjectionsPage from "./pages/ObjectionsPage";
 import ObjectionBrainPage from "./pages/ObjectionBrainPage";
 import ObjectionAnalyticsPage from "./pages/ObjectionAnalyticsPage";
 import FollowUpTemplateManagerPage from "./pages/FollowUpTemplateManagerPage";
@@ -34,7 +35,7 @@ import LeadDetailPage from "@/pages/crm/LeadDetailPage";
 import TemplateLeaderboardPage from "./pages/TemplateLeaderboardPage";
 import AICoachPage from "./pages/AICoachPage";
 import { AnalyticsDashboard } from "./pages/AnalyticsDashboard";
-import { PowerHourPage } from "./pages/PowerHourPage";
+import PowerHourPage from "./pages/PowerHourPage";
 import { ChurnRadarPage } from "./pages/ChurnRadarPage";
 import { NetworkGraphPage } from "./pages/NetworkGraphPage";
 import { RoleplayDojoPage } from "./pages/RoleplayDojoPage";
@@ -76,6 +77,8 @@ import SignupPage from "./pages/SignupPage";
 import { ProtectedRoute } from "./components/auth";
 import MagicSendDemo from "./pages/MagicSendDemo";
 import FollowUpAnalyticsPage from "./pages/FollowUpAnalyticsPage";
+import SequencesPage from "./pages/SequencesPage";
+import ProposalsPage from "./pages/ProposalsPage";
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -227,7 +230,10 @@ const App = () => {
                       <Route path="lead-hunter" element={<LeadHunterPage />} />
                       <Route path="delay-master" element={<DelayMasterPage />} />
                       <Route path="follow-ups" element={<FollowUpsPage />} />
-                      <Route path="objections" element={<ObjectionBrainPage />} />
+                      <Route path="sequences" element={<SequencesPage />} />
+                      <Route path="proposals" element={<ProposalsPage />} />
+                      <Route path="objections" element={<ObjectionsPage />} />
+                      <Route path="objection-brain" element={<ObjectionBrainPage />} />
                       <Route path="next-best-actions" element={<NextBestActionsPage />} />
                       <Route path="demo/team-chief" element={<TeamChiefDemoPage />} />
                       <Route path="manager/objections" element={<ObjectionAnalyticsPage />} />

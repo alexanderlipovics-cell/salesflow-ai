@@ -20,6 +20,8 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.core.ai_prompts import SALES_COACH_PROMPT, detect_action_from_text
+from app.core.deps import get_current_user
+from app.supabase_client import get_supabase_client
 from ..core.security import get_current_user_dict
 
 router = APIRouter(
@@ -32,6 +34,18 @@ logger = logging.getLogger(__name__)
 
 # DEV User ID für Tests wenn kein Header gesetzt
 DEV_USER_ID = "dev-user-00000000-0000-0000-0000-000000000001"
+
+LIVE_CALL_TRIGGERS = [
+    "bin beim kunden",
+    "bin im gespräch",
+    "bin gerade bei",
+    "sitze beim kunden",
+    "live call",
+    "im meeting",
+    "kunde fragt gerade",
+    "er sagt gerade",
+    "sie fragt nach",
+]
 
 # ============================================
 # A/B EXPERIMENT CONFIGURATION
@@ -104,6 +118,12 @@ class CopilotRequest(BaseModel):
     # NBA: Lead/Contact ID für Next Best Action
     lead_id: Optional[str] = None
     contact_id: Optional[str] = None
+
+
+class LiveAssistRequest(BaseModel):
+    """Request-Modell für Live Call Unterstützung."""
+    text: str
+    lead_id: Optional[str] = None
 
 
 class CopilotOption(BaseModel):
@@ -408,6 +428,31 @@ def generate_mock_options(message: str) -> Dict[str, Any]:
 # AI-POWERED RESPONSE (wenn API Key vorhanden)
 # ============================================
 
+
+def _extract_user_id(current_user: Any) -> str:
+    """Ermittle eine user_id, egal ob Dict oder User-Objekt."""
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="Kein Benutzerkontext gefunden")
+
+    if isinstance(current_user, dict):
+        user_id = current_user.get("user_id") or current_user.get("id")
+    else:
+        user_id = getattr(current_user, "id", None) or getattr(current_user, "user_id", None)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Kein Benutzerkontext gefunden")
+
+    return str(user_id)
+
+
+def detect_live_call(text: str) -> bool:
+    """Erkenne Live-Situationen basierend auf typischen Trigger-Formulierungen."""
+    if not text:
+        return False
+    text_lower = text.lower()
+    return any(trigger in text_lower for trigger in LIVE_CALL_TRIGGERS)
+
+
 async def generate_ai_response(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generiert eine AI-Antwort mit OpenAI oder Anthropic.
@@ -481,6 +526,117 @@ Jede Option soll Copy-Paste-bereit sein!
 # ============================================
 # API ENDPOINTS
 # ============================================
+
+
+@router.post("/live-assist")
+async def live_call_assist(
+    request: LiveAssistRequest,
+    current_user=Depends(get_current_user),
+):
+    """Echtzeit-Unterstützung für Live-Calls mit kurzem, umsetzbarem Feedback."""
+    supabase = get_supabase_client()
+    user_id = _extract_user_id(current_user)
+
+    # Optional: Lead-Kontext laden
+    lead_context = ""
+    try:
+        if request.lead_id:
+            lead = (
+                supabase.table("leads")
+                .select("*")
+                .eq("id", request.lead_id)
+                .single()
+                .execute()
+            )
+            if lead.data:
+                lead_context = f"""
+Lead: {lead.data.get('name')}
+Firma: {lead.data.get('company')}
+Status: {lead.data.get('status')}
+Temperatur: {lead.data.get('temperature')}
+Notizen: {lead.data.get('notes')}
+Deal Value: {lead.data.get('deal_value')}
+"""
+    except Exception as exc:
+        logger.warning(f"Lead-Kontext konnte nicht geladen werden: {exc}")
+
+    # Objection-Templates abrufen
+    objection_context = ""
+    try:
+        objections = (
+            supabase.table("objection_templates")
+            .select("objection_text, response_template, response_strategy")
+            .limit(10)
+            .execute()
+        )
+        for obj in objections.data or []:
+            objection_context += f"- {obj['objection_text']}: {obj['response_template']}\n"
+    except Exception as exc:
+        logger.warning(f"Objection Templates konnten nicht geladen werden: {exc}")
+
+    # Prompt vorbereiten
+    prompt = f"""Du bist ein Live-Sales-Coach. Der Verkäufer ist GERADE im Kundengespräch und braucht sofortige Hilfe.
+
+SITUATION: {request.text}
+
+LEAD-KONTEXT:
+{lead_context}
+
+BEKANNTE EINWÄNDE & ANTWORTEN:
+{objection_context}
+
+Gib eine KURZE, SOFORT NUTZBARE Antwort:
+1. 🎯 Direkte Antwort/Argument (max 2 Sätze)
+2. ❓ Eine Rückfrage die der Verkäufer stellen kann
+3. ⚡ Quick Tipp (wenn relevant)
+
+Sei knapp und präzise - der User ist LIVE beim Kunden!"""
+
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    if not anthropic_key:
+        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY nicht konfiguriert")
+
+    try:
+        from anthropic import Anthropic
+
+        client = Anthropic(api_key=anthropic_key)
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=300,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        assistance_text = message.content[0].text if message and message.content else ""
+    except Exception as exc:
+        logger.error(f"Live-Assist Fehler: {exc}")
+        raise HTTPException(status_code=500, detail="Fehler bei der Live-Unterstützung")
+
+    # Events loggen (non-blocking Fehlerbehandlung)
+    try:
+        is_live = detect_live_call(request.text)
+        detected_action = "live_call" if is_live else detect_action_from_text(request.text)
+        await log_message_event(
+            user_id=user_id,
+            text=request.text,
+            direction="inbound",
+            detected_action=detected_action,
+        )
+        await log_message_event(
+            user_id=user_id,
+            text=assistance_text[:500],
+            direction="outbound",
+            detected_action=detected_action,
+            template_version=CURRENT_TEMPLATE_VERSION,
+            persona_variant=CURRENT_PERSONA_VARIANT,
+        )
+    except Exception as exc:
+        logger.debug(f"Live-Assist Logging fehlgeschlagen (non-critical): {exc}")
+
+    return {
+        "success": True,
+        "assistance": assistance_text,
+        "lead_context": lead_context or None,
+    }
+
 
 @router.post("/generate", response_model=CopilotResponse)
 async def generate_copilot_response(

@@ -60,6 +60,7 @@ const navGroups = [
       { label: "Phoenix", to: "/phoenix", icon: Flame },
       { label: "Objection Killer", to: "/objections", icon: Brain },
       { label: "GTM Copy", to: "/gtm-copy", icon: PenLine },
+      { label: "Angebote", to: "/proposals", icon: FileText },
       { label: "All Tools", to: "/all-tools", icon: AppWindow },
     ],
   },
@@ -104,7 +105,7 @@ const AppShell = () => {
   const mobileNavItems = navGroups.flatMap((group) => group.items);
 
   return (
-    <div className="relative flex min-h-screen bg-slate-950 text-slate-50 antialiased overflow-hidden">
+    <div className="relative flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-slate-50 antialiased overflow-hidden">
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* NEBULA BACKGROUND                                                    */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -120,7 +121,7 @@ const AppShell = () => {
       {/* SIDEBAR                                                              */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       
-      <aside className="relative z-10 hidden h-screen w-72 flex-col border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl xl:flex">
+      <aside className="relative z-10 hidden h-screen w-72 flex-col border-r border-gray-800/50 bg-gray-900/90 backdrop-blur-xl xl:flex">
         <div className="flex-1 space-y-5 overflow-y-auto py-6 scrollbar-hide">
           {/* Logo / Brand */}
           <div className="px-6">
@@ -231,7 +232,10 @@ const AppShell = () => {
         </div>
 
         {/* Page Content */}
-        <div role="main" className="flex-1 overflow-y-auto">
+        <div
+          role="main"
+          className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"
+        >
           <div className="mx-auto w-full max-w-7xl px-6 py-8">
             <Outlet />
           </div>

@@ -57,6 +57,7 @@ export const AppShell: React.FC = () => {
         { name: 'Außendienst', href: '/field-ops', icon: MapPin },
         { name: 'Objection Brain', href: '/objections', icon: Brain },
         { name: 'Lead Import', href: '/import', icon: UploadCloud },
+        { name: 'Angebote', href: '/proposals', icon: FileText },
       ]
     },
     {

@@ -7,9 +7,19 @@ const AnalysisCard = ({
     onClose,
     onCopy,
     onMagicSend,
-    onOpenLead
+    onOpenLead,
+    onImportBulk,
 }) => {
     const [copiedField, setCopiedField] = React.useState(null);
+    const [selectedContacts, setSelectedContacts] = React.useState([]);
+
+    React.useEffect(() => {
+        if (analysis?.contacts?.length) {
+            setSelectedContacts(analysis.contacts.map((_, idx) => idx));
+        } else {
+            setSelectedContacts([]);
+        }
+    }, [analysis]);
 
     const handleCopy = (text, field) => {
         navigator.clipboard.writeText(text);
@@ -18,11 +28,93 @@ const AnalysisCard = ({
         onCopy?.(text, field);
     };
 
+    const toggleContact = (index) => {
+        setSelectedContacts((prev) =>
+            prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+        );
+    };
+
+    const handleImportAll = () => {
+        if (!analysis?.contacts || !onImportBulk) return;
+        const chosen = analysis.contacts.filter((_, idx) => selectedContacts.includes(idx));
+        onImportBulk(chosen, analysis);
+    };
+
     if (!analysis) return null;
 
+    const isBulk = Boolean(analysis.is_bulk_list || (analysis.contacts?.length || 0) > 1);
     const { lead, status, waiting_for, conversation_summary, suggested_next_action,
             follow_up_days, customer_message, crm_note, follow_up_draft,
-            lead_exists, existing_lead_id, input_type } = analysis;
+            lead_exists, existing_lead_id, input_type, contacts, total_found, scroll_hint } = analysis;
+
+    if (isBulk) {
+        return (
+            <div className="mx-4 mb-4 bg-gray-800 rounded-xl border border-green-500/30 overflow-hidden animate-fadeIn">
+                <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 px-4 py-3 border-b border-gray-700 flex items-center justify-between">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        📋 Kontakte-Liste erkannt
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white transition-colors"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                        <span className="text-green-400 font-medium">
+                            {total_found || contacts?.length || 0} Kontakte erkannt
+                        </span>
+                        <button
+                            onClick={handleImportAll}
+                            className="px-4 py-2 bg-green-600 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                            disabled={!onImportBulk || !selectedContacts.length}
+                        >
+                            Alle importieren
+                        </button>
+                    </div>
+
+                    {scroll_hint && (
+                        <p className="text-xs text-gray-400">{scroll_hint}</p>
+                    )}
+
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                        {contacts?.map((contact, i) => (
+                            <div key={i} className="flex items-center gap-3 p-2 bg-gray-800 rounded">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedContacts.includes(i)}
+                                    onChange={() => toggleContact(i)}
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium truncate">{contact.name || 'Unbekannt'}</p>
+                                    <p className="text-xs text-gray-400 truncate">
+                                        {(contact.username || '').trim()} {contact.username && contact.title ? '•' : ''} {contact.title || ''}
+                                    </p>
+                                    {(contact.company || contact.bio) && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                            {[contact.company, contact.bio].filter(Boolean).join(' • ')}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="text-right">
+                                    <span className={`text-sm ${
+                                        (contact.warm_score || 0) > 70 ? 'text-green-400' :
+                                        (contact.warm_score || 0) > 40 ? 'text-yellow-400' : 'text-gray-400'
+                                    }`}>
+                                        {(contact.warm_score ?? 0)}%
+                                    </span>
+                                    <p className="text-xs text-gray-500">Warm Score</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-4 mb-4 bg-gray-800 rounded-xl border border-blue-500/30 overflow-hidden animate-fadeIn">

@@ -1,4 +1,68 @@
 """
+Einfacher In-Memory-Cache mit TTL.
+Reduziert API- und Datenbank-Calls.
+"""
+
+import hashlib
+import json
+from datetime import datetime, timedelta
+from typing import Any, Optional
+
+# Globaler Cache-Speicher
+_CACHE: dict = {}
+
+
+def cache_key(prefix: str, *args, **kwargs) -> str:
+    """Cache-Key aus Argumenten erzeugen."""
+    data = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True, default=str)
+    hash_val = hashlib.md5(data.encode()).hexdigest()[:12]
+    return f"{prefix}:{hash_val}"
+
+
+def get_cached(key: str) -> Optional[Any]:
+    """Wert aus Cache holen, falls nicht abgelaufen."""
+    if key in _CACHE:
+        entry = _CACHE[key]
+        if datetime.now() < entry["expires"]:
+            return entry["data"]
+        # Abgelaufen – entfernen
+        del _CACHE[key]
+    return None
+
+
+def set_cached(key: str, data: Any, ttl_seconds: int = 300) -> None:
+    """Wert mit TTL (Standard 5 Minuten) cachen."""
+    _CACHE[key] = {
+        "data": data,
+        "expires": datetime.now() + timedelta(seconds=ttl_seconds),
+    }
+
+
+def clear_cache(prefix: Optional[str] = None) -> int:
+    """Cache leeren. Optional nur Keys mit Prefix entfernen."""
+    global _CACHE
+    if prefix is None:
+        count = len(_CACHE)
+        _CACHE = {}
+        return count
+
+    keys_to_delete = [k for k in _CACHE if k.startswith(prefix)]
+    for key in keys_to_delete:
+        del _CACHE[key]
+    return len(keys_to_delete)
+
+
+def cache_stats() -> dict:
+    """Cache-Statistiken abrufen."""
+    now = datetime.now()
+    valid = sum(1 for v in _CACHE.values() if v["expires"] > now)
+    expired = len(_CACHE) - valid
+    return {
+        "total_entries": len(_CACHE),
+        "valid": valid,
+        "expired": expired,
+    }
+"""
 ============================================
 ⚡ SALESFLOW AI - REDIS CACHE SERVICE
 ============================================

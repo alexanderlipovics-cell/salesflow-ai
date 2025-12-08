@@ -1,4 +1,59 @@
 """
+AI Model Router - Route tasks to cheapest capable model.
+
+Haiku: $0.001/1K tokens (simple tasks)
+Sonnet: $0.015/1K tokens (complex tasks)
+"""
+
+# Simple tasks → Haiku (90% günstiger)
+HAIKU_TASKS = {
+    "extract_name",           # Screenshot name extraction
+    "detect_intent",          # Voice command intent
+    "categorize_objection",   # Match objection to template
+    "parse_contact_list",     # Simple list parsing
+    "sentiment_analysis",     # Basic sentiment
+    "extract_phone",          # Phone number extraction
+    "extract_email",          # Email extraction
+    "language_detection",     # Detect language
+}
+
+
+# Complex tasks → Sonnet
+SONNET_TASKS = {
+    "analyze_conversation",   # Full chat analysis
+    "generate_response",      # Objection response generation
+    "meeting_prep",           # Research synthesis
+    "proposal_intro",         # Creative writing
+    "stakeholder_inference",  # Complex reasoning
+    "personality_analysis",   # DISG profiling
+}
+
+# Vision-Spezialfälle (benötigen Vision-Modell)
+VISION_TASKS = {
+    "vision_extraction",
+    "receipt_vision",
+}
+
+VISION_MODEL = "claude-3-5-sonnet-20241022"
+
+
+def get_model_for_task(task_type: str) -> str:
+    """Route to günstigstes Modell, das den Task beherrscht."""
+    if task_type in VISION_TASKS:
+        return VISION_MODEL
+    if task_type in HAIKU_TASKS:
+        return "claude-haiku-4-5-20250101"
+    return "claude-sonnet-4-20250514"
+
+
+def get_max_tokens_for_task(task_type: str) -> int:
+    """Limit Tokens basierend auf Komplexität."""
+    if task_type in VISION_TASKS:
+        return 2000
+    if task_type in HAIKU_TASKS:
+        return 500  # Simple Tasks brauchen weniger
+    return 2000  # Komplexe Tasks brauchen mehr
+"""
 AI Router für SalesFlow AI.
 
 Zentraler Entry-Point für alle AI-Anfragen mit:

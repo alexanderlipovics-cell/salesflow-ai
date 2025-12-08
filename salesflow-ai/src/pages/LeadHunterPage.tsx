@@ -1,457 +1,496 @@
-import { FormEvent, useState } from "react";
-import { useUser } from "../context/UserContext";
+import React, { useEffect, useState } from "react";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  Clock,
+  DollarSign,
+  Instagram,
+  Linkedin,
+  Mail,
+  Phone,
+  Search,
+  Target,
+  TrendingUp,
+  Users,
+  Zap,
+} from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8000";
 
-export type LeadSuggestionCandidate = {
+type Trend = "up" | "down" | "stable";
+type NextActionType = "call" | "email" | "linkedin" | "meeting" | "follow_up";
+type Urgency = "high" | "medium" | "low";
+type QuickActionPlatform = "whatsapp" | "email" | "instagram" | "linkedin";
+
+type LeadIntelligence = {
   id: string;
   name: string;
-  company: string;
-  role: string;
-  website_url: string | null;
-  impressum_url: string | null;
-  region: string | null;
-  source: string | null;
-  notes: string | null;
-  selected: boolean;
+  first_name?: string | null;
+  company?: string | null;
+  position?: string | null;
+  ai_score: number;
+  score_trend: Trend;
+  health_status: "hot" | "warm" | "cold";
+  deal_size?: number | null;
+  win_probability: number;
+  last_activity: string;
+  days_since_contact: number;
+  next_action: string;
+  next_action_type: NextActionType;
+  urgency: Urgency;
+  tags: string[];
+  ai_insight?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  instagram?: string | null;
+  linkedin?: string | null;
+  whatsapp?: string | null;
 };
 
-// Beispiel: Lead-Hunter Output für 10 Network-Leads
-/*
-Kaiser,
-10 neue Network-Leads (gemischte Firmen)
+type BoardStats = {
+  total_leads: number;
+  pipeline_value: number;
+  hot_leads: number;
+  tasks_due_today: number;
+  avg_response_days: number;
+};
 
-1️⃣ Manuela Frabetti – Aurora Global Network
-Firma: Aurora Global Network
-Plattform: Instagram
-Handle: @manuela.aurora
-Bio (kurz): Baut ein 120-Personen-Team mit Fokus auf Health-SaaS Add-ons
-Profil: https://instagram.com/manuela.aurora
+type HunterBoardResponse = {
+  stats: BoardStats;
+  leads: LeadIntelligence[];
+};
 
-2️⃣ Fabio Conti – Elevate Circle
-Firma: Elevate Circle
-Plattform: Facebook
-Handle: @fabiocontiofficial
-Bio (kurz): Ex-Consultant, jetzt Network-Leader mit wöchentlichen Masterminds
-Profil: https://facebook.com/fabiocontiofficial
+const ScoreRing: React.FC<{ score: number; trend: Trend }> = ({ score, trend }) => {
+  const getColor = (s: number) =>
+    s > 70 ? "text-green-400" : s > 40 ? "text-yellow-400" : "text-gray-500";
+  const getStrokeColor = (s: number) =>
+    s > 70 ? "#4ade80" : s > 40 ? "#facc15" : "#6b7280";
 
-3️⃣ Saskia Halden – Momentum Tribe
-Firma: Momentum Tribe
-Plattform: Instagram
-Handle: @saskia.momentum
-Bio (kurz): Führt Remote-Vertriebsteams in DACH, Schwerpunkt Female Founders
-Profil: https://instagram.com/saskia.momentum
-
-4️⃣ Jonas Klee – Vertex Connect
-Firma: Vertex Connect
-Plattform: LinkedIn
-Handle: @jonas-klee
-Bio (kurz): Baut Hybrid-Teams für FinTech-Produkte, 8 Länder aktiv
-Profil: https://www.linkedin.com/in/jonas-klee
-
-5️⃣ Emilia Duarte – Zenith Rise Partners
-Firma: Zenith Rise Partners
-Plattform: Instagram
-Handle: @emilia.zenith
-Bio (kurz): Scale-Coach für Networker mit Fokus auf Content-Automation
-Profil: https://instagram.com/emilia.zenith
-
-6️⃣ Felix Hartwig – Pulse Affiliate Group
-Firma: Pulse Affiliate Group
-Plattform: Facebook
-Handle: @felixhartwig.sales
-Bio (kurz): 15 Jahre Network-Erfahrung, baut neue Teams für BioTech-Produkte
-Profil: https://facebook.com/felixhartwig.sales
-
-7️⃣ Natalia Romero – Nova Reach Collective
-Firma: Nova Reach Collective
-Plattform: Instagram
-Handle: @natalia.novareach
-Bio (kurz): Führt zweisprachige Teams (ES/DE) für Premium-Cosmetics
-Profil: https://instagram.com/natalia.novareach
-
-8️⃣ Daniel Seidel – Peakwave Network
-Firma: Peakwave Network
-Plattform: LinkedIn
-Handle: @daniel-seidel
-Bio (kurz): Spezialisiert auf B2B-Abos im IT-Security-Networking
-Profil: https://www.linkedin.com/in/daniel-seidel
-
-9️⃣ Mira Solberg – Atlas Flow Alliance
-Firma: Atlas Flow Alliance
-Plattform: Instagram
-Handle: @mira.atlasflow
-Bio (kurz): Baut Community-Events für Networker in Berlin & Zürich
-Profil: https://instagram.com/mira.atlasflow
-
-🔟 Henrik Danner – Horizon Sync Labs
-Firma: Horizon Sync Labs
-Plattform: Facebook
-Handle: @henrikdanner
-Bio (kurz): Skaliert High-Ticket-Networks via Paid Ads und Webinare
-Profil: https://facebook.com/henrikdanner
-
-Ich verbuche für dich im System: +10 neue Network-Leads (gemischte Firmen, Fokus DACH).
-Sag mir einfach, wenn du mit den Nachrichten starten willst – z.B.: „Block 1: 5 DMs vorbereiten“.
-*/
-
-export function LeadHunterPage() {
-  const user = useUser();
-  const userName = user?.name?.trim();
-  const [industry, setIndustry] = useState<string>("network_marketing");
-  const [region, setRegion] = useState<string>("DACH");
-  const [query, setQuery] = useState<string>("");
-  const [minTeamSize, setMinTeamSize] = useState<number | undefined>(10);
-  const [maxResults, setMaxResults] = useState<number>(20);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [saving, setSaving] = useState<boolean>(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [candidates, setCandidates] = useState<LeadSuggestionCandidate[]>([]);
-
-  async function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setSaveMessage(null);
-    setLoading(true);
-    setCandidates([]);
-
-    try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`${API_BASE_URL}/api/lead-hunter/hunt`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          hashtags: query ? [query] : [industry],
-          bio_keywords: query ? [query] : [],
-          locations: [region],
-          min_followers: minTeamSize ?? 0,
-          max_followers: 50000,
-          limit: maxResults,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const raw = await response.text();
-      console.log("LeadHunter hunt raw response:", raw);
-
-      let payload: { action: string; reply: string };
-      try {
-        payload = JSON.parse(raw);
-      } catch (e) {
-        console.error("LeadHunter hunt: JSON parse failed", raw);
-        throw new Error("Backend returned invalid response");
-      }
-
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(payload.reply);
-      } catch (parseError) {
-        throw new Error("Die AI-Antwort konnte nicht als JSON geparst werden.");
-      }
-
-      const list = Array.isArray((parsed as { candidates?: unknown }).candidates)
-        ? ((parsed as { candidates?: LeadSuggestionCandidate[] }).candidates as unknown[])
-        : [];
-
-      setCandidates(
-        list.map((item, index) => {
-          const entry = item as Partial<LeadSuggestionCandidate>;
-          return {
-            id: `${index}`,
-            name: entry.name ?? "",
-            company: entry.company ?? "",
-            role: entry.role ?? "",
-            website_url: entry.website_url ?? null,
-            impressum_url: entry.impressum_url ?? null,
-            region: entry.region ?? null,
-            source: entry.source ?? "lead_hunter",
-            notes: entry.notes ?? null,
-            selected: false,
-          };
-        })
-      );
-    } catch (err) {
-      console.error(err);
-      const message = err instanceof Error ? err.message : "Unbekannter Fehler beim Lead-Hunter.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSaveSelected() {
-    setSaveMessage(null);
-    const selectedCandidates = candidates.filter((candidate) => candidate.selected);
-
-    if (selectedCandidates.length === 0) {
-      setSaveMessage("Keine Kandidaten ausgewählt.");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        candidates: selectedCandidates.map((candidate) => ({
-          name: candidate.name || null,
-          company: candidate.company || null,
-          role: candidate.role || null,
-          website_url: candidate.website_url || null,
-          impressum_url: candidate.impressum_url || null,
-          region: candidate.region || null,
-          source: candidate.source || "lead_hunter_ui",
-          notes: candidate.notes || null,
-        })),
-      };
-
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`${API_BASE_URL}/api/leads/from-hunter`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const summary = (await response.json()) as { total: number; inserted: number };
-      setSaveMessage(`Leads gespeichert: ${summary.inserted} von ${summary.total}.`);
-
-      setCandidates((prev) => prev.map((candidate) => ({ ...candidate, selected: false })));
-    } catch (err) {
-      console.error(err);
-      const message =
-        err instanceof Error ? err.message : "Fehler beim Speichern der Leads.";
-      setSaveMessage(message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const selectedCount = candidates.filter((candidate) => candidate.selected).length;
-  const allSelected = candidates.length > 0 && selectedCount === candidates.length;
+  const circumference = 2 * Math.PI * 20;
+  const offset = circumference - (circumference * score) / 100;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-50">Lead-Hunter · Research</h1>
-          <p className="text-sm text-slate-400">
-            Lass die KI Vorschläge für neue Kontakte machen – du prüfst und entscheidest.
-          </p>
+    <div className="relative w-14 h-14 flex items-center justify-center">
+      <svg className="w-full h-full transform -rotate-90">
+        <circle cx="28" cy="28" r="20" stroke="#1f2937" strokeWidth="4" fill="transparent" />
+        <circle
+          cx="28"
+          cy="28"
+          r="20"
+          stroke={getStrokeColor(score)}
+          strokeWidth="4"
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`text-sm font-bold ${getColor(score)}`}>{score}</span>
+      </div>
+      {trend === "up" && (
+        <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
+          <ArrowUpRight className="w-3 h-3 text-white" />
+        </div>
+      )}
+      {trend === "down" && (
+        <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+          <ArrowDownRight className="w-3 h-3 text-white" />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const LeadCard: React.FC<{
+  lead: LeadIntelligence;
+  onAction?: (lead: LeadIntelligence, platform: QuickActionPlatform) => void;
+  onOpenLead?: (id: string) => void;
+}> = ({ lead, onAction, onOpenLead }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const getUrgencyColor = (urgency: Urgency) => {
+    if (urgency === "high") return "text-red-400 bg-red-500/10";
+    if (urgency === "medium") return "text-yellow-400 bg-yellow-500/10";
+    return "text-gray-400 bg-gray-500/10";
+  };
+
+  const getActionIcon = (type: NextActionType) => {
+    switch (type) {
+      case "call":
+        return <Phone className="w-4 h-4" />;
+      case "email":
+        return <Mail className="w-4 h-4" />;
+      case "linkedin":
+        return <Linkedin className="w-4 h-4" />;
+      case "meeting":
+        return <Target className="w-4 h-4" />;
+      default:
+        return <Zap className="w-4 h-4" />;
+    }
+  };
+
+  const handleQuickAction = (platform: QuickActionPlatform, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAction?.(lead, platform);
+  };
+
+  return (
+    <div
+      className="group relative bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-blue-500/50 rounded-xl p-4 mb-3 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-blue-500/10"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onOpenLead?.(lead.id)}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center w-1/3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mr-4 border border-gray-700 font-bold text-gray-300 text-lg">
+            {lead.first_name?.[0] || lead.name?.[0] || "?"}
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg leading-tight group-hover:text-blue-400 transition-colors">
+              {lead.name}
+            </h3>
+            <p className="text-gray-400 text-sm flex items-center">
+              {lead.position && <span>{lead.position}</span>}
+              {lead.position && lead.company && <span className="mx-1">•</span>}
+              {lead.company && <span>{lead.company}</span>}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-8 w-1/3 justify-center">
+          <div className="text-center">
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Deal Size</p>
+            <p className="text-white font-mono font-medium">
+              {lead.deal_size ? `€${(lead.deal_size / 1000).toFixed(0)}k` : "—"}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Win %</p>
+            <p
+              className={`font-mono font-medium ${
+                lead.win_probability > 60 ? "text-green-400" : "text-gray-400"
+              }`}
+            >
+              {lead.win_probability}%
+            </p>
+          </div>
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">AI Score</p>
+            <ScoreRing score={lead.ai_score} trend={lead.score_trend} />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end w-1/3 space-x-3">
+          <div className="text-right mr-4 hidden xl:block">
+            <div
+              className={`flex items-center justify-end text-sm mb-1 px-2 py-0.5 rounded-full ${getUrgencyColor(
+                lead.urgency
+              )}`}
+            >
+              {getActionIcon(lead.next_action_type)}
+              <span className="ml-1">{lead.next_action}</span>
+            </div>
+            <p className="text-xs text-gray-500 italic max-w-[180px] truncate">
+              {lead.last_activity}
+            </p>
+          </div>
+
+          {lead.phone && (
+            <button
+              onClick={(e) => handleQuickAction("whatsapp", e)}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-green-600 text-gray-400 hover:text-white transition-colors border border-gray-700"
+            >
+              <Phone className="w-4 h-4" />
+            </button>
+          )}
+          {lead.email && (
+            <button
+              onClick={(e) => handleQuickAction("email", e)}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-purple-600 text-gray-400 hover:text-white transition-colors border border-gray-700"
+            >
+              <Mail className="w-4 h-4" />
+            </button>
+          )}
+          {lead.instagram && (
+            <button
+              onClick={(e) => handleQuickAction("instagram", e)}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-pink-600 text-gray-400 hover:text-white transition-colors border border-gray-700"
+            >
+              <Instagram className="w-4 h-4" />
+            </button>
+          )}
+          {lead.linkedin && (
+            <button
+              onClick={(e) => handleQuickAction("linkedin", e)}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-blue-700 text-gray-400 hover:text-white transition-colors border border-gray-700"
+            >
+              <Linkedin className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
-      <form
-        onSubmit={handleSearch}
-        className="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:grid-cols-5"
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          isHovered ? "max-h-20 opacity-100 mt-4" : "max-h-0 opacity-0"
+        }`}
       >
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Branche
-          </label>
-          <input
-            value={industry}
-            onChange={(event) => setIndustry(event.target.value)}
-            className="h-9 rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            placeholder="z.B. network_marketing, real_estate"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Region
-          </label>
-          <input
-            value={region}
-            onChange={(event) => setRegion(event.target.value)}
-            className="h-9 rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            placeholder="z.B. DACH, Wien"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1 md:col-span-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Such-Query
-          </label>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="h-9 rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            placeholder='z.B. "Network Leader in DACH mit Team 50+"'
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Min. Teamgröße
-          </label>
-          <input
-            type="number"
-            value={minTeamSize ?? ""}
-            onChange={(event) =>
-              setMinTeamSize(event.target.value ? Number(event.target.value) : undefined)
-            }
-            className="h-9 rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Max. Ergebnisse
-          </label>
-          <input
-            type="number"
-            value={maxResults}
-            onChange={(event) => setMaxResults(Number(event.target.value || 20))}
-            className="h-9 rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          />
-        </div>
-
-        <div className="flex items-end md:col-span-1">
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Suche..." : "Leads vorschlagen"}
-          </button>
-        </div>
-      </form>
-
-      {error && (
-        <div className="rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-          {error}
-        </div>
-      )}
-
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-100">
-              Vorschläge ({candidates.length})
-            </h2>
-            <p className="text-xs text-slate-500">
-              Wähle die Kontakte aus, die du als Leads speichern möchtest.
-            </p>
+        <div className="pt-3 border-t border-gray-800 flex items-center justify-between">
+          <div className="flex flex-wrap gap-2">
+            {lead.tags?.map((tag, i) => (
+              <span
+                key={tag + i.toString()}
+                className="px-2 py-0.5 rounded bg-gray-800 text-gray-400 text-xs border border-gray-700"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            {saveMessage && <span className="text-xs text-emerald-400">{saveMessage}</span>}
-            <button
-              type="button"
-              disabled={saving || selectedCount === 0}
-              onClick={handleSaveSelected}
-              className="inline-flex items-center justify-center rounded-xl border border-emerald-500/70 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {saving ? "Speichere..." : "Auswahl als Leads übernehmen"}
-            </button>
-          </div>
+          {lead.ai_insight && (
+            <span className="text-cyan-400 flex items-center text-xs">
+              <Activity className="w-4 h-4 mr-1" />
+              {lead.ai_insight}
+            </span>
+          )}
         </div>
-
-        {candidates.length === 0 ? (
-          <p className="text-sm text-slate-500">Noch keine Vorschläge. Starte eine Suche oben.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-xs text-slate-200">
-              <thead className="border-b border-slate-800 text-[11px] uppercase tracking-wide text-slate-400">
-                <tr>
-                  <th className="px-2 py-2">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500"
-                      checked={allSelected}
-                      onChange={(event) => {
-                        const { checked } = event.target;
-                        setCandidates((prev) =>
-                          prev.map((candidate) => ({ ...candidate, selected: checked }))
-                        );
-                      }}
-                    />
-                  </th>
-                  <th className="px-2 py-2">Name</th>
-                  <th className="px-2 py-2">Firma</th>
-                  <th className="px-2 py-2">Rolle</th>
-                  <th className="px-2 py-2">Region</th>
-                  <th className="px-2 py-2">Website</th>
-                  <th className="px-2 py-2">Impressum</th>
-                  <th className="px-2 py-2">Notiz</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {candidates.map((candidate) => (
-                  <tr key={candidate.id} className="hover:bg-slate-900/80">
-                    <td className="px-2 py-2 text-xs">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500"
-                        checked={candidate.selected}
-                        onChange={(event) => {
-                          const { checked } = event.target;
-                          setCandidates((prev) =>
-                            prev.map((item) =>
-                              item.id === candidate.id ? { ...item, selected: checked } : item
-                            )
-                          );
-                        }}
-                      />
-                    </td>
-                    <td className="px-2 py-2 text-xs">{candidate.name}</td>
-                    <td className="px-2 py-2 text-xs">{candidate.company}</td>
-                    <td className="px-2 py-2 text-xs">{candidate.role}</td>
-                    <td className="px-2 py-2 text-xs">{candidate.region}</td>
-                    <td className="px-2 py-2 text-xs">
-                      {candidate.website_url ? (
-                        <a
-                          href={candidate.website_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-emerald-400 hover:underline"
-                        >
-                          Website
-                        </a>
-                      ) : (
-                        <span className="text-slate-500">–</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-2 text-xs">
-                      {candidate.impressum_url ? (
-                        <a
-                          href={candidate.impressum_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-emerald-400 hover:underline"
-                        >
-                          Impressum
-                        </a>
-                      ) : (
-                        <span className="text-slate-500">–</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-2 text-xs">
-                      <span className="line-clamp-2">
-                        {candidate.notes}
-                        {candidate.source ? ` ${candidate.source}` : ""}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
-}
+};
+
+const StatsCard: React.FC<{
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  change?: string;
+  changeType?: "positive" | "negative" | "neutral";
+}> = ({ label, value, icon, change, changeType }) => (
+  <div className="bg-gray-900 border border-gray-800 p-4 rounded-xl hover:border-gray-700 transition-colors">
+    <div className="flex justify-between items-start mb-2">
+      <span className="text-gray-500 text-xs uppercase font-medium tracking-wide">{label}</span>
+      {icon}
+    </div>
+    <div className="flex items-end justify-between">
+      <span className="text-2xl font-bold text-white">{value}</span>
+      {change && (
+        <span
+          className={`text-xs px-1.5 py-0.5 rounded ${
+            changeType === "positive"
+              ? "bg-green-500/10 text-green-400"
+              : changeType === "negative"
+              ? "bg-red-500/10 text-red-400"
+              : "bg-blue-500/10 text-blue-400"
+          }`}
+        >
+          {change}
+        </span>
+      )}
+    </div>
+  </div>
+);
+
+const LeadHunterPage: React.FC = () => {
+  const [data, setData] = useState<HunterBoardResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("ai_score");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, sortBy]);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/hunter-board/data?filter_status=${filter}&sort_by=${sortBy}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const result = (await res.json()) as HunterBoardResponse;
+      setData(result);
+    } catch (err) {
+      console.error("Error fetching hunter board:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQuickAction = (lead: LeadIntelligence, platform: QuickActionPlatform) => {
+    const message = `Hey ${lead.first_name || lead.name}! 👋`;
+
+    let deepLink: string | null = null;
+
+    if (platform === "whatsapp" && lead.phone) {
+      const phone = lead.phone.replace(/\s+/g, "").replace("+", "");
+      deepLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    } else if (platform === "email" && lead.email) {
+      deepLink = `mailto:${lead.email}?body=${encodeURIComponent(message)}`;
+    } else if (platform === "instagram" && lead.instagram) {
+      const handle = lead.instagram.replace("@", "");
+      deepLink = `https://instagram.com/${handle}`;
+    } else if (platform === "linkedin" && lead.linkedin) {
+      deepLink = lead.linkedin.startsWith("http")
+        ? lead.linkedin
+        : `https://linkedin.com/in/${lead.linkedin}`;
+    }
+
+    if (deepLink) {
+      window.open(deepLink, "_blank");
+    }
+  };
+
+  const handleOpenLead = (leadId: string) => {
+    window.location.href = `/leads/${leadId}`;
+  };
+
+  const filteredLeads =
+    data?.leads?.filter(
+      (lead) =>
+        !searchQuery ||
+        lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.company?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}k`;
+    return `€${value}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-950 p-6 lg:p-8">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8">
+        <div>
+          <p className="text-blue-500 font-medium text-sm tracking-wider uppercase mb-1">
+            Sales Flow AI
+          </p>
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            Hunter Board
+            <span className="text-sm bg-gray-800 text-gray-400 px-3 py-1 rounded-lg border border-gray-700">
+              {data?.stats?.total_leads || 0} Leads
+            </span>
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-3 mt-4 lg:mt-0 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Suche Leads, Firmen..."
+              className="bg-gray-900 border border-gray-800 text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-blue-500 w-64 transition-colors"
+            />
+          </div>
+
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-gray-900 border border-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+          >
+            <option value="all">Alle Status</option>
+            <option value="hot">🔥 Hot</option>
+            <option value="warm">🌡️ Warm</option>
+            <option value="cold">❄️ Cold</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-gray-900 border border-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+          >
+            <option value="ai_score">AI Score</option>
+            <option value="deal_size">Deal Size</option>
+            <option value="days_since_contact">Letzter Kontakt</option>
+          </select>
+
+          <button className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all">
+            <Zap className="w-4 h-4" /> AI Auto-Connect
+          </button>
+        </div>
+      </div>
+
+      {data?.stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <StatsCard
+            label="Pipeline Value"
+            value={formatCurrency(data.stats.pipeline_value)}
+            icon={<DollarSign className="w-5 h-5 text-green-400" />}
+            change="+12%"
+            changeType="positive"
+          />
+          <StatsCard
+            label="Hot Leads (Score >70)"
+            value={data.stats.hot_leads}
+            icon={<Activity className="w-5 h-5 text-orange-400" />}
+            change={`${data.stats.hot_leads} aktiv`}
+            changeType="neutral"
+          />
+          <StatsCard
+            label="Tasks Due Today"
+            value={data.stats.tasks_due_today}
+            icon={<Clock className="w-5 h-5 text-blue-400" />}
+            change={data.stats.tasks_due_today > 0 ? "Urgent" : "✓"}
+            changeType={data.stats.tasks_due_today > 0 ? "negative" : "positive"}
+          />
+          <StatsCard
+            label="Ø Tage seit Kontakt"
+            value={`${data.stats.avg_response_days}d`}
+            icon={<TrendingUp className="w-5 h-5 text-purple-400" />}
+            change={data.stats.avg_response_days < 5 ? "Gut" : "Verbessern"}
+            changeType={data.stats.avg_response_days < 5 ? "positive" : "negative"}
+          />
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center px-4 pb-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <span className="w-1/3">Lead Details</span>
+            <span className="w-1/3 text-center">AI Intelligence</span>
+            <span className="w-1/3 text-right pr-16">Next Action</span>
+          </div>
+
+          {filteredLeads.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Keine Leads gefunden</p>
+            </div>
+          ) : (
+            filteredLeads.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                onAction={handleQuickAction}
+                onOpenLead={handleOpenLead}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default LeadHunterPage;

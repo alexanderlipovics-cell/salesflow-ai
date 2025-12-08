@@ -16,6 +16,8 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
 import sys
+import traceback
+import uuid
 
 # Initialize Sentry (must be first)
 from .core import sentry
@@ -27,7 +29,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("salesflow")
 
 # Event Handler registrieren (beim Import)
 # Dies muss VOR der App-Erstellung passieren, damit Handler registriert sind
@@ -85,15 +87,22 @@ async def salesflow_exception_handler(request: Request, exc: SalesFlowException)
     )
 
 @app.exception_handler(Exception)
-async def generic_exception_handler(request: Request, exc: Exception):
-    """Handle unexpected exceptions."""
-    logger.exception(f"Unhandled exception: {exc}")
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all unhandled exceptions and return safe response."""
+    error_id = str(uuid.uuid4())[:8]
+
+    logger.error(
+        f"[{error_id}] Unhandled error on {request.method} {request.url.path}: "
+        f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
+    )
+
     return JSONResponse(
         status_code=500,
         content={
-            "error": "INTERNAL_ERROR",
-            "message": "An unexpected error occurred",
-            "details": {}
+            "success": False,
+            "error": "Ein unerwarteter Fehler ist aufgetreten",
+            "error_id": error_id,
+            "hint": "Bitte versuche es erneut oder kontaktiere den Support"
         }
     )
 
@@ -174,6 +183,24 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# Request-Timing Middleware
+@app.middleware("http")
+async def add_timing(request: Request, call_next):
+    import time
+
+    start = time.time()
+    response = await call_next(request)
+    duration = time.time() - start
+
+    response.headers["X-Response-Time"] = f"{duration:.3f}s"
+
+    if duration > 2.0:
+        logger.warning(
+            f"Slow request: {request.method} {request.url.path} took {duration:.2f}s"
+        )
+
+    return response
+
 # Request Context Filter für Logging (fügt request_id zu Logs hinzu)
 for handler in logging.root.handlers:
     handler.addFilter(RequestContextFilter())
@@ -194,8 +221,10 @@ from .routers.idps import router as idps_router  # IDPS: Intelligent DM Persiste
 from .routers.chat_import import router as chat_import_router  # 🆕 Chat Import für Networker
 from .routers.screenshot_import import router as screenshot_router  # 🆕 Screenshot-to-Lead Magic
 from .routers.followups import router as followups_router  # 🆕 GPT Follow-Up Engine
+from .routers.sequences import router as sequences_router  # 🆕 Follow-up Sequenzen
 from .routers.team_templates import router as team_templates_router  # 🆕 Team Duplikation
 from .routers.lead_hunter import router as lead_hunter_router  # 🆕 Lead Hunter für Networker
+from .routers.hunter_board import router as hunter_board_router  # 🆕 Hunter Board Intelligence
 from .routers.onboarding import router as onboarding_router  # 🆕 Magic Onboarding System
 from .routers.compensation import router as compensation_router  # 🆕 Provisionsberechnung
 from .routers.ad_webhooks import router as ad_webhooks_router  # 🆕 Ad Platform Webhooks (Facebook, LinkedIn, Instagram)
@@ -214,15 +243,24 @@ from .routers.user_learning import router as user_learning_router  # 🧠 User L
 from .routers.genealogy import router as genealogy_router  # 🌳 Genealogy Tree & Downline
 from .routers.commissions import router as commissions_router  # 💰 Provisions-Tracker & Rechnungsgenerator
 from .routers.closing_coach import router as closing_coach_router  # 🎯 Closing Coach
+from .routers.power_hour import router as power_hour_router  # ⚡ Power Hour Sprint
+from .routers.objections import router as objections_router  # 🧠 Objection Handling
+from .routers.competitors import router as competitors_router  # 🛡️ Competitor Battle Cards
 from .routers.cold_call_assistant import router as cold_call_router  # 📞 Kaltakquise-Assistent
 from .routers.vision import router as vision_router  # 🤖 Claude Vision für Screenshots
 from .routers.smart_import import router as smart_import_router  # 🧠 Smart Chat Import
+from .routers.csv_import import router as csv_import_router  # 🧠 CSV/VCF Import
 from .routers.magic_send import router as magic_send_router  # 🔗 Magic Send Deep Links
+from .routers.stakeholder import router as stakeholder_router  # 🧭 Stakeholder Mapping
+from .routers.finance import router as finance_router  # 💰 Finance Module
 from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
+from .routers.income_predictor import router as income_predictor_router  # 📈 Income Predictor
 from .routers.gamification import router as gamification_router  # 🏆 Gamification
 from .routers.lead_qualifier import router as lead_qualifier_router  # 🧠 AI Lead Qualifier
 from .routers.lead_discovery import router as lead_discovery_router  # 🔍 Lead Discovery Engine
 from .routers.meeting_prep import router as meeting_prep_router  # 🧠 Meeting Prep
+from .routers.voice import router as voice_router  # 🗣️ Voice Transcription
+from .routers.proposals import router as proposals_router  # 📄 Angebots-PDFs
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -240,8 +278,10 @@ app.include_router(idps_router, prefix="/api")  # IDPS: Intelligent DM Persisten
 app.include_router(chat_import_router, prefix="/api")  # 🆕 Chat Import für Networker
 app.include_router(screenshot_router, prefix="/api")  # 🆕 Screenshot-to-Lead Magic (GPT-4o Vision)
 app.include_router(followups_router, prefix="/api")  # 🆕 GPT Follow-Up Engine
+app.include_router(sequences_router, prefix="/api")  # 🆕 Follow-up Sequenzen
 app.include_router(team_templates_router, prefix="/api")  # 🆕 Team Duplikation System
 app.include_router(lead_hunter_router, prefix="/api")  # 🆕 Lead Hunter für Networker
+app.include_router(hunter_board_router, prefix="/api")  # 🆕 Hunter Board Intelligence
 app.include_router(onboarding_router, prefix="/api")  # 🆕 Magic Onboarding System
 app.include_router(compensation_router, prefix="/api")  # 🆕 Provisionsberechnung für MLM
 app.include_router(ad_webhooks_router, prefix="/api")  # 🆕 Ad Platform Webhooks (Facebook, LinkedIn, Instagram)
@@ -261,6 +301,9 @@ app.include_router(genealogy_router, prefix="/api")  # 🌳 Genealogy Tree & Dow
 app.include_router(commissions_router, prefix="/api")  # 💰 Provisions-Tracker & Rechnungsgenerator
 app.include_router(meeting_prep_router, prefix="/api")  # 🧠 Meeting Prep
 app.include_router(closing_coach_router, prefix="/api")  # 🎯 Closing Coach
+app.include_router(power_hour_router, prefix="/api")  # ⚡ Power Hour Sprint
+app.include_router(objections_router, prefix="/api")  # 🧠 Objection Handling
+app.include_router(competitors_router, prefix="/api")  # 🛡️ Competitor Battle Cards
 app.include_router(cold_call_router, prefix="/api")  # 📞 Kaltakquise-Assistent
 app.include_router(performance_insights_router, prefix="/api")  # 📈 Performance Insights
 app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
@@ -268,7 +311,13 @@ app.include_router(lead_qualifier_router)  # 🧠 AI Lead Qualifier (hat bereits
 app.include_router(lead_discovery_router)  # 🔍 Lead Discovery Engine (hat bereits /api/lead-discovery prefix)
 app.include_router(vision_router, prefix="/api")  # 🤖 Claude Vision für Screenshots
 app.include_router(smart_import_router, prefix="/api")  # 🧠 Smart Chat Import
+app.include_router(csv_import_router, prefix="/api")  # 🧠 CSV/VCF Import
+app.include_router(finance_router, prefix="/api")  # 💰 Finance Module
+app.include_router(income_predictor_router, prefix="/api")  # 📈 Income Predictor
 app.include_router(magic_send_router, prefix="/api")  # 🔗 Magic Send Deep Links
+app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mapping
+app.include_router(voice_router, prefix="/api")  # 🗣️ Voice Transcription
+app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert
