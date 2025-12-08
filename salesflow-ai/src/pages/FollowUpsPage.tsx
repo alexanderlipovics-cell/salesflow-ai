@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CalendarClock,
@@ -8,9 +8,10 @@ import {
   Loader2,
   Mail,
   MessageCircle,
-  Phone,
   RefreshCw,
   Rocket,
+  Send,
+  Sparkles,
   SkipForward,
   Target,
 } from 'lucide-react';
@@ -29,6 +30,9 @@ import {
 import { startStandardFollowUpSequenceForLead } from '@/services/followUpService';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { generateDeepLink } from '@/services/magicDeepLinkService';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import FollowUpTemplateManagerPage from './FollowUpTemplateManagerPage';
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -38,6 +42,13 @@ interface LeadOption {
   id: string;
   name: string | null;
   company: string | null;
+}
+
+interface MagicSendPreview {
+  taskId?: string;
+  lead: LeadOption | (FollowUpTaskCardProps['task']['lead'] | null);
+  message: string;
+  channel?: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -79,6 +90,41 @@ const getDueLabel = (dateString: string | null): { label: string; isOverdue: boo
   } else {
     return { label: formatDate(dateString), isOverdue: false, isToday: false };
   }
+};
+
+const isSameDay = (dateA: Date, dateB: Date) => {
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+};
+
+const isDueToday = (dateString: string | null) => {
+  if (!dateString) return false;
+  const dueDate = new Date(dateString);
+  const today = new Date();
+  dueDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return isSameDay(dueDate, today);
+};
+
+const isDueThisWeek = (dateString: string | null) => {
+  if (!dateString) return false;
+  const dueDate = new Date(dateString);
+  const today = new Date();
+
+  const dayOfWeek = today.getDay(); // 0 = Sunday
+  const diffToMonday = (dayOfWeek + 6) % 7; // convert so Monday=0
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  return dueDate >= monday && dueDate <= sunday;
 };
 
 /**
@@ -217,6 +263,10 @@ export default function FollowUpsPage() {
   const [startingSequence, setStartingSequence] = useState(false);
   const [availableLeads, setAvailableLeads] = useState<LeadOption[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
+  const [magicSendPreview, setMagicSendPreview] = useState<MagicSendPreview | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [magicSendError, setMagicSendError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates'>('due');
 
   // Leads für das Dropdown laden
   useEffect(() => {
@@ -243,6 +293,16 @@ export default function FollowUpsPage() {
     
     fetchLeads();
   }, []);
+
+  const dueToday = useMemo(
+    () => tasks.filter((task) => isDueToday(task.due_at)),
+    [tasks]
+  );
+
+  const dueThisWeek = useMemo(
+    () => tasks.filter((task) => isDueThisWeek(task.due_at)),
+    [tasks]
+  );
 
   // ─────────────────────────────────────────────────────────────────
   // Handlers
@@ -296,6 +356,207 @@ export default function FollowUpsPage() {
     }
   };
 
+  const inferChannel = (lead: FollowUpTaskCardProps['task']['lead'] | null): string => {
+    if (!lead) return 'whatsapp';
+    if (lead.phone) return 'whatsapp';
+    if ((lead as any).email) return 'email';
+    return 'linkedin';
+  };
+
+  const getLeadFirstName = (
+    lead: FollowUpTaskCardProps['task']['lead'] | LeadOption | null
+  ): string => {
+    if (!lead) return 'Lead';
+    const first = (lead as any).first_name || (lead as any).firstName;
+    if (first) return first;
+    const fullName = (lead as any).name;
+    if (fullName && typeof fullName === 'string') {
+      return fullName.split(' ')[0];
+    }
+    return 'Lead';
+  };
+
+  const handleMagicSend = async (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => {
+    if (!task.lead_id && !task.lead?.id) {
+      alert('Lead-ID fehlt – bitte Lead-Daten prüfen.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setMagicSendError(null);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch('/api/ai/generate-followup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          lead_id: task.lead_id || task.lead?.id,
+          context: task.note || task.lead?.notes || task.lead?.source,
+          follow_up_type: task.template_key,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || 'Nachricht konnte nicht generiert werden.');
+      }
+
+      const suggestedChannel = data.suggested_channel || data.channel || inferChannel(task.lead);
+      const messageText =
+        data.message || data.content || fallbackMessage || 'Nachricht konnte nicht generiert werden.';
+
+      setMagicSendPreview({
+        taskId: task.id,
+        lead: task.lead,
+        message: messageText,
+        channel: suggestedChannel,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Magic Send fehlgeschlagen.';
+      setMagicSendError(message);
+      alert(`Fehler: ${message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleManualWrite = (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => {
+    setMagicSendPreview({
+      taskId: task.id,
+      lead: task.lead,
+      message: fallbackMessage || '',
+      channel: inferChannel(task.lead),
+    });
+  };
+
+  const mapChannelToPlatform = (channel?: string | null) => {
+    if (!channel) return 'whatsapp';
+    if (channel.includes('email')) return 'email';
+    if (channel.includes('instagram')) return 'instagram';
+    if (channel.includes('linkedin')) return 'whatsapp';
+    if (channel.includes('telegram')) return 'telegram';
+    return channel;
+  };
+
+  const handleConfirmSend = async (preview: MagicSendPreview) => {
+    if (!preview.lead) {
+      alert('Kein Lead vorhanden.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch('/api/magic-send/generate-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          platform: mapChannelToPlatform(preview.channel),
+          message: preview.message,
+          phone: (preview.lead as any).phone,
+          email: (preview.lead as any).email,
+          instagram_handle: (preview.lead as any).instagram,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || 'Versand nicht möglich.');
+      }
+
+      if (data.deep_link) {
+        window.open(data.deep_link, '_blank');
+      }
+
+      if (preview.taskId) {
+        await markAs(preview.taskId, 'done');
+        await refetch();
+      }
+
+      setMagicSendPreview(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Versand fehlgeschlagen';
+      setMagicSendError(message);
+      alert(`Fehler: ${message}`);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!magicSendPreview?.taskId) return;
+    const relatedTask = tasks.find((t) => t.id === magicSendPreview.taskId);
+    if (relatedTask) {
+      await handleMagicSend(relatedTask, magicSendPreview.message);
+    }
+  };
+
+  const handleMagicSendAll = async () => {
+    if (!dueToday.length) {
+      alert('Keine heute fälligen Follow-ups.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setMagicSendError(null);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const leadIds = dueToday
+        .map((task) => task.lead_id || task.lead?.id)
+        .filter(Boolean);
+
+      const response = await fetch('/api/follow-ups/batch/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ lead_ids: leadIds }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || 'Batch-Generierung fehlgeschlagen.');
+      }
+
+      if (data.messages && data.messages.length > 0) {
+        const first = data.messages[0];
+        const relatedTask = tasks.find(
+          (t) => (t.lead_id || t.lead?.id) === first.lead_id
+        );
+
+        setMagicSendPreview({
+          taskId: relatedTask?.id,
+          lead: relatedTask?.lead || null,
+          message: first.content || first.message || '',
+          channel: first.channel || first.suggested_channel,
+        });
+      } else {
+        alert('Keine Nachrichten generiert.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Magic Send All fehlgeschlagen';
+      setMagicSendError(message);
+      alert(`Fehler: ${message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────
   // Render: Loading State
   // ─────────────────────────────────────────────────────────────────
@@ -314,11 +575,12 @@ export default function FollowUpsPage() {
   // ─────────────────────────────────────────────────────────────────
 
   const groupedTasks = groupTasks(tasks);
+  const groupedWeekTasks = groupTasks(dueThisWeek);
 
   return (
     <div className="min-h-screen bg-slate-900 px-4 py-8 pb-24 text-slate-50">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
             <Mail className="h-6 w-6" />
@@ -328,14 +590,30 @@ export default function FollowUpsPage() {
             <p className="text-sm text-slate-400">Deine offenen Nachfass-Aufgaben aus allen Leads.</p>
           </div>
         </div>
-        
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-700"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Aktualisieren
-        </button>
+
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleMagicSendAll}
+            className="bg-gradient-to-r from-purple-500 to-indigo-600"
+            disabled={isGenerating || dueToday.length === 0}
+          >
+            {isGenerating ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-2" />
+            )}
+            Magic Send All ({dueToday.length})
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={loading || overridesLoading || isGenerating}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Aktualisieren
+          </Button>
+        </div>
       </div>
 
       {/* Admin-Tool: Sequenz manuell starten (nur für Tests/Admin) */}
@@ -406,64 +684,178 @@ export default function FollowUpsPage() {
         </div>
       )}
 
-      {/* Empty State */}
-      {tasks.length === 0 && !error && (
-        <div className="mt-12 text-center text-slate-400">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
-            <Check className="h-8 w-8 text-slate-600" />
-          </div>
-          <p className="text-lg">Aktuell keine offenen Follow-ups. 🎯</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Starte eine Sequenz für einen Lead, um hier Follow-up-Aufgaben zu sehen.
-          </p>
+      {magicSendError && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <p>{magicSendError}</p>
         </div>
       )}
 
-      {/* Task Groups */}
-      {tasks.length > 0 && (
-        <div className="space-y-8">
-          {/* Überfällig */}
-          {groupedTasks.overdue.length > 0 && (
-            <TaskGroupSection
-              title="Überfällig"
-              tasks={groupedTasks.overdue}
-              badgeColor="bg-red-500/20 text-red-400"
-              onMarkAs={handleAction}
-              onCopyMessage={handleCopyMessage}
-              processingId={processingId}
-              copiedId={copiedId}
-              overrides={overrides}
-            />
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="mt-4">
+        <TabsList>
+          <TabsTrigger value="due">Heute fällig ({dueToday.length})</TabsTrigger>
+          <TabsTrigger value="week">Diese Woche ({dueThisWeek.length})</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="due">
+          {/* Empty State */}
+          {tasks.length === 0 && !error && (
+            <div className="mt-12 text-center text-slate-400">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
+                <Check className="h-8 w-8 text-slate-600" />
+              </div>
+              <p className="text-lg">Aktuell keine offenen Follow-ups. 🎯</p>
+              <p className="mt-2 text-sm text-slate-500">
+                Starte eine Sequenz für einen Lead, um hier Follow-up-Aufgaben zu sehen.
+              </p>
+            </div>
           )}
-          
-          {/* Heute */}
-          {groupedTasks.today.length > 0 && (
-            <TaskGroupSection
-              title="Heute"
-              tasks={groupedTasks.today}
-              badgeColor="bg-amber-500/20 text-amber-400"
-              onMarkAs={handleAction}
-              onCopyMessage={handleCopyMessage}
-              processingId={processingId}
-              copiedId={copiedId}
-              overrides={overrides}
-            />
+
+          {/* Task Groups */}
+          {tasks.length > 0 && (
+            <div className="space-y-8 mt-6">
+              {/* Überfällig */}
+              {groupedTasks.overdue.length > 0 && (
+                <TaskGroupSection
+                  title="Überfällig"
+                  tasks={groupedTasks.overdue}
+                  badgeColor="bg-red-500/20 text-red-400"
+                  onMarkAs={handleAction}
+                  onCopyMessage={handleCopyMessage}
+                  onMagicSend={handleMagicSend}
+                  onManualWrite={handleManualWrite}
+                  processingId={processingId}
+                  copiedId={copiedId}
+                  overrides={overrides}
+                  isGenerating={isGenerating}
+                />
+              )}
+              
+              {/* Heute */}
+              {groupedTasks.today.length > 0 && (
+                <TaskGroupSection
+                  title="Heute"
+                  tasks={groupedTasks.today}
+                  badgeColor="bg-amber-500/20 text-amber-400"
+                  onMarkAs={handleAction}
+                  onCopyMessage={handleCopyMessage}
+                  onMagicSend={handleMagicSend}
+                  onManualWrite={handleManualWrite}
+                  processingId={processingId}
+                  copiedId={copiedId}
+                  overrides={overrides}
+                  isGenerating={isGenerating}
+                />
+              )}
+              
+              {/* Demnächst */}
+              {groupedTasks.upcoming.length > 0 && (
+                <TaskGroupSection
+                  title="Demnächst"
+                  tasks={groupedTasks.upcoming}
+                  badgeColor="bg-slate-500/20 text-slate-400"
+                  onMarkAs={handleAction}
+                  onCopyMessage={handleCopyMessage}
+                  onMagicSend={handleMagicSend}
+                  onManualWrite={handleManualWrite}
+                  processingId={processingId}
+                  copiedId={copiedId}
+                  overrides={overrides}
+                  isGenerating={isGenerating}
+                />
+              )}
+            </div>
           )}
-          
-          {/* Demnächst */}
-          {groupedTasks.upcoming.length > 0 && (
-            <TaskGroupSection
-              title="Demnächst"
-              tasks={groupedTasks.upcoming}
-              badgeColor="bg-slate-500/20 text-slate-400"
-              onMarkAs={handleAction}
-              onCopyMessage={handleCopyMessage}
-              processingId={processingId}
-              copiedId={copiedId}
-              overrides={overrides}
-            />
+        </TabsContent>
+
+        <TabsContent value="week">
+          {dueThisWeek.length === 0 ? (
+            <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4 text-sm text-slate-400">
+              Keine Follow-ups für diese Woche geplant.
+            </div>
+          ) : (
+            <div className="space-y-8 mt-6">
+              {groupedWeekTasks.today.length > 0 && (
+                <TaskGroupSection
+                  title="Diese Woche"
+                  tasks={groupedWeekTasks.today}
+                  badgeColor="bg-blue-500/20 text-blue-300"
+                  onMarkAs={handleAction}
+                  onCopyMessage={handleCopyMessage}
+                  onMagicSend={handleMagicSend}
+                  onManualWrite={handleManualWrite}
+                  processingId={processingId}
+                  copiedId={copiedId}
+                  overrides={overrides}
+                  isGenerating={isGenerating}
+                />
+              )}
+              {groupedWeekTasks.upcoming.length > 0 && (
+                <TaskGroupSection
+                  title="Später in der Woche"
+                  tasks={groupedWeekTasks.upcoming}
+                  badgeColor="bg-slate-500/20 text-slate-400"
+                  onMarkAs={handleAction}
+                  onCopyMessage={handleCopyMessage}
+                  onMagicSend={handleMagicSend}
+                  onManualWrite={handleManualWrite}
+                  processingId={processingId}
+                  copiedId={copiedId}
+                  overrides={overrides}
+                  isGenerating={isGenerating}
+                />
+              )}
+            </div>
           )}
-        </div>
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900">
+            <FollowUpTemplateManagerPage />
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {magicSendPreview && (
+        <Modal onClose={() => setMagicSendPreview(null)}>
+          <div className="p-6">
+            <h3 className="font-semibold mb-2">
+              Nachricht an {getLeadFirstName(magicSendPreview.lead as any)}
+            </h3>
+            <div className="text-sm text-gray-500 mb-4">
+              via {magicSendPreview.channel || 'whatsapp'}
+            </div>
+            
+            <textarea
+              value={magicSendPreview.message}
+              onChange={(e) =>
+                setMagicSendPreview({
+                  ...magicSendPreview,
+                  message: e.target.value,
+                })
+              }
+              className="w-full h-32 p-3 border rounded-lg mb-4 text-slate-900"
+            />
+            
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setMagicSendPreview(null)}>
+                Abbrechen
+              </Button>
+              <Button variant="outline" onClick={handleRegenerate}>
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Neu generieren
+              </Button>
+              <Button 
+                className="bg-green-500 hover:bg-green-600"
+                onClick={() => handleConfirmSend(magicSendPreview)}
+              >
+                <Send className="w-4 h-4 mr-1" />
+                Senden
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -479,9 +871,18 @@ interface TaskGroupSectionProps {
   badgeColor: string;
   onMarkAs: (id: string, status: 'done' | 'skipped') => Promise<void>;
   onCopyMessage: (taskId: string, message: string) => Promise<void>;
+  onMagicSend: (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => Promise<void>;
+  onManualWrite: (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => void;
   processingId: string | null;
   copiedId: string | null;
   overrides: FollowUpTemplateOverrideLookup;
+  isGenerating: boolean;
 }
 
 function TaskGroupSection({
@@ -490,9 +891,12 @@ function TaskGroupSection({
   badgeColor,
   onMarkAs,
   onCopyMessage,
+  onMagicSend,
+  onManualWrite,
   processingId,
   copiedId,
   overrides,
+  isGenerating,
 }: TaskGroupSectionProps) {
   return (
     <div>
@@ -510,7 +914,10 @@ function TaskGroupSection({
             task={task}
             onMarkAs={onMarkAs}
             onCopyMessage={onCopyMessage}
+            onMagicSend={onMagicSend}
+            onManualWrite={onManualWrite}
             isProcessing={processingId === task.id}
+            isGenerating={isGenerating}
             isCopied={copiedId === task.id}
             overrides={overrides}
           />
@@ -524,7 +931,16 @@ interface FollowUpTaskCardProps {
   task: ReturnType<typeof useFollowUpTasks>['tasks'][0];
   onMarkAs: (id: string, status: 'done' | 'skipped') => Promise<void>;
   onCopyMessage: (taskId: string, message: string) => Promise<void>;
+  onMagicSend: (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => Promise<void>;
+  onManualWrite: (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => void;
   isProcessing: boolean;
+  isGenerating: boolean;
   isCopied: boolean;
   overrides: FollowUpTemplateOverrideLookup;
 }
@@ -533,7 +949,10 @@ function FollowUpTaskCard({
   task,
   onMarkAs,
   onCopyMessage,
+  onMagicSend,
+  onManualWrite,
   isProcessing,
+  isGenerating,
   isCopied,
   overrides,
 }: FollowUpTaskCardProps) {
@@ -710,6 +1129,27 @@ function FollowUpTaskCard({
         </div>
       )}
 
+      {/* Magic Send Actions */}
+      <div className="mt-3 flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onMagicSend(task, personalizedMessage)}
+          className="text-purple-600 hover:bg-purple-50"
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+          ) : (
+            <Sparkles className="w-4 h-4 mr-1" />
+          )}
+          Magic Send
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onManualWrite(task, personalizedMessage)}>
+          Manuell
+        </Button>
+      </div>
+
       {/* Action Buttons */}
       <div className="flex gap-3 border-t border-slate-700 pt-4">
         <button
@@ -732,6 +1172,17 @@ function FollowUpTaskCard({
           )}
           Erledigt
         </button>
+      </div>
+    </div>
+  );
+}
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-xl bg-white shadow-2xl">
+        {children}
       </div>
     </div>
   );

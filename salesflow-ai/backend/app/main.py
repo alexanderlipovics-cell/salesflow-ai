@@ -217,6 +217,7 @@ from .routers.zero_input_crm import router as zero_input_crm_router
 from .routers.channel_webhooks import router as webhooks_router
 from .routers.collective_intelligence import router as ci_router
 from .routers.lead_generation import router as lead_gen_router  # Non Plus Ultra Lead Generation
+from .routers.ai_followup import router as ai_followup_router  # 🧠 Magic Send Follow-up
 from .routers.idps import router as idps_router  # IDPS: Intelligent DM Persistence System
 from .routers.chat_import import router as chat_import_router  # 🆕 Chat Import für Networker
 from .routers.screenshot_import import router as screenshot_router  # 🆕 Screenshot-to-Lead Magic
@@ -277,6 +278,7 @@ app.include_router(analytics_extended_router, prefix="/api")  # Extended Analyti
 app.include_router(zero_input_crm_router, prefix="/api")
 app.include_router(webhooks_router, prefix="/api")
 app.include_router(ci_router)  # Collective Intelligence (Non Plus Ultra)
+app.include_router(ai_followup_router, prefix="/api")  # 🧠 Magic Send Follow-up
 app.include_router(lead_gen_router, prefix="/api")  # Non Plus Ultra Lead Generation System
 app.include_router(idps_router, prefix="/api")  # IDPS: Intelligent DM Persistence System
 app.include_router(chat_import_router, prefix="/api")  # 🆕 Chat Import für Networker

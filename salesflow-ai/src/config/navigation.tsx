@@ -6,7 +6,7 @@
  * @author Gemini 3 Ultra - Layout Architecture
  */
 
-import { LayoutDashboard, Users, BarChart3, Settings, Zap, MessageSquare, Target, TrendingUp, CreditCard, Sparkles, Video, Trophy, Flame, FileText, DollarSign } from "lucide-react";
+import { LayoutDashboard, Users, BarChart3, Settings, Zap, MessageSquare, Target, TrendingUp, CreditCard, Sparkles, Video, Trophy, Flame, FileText, DollarSign, Calculator } from "lucide-react";
 
 export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -26,6 +26,7 @@ export const navigationItems = [
   { name: 'Billing', href: '/billing', icon: CreditCard },
   { name: 'Integrationen', href: '/integrations', icon: Zap },
   { name: 'Finanzen', href: '/finance', icon: DollarSign },
+  { name: 'Vergütungsrechner', href: '/compensation-simulator', icon: Calculator },
   { name: 'Angebote', href: '/proposals', icon: FileText },
   { name: 'Einstellungen', href: '/settings', icon: Settings },
 ];
