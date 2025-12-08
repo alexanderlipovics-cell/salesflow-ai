@@ -151,36 +151,22 @@ app.add_middleware(
 # )
 
 # 4. CORS Middleware
-# Erlaubt Frontend-Origins (Vercel + localhost). Previews über Regex *.vercel.app.
-allowed_origins = [
-    # Production Vercel Domains
-    "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
-    "https://aura-os-topaz.vercel.app",
-    "https://aura-3e8tbi4ny-sales-flow-ais-projects.vercel.app",
-    "https://aura-n92sibt17-sales-flow-ais-projects.vercel.app",
-    # Localhost Development
-    "http://localhost:3000",
-    "http://localhost:8000",
-    # Vite Development Server (verschiedene Ports)
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    "http://localhost:5177",
-    "http://localhost:5178",
-    "http://localhost:5179",
-    # Alternative localhost-Formate
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8003",
-]
+# Erlaubt Frontend-Origins (Vercel + localhost)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",  # alle Vercel-Previews (inkl. git-main, git-*, etc.)
+    allow_origins=[
+        "https://aura-os-topaz.vercel.app",
+        "https://salesflow.ai",
+        "https://www.salesflow.ai",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],        # OPTIONS wird automatisch gehandhabt
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
+    expose_headers=["X-Request-ID", "X-Process-Time"],
 )
 
 # Request-Timing Middleware
