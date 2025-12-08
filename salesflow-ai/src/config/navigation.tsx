@@ -13,6 +13,7 @@ export const navigationItems = [
   { name: 'Mein Team', href: '/network', icon: Users },
   { name: 'Team Coach', href: '/team-coach', icon: Users },
   { name: 'Leads', href: '/leads', icon: Users },
+  { name: 'Lead Liste', href: '/lead-list', icon: Target },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Follow-up Analytics', href: '/follow-up-analytics', icon: TrendingUp },
   { name: 'Meetings', href: '/meetings', icon: Video },

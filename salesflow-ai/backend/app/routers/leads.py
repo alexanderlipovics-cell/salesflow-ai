@@ -5,7 +5,7 @@ Leads Router für SalesFlow AI - Lead Management mit Follow-up System.
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import logging
 import os
 import uuid
@@ -59,11 +59,27 @@ class LeadCreate(BaseModel):
 
 
 @router.get("")
-async def get_leads():
+async def get_leads(filter: Optional[str] = None):
     try:
         db = get_supabase()
-        result = db.table("leads").select("*").order("created_at", desc=True).execute()
-        return {"leads": result.data}
+        query = db.table("leads").select("*")
+
+        if filter:
+            today = date.today().isoformat()
+
+            if filter == "today":
+                # Leads mit next_follow_up heute
+                query = query.gte("next_follow_up", today).lt("next_follow_up", (date.today() + timedelta(days=1)).isoformat())
+            elif filter == "hot":
+                # Leads mit Score >= 80
+                query = query.gte("score", 80)
+            elif filter == "overdue":
+                # Leads mit next_follow_up vor heute
+                query = query.lt("next_follow_up", today).not_.is_("next_follow_up", None)
+            # "all" oder unbekannter Filter = alle Leads
+
+        result = query.order("created_at", desc=True).execute()
+        return result.data
     except Exception as e:
         logger.exception(f"Get leads error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
