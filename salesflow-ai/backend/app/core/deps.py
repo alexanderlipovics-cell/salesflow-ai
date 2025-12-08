@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from fastapi import Header, HTTPException
 from supabase import Client, create_client
 
-from ..config import get_settings
 
 # Lade .env Datei aus dem backend/ Verzeichnis
 backend_dir = Path(__file__).parent.parent.parent
@@ -111,9 +110,8 @@ async def get_current_user(
     In Produktion sollten diese Werte definitiv über ein echtes Auth-System kommen.
     """
 
-    settings = get_settings()
-    org_id = x_org_id or settings.default_org_id
-    user_id = x_user_id or settings.default_user_id
+    org_id = x_org_id or "00000000-0000-0000-0000-000000000000"
+    user_id = x_user_id or "00000000-0000-0000-0000-000000000001"
 
     if not org_id:
         raise HTTPException(
@@ -126,7 +124,7 @@ async def get_current_user(
         "team_member_id": user_id,
         "user_id": user_id,
         "role": x_user_role or "owner",
-        "name": x_user_name or settings.default_user_name,
+        "name": x_user_name or "Default User",
     }
 
 
