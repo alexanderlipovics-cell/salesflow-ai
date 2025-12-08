@@ -11,7 +11,6 @@ Central configuration with validation for:
 """
 
 from typing import Optional, List
-from functools import lru_cache
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -247,14 +246,16 @@ class Settings(BaseSettings):
         return bool(self.celery_broker_url)
 
 
-@lru_cache()
+_settings_instance: Optional[Settings] = None
+
 def get_settings() -> Settings:
     """
-    Get cached settings instance.
-    
-    Uses LRU cache to avoid re-reading env vars.
+    Get settings instance with lazy initialization.
     """
-    return Settings()
+    global _settings_instance
+    if _settings_instance is None:
+        _settings_instance = Settings()
+    return _settings_instance
 
 
 # Export singleton
