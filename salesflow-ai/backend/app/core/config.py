@@ -258,7 +258,8 @@ def get_settings() -> Settings:
     return _settings_instance
 
 
-# No longer export cached singleton - use get_settings() directly
+# Export singleton for backward compatibility (uses lazy initialization)
+settings = get_settings()
 
 
 # ==================== CONFIGURATION HELPERS ====================
