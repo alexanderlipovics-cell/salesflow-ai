@@ -207,11 +207,11 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": "Suche im Internet nach Personen, Firmen, LinkedIn Profilen, Instagram Accounts, MLM Leadern. IMMER nutzen wenn User nach Leads/Kontakten im Internet fragt.",
+            "description": "Suche im Internet nach Personen, Firmen, LinkedIn Profilen, Instagram Accounts, MLM Leadern. IMMER verwenden wenn User nach Kontakten/Leads im Internet fragt.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "Suchbegriff"}
+                    "query": {"type": "string", "description": "Suchbegriff z.B. 'MLM Leader Instagram Deutschland'"}
                 },
                 "required": ["query"]
             }

@@ -39,7 +39,10 @@ class ToolExecutor:
             return {"error": f"Unknown tool: {tool_name}"}
 
         try:
-            return await executor_map[tool_name](**arguments)
+            logger.info(f"Executing tool: {tool_name} with args: {arguments}")
+            result = await executor_map[tool_name](**arguments)
+            logger.info(f"Tool {tool_name} result: {result}")
+            return result
         except Exception as e:  # noqa: BLE001
             return {"error": str(e)}
 

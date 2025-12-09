@@ -5,6 +5,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 BRAVE_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY")
+logger.info(f"Brave API key configured: {bool(BRAVE_API_KEY)}")
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 
 
