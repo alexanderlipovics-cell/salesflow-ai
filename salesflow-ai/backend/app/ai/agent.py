@@ -33,15 +33,23 @@ async def run_sales_agent(
 ) -> dict:
     """Run the sales agent with function calling."""
 
-    user = (
+    profile_result = (
         db.table("profiles")
         .select("name, vertical, company_id, monthly_revenue_goal")
         .eq("id", user_id)
-        .single()
         .execute()
     )
 
-    user_context = user.data or {}
+    user_context = (
+        profile_result.data[0]
+        if profile_result and profile_result.data
+        else {
+            "name": None,
+            "vertical": "mlm",
+            "company_id": None,
+            "monthly_revenue_goal": 0,
+        }
+    )
 
     if user_context.get("company_id"):
         company = (
