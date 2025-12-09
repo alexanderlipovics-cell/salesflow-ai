@@ -47,8 +47,7 @@ class ToolExecutor:
     async def _query_leads(
         self,
         status: str = None,
-        location: str = None,
-        inactive_days: int = None,
+        inactive_days: int = None,  # deprecated
         company: str = None,
         tag: str = None,
         hot_only: bool = False,
@@ -58,30 +57,22 @@ class ToolExecutor:
         """Query leads with filters."""
 
         query = self.db.table("leads").select(
-            "id, name, email, phone, company, status, score, "
-            "last_contact, created_at, location, tags"
+            "id, name, email, phone, company, status, temperature, created_at, tags"
         ).eq("user_id", self.user_id)
 
         if status:
             query = query.eq("status", status)
 
-        if location:
-            query = query.ilike("location", f"%{location}%")
-
-        if inactive_days:
-            cutoff = datetime.now() - timedelta(days=inactive_days)
-            query = query.lt("last_contact", cutoff.isoformat())
-
         if company:
             query = query.ilike("company", f"%{company}%")
 
         if hot_only:
-            query = query.gte("score", 70)
+            query = query.gte("temperature", 70)
 
         if order_by == "score":
-            query = query.order("score", desc=True)
+            query = query.order("temperature", desc=True)
         elif order_by == "last_contact":
-            query = query.order("last_contact", desc=True)
+            query = query.order("created_at", desc=True)
         elif order_by == "created_at":
             query = query.order("created_at", desc=True)
 
@@ -539,28 +530,34 @@ class ToolExecutor:
         else:
             due = now + timedelta(days=1)
 
-        result = (
-            self.db.table("lead_tasks")
-            .insert(
-                {
-                    "user_id": self.user_id,
-                    "lead_id": resolved_lead_id,
-                    "title": title,
-                    "description": description,
-                    "due_date": due.isoformat(),
-                    "priority": priority,
-                    "type": type,
-                    "status": "pending",
-                }
+        try:
+            result = (
+                self.db.table("lead_tasks")
+                .insert(
+                    {
+                        "user_id": self.user_id,
+                        "lead_id": resolved_lead_id,
+                        "title": title,
+                        "description": description,
+                        "due_date": due.isoformat(),
+                        "priority": priority,
+                        "type": type,
+                        "status": "pending",
+                    }
+                )
+                .execute()
             )
-            .execute()
-        )
 
-        return {
-            "success": True,
-            "task_id": result.data[0]["id"] if result and result.data else None,
-            "message": f"✅ Task '{title}' erstellt für {due.strftime('%d.%m.%Y')}",
-        }
+            return {
+                "success": True,
+                "task_id": result.data[0]["id"] if result and result.data else None,
+                "message": f"✅ Task '{title}' erstellt für {due.strftime('%d.%m.%Y')}",
+            }
+        except Exception as e:  # noqa: BLE001
+            return {
+                "success": False,
+                "error": str(e),
+            }
 
     async def _log_interaction(
         self,
