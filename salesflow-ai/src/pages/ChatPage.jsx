@@ -9,6 +9,7 @@ import MeetingPrepCard from "../components/chat/MeetingPrepCard";
 import StakeholderCard from "../components/StakeholderCard";
 import VoiceRecorder from "../components/VoiceRecorder";
 import WhatsAppMessageActions from "../components/chat/WhatsAppMessageActions";
+import SendMessageModal from "@/components/chat/SendMessageModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -141,6 +142,7 @@ const ChatPage = () => {
   const [isParsingList, setIsParsingList] = useState(false);
   const [listError, setListError] = useState(null);
   const [isImportingList, setIsImportingList] = useState(false);
+  const [sendModal, setSendModal] = useState({ open: false, message: "", lead: null });
   const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [sessionId, setSessionId] = useState(null);
@@ -214,6 +216,11 @@ const ChatPage = () => {
       return null;
     }
   }, [leadContext]);
+
+  const currentLead = useMemo(() => {
+    if (!parsedLeadContext || typeof parsedLeadContext !== "object") return null;
+    return parsedLeadContext;
+  }, [parsedLeadContext]);
 
   const leadContextEntries = useMemo(() => {
     if (!parsedLeadContext || typeof parsedLeadContext !== "object") {
@@ -300,6 +307,10 @@ const ChatPage = () => {
       }
     }
     return null;
+  };
+
+  const handleOpenSendModal = (messageText, lead) => {
+    setSendModal({ open: true, message: messageText, lead });
   };
 
   const detectListInput = (text) => {
@@ -1041,6 +1052,16 @@ const ChatPage = () => {
                       leadName={parsedLeadContext?.name}
                     />
                   )}
+                  {message.role === "assistant" && message.content?.length > 50 && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSendModal(message.content, currentLead)}
+                      className="mt-2 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+                    >
+                      <Send className="w-3 h-3" />
+                      Senden
+                    </button>
+                  )}
                 </div>
 
                 {/* Avatar User */}
@@ -1436,6 +1457,13 @@ const ChatPage = () => {
           </div>
         </aside>
       </div>
+
+      <SendMessageModal
+        isOpen={sendModal.open}
+        onClose={() => setSendModal({ open: false, message: "", lead: null })}
+        message={sendModal.message}
+        lead={sendModal.lead || currentLead}
+      />
     </main>
   );
 };

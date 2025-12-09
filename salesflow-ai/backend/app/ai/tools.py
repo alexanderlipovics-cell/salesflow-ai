@@ -329,6 +329,35 @@ SALES_AGENT_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "create_lead",
+            "description": "Erstelle einen Lead aus Chat-Kontext (Name, Firma, Kontakt).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Name des Leads"},
+                    "email": {"type": "string", "description": "E-Mail des Leads"},
+                    "phone": {"type": "string", "description": "Telefonnummer"},
+                    "company": {"type": "string", "description": "Firma"},
+                    "status": {
+                        "type": "string",
+                        "enum": ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"],
+                        "description": "Lead-Status"
+                    },
+                    "temperature": {
+                        "type": "string",
+                        "enum": ["hot", "warm", "cold"],
+                        "description": "Lead-Temperatur"
+                    },
+                    "source": {"type": "string", "description": "Quelle, z.B. ai_chat"},
+                    "notes": {"type": "string", "description": "Notizen / Kontext"}
+                },
+                "required": ["name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "create_task",
             "description": "Erstelle eine Aufgabe/Follow-up für einen Lead.",
             "parameters": {

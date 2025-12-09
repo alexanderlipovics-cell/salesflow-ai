@@ -29,6 +29,7 @@ class ToolExecutor:
             "search_nearby_places": self._search_nearby_places,
             "write_message": self._write_message,
             "handle_objection": self._handle_objection,
+            "create_lead": self._create_lead,
             "create_task": self._create_task,
             "log_interaction": self._log_interaction,
             "update_lead_status": self._update_lead_status,
@@ -369,6 +370,7 @@ class ToolExecutor:
         from app.ai.tools.web_search import web_search as brave_web_search
         logger.info(f"BRAVE_API_KEY configured: {bool(os.getenv('BRAVE_SEARCH_API_KEY'))}")
         result = await brave_web_search(query=query, count=count)
+        logger.info(f"Web search result: {result}")
         if not result.get("success", False):
             return {"error": result.get("error", "Web search fehlgeschlagen"), "results": result.get("results", [])}
         return result
@@ -471,6 +473,48 @@ class ToolExecutor:
     # ─────────────────────────────────────────────────────────
     # ACTIONS
     # ─────────────────────────────────────────────────────────
+
+    async def _create_lead(
+        self,
+        name: str = None,
+        email: str = None,
+        phone: str = None,
+        company: str = None,
+        status: str = "new",
+        temperature: str = "warm",
+        source: str = "ai_chat",
+        notes: str = None,
+    ) -> dict:
+        """Create a new lead from chat context."""
+        try:
+            lead_data = {
+                "user_id": self.user_id,
+                "name": name or "Unbekannt",
+                "email": email,
+                "phone": phone,
+                "company": company,
+                "status": status or "new",
+                "temperature": temperature or "warm",
+                "source": source or "ai_chat",
+                "notes": notes or "",
+            }
+
+            lead_data = {k: v for k, v in lead_data.items() if v is not None}
+
+            logger.info(f"Creating lead: {lead_data}")
+            result = self.db.table("leads").insert(lead_data).execute()
+
+            if result.data:
+                lead = result.data[0]
+                return {
+                    "success": True,
+                    "lead_id": lead.get("id"),
+                    "message": f"✅ Lead '{lead_data['name']}' erfolgreich gespeichert!",
+                }
+            return {"success": False, "error": "Keine Daten zurückgegeben"}
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Create lead error: {e}")
+            return {"success": False, "error": str(e)}
 
     async def _create_task(
         self,

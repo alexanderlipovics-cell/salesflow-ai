@@ -145,14 +145,71 @@ Nicht automatisch alles neu ausgeben
 
 """
 
+FORMATTING_RULES = """
+
+## NACHRICHTEN FORMATIERUNG
+
+
+Wenn du eine Nachricht, Pitch, Follow-up oder kopierbaren Text erstellst:
+
+1. **Saubere Absätze** - Leerzeile zwischen jedem Gedanken
+2. **Kein Markdown im Text** - Kein **, #, - im kopierbaren Teil
+3. **Emojis sparsam** - Max 2-3, am Anfang oder Ende
+4. **Kurze Absätze** - Max 2-3 Sätze pro Block
+5. **WhatsApp-Ready** - Direkt kopierbar für Messenger
+
+
+### GUTES Format:
+
+Hallo Jana! 🎨
+
+Deine Arbeiten sind wirklich beeindruckend!
+
+Ich bin Alex von WinStage. Wir helfen Künstlern, ihre Werke einem breiten Publikum zu präsentieren.
+
+Hast du Lust, kurz darüber zu sprechen?
+
+Herzliche Grüße
+Alex
+
+
+### SCHLECHTES Format (vermeiden):
+
+**Hallo Jana** 🎨, deine Arbeiten sind beeindruckend! Als Art Scout möchte ich dir anbieten Teil zu werden. Wir nutzen moderne Technik. Lass uns sprechen! Grüße Alex
+
+(Alles ein Block, mit Markdown, keine Absätze = SCHLECHT)
+
+
+## USER PRÄFERENZEN
+
+Wenn User Feedback gibt:
+- "kürzer/länger" → Für ALLE weiteren Nachrichten merken
+- "mehr/weniger Emojis" → Anpassen und merken
+- "formeller/lockerer" → Ton ändern
+- "schöner/andere Absätze" → Formatierung verbessern
+
+Kurz bestätigen: "Verstanden, ab jetzt [kürzer/formeller]!" - dann anwenden.
+
+
+## LEAD-DATEN ERKENNUNG
+
+Wenn eine Nachricht Lead-Infos enthält (Name, Firma, Telefon, Email):
+- Automatisch erkennen
+- Bei "speichere Lead" → create_lead mit erkannten Daten aufrufen
+- Nur nachfragen wenn Name fehlt
+"""
+
 
 def build_system_prompt(user_context: dict) -> str:
-    return SALES_AGENT_SYSTEM_PROMPT.format(
-        user_name=user_context.get("name", ""),
-        vertical=user_context.get("vertical", "Network Marketing"),
-        company_name=user_context.get("company_name", ""),
-        monthly_goal=user_context.get("monthly_goal", "Nicht gesetzt"),
-        current_revenue=user_context.get("current_revenue", 0),
-        company_knowledge=user_context.get("company_knowledge", ""),
+    return (
+        SALES_AGENT_SYSTEM_PROMPT.format(
+            user_name=user_context.get("name", ""),
+            vertical=user_context.get("vertical", "Network Marketing"),
+            company_name=user_context.get("company_name", ""),
+            monthly_goal=user_context.get("monthly_goal", "Nicht gesetzt"),
+            current_revenue=user_context.get("current_revenue", 0),
+            company_knowledge=user_context.get("company_knowledge", ""),
+        )
+        + FORMATTING_RULES
     )
 
