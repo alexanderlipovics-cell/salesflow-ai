@@ -25,6 +25,10 @@ export interface User {
   first_name?: string;
   last_name?: string;
   role?: string;
+  vertical?: string;
+  profile?: {
+    vertical?: string;
+  };
   // weitere Felder nach Bedarf
 }
 

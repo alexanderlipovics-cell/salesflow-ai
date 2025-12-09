@@ -6,30 +6,54 @@
  * @author Gemini 3 Ultra - Layout Architecture
  */
 
-import { LayoutDashboard, Users, BarChart3, Settings, Zap, MessageSquare, Target, TrendingUp, CreditCard, Sparkles, Video, Trophy, Flame, FileText, DollarSign, Calculator } from "lucide-react";
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Users,
+  CheckSquare,
+  Handshake,
+  Network,
+  DollarSign,
+  Settings
+} from 'lucide-react';
+
+
+
+// 8 Core Navigation Items - REPLACE the entire navigationItems array
 
 export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Mein Team', href: '/network', icon: Users },
-  { name: 'Team Coach', href: '/team-coach', icon: Users },
+  { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
   { name: 'Leads', href: '/leads', icon: Users },
-  { name: 'Lead Liste', href: '/lead-list', icon: Target },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Follow-up Analytics', href: '/follow-up-analytics', icon: TrendingUp },
-  { name: 'Meetings', href: '/meetings', icon: Video },
-  { name: 'AI Prompts', href: '/ai-prompts', icon: Sparkles },
-  { name: 'Challenges', href: '/challenges', icon: Trophy },
-  { name: 'Power Hour', href: '/power-hour', icon: Flame },
-  { name: 'AI Autopilot', href: '/autopilot', icon: Zap },
-  { name: 'Chat', href: '/chat', icon: MessageSquare },
-  { name: 'Einwände', href: '/objections', icon: MessageSquare },
-  { name: 'Follow-ups', href: '/follow-ups', icon: Target },
-  { name: 'Sequenzen', href: '/sequences', icon: Zap },
-  { name: 'Billing', href: '/billing', icon: CreditCard },
-  { name: 'Integrationen', href: '/integrations', icon: Zap },
+  { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
+  { name: 'Kunden', href: '/customers', icon: Handshake },
+  { name: 'Netzwerk', href: '/network', icon: Network, mlmOnly: true },
   { name: 'Finanzen', href: '/finance', icon: DollarSign },
-  { name: 'Vergütungsrechner', href: '/compensation-simulator', icon: Calculator },
-  { name: 'Angebote', href: '/proposals', icon: FileText },
-  { name: 'Einstellungen', href: '/settings', icon: Settings },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
+
+
+
+// Add this new export for legacy route redirects
+
+export const legacyRouteRedirects: Record<string, string> = {
+  '/hunter-board': '/chat?prompt=Zeig%20mir%20meine%20besten%20Leads',
+  '/objections': '/chat?prompt=Hilf%20mir%20bei%20Einwänden',
+  '/einwände': '/chat?prompt=Hilf%20mir%20bei%20Einwänden',
+  '/sequences': '/chat?prompt=Erstelle%20eine%20Follow-up%20Sequenz',
+  '/sequenzen': '/chat?prompt=Erstelle%20eine%20Follow-up%20Sequenz',
+  '/proposals': '/chat?prompt=Schreibe%20ein%20Angebot',
+  '/ai-prompts': '/chat?prompt=Welche%20AI%20Prompts%20hast%20du%20für%20mich',
+  '/power-hour': '/chat?prompt=Starte%20meine%20Power%20Hour',
+  '/team-coach': '/chat?prompt=Analysiere%20mein%20Team',
+  '/challenges': '/chat?prompt=Zeig%20mir%20aktuelle%20Challenges',
+  '/analytics': '/dashboard',
+  '/follow-up-analytics': '/dashboard',
+  '/lead-list': '/leads',
+  '/autopilot': '/chat',
+  '/meetings': '/chat?prompt=Plane%20meine%20nächsten%20Meetings',
+  '/billing': '/settings',
+  '/integrationen': '/settings',
+  '/integrations': '/settings',
+};
 

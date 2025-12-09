@@ -1,42 +1,63 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Network, Home, Shield, Building, Target, Briefcase } from "lucide-react";
 import { useSalesPersona } from "@/hooks/useSalesPersona";
 import { useCompanyKnowledge } from "@/hooks/useCompanyKnowledge";
 import { useAuth } from "@/context/AuthContext";
+import { supabaseClient } from "@/lib/supabaseClient";
+
+// Migration Note: Add vertical column to profiles table
+// Run in Supabase SQL Editor:
+// ALTER TABLE profiles ADD COLUMN IF NOT EXISTS vertical TEXT DEFAULT 'other';
 
 // ─────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────
 
 type OnboardingStep = 1 | 2 | 3 | 4;
-type VerticalChoice = "network" | "real_estate" | "finance" | "generic";
+type VerticalChoice = "network" | "real_estate" | "finance" | "b2b" | "coaching" | "other";
 type TeamSizeChoice = "solo" | "small" | "medium" | "large";
 
 // ─────────────────────────────────────────────────────────────────
 // Data
 // ─────────────────────────────────────────────────────────────────
 
-const verticalOptions: { key: VerticalChoice; label: string; description: string }[] = [
+const verticalOptions: { key: VerticalChoice; label: string; description: string; icon: React.ReactNode }[] = [
   {
     key: "network",
-    label: "Network Marketing",
-    description: "Teams, Strukturen, viele Kontakte – Fokus auf DMs & Follow-ups.",
+    label: "Network Marketing / MLM",
+    description: "Teams, Strukturen, Provisionen, Downline Management",
+    icon: <Network className="w-6 h-6" />,
   },
   {
     key: "real_estate",
     label: "Immobilien",
-    description: "Makler, Leads mit höherem Ticket, längere Zyklen.",
+    description: "Makler, Leads, Exposés, Besichtigungen",
+    icon: <Home className="w-6 h-6" />,
   },
   {
     key: "finance",
-    label: "Finance",
-    description: "Berater, Produkte mit hoher Regulierung & Vertrauen.",
+    label: "Versicherung & Finanzen",
+    description: "Kunden, Verträge, Beratung, Bestandspflege",
+    icon: <Shield className="w-6 h-6" />,
   },
   {
-    key: "generic",
+    key: "b2b",
+    label: "B2B Sales",
+    description: "Firmenkunden, Deals, Proposals, CRM",
+    icon: <Building className="w-6 h-6" />,
+  },
+  {
+    key: "coaching",
+    label: "Coaching & Beratung",
+    description: "Klienten, Sessions, Programme, Follow-ups",
+    icon: <Target className="w-6 h-6" />,
+  },
+  {
+    key: "other",
     label: "Sonstiger Vertrieb",
-    description: "Coaches, Agenturen oder andere B2B/B2C-Vertriebe.",
+    description: "Flexibles CRM für alle Vertriebsarten",
+    icon: <Briefcase className="w-6 h-6" />,
   },
 ];
 
@@ -71,20 +92,19 @@ const personaDescriptions: Record<
 
 const OnboardingWizardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState<OnboardingStep>(1);
 
   // Only load hooks after authentication is ready
   const { loading: personaLoading, error: personaError, persona, setPersona } = useSalesPersona();
   const {
-    loading: knowledgeLoading,
     saving: knowledgeSaving,
     error: knowledgeError,
     knowledge,
     save: saveKnowledge,
   } = useCompanyKnowledge();
 
-  const [vertical, setVertical] = useState<VerticalChoice>("generic");
+  const [vertical, setVertical] = useState<VerticalChoice>("other");
   const [teamSize, setTeamSize] = useState<TeamSizeChoice>("solo");
 
   const [companyName, setCompanyName] = useState("");
@@ -119,7 +139,7 @@ const OnboardingWizardPage: React.FC = () => {
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
+  if (!user) {
     navigate("/login");
     return null;
   }
@@ -143,7 +163,23 @@ const OnboardingWizardPage: React.FC = () => {
     if (step < totalSteps) {
       setStep((prev) => (prev + 1) as OnboardingStep);
     } else {
-      // Fertig → Weiterleitung
+      // Fertig → Vertical in Profile speichern, dann Weiterleitung
+      try {
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({
+            vertical: vertical,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+
+        if (error) {
+          console.warn('Fehler beim Speichern der Vertical:', error);
+        }
+      } catch (err) {
+        console.warn('Fehler beim Speichern der Vertical:', err);
+      }
+
       navigate("/daily-command");
     }
   };

@@ -263,6 +263,7 @@ from .routers.email_sync import router as email_sync_router  # 📧 Email Sync &
 from .routers.interactions import router as interactions_router  # 📊 User Interactions Tracking
 from .routers.dashboard import router as dashboard_router  # 📊 Dashboard Data
 from .api.zapier import router as zapier_router  # 🔌 Zapier Integration
+from .routers.ai_usage import router as ai_usage_router  # 🧾 AI Usage Limits
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -330,6 +331,7 @@ app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracki
 app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking
 app.include_router(dashboard_router, prefix="/api")  # 📊 Dashboard Data
 app.include_router(zapier_router)  # 🔌 Zapier Integration (Router bringt eigenes Prefix mit)
+app.include_router(ai_usage_router)  # 🧾 AI Usage Status
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

@@ -11,6 +11,7 @@ from .system_prompt import build_system_prompt
 from .model_router import ModelRouter, ModelTier
 from .intent_detector import IntentDetector
 from .cost_tracker import CostTracker
+from ..services.ai_usage_service import AIUsageService
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,7 @@ async def run_sales_agent(
 
     tool_executor = ToolExecutor(db, user_id, user_context)
     client_instance = get_client()
+    usage_service = AIUsageService(user_id)
 
     # Initialize AI services for model routing and cost tracking
     intent_detector = IntentDetector(client_instance)
@@ -87,6 +89,22 @@ async def run_sales_agent(
     # Step 1: Detect intent and route to appropriate model
     detected_intent, selected_model = await intent_detector.classify_with_fallback(message)
     logger.info(f"User {user_id}: Intent '{detected_intent}' -> Model {selected_model.value}")
+
+    # Check limits before making request
+    limits = await usage_service.check_limits()
+    if limits["is_over_limit"]:
+        limit_msg = (
+            f"⚠️ Du hast dein monatliches Limit erreicht "
+            f"({limits['tokens_used']:,} / {limits['tokens_limit']:,} Tokens). "
+            f"Upgrade auf {('Pro' if limits['tier'] == 'basic' else 'Business')} für mehr."
+        )
+        return {
+            "response": limit_msg,
+            "message": limit_msg,
+            "limit_reached": True,
+            "tools_used": [],
+            "session_id": session_id,
+        }
 
     response = await client_instance.chat.completions.create(
         model=selected_model.value,
@@ -111,6 +129,13 @@ async def run_sales_agent(
         intent=detected_intent,
         session_id=session_id
     )
+
+    if response.usage:
+        await usage_service.track_usage(
+            model=selected_model.value,
+            input_tokens=response.usage.prompt_tokens,
+            output_tokens=response.usage.completion_tokens,
+        )
 
     while assistant_message.tool_calls:
         messages.append(
@@ -174,6 +199,13 @@ async def run_sales_agent(
             session_id=session_id,
             tool_calls=assistant_message.tool_calls
         )
+
+        if response.usage:
+            await usage_service.track_usage(
+                model=followup_model.value,
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens,
+            )
 
     db.table("ai_chat_messages").insert(
         {

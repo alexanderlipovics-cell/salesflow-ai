@@ -117,7 +117,7 @@ const ChatPage = () => {
   const navigate = useNavigate();
   // URL-Parameter für vorgefüllten Text (z.B. aus Follow-ups Seite)
   const [searchParams, setSearchParams] = useSearchParams();
-  const prefillText = searchParams.get("prefill") ?? "";
+  const promptParam = searchParams.get("prompt") ?? "";
   const [prefillApplied, setPrefillApplied] = useState(false);
 
   const [messages, setMessages] = useState(initialMessages);
@@ -195,15 +195,16 @@ const ChatPage = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Prefill-Text aus URL-Parameter anwenden
+  // Prompt aus URL-Parameter anwenden
   useEffect(() => {
-    if (prefillText && !prefillApplied) {
-      setInput(prefillText);
+    if (promptParam && !prefillApplied) {
+      const decodedPrompt = decodeURIComponent(promptParam);
+      setInput(decodedPrompt);
       setPrefillApplied(true);
       // URL-Parameter entfernen, um bei Refresh nicht erneut zu setzen
       setSearchParams({}, { replace: true });
     }
-  }, [prefillText, prefillApplied, setSearchParams]);
+  }, [promptParam, prefillApplied, setSearchParams]);
 
   const parsedLeadContext = useMemo(() => {
     try {
@@ -505,7 +506,7 @@ const ChatPage = () => {
       const response = await fetch(
         isLiveRequest
           ? `${API_BASE_URL}/api/copilot/live-assist`
-          : `${API_BASE_URL}/api/ai/chat`,
+          : `${API_BASE_URL}/ai/chief/chat`,
         {
           method: "POST",
           headers: {
@@ -520,7 +521,12 @@ const ChatPage = () => {
                 }
               : {
                   message: messageText,
-                  session_id: sessionId || undefined,
+                  include_context: true,
+                  conversation_history: messages.slice(-10).map(m => ({
+                    role: m.role,
+                    content: m.content
+                  })),
+                  lead_id: parsedLeadContext?.id,
                 }
           ),
         }
@@ -970,7 +976,7 @@ const ChatPage = () => {
           )}
 
           {showSuggestions && (
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div data-tour="quick-actions" className="flex flex-wrap gap-2 mb-4">
               {quickSuggestions.map((suggestion) => (
                 <button
                   key={suggestion.label}
@@ -1161,7 +1167,7 @@ const ChatPage = () => {
 
           {/* Input Bereich */}
           <form onSubmit={handleSendMessage} className="space-y-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60">
+          <div data-tour="chat-input" className="rounded-2xl border border-slate-800 bg-slate-900/60">
               <textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}

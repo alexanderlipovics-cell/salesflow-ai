@@ -11,6 +11,7 @@ import { Link, NavLink } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { navigationItems } from "../../config/navigation";
 import { Sparkles } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
 
 interface SidebarProps {
   className?: string;
@@ -18,6 +19,27 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ className, onClose }: SidebarProps) => {
+  const { user } = useAuth();
+  const userVertical = user?.vertical || user?.profile?.vertical;
+
+  const getTourAttribute = (href: string) => {
+    const tourMap: Record<string, string> = {
+      '/chat': 'ai-chat',
+      '/leads': 'leads',
+      '/leads/prospects': 'leads',
+      '/follow-ups': 'followups',
+      '/dashboard': 'dashboard',
+    };
+    return tourMap[href];
+  };
+
+  const filteredNavItems = navigationItems.filter(item => {
+    if (item.mlmOnly && userVertical !== 'network' && userVertical !== 'mlm') {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <div className={cn("flex h-full w-64 flex-col border-r border-white/10 bg-black/40 backdrop-blur-xl", className)}>
       
@@ -33,10 +55,11 @@ export const Sidebar = ({ className, onClose }: SidebarProps) => {
 
       {/* 2. Navigation Links */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {navigationItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.href}
+            data-tour={getTourAttribute(item.href)}
             onClick={onClose}
             className={({ isActive }) =>
               cn(

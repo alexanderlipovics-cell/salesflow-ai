@@ -35,6 +35,18 @@ import { useUser } from "../context/UserContext";
 import { useSubscription } from "../hooks/useSubscription";
 import { usePricingModal } from "../context/PricingModalContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { ProductTour } from "@/components/onboarding/ProductTour";
+
+const getTourAttribute = (href) => {
+  const tourMap = {
+    "/chat": "ai-chat",
+    "/leads": "leads",
+    "/leads/prospects": "leads",
+    "/follow-ups": "followups",
+    "/dashboard": "dashboard",
+  };
+  return tourMap[href];
+};
 
 const navGroups = [
   {
@@ -106,6 +118,7 @@ const AppShell = () => {
 
   return (
     <div className="relative flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-slate-50 antialiased overflow-hidden">
+      <ProductTour />
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* NEBULA BACKGROUND                                                    */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -216,6 +229,7 @@ const AppShell = () => {
               <NavLink
                 key={item.to}
                 to={item.to}
+                data-tour={getTourAttribute(item.to)}
                 className={({ isActive }) =>
                   clsx(
                     "whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200",
@@ -252,6 +266,7 @@ const AppShell = () => {
 const SidebarLink = ({ to, label, icon: Icon }) => (
   <NavLink
     to={to}
+    data-tour={getTourAttribute(to)}
     className={({ isActive }) =>
       clsx(
         "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",

@@ -15,10 +15,13 @@ import SettingsEmailPage from './SettingsEmailPage';
 import SalesAiSettingsPage from './SalesAiSettingsPage';
 import CompanyKnowledgeSettingsPage from './CompanyKnowledgeSettingsPage';
 import AIPromptsPage from './AIPromptsPage';
+import { resetTour } from '@/components/onboarding/ProductTour';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
+  const { user } = useAuth();
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -49,6 +52,19 @@ export default function SettingsPage() {
           Einstellungen
         </h1>
         <p className="text-gray-500">Verwalte dein Konto und Präferenzen</p>
+        <div className="mt-3">
+          <button
+            onClick={() => {
+              if (user?.id) {
+                resetTour(user.id);
+                window.location.reload();
+              }
+            }}
+            className="text-blue-500 hover:text-blue-600"
+          >
+            🎓 Produkt-Tour neu starten
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

@@ -1,5 +1,5 @@
-import React, { useMemo, lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import React, { useMemo, lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import PricingModal from "./components/PricingModal";
 import FeatureGateModal from "./components/FeatureGateModal";
 import AppShell from "./layout/AppShell";
@@ -13,9 +13,25 @@ import { getBootstrapUser } from "./lib/user";
 import { useApiInitialization } from "./hooks/useApiInitialization";
 import { ProtectedRoute } from "./components/auth";
 import { ToastProvider } from "./components/Toast";
+import { legacyRouteRedirects } from './config/navigation';
 import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage.tsx";
 import FinancePage from "./pages/FinancePage";
+
+// Add this component for legacy route redirects
+const LegacyRouteHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const redirect = legacyRouteRedirects[location.pathname];
+    if (redirect) {
+      navigate(redirect, { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  return null;
+};
 
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -189,6 +205,7 @@ const App = () => {
             <FeatureGateProvider>
                 <BrowserRouter>
                   <ToastProvider />
+                  <LegacyRouteHandler />
                   <Suspense fallback={<PageLoader />}>
                   <Routes>
                     {/* Public Routes - Auth Pages */}
