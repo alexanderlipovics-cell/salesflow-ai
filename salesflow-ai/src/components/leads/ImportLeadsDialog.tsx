@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Upload, X, FileSpreadsheet, Check } from "lucide-react";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 
 interface ImportLeadsDialogProps {
   isOpen: boolean;
@@ -27,89 +28,138 @@ export default function ImportLeadsDialog({ isOpen, onClose, onImportComplete }:
     { key: "source", label: "Quelle", required: false },
   ];
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const autoMapColumns = useCallback((fields: string[]) => {
+    const autoMapping: Record<string, string> = {};
+    fields.forEach((header) => {
+      const lower = header.toLowerCase();
+      if (lower.includes("name") || lower.includes("vorname")) autoMapping["name"] = header;
+      if (lower.includes("email") || lower.includes("mail")) autoMapping["email"] = header;
+      if (lower.includes("phone") || lower.includes("telefon") || lower.includes("tel")) autoMapping["phone"] = header;
+      if (lower.includes("firma") || lower.includes("company") || lower.includes("unternehmen")) autoMapping["company"] = header;
+      if (lower.includes("status")) autoMapping["status"] = header;
+      if (lower.includes("notiz") || lower.includes("note")) autoMapping["notes"] = header;
+    });
+    setMapping(autoMapping);
+  }, []);
 
-    setFile(selectedFile);
-    setResult(null);
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0];
+      if (!selectedFile) return;
 
-    Papa.parse(selectedFile, {
-      header: true,
-      preview: 5,
-      skipEmptyLines: true,
-      complete: (results) => {
-        setHeaders(results.meta.fields || []);
-        setPreview(results.data as any[]);
+      setFile(selectedFile);
+      setResult(null);
 
-        const autoMapping: Record<string, string> = {};
-        const fields = results.meta.fields || [];
+      const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
 
-        fields.forEach((header) => {
-          const lower = header.toLowerCase();
-          if (lower.includes("name") || lower.includes("vorname")) autoMapping["name"] = header;
-          if (lower.includes("email") || lower.includes("mail")) autoMapping["email"] = header;
-          if (lower.includes("phone") || lower.includes("telefon") || lower.includes("tel")) autoMapping["phone"] = header;
-          if (lower.includes("firma") || lower.includes("company") || lower.includes("unternehmen")) autoMapping["company"] = header;
-          if (lower.includes("status")) autoMapping["status"] = header;
-          if (lower.includes("notiz") || lower.includes("note")) autoMapping["notes"] = header;
+      if (fileExtension === "xlsx" || fileExtension === "xls") {
+        const buffer = await selectedFile.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[]; // rows as arrays
+
+        const fileHeaders = (jsonData[0] as string[]) || [];
+        const rows = jsonData.slice(1, 6).map((row: any) => {
+          const obj: Record<string, any> = {};
+          fileHeaders.forEach((h, i) => {
+            obj[h] = row?.[i];
+          });
+          return obj;
         });
 
-        setMapping(autoMapping);
-      },
-    });
-  }, []);
+        setHeaders(fileHeaders);
+        setPreview(rows);
+        autoMapColumns(fileHeaders);
+      } else {
+        Papa.parse(selectedFile, {
+          header: true,
+          preview: 5,
+          skipEmptyLines: true,
+          complete: (results) => {
+            const fields = results.meta.fields || [];
+            setHeaders(fields);
+            setPreview(results.data as any[]);
+            autoMapColumns(fields);
+          },
+        });
+      }
+    },
+    [autoMapColumns]
+  );
 
   const handleImport = async () => {
     if (!file || !mapping.name) return;
 
     setImporting(true);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const leads = (results.data as any[])
-          .map((row: any) => ({
-            name: row[mapping.name] || "Unbekannt",
-            email: mapping.email ? row[mapping.email] : null,
-            phone: mapping.phone ? row[mapping.phone] : null,
-            company: mapping.company ? row[mapping.company] : null,
-            status: mapping.status ? row[mapping.status] : "new",
-            temperature: mapping.temperature ? row[mapping.temperature] : "warm",
-            notes: mapping.notes ? row[mapping.notes] : null,
-            source: mapping.source ? row[mapping.source] : "csv_import",
-          }))
-          .filter((lead) => lead.name && lead.name !== "Unbekannt");
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
+    let allRows: any[] = [];
 
-        try {
-          const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-          const response = await fetch("/api/leads/import", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({ leads }),
-          });
+    if (fileExtension === "xlsx" || fileExtension === "xls") {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[];
+      const fileHeaders = (jsonData[0] as string[]) || [];
+      allRows = jsonData.slice(1).map((row: any) => {
+        const obj: Record<string, any> = {};
+        fileHeaders.forEach((h, i) => {
+          obj[h] = row?.[i];
+        });
+        return obj;
+      });
+    } else {
+      await new Promise<void>((resolve) => {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            allRows = results.data as any[];
+            resolve();
+          },
+        });
+      });
+    }
 
-          const data = await response.json();
-          setResult({ success: data.imported || leads.length, errors: data.errors || 0 });
+    const leads = allRows
+      .map((row: any) => ({
+        name: row[mapping.name] || "Unbekannt",
+        email: mapping.email ? row[mapping.email] : null,
+        phone: mapping.phone ? row[mapping.phone] : null,
+        company: mapping.company ? row[mapping.company] : null,
+        status: mapping.status ? row[mapping.status] : "new",
+        temperature: mapping.temperature ? row[mapping.temperature] : "warm",
+        notes: mapping.notes ? row[mapping.notes] : null,
+        source: mapping.source ? row[mapping.source] : "csv_import",
+      }))
+      .filter((lead) => lead.name && lead.name !== "Unbekannt");
 
-          setTimeout(() => {
-            onImportComplete();
-            onClose();
-            setFile(null);
-            setPreview([]);
-            setMapping({});
-          }, 2000);
-        } catch (error) {
-          setResult({ success: 0, errors: (results.data as any[]).length });
-        } finally {
-          setImporting(false);
-        }
-      },
-    });
+    try {
+      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+      const response = await fetch("/api/leads/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ leads }),
+      });
+
+      const data = await response.json();
+      setResult({ success: data.imported || leads.length, errors: data.errors || 0 });
+
+      setTimeout(() => {
+        onImportComplete();
+        onClose();
+        setFile(null);
+        setPreview([]);
+        setMapping({});
+      }, 2000);
+    } catch (error) {
+      setResult({ success: 0, errors: allRows.length });
+    } finally {
+      setImporting(false);
+    }
   };
 
   if (!isOpen) return null;
