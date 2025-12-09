@@ -29,7 +29,6 @@ export default function SettingsPage() {
   };
 
   // Placeholder data/states for profile + notifications (can be wired later)
-  const user = { name: 'Demo User', email: 'demo@example.com', avatar: '/default-avatar.png' };
   const [firstName, setFirstName] = useState('Demo');
   const [lastName, setLastName] = useState('User');
   const [phone, setPhone] = useState('');
