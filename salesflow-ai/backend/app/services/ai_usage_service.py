@@ -1,6 +1,9 @@
 from datetime import date
+import logging
 
 from ..core.deps import get_supabase
+
+logger = logging.getLogger(__name__)
 
 
 class AIUsageService:
