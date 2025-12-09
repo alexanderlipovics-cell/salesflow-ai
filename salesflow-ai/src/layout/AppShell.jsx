@@ -7,35 +7,13 @@
 
 import clsx from "clsx";
 import { NavLink, Outlet } from "react-router-dom";
-import {
-  AppWindow,
-  BookOpen,
-  Camera,
-  Clock3,
-  Command,
-  FileSpreadsheet,
-  Flame,
-  LayoutDashboard,
-  MapPin,
-  MessageCircle,
-  MessageSquare,
-  ShieldCheck,
-  Target,
-  UserCheck,
-  UserSearch,
-  Users,
-  Zap,
-  BarChart3,
-  Brain,
-  FileText,
-  Sparkles,
-  PenLine,
-} from "lucide-react";
-import { useUser } from "../context/UserContext";
+import { Zap, Sparkles } from "lucide-react";
 import { useSubscription } from "../hooks/useSubscription";
 import { usePricingModal } from "../context/PricingModalContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { ProductTour } from "@/components/onboarding/ProductTour";
+import { navigationItems } from "../config/navigation";
+import { useAuth } from "../context/AuthContext";
 
 const getTourAttribute = (href) => {
   const tourMap = {
@@ -48,73 +26,24 @@ const getTourAttribute = (href) => {
   return tourMap[href];
 };
 
-const navGroups = [
-  {
-    title: "COMMAND CENTER",
-    items: [
-      { label: "Daily Command", to: "/daily-command", icon: Command },
-      { label: "Next Best Actions", to: "/next-best-actions", icon: Target },
-      { label: "Hunter Board", to: "/hunter", icon: Target },
-      { label: "AI Copilot", to: "/chat", icon: MessageSquare },
-      { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-    ],
-  },
-  {
-    title: "POWER TOOLS",
-    items: [
-      { label: "Screenshot AI", to: "/screenshot-ai", icon: Camera },
-      { label: "Import", to: "/import", icon: FileSpreadsheet },
-      { label: "Lead Hunter", to: "/lead-hunter", icon: Users },
-      { label: "Delay Master", to: "/delay-master", icon: Clock3 },
-      { label: "Follow-ups", to: "/follow-ups", icon: MessageCircle },
-      { label: "Field Ops", to: "/field-ops", icon: MapPin },
-      { label: "Speed Hunter", to: "/speed-hunter", icon: Zap },
-      { label: "Phoenix", to: "/phoenix", icon: Flame },
-      { label: "Objection Killer", to: "/objections", icon: Brain },
-      { label: "GTM Copy", to: "/gtm-copy", icon: PenLine },
-      { label: "Angebote", to: "/proposals", icon: FileText },
-      { label: "All Tools", to: "/all-tools", icon: AppWindow },
-    ],
-  },
-  {
-    title: "ANALYTICS",
-    items: [
-      { label: "Analytics Hub", to: "/analytics", icon: LayoutDashboard },
-      { label: "Objection Analytics", to: "/manager/objections", icon: BarChart3 },
-      { label: "Template Manager", to: "/manager/followup-templates", icon: FileText },
-    ],
-  },
-  {
-    title: "SETTINGS",
-    items: [
-      { label: "AI Settings", to: "/settings/ai", icon: Sparkles },
-    ],
-  },
-  {
-    title: "CONTACTS",
-    items: [
-      { label: "Leads", to: "/leads/prospects", icon: UserSearch },
-      { label: "Customers", to: "/leads/customers", icon: UserCheck },
-      { label: "Partners", to: "/network/team", icon: Users },
-    ],
-  },
-  {
-    title: "KNOWLEDGE",
-    items: [
-      {
-        label: "Playbooks",
-        to: "/knowledge-base",
-        icon: BookOpen,
-      },
-    ],
-  },
-];
-
 const AppShell = () => {
-  const user = useUser();
   const { plan, planLabel } = useSubscription();
   const { openPricing } = usePricingModal();
-  const mobileNavItems = navGroups.flatMap((group) => group.items);
+  const { user } = useAuth();
+  const userVertical = user?.vertical || user?.profile?.vertical;
+
+  const filteredNavItems = navigationItems.filter(item => {
+    if (item.mlmOnly && userVertical !== 'network' && userVertical !== 'mlm') {
+      return false;
+    }
+    return true;
+  });
+
+  const mobileNavItems = filteredNavItems.map(item => ({
+    to: item.href,
+    label: item.name,
+    icon: item.icon
+  }));
 
   return (
     <div className="relative flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-slate-50 antialiased overflow-hidden">
@@ -151,19 +80,16 @@ const AppShell = () => {
             </div>
           </div>
 
-          {/* Navigation Groups */}
-          {navGroups.map((section) => (
-            <div key={section.title} className="mt-4">
-              <div className="px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/70">
-                {section.title}
-              </div>
-              <nav className="mt-2 space-y-1 px-3">
-                {section.items.map((item) => (
-                  <SidebarLink key={item.to} {...item} />
-                ))}
-              </nav>
-            </div>
-          ))}
+          <nav className="mt-4 space-y-1 px-3">
+            {filteredNavItems.map((item) => (
+              <SidebarLink
+                key={item.href}
+                to={item.href}
+                label={item.name}
+                icon={item.icon}
+              />
+            ))}
+          </nav>
         </div>
 
         {/* Bottom Section */}
