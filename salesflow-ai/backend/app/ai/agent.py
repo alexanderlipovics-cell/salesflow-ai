@@ -15,13 +15,12 @@ from .intent_detector import IntentDetector
 from .cost_tracker import CostTracker
 from ..services.ai_usage_service import AIUsageService
 from ..services.collective_intelligence_engine import CollectiveIntelligenceEngine
-from ..services.conversation_service import ConversationService
 
 logger = logging.getLogger(__name__)
 
 client = None
 router = ModelRouter()
-_ = (CollectiveIntelligenceEngine, ConversationService)  # silence unused import warnings
+_ = CollectiveIntelligenceEngine  # silence unused import warnings
 
 
 def anonymize_message(message: str, lead_name: str = None, company: str = None, phone: str = None, email: str = None) -> str:
