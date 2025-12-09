@@ -1,284 +1,355 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Users,
-  Search,
-  Plus,
-  Target,
-  Sparkles,
-  UserCheck,
-  Crosshair,
-  Upload,
-  Loader2,
-  MoreHorizontal,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { LeadForm } from '../../components/forms/LeadForm';
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle } from "lucide-react";
+import LeadsKanban from "@/components/leads/LeadsKanban";
+import { Button } from "@/components/ui/button";
+import { LeadForm } from "@/components/forms/LeadForm";
 
 type Lead = {
   id: string;
-  first_name?: string | null;
-  last_name?: string | null;
+  name: string;
   email?: string | null;
+  phone?: string | null;
   company?: string | null;
   status?: string | null;
   score?: number | null;
-  qualified?: boolean;
-  last_contact?: string | null;
+  lastActivity?: string | null;
+  nextAction?: string | null;
+};
+
+const statusTabs = [
+  { id: "all", label: "Alle" },
+  { id: "new", label: "Neu" },
+  { id: "contacted", label: "Im Gespräch" },
+  { id: "qualified", label: "Qualifiziert" },
+  { id: "customer", label: "Kunden" },
+];
+
+const statusColors: Record<string, string> = {
+  new: "bg-blue-500/20 text-blue-300",
+  contacted: "bg-yellow-500/20 text-yellow-300",
+  qualified: "bg-green-500/20 text-green-300",
+  customer: "bg-emerald-600 text-white",
+  default: "bg-slate-700 text-slate-200",
+};
+
+const getScoreColor = (score?: number | null) => {
+  if (!score && score !== 0) return "text-gray-400";
+  if (score > 80) return "text-orange-400";
+  if (score >= 50) return "text-yellow-300";
+  return "text-gray-400";
 };
 
 const LeadsPage = () => {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeView, setActiveView] = useState(searchParams.get('view') || 'all');
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [showImport, setShowImport] = useState(false);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "board">("table");
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showAddLead, setShowAddLead] = useState(false);
   const [creatingLead, setCreatingLead] = useState(false);
 
-  const views = [
-    { id: 'all', label: 'Alle Leads', icon: Users, count: leads.length },
-    { id: 'prospects', label: 'Prospects', icon: Target, count: leads.filter((l) => l.status === 'prospect').length },
-    { id: 'customers', label: 'Kunden', icon: UserCheck, count: leads.filter((l) => l.status === 'customer').length },
-    { id: 'hunter', label: 'Lead Hunter', icon: Crosshair, count: null, special: true },
-    { id: 'discovery', label: 'AI Discovery', icon: Sparkles, count: null, special: true },
-    { id: 'qualifier', label: 'Qualifier', icon: Target, count: leads.filter((l) => !l.qualified).length },
-  ];
-
   useEffect(() => {
     fetchLeads();
-  }, [activeView]);
+  }, []);
 
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      let endpoint = '/api/leads';
-      if (activeView === 'prospects') {
-        endpoint = '/api/leads?status=prospect';
-      } else if (activeView === 'customers') {
-        endpoint = '/api/leads?status=customer';
-      } else if (activeView === 'qualifier') {
-        endpoint = '/api/leads?qualified=false';
-      }
-
-      const res = await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+      const token = localStorage.getItem("access_token");
+      const res = await fetch("/api/leads", {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
       const data = await res.json();
-      setLeads(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Failed to fetch leads:', error);
+      const normalized = (Array.isArray(data) ? data : []).map((l: any) => ({
+        id: l.id,
+        name: l.name || `${l.first_name || ""} ${l.last_name || ""}`.trim() || "Unbekannt",
+        email: l.email,
+        phone: l.phone,
+        company: l.company,
+        status: l.status || "new",
+        score: l.score ?? l.temperature ?? null,
+        lastActivity: l.last_activity || l.last_contact,
+        nextAction: l.next_action || "Nächster Schritt offen",
+      }));
+      setLeads(normalized);
+    } catch (err) {
+      console.error("Leads laden fehlgeschlagen", err);
       setLeads([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const filteredLeads = useMemo(() => {
+    const term = search.toLowerCase();
+    return leads.filter((lead) => {
+      const matchesSearch =
+        !term ||
+        lead.name.toLowerCase().includes(term) ||
+        (lead.email || "").toLowerCase().includes(term) ||
+        (lead.company || "").toLowerCase().includes(term);
+      const matchesStatus = status === "all" || lead.status === status;
+      return matchesSearch && matchesStatus;
+    });
+  }, [leads, search, status]);
+
+  const hotLeads = useMemo(() => {
+    return [...filteredLeads]
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 3);
+  }, [filteredLeads]);
+
   const handleCreateLead = async (data: any) => {
     setCreatingLead(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch('/api/leads', {
-        method: 'POST',
+      const token = localStorage.getItem("access_token");
+      const res = await fetch("/api/leads", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           name: data.fullName,
           email: data.email,
           company: data.company,
-          budget: data.budget,
+          phone: data.phone,
           notes: data.notes,
         }),
       });
-      if (!res.ok) {
-        throw new Error(`Lead konnte nicht erstellt werden (${res.status})`);
-      }
+      if (!res.ok) throw new Error("Lead konnte nicht erstellt werden");
       await fetchLeads();
       setShowAddLead(false);
-    } catch (error) {
-      console.error(error);
-      alert(error instanceof Error ? error.message : 'Lead konnte nicht erstellt werden.');
+    } catch (e) {
+      console.error(e);
+      alert("Lead konnte nicht erstellt werden");
     } finally {
       setCreatingLead(false);
     }
   };
 
-  const handleViewChange = (viewId: string) => {
-    setActiveView(viewId);
-    setSearchParams({ view: viewId });
-  };
-
-  const handleQualify = (leadId: string, status: string) => {
-    console.log('Qualify lead', leadId, status);
-  };
-
-  const handleAddLead = (lead: any) => {
-    console.log('Add lead from hunter/discovery', lead);
-  };
-
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      const name = `${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim();
-      const matchesSearch =
-        searchQuery === '' ||
-        name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.company?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [leads, searchQuery, statusFilter]);
-
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Leads</h1>
-          <p className="text-gray-500">Verwalte und qualifiziere deine Leads</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImport(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Import
-          </Button>
-          <Button onClick={() => setShowAddLead(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Neuer Lead
-          </Button>
-        </div>
-      </div>
-
-      {/* View Selector */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {views.map((view) => (
-          <button
-            key={view.id}
-            onClick={() => handleViewChange(view.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition ${
-              activeView === view.id
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
-            } ${view.special ? 'border-2 border-dashed border-purple-300' : ''}`}
-          >
-            <view.icon className="w-4 h-4" />
-            {view.label}
-            {view.count !== null && (
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeView === view.id ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700'
+    <div className="min-h-screen bg-slate-950 px-6 py-8 text-white">
+      <div className="mx-auto max-w-7xl">
+        {/* Header / Filter */}
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-1 rounded-lg bg-slate-800 p-1">
+            {statusTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStatus(tab.id)}
+                className={`px-4 py-2 rounded-md text-sm ${
+                  status === tab.id ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-slate-700"
                 }`}
               >
-                {view.count}
-              </span>
-            )}
-          </button>
-        ))}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Suche nach Name, Firma..."
+                className="w-64 rounded-lg border border-slate-700 bg-slate-800 py-2 pl-10 pr-4 text-white"
+              />
+            </div>
+
+            <div className="flex rounded-lg bg-slate-800 p-1">
+              <button
+                className={`p-2 rounded ${viewMode === "table" ? "bg-slate-700" : ""}`}
+                onClick={() => setViewMode("table")}
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                className={`p-2 rounded ${viewMode === "board" ? "bg-slate-700" : ""}`}
+                onClick={() => setViewMode("board")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowAddLead(true)}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              Neuer Lead
+            </button>
+          </div>
+        </div>
+
+        {/* Hot leads quick row */}
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+          {hotLeads.map((lead) => (
+            <div key={lead.id} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-white">{lead.name}</p>
+                  <p className="text-xs text-gray-500">{lead.company}</p>
+                </div>
+                {lead.score && lead.score > 80 && <Flame className="h-4 w-4 text-orange-400" />}
+              </div>
+              <p className="mt-2 text-sm text-gray-400">{lead.nextAction}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Main content */}
+        {viewMode === "table" ? (
+          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
+            <table className="w-full">
+              <thead className="bg-slate-900">
+                <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Firma</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Score</th>
+                  <th className="px-4 py-3">Nächster Schritt</th>
+                  <th className="px-4 py-3">Letzte Aktivität</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                      Lädt Leads …
+                    </td>
+                  </tr>
+                )}
+                {!loading &&
+                  filteredLeads.map((lead) => (
+                    <tr
+                      key={lead.id}
+                      className="cursor-pointer border-b border-slate-800 hover:bg-slate-800/50"
+                      onClick={() => setSelectedLead(lead)}
+                    >
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white font-medium">
+                            {lead.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-white">{lead.name}</p>
+                            <p className="text-xs text-gray-500">{lead.email || "Keine Email"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-white">{lead.company || "–"}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`rounded-full px-2 py-1 text-xs ${statusColors[lead.status || "default"]}`}>
+                          {lead.status || "Unbekannt"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          {lead.score && lead.score > 80 && <Flame className="h-4 w-4 text-orange-500" />}
+                          <span className={`font-medium ${getScoreColor(lead.score)}`}>{lead.score ?? "–"}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-gray-300">{lead.nextAction || "–"}</td>
+                      <td className="px-4 py-4 text-gray-400 text-sm">{lead.lastActivity || "–"}</td>
+                      <td className="px-4 py-4">
+                        <button className="rounded p-2 hover:bg-slate-800">
+                          <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                {!loading && filteredLeads.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                      Keine Leads gefunden
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <LeadsKanban leads={filteredLeads} onLeadClick={(lead) => setSelectedLead(lead)} />
+        )}
       </div>
 
-      {/* Search & Filters */}
-      <div className="flex gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Suche nach Name, Email, Firma..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800"
-        >
-          <option value="all">Alle Status</option>
-          <option value="new">Neu</option>
-          <option value="contacted">Kontaktiert</option>
-          <option value="qualified">Qualifiziert</option>
-          <option value="proposal">Angebot</option>
-          <option value="won">Gewonnen</option>
-          <option value="lost">Verloren</option>
-          <option value="prospect">Prospect</option>
-          <option value="customer">Kunde</option>
-        </select>
-      </div>
+      {/* Sheet */}
+      {selectedLead && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
+          <div className="h-full w-full max-w-xl bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-white">{selectedLead.name}</h3>
+                <p className="text-sm text-gray-500">{selectedLead.company}</p>
+              </div>
+              <button onClick={() => setSelectedLead(null)} className="text-gray-400 hover:text-white">
+                ✕
+              </button>
+            </div>
 
-      {/* Content based on view */}
-      {activeView === 'hunter' ? (
-        <LeadHunterView onAddLead={handleAddLead} />
-      ) : activeView === 'discovery' ? (
-        <LeadDiscoveryView />
-      ) : activeView === 'qualifier' ? (
-        <LeadQualifierView leads={filteredLeads} onQualify={handleQualify} />
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="text-left p-4 font-medium">Name</th>
-                <th className="text-left p-4 font-medium">Firma</th>
-                <th className="text-left p-4 font-medium">Status</th>
-                <th className="text-left p-4 font-medium">Score</th>
-                <th className="text-left p-4 font-medium">Letzter Kontakt</th>
-                <th className="p-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
-                <tr>
-                  <td colSpan={6} className="p-6 text-center text-gray-500">
-                    Lädt Leads …
-                  </td>
-                </tr>
-              )}
-              {!loading &&
-                filteredLeads.map((lead) => (
-                  <LeadRow key={lead.id} lead={lead} onClick={() => navigate(`/leads/${lead.id}`)} />
-                ))}
-              {!loading && filteredLeads.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="p-6 text-center text-gray-500">
-                    Keine Leads gefunden
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+            <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">Email</p>
+                <p className="text-white">{selectedLead.email || "–"}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Telefon</p>
+                <p className="text-white">{selectedLead.phone || "–"}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Status</p>
+                <p className="text-white">{selectedLead.status || "–"}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Score</p>
+                <p className={`font-semibold ${getScoreColor(selectedLead.score)}`}>{selectedLead.score ?? "–"}</p>
+              </div>
+            </div>
 
-      {/* Modals (Platzhalter) */}
-      {showImport && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="font-semibold mb-3">Lead-Import</h3>
-            <p className="text-sm text-gray-600 mb-4">Import-Dialog (Platzhalter).</p>
-            <Button onClick={() => setShowImport(false)}>Schließen</Button>
+            <div className="mt-6 flex gap-2">
+              <button className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold hover:bg-green-700 flex items-center justify-center gap-2">
+                <Phone className="h-4 w-4" /> Anrufen
+              </button>
+              <button className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2">
+                <Mail className="h-4 w-4" /> Email
+              </button>
+              <button className="flex-1 rounded-lg bg-pink-600 px-3 py-2 text-sm font-semibold hover:bg-pink-700 flex items-center justify-center gap-2">
+                <MessageCircle className="h-4 w-4" /> WhatsApp
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <p className="text-sm text-gray-500">Notizen</p>
+              <textarea
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                rows={4}
+                placeholder="Notizen hinzufügen..."
+              />
+            </div>
           </div>
         </div>
       )}
 
+      {/* Add lead modal */}
       {showAddLead && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-gray-950 rounded-xl p-4 border border-white/10 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Neuer Lead</h3>
-              <Button variant="ghost" onClick={() => setShowAddLead(false)}>
-                Schließen
-              </Button>
+              <button onClick={() => setShowAddLead(false)} className="text-gray-400 hover:text-white">
+                ✕
+              </button>
             </div>
             <LeadForm onSubmit={handleCreateLead} />
-            {creatingLead && (
-              <div className="mt-3 text-sm text-gray-400">Lead wird erstellt …</div>
-            )}
+            {creatingLead && <p className="mt-2 text-sm text-gray-400">Lead wird erstellt…</p>}
           </div>
         </div>
       )}

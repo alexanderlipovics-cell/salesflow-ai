@@ -7,9 +7,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 interface Props {
   insights?: InsightItem[];
   isLoading?: boolean;
+  onInsightClick?: (insight: InsightItem) => void;
 }
 
-export const AIInsights: React.FC<Props> = ({ insights, isLoading: loadingProp }) => {
+export const AIInsights: React.FC<Props> = ({ insights, isLoading: loadingProp, onInsightClick }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<InsightItem[]>([]);
 
@@ -66,7 +67,10 @@ export const AIInsights: React.FC<Props> = ({ insights, isLoading: loadingProp }
       {rendered.map((insight, idx) => (
         <div
           key={idx}
-          className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-indigo-500/10 p-4 shadow-[0_0_30px_rgba(34,211,238,0.1)]"
+          onClick={() => onInsightClick?.(insight)}
+          className={`rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-indigo-500/10 p-4 shadow-[0_0_30px_rgba(34,211,238,0.1)] ${
+            onInsightClick ? "cursor-pointer hover:border-cyan-400/60 transition" : ""
+          }`}
         >
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-cyan-500/20 p-2 text-cyan-200">

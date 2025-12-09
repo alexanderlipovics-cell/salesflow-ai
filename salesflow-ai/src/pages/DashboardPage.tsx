@@ -25,6 +25,7 @@ const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { kpis, todaysTasks, pipeline, activities, chartData, insights, isLoading } = useDashboardData();
+  const hasTasksToday = (todaysTasks ?? []).length > 0;
 
   const firstName =
     user?.first_name ||
@@ -97,7 +98,7 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* SECTION 1: HEADER */}
         <GreetingHeader firstName={firstName} followUpsToday={kpis.followUpsToday} />
@@ -117,9 +118,11 @@ const DashboardPage: React.FC = () => {
         {/* SECTION 4: TWO COLUMN LAYOUT */}
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <div className="rounded-2xl border border-white/5 bg-white/5 p-5 backdrop-blur">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
               <div className="mb-4 flex items-center justify-between">
-                <div className="text-lg font-semibold text-white">Heute zu erledigen</div>
+                <div className="text-lg font-semibold text-white">
+                  {hasTasksToday ? "Heute zu erledigen" : "Hot Leads"}
+                </div>
                 <button
                   onClick={() => navigate("/follow-ups")}
                   className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
@@ -127,10 +130,17 @@ const DashboardPage: React.FC = () => {
                   Alle anzeigen →
                 </button>
               </div>
-              <TodaysTasks tasks={todaysTasks} isLoading={isLoading} />
+              {hasTasksToday ? (
+                <TodaysTasks tasks={todaysTasks} isLoading={isLoading} />
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-300">Keine heutigen Tasks. Schau dir stattdessen deine heißesten Leads an:</p>
+                  <ActivityFeed activities={activities?.slice(0, 3) || []} />
+                </div>
+              )}
             </div>
 
-            <div className="rounded-2xl border border-white/5 bg-white/5 p-5 backdrop-blur">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">Deine Pipeline</div>
               </div>
@@ -139,19 +149,23 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-indigo-500/10 p-5 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
+            <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-5 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
               <div className="mb-3 text-lg font-semibold text-white">AI Insights</div>
-              <AIInsights insights={insights} isLoading={isLoading} />
+              <AIInsights
+                insights={insights}
+                isLoading={isLoading}
+                onInsightClick={(insight) => navigate("/follow-ups", { state: { insight } })}
+              />
             </div>
 
-            <div className="rounded-2xl border border-white/5 bg-white/5 p-5 backdrop-blur">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
               <ActivityFeed activities={activities} />
             </div>
           </div>
         </div>
 
         {/* SECTION 5: PERFORMANCE CHART */}
-        <div className="mt-8 rounded-2xl border border-white/5 bg-white/5 p-5 backdrop-blur">
+        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold text-white">
               <Activity className="h-4 w-4 text-cyan-300" />
