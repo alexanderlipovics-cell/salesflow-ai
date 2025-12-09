@@ -315,6 +315,86 @@ export default function FollowUpsPage() {
   const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates'>('due');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+  const markAsResponded = async (leadId: string) => {
+    if (!leadId) {
+      alert('Lead-ID fehlt – bitte Lead-Daten prüfen.');
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`/api/sequences/lead/${leadId}/responded`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (response.ok) {
+      await refetch();
+      alert('✅ Lead als "Hat geantwortet" markiert!');
+    }
+  };
+
+  const markAsNoResponse = async (leadId: string) => {
+    if (!leadId) {
+      alert('Lead-ID fehlt – bitte Lead-Daten prüfen.');
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`/api/sequences/lead/${leadId}/no-response`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (response.ok) {
+      await refetch();
+      alert('⏭️ Nächster Follow-up geplant!');
+    }
+  };
+
+  const markAsWon = async (leadId: string) => {
+    if (!leadId) {
+      alert('Lead-ID fehlt – bitte Lead-Daten prüfen.');
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`/api/sequences/lead/${leadId}/won`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (response.ok) {
+      await refetch();
+      alert('🎉 Herzlichen Glückwunsch zum neuen Kunden!');
+    }
+  };
+
+  const markAsLost = async (leadId: string) => {
+    if (!leadId) {
+      alert('Lead-ID fehlt – bitte Lead-Daten prüfen.');
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`/api/sequences/lead/${leadId}/lost`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (response.ok) {
+      await refetch();
+      alert('Lead als verloren markiert. Reaktivierung in 60-90 Tagen geplant.');
+    }
+  };
+
   // Leads für das Dropdown laden
   useEffect(() => {
     const fetchLeads = async () => {
@@ -793,6 +873,10 @@ export default function FollowUpsPage() {
                   onCopyMessage={handleCopyMessage}
                   onMagicSend={handleMagicSend}
                   onManualWrite={handleManualWrite}
+                  onResponded={markAsResponded}
+                  onNoResponse={markAsNoResponse}
+                  onWon={markAsWon}
+                  onLost={markAsLost}
                   processingId={processingId}
                   copiedId={copiedId}
                   overrides={overrides}
@@ -811,6 +895,10 @@ export default function FollowUpsPage() {
                   onCopyMessage={handleCopyMessage}
                   onMagicSend={handleMagicSend}
                   onManualWrite={handleManualWrite}
+                  onResponded={markAsResponded}
+                  onNoResponse={markAsNoResponse}
+                  onWon={markAsWon}
+                  onLost={markAsLost}
                   processingId={processingId}
                   copiedId={copiedId}
                   overrides={overrides}
@@ -829,6 +917,10 @@ export default function FollowUpsPage() {
                   onCopyMessage={handleCopyMessage}
                   onMagicSend={handleMagicSend}
                   onManualWrite={handleManualWrite}
+                  onResponded={markAsResponded}
+                  onNoResponse={markAsNoResponse}
+                  onWon={markAsWon}
+                  onLost={markAsLost}
                   processingId={processingId}
                   copiedId={copiedId}
                   overrides={overrides}
@@ -856,6 +948,10 @@ export default function FollowUpsPage() {
                   onCopyMessage={handleCopyMessage}
                   onMagicSend={handleMagicSend}
                   onManualWrite={handleManualWrite}
+                  onResponded={markAsResponded}
+                  onNoResponse={markAsNoResponse}
+                  onWon={markAsWon}
+                  onLost={markAsLost}
                   processingId={processingId}
                   copiedId={copiedId}
                   overrides={overrides}
@@ -872,6 +968,10 @@ export default function FollowUpsPage() {
                   onCopyMessage={handleCopyMessage}
                   onMagicSend={handleMagicSend}
                   onManualWrite={handleManualWrite}
+                  onResponded={markAsResponded}
+                  onNoResponse={markAsNoResponse}
+                  onWon={markAsWon}
+                  onLost={markAsLost}
                   processingId={processingId}
                   copiedId={copiedId}
                   overrides={overrides}
@@ -952,6 +1052,10 @@ interface TaskGroupSectionProps {
     task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
     fallbackMessage?: string
   ) => void;
+  onResponded: (leadId: string) => Promise<void> | void;
+  onNoResponse: (leadId: string) => Promise<void> | void;
+  onWon: (leadId: string) => Promise<void> | void;
+  onLost: (leadId: string) => Promise<void> | void;
   processingId: string | null;
   copiedId: string | null;
   overrides: FollowUpTemplateOverrideLookup;
@@ -967,6 +1071,10 @@ function TaskGroupSection({
   onCopyMessage,
   onMagicSend,
   onManualWrite,
+  onResponded,
+  onNoResponse,
+  onWon,
+  onLost,
   processingId,
   copiedId,
   overrides,
@@ -992,6 +1100,10 @@ function TaskGroupSection({
               onCopyMessage={onCopyMessage}
               onMagicSend={onMagicSend}
               onManualWrite={onManualWrite}
+              onResponded={onResponded}
+              onNoResponse={onNoResponse}
+              onWon={onWon}
+              onLost={onLost}
               isProcessing={processingId === task.id}
               isGenerating={isGenerating}
               isCopied={copiedId === task.id}
@@ -1006,6 +1118,10 @@ function TaskGroupSection({
           onCopyMessage={onCopyMessage}
           onMagicSend={onMagicSend}
           onManualWrite={onManualWrite}
+          onResponded={onResponded}
+          onNoResponse={onNoResponse}
+          onWon={onWon}
+          onLost={onLost}
           processingId={processingId}
           isGenerating={isGenerating}
           overrides={overrides}
@@ -1027,6 +1143,10 @@ interface FollowUpTaskCardProps {
     task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
     fallbackMessage?: string
   ) => void;
+  onResponded: (leadId: string) => Promise<void> | void;
+  onNoResponse: (leadId: string) => Promise<void> | void;
+  onWon: (leadId: string) => Promise<void> | void;
+  onLost: (leadId: string) => Promise<void> | void;
   isProcessing: boolean;
   isGenerating: boolean;
   isCopied: boolean;
@@ -1039,6 +1159,10 @@ function FollowUpTaskCard({
   onCopyMessage,
   onMagicSend,
   onManualWrite,
+  onResponded,
+  onNoResponse,
+  onWon,
+  onLost,
   isProcessing,
   isGenerating,
   isCopied,
@@ -1049,6 +1173,8 @@ function FollowUpTaskCard({
   const dueInfo = getDueLabel(task.due_at);
   const displayName = lead?.name || lead?.email || 'Neuer Kontakt';
   const displayCompany = lead?.company || '';
+  const sequenceStatus = (lead as any)?.sequence_status || 'new';
+  const leadId = task.lead_id || lead?.id || '';
   const [showFullMessage, setShowFullMessage] = useState(false);
 
   const statusBorder = dueInfo.isOverdue
@@ -1074,6 +1200,9 @@ function FollowUpTaskCard({
           <div className="flex flex-col items-end gap-1">
             <span className="rounded bg-slate-900 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {lead?.vertical || 'Generic'}
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+              {sequenceStatus}
             </span>
             <div
               className={`flex items-center gap-2 text-[11px] font-medium ${
@@ -1132,6 +1261,11 @@ function FollowUpTaskCard({
         onCopy={() => onCopyMessage(task.id, personalizedMessage)}
         onManual={() => onManualWrite(task, personalizedMessage)}
         onSkip={() => onMarkAs(task.id, 'skipped')}
+        onResponded={onResponded}
+        onNoResponse={onNoResponse}
+        onWon={onWon}
+        onLost={onLost}
+        leadId={leadId}
         isProcessing={isProcessing}
         isGenerating={isGenerating}
         disableCopy={!personalizedMessage}
@@ -1153,6 +1287,10 @@ interface TaskListTableProps {
     task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
     fallbackMessage?: string
   ) => void;
+  onResponded: (leadId: string) => Promise<void> | void;
+  onNoResponse: (leadId: string) => Promise<void> | void;
+  onWon: (leadId: string) => Promise<void> | void;
+  onLost: (leadId: string) => Promise<void> | void;
   processingId: string | null;
   isGenerating: boolean;
   overrides: FollowUpTemplateOverrideLookup;
@@ -1164,6 +1302,10 @@ function TaskListTable({
   onCopyMessage,
   onMagicSend,
   onManualWrite,
+  onResponded,
+  onNoResponse,
+  onWon,
+  onLost,
   processingId,
   isGenerating,
   overrides,
@@ -1187,6 +1329,7 @@ function TaskListTable({
             const dueInfo = getDueLabel(task.due_at);
             const displayName = lead?.name || lead?.email || 'Neuer Kontakt';
             const displayCompany = lead?.company || '';
+            const leadId = task.lead_id || lead?.id || '';
             const statusColor = dueInfo.isOverdue
               ? 'text-red-400'
               : dueInfo.isToday
@@ -1226,6 +1369,11 @@ function TaskListTable({
                     onCopy={() => onCopyMessage(task.id, personalizedMessage)}
                     onManual={() => onManualWrite(task, personalizedMessage)}
                     onSkip={() => onMarkAs(task.id, 'skipped')}
+                    onResponded={onResponded}
+                    onNoResponse={onNoResponse}
+                    onWon={onWon}
+                    onLost={onLost}
+                    leadId={leadId}
                     isProcessing={processingId === task.id}
                     isGenerating={isGenerating}
                     disableCopy={!personalizedMessage}
@@ -1246,6 +1394,11 @@ interface ActionButtonsProps {
   onCopy: () => void;
   onManual: () => void;
   onSkip: () => void;
+  onResponded: (leadId: string) => Promise<void> | void;
+  onNoResponse: (leadId: string) => Promise<void> | void;
+  onWon: (leadId: string) => Promise<void> | void;
+  onLost: (leadId: string) => Promise<void> | void;
+  leadId: string;
   isProcessing: boolean;
   isGenerating: boolean;
   disableCopy?: boolean;
@@ -1258,67 +1411,121 @@ function ActionButtons({
   onCopy,
   onManual,
   onSkip,
+  onResponded,
+  onNoResponse,
+  onWon,
+  onLost,
+  leadId,
   isProcessing,
   isGenerating,
   disableCopy,
   isCopied,
 }: ActionButtonsProps) {
+  const hasLead = Boolean(leadId);
+  const MenuItem = DropdownMenuItem as any;
+
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        onClick={onSend}
-        className="bg-indigo-500 hover:bg-indigo-600 text-white"
-        disabled={isGenerating}
-        size="sm"
-      >
-        {isGenerating ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <Send className="w-4 h-4 mr-2" />
-        )}
-        Senden
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        className="border-green-500 text-green-400 hover:bg-green-500/10"
-        onClick={onDone}
-        disabled={isProcessing}
-      >
-        <Check className="w-4 h-4 mr-1" />
-        Erledigt
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 border border-slate-700 text-slate-300 hover:bg-slate-700"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="border border-slate-700 bg-slate-800 text-slate-100 shadow-lg"
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={onSend}
+          className="bg-indigo-500 hover:bg-indigo-600 text-white"
+          disabled={isGenerating}
+          size="sm"
         >
-          <DropdownMenuItem
-            onClick={onCopy}
-            disabled={disableCopy}
-            className="cursor-pointer focus:bg-slate-700"
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4 mr-2" />
+          )}
+          Senden
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-green-500 text-green-400 hover:bg-green-500/10"
+          onClick={onDone}
+          disabled={isProcessing}
+        >
+          <Check className="w-4 h-4 mr-1" />
+          Erledigt
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 border border-slate-700 text-slate-300 hover:bg-slate-700"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="border border-slate-700 bg-slate-800 text-slate-100 shadow-lg"
           >
-            <Clipboard className="mr-2 h-4 w-4" />
-            {isCopied ? 'Kopiert!' : 'Kopieren'}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onManual} className="cursor-pointer focus:bg-slate-700">
-            Manuell
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onSkip} className="cursor-pointer focus:bg-slate-700">
-            <SkipForward className="mr-2 h-4 w-4" />
-            Überspringen
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <MenuItem
+              onClick={onCopy}
+              disabled={disableCopy}
+              className="cursor-pointer focus:bg-slate-700"
+            >
+              <Clipboard className="mr-2 h-4 w-4" />
+              {isCopied ? 'Kopiert!' : 'Kopieren'}
+            </MenuItem>
+            <MenuItem onClick={onManual} className="cursor-pointer focus:bg-slate-700">
+              Manuell
+            </MenuItem>
+            <MenuItem onClick={onSkip} className="cursor-pointer focus:bg-slate-700">
+              <SkipForward className="mr-2 h-4 w-4" />
+              Überspringen
+            </MenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700">
+        <span className="text-xs text-slate-500 mr-2">Status:</span>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-green-500 text-green-400 hover:bg-green-500/10 text-xs px-2 py-1"
+          onClick={() => onResponded(leadId)}
+          disabled={!hasLead}
+        >
+          ✅ Geantwortet
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10 text-xs px-2 py-1"
+          onClick={() => onNoResponse(leadId)}
+          disabled={!hasLead}
+        >
+          ⏭️ Keine Antwort
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-emerald-500 text-emerald-400 hover:bg-emerald-500/10 text-xs px-2 py-1"
+          onClick={() => onWon(leadId)}
+          disabled={!hasLead}
+        >
+          🎉 Gewonnen
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-red-500 text-red-400 hover:bg-red-500/10 text-xs px-2 py-1"
+          onClick={() => onLost(leadId)}
+          disabled={!hasLead}
+        >
+          ❌ Verloren
+        </Button>
+      </div>
     </div>
   );
 }

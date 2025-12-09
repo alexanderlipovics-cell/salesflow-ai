@@ -1,3 +1,110 @@
+import logging
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.core.security.main import get_current_user
+from app.core.deps import get_supabase
+from app.services.sequence_engine import SequenceEngine
+
+router = APIRouter(prefix="/api/sequences", tags=["sequences"])
+logger = logging.getLogger(__name__)
+
+
+def _get_user_id(current_user) -> str:
+    return current_user.get("sub") or current_user.get("id") or current_user.get("user_id")
+
+
+@router.post("/lead/{lead_id}/responded")
+async def mark_responded(lead_id: str, current_user=Depends(get_current_user), db=Depends(get_supabase)):
+    try:
+        engine = SequenceEngine(db)
+        result = await engine.process_lead_response(lead_id, responded=True)
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        return {"success": True, "message": "Lead als geantwortet markiert"}
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("mark_responded failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/lead/{lead_id}/no-response")
+async def mark_no_response(lead_id: str, current_user=Depends(get_current_user), db=Depends(get_supabase)):
+    try:
+        engine = SequenceEngine(db)
+        result = await engine.process_lead_response(lead_id, responded=False)
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        return {"success": True, "message": "Nächster Follow-up geplant"}
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("mark_no_response failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/lead/{lead_id}/won")
+async def mark_won(lead_id: str, current_user=Depends(get_current_user), db=Depends(get_supabase)):
+    try:
+        engine = SequenceEngine(db)
+        result = await engine.mark_lead_won(lead_id)
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        return {"success": True, "message": "Lead als gewonnen markiert"}
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("mark_won failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/lead/{lead_id}/lost")
+async def mark_lost(lead_id: str, current_user=Depends(get_current_user), db=Depends(get_supabase)):
+    try:
+        engine = SequenceEngine(db)
+        result = await engine.mark_lead_lost(lead_id)
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        return {"success": True, "message": "Lead als verloren markiert, Reaktivierung geplant"}
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("mark_lost failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/templates")
+async def list_templates(current_user=Depends(get_current_user), db=Depends(get_supabase)):
+    try:
+        result = db.table("follow_up_sequence_steps").select("*").execute()
+        return {"success": True, "templates": result.data or []}
+    except Exception as exc:  # noqa: BLE001
+        logger.error("list_templates failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/start/{lead_id}")
+async def start_sequence(lead_id: str, current_user=Depends(get_current_user), db=Depends(get_supabase)):
+    try:
+        user_id = _get_user_id(current_user)
+        now = datetime.now(timezone.utc).isoformat()
+        db.table("leads").update(
+            {
+                "sequence_status": "new",
+                "follow_up_count": 0,
+                "next_follow_up_at": now,
+                "user_id": user_id,
+            }
+        ).eq("id", lead_id).execute()
+
+        engine = SequenceEngine(db)
+        await engine.advance_sequence(lead_id)
+
+        return {"success": True, "message": "Sequenz gestartet"}
+    except Exception as exc:  # noqa: BLE001
+        logger.error("start_sequence failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
 from datetime import date, datetime, timedelta
 import urllib.parse
 from typing import Any, Dict, List, Optional, Tuple
