@@ -134,6 +134,11 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
         # Timestamps setzen
         now = datetime.now().isoformat()
         
+        # User-ID extrahieren (Pflicht für Ownership)
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+
         # Flexibles Mapping - akzeptiere beide Namenskonventionen
         data = {
             "name": lead_data.get("name", "Unbekannt"),
@@ -146,6 +151,7 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
             "last_message": lead_data.get("last_message") or lead_data.get("lastMessage"),
             "notes": lead_data.get("notes"),
             "tags": lead_data.get("tags", []),
+            "user_id": user_id,
             "created_at": now,
             "updated_at": now,
         }
