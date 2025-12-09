@@ -35,7 +35,7 @@ async def run_sales_agent(
 
     profile_result = (
         db.table("profiles")
-        .select("name, vertical, company_id, monthly_revenue_goal")
+        .select("name, full_name, vertical, company_id, monthly_revenue_goal")
         .eq("id", user_id)
         .execute()
     )
