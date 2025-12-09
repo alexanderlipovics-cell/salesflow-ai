@@ -1044,7 +1044,9 @@ const ChatPage = () => {
                       🧠 {message.intentDescription || message.intentDetected}
                     </span>
                   )}
-                  {message.content}
+                  <div className="whitespace-pre-wrap break-words">
+                    {message.content}
+                  </div>
                   {message.role === "assistant" && (
                     <WhatsAppMessageActions
                       message={message.content}
