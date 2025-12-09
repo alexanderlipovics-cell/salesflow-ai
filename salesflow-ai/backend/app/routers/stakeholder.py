@@ -8,8 +8,7 @@ from anthropic import Anthropic
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
-from app.supabase_client import get_supabase_client
+from ..core.deps import get_current_user, get_supabase
 from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
 
@@ -134,7 +133,7 @@ async def save_stakeholder_as_contact(
     current_user=Depends(get_current_user),
 ):
     """Stakeholder als Kontakt in Supabase-Leads speichern."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     parts = payload.name.strip().split()
     first_name = parts[0] if parts else ""

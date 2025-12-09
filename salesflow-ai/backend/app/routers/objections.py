@@ -11,7 +11,7 @@ from ..core.cache import cache_key, get_cached, set_cached
 router = APIRouter(prefix="/objections", tags=["objections"])
 
 from app.core.deps import get_current_user
-from app.supabase_client import get_supabase_client
+from ..core.deps import get_supabase
 
 
 class ObjectionQuery(BaseModel):
@@ -51,7 +51,7 @@ def _extract_user_id(current_user) -> str:
 @router.get("/templates")
 async def get_objection_templates(current_user=Depends(get_current_user)):
     """Get all predefined objection templates (mit Caching)."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     user_id = _extract_user_id(current_user)
 
     key = cache_key("objection_templates", user_id)
@@ -77,7 +77,7 @@ async def handle_objection(
     current_user=Depends(get_current_user),
 ):
     """Get responses for an objection - matches templates + AI suggestion."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     user_id = _extract_user_id(current_user)
 
     objection = query.objection_text.lower().strip()
@@ -173,7 +173,7 @@ async def save_custom_objection(
     current_user=Depends(get_current_user),
 ):
     """Save a custom objection with response."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     user_id = _extract_user_id(current_user)
 
     objection_data = {
@@ -195,7 +195,7 @@ async def get_my_objections(
     current_user=Depends(get_current_user),
 ):
     """Get user's saved objections."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     user_id = _extract_user_id(current_user)
 
     result = (
@@ -216,7 +216,7 @@ async def track_objection_result(
     current_user=Depends(get_current_user),
 ):
     """Track if an objection response worked."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     # Get current counts
     result = (

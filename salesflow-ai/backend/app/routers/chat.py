@@ -79,11 +79,11 @@ async def log_message_event(
     und persona_variant mitgeloggt.
     """
     try:
-        from app.supabase_client import get_supabase_client, SupabaseNotConfiguredError
+        from ..core.deps import get_supabase
         from app.schemas.message_events import MessageEventCreate
         from app.db.repositories.message_events import create_message_event
         
-        db = get_supabase_client()
+        db = get_supabase()
         
         event_data = MessageEventCreate(
             contact_id=None,
@@ -191,7 +191,7 @@ async def get_nba_for_lead(
         from app.supabase_client import get_supabase_client
         from app.services.next_best_action import compute_next_best_action_for_lead
         
-        db = get_supabase_client()
+        db = get_supabase()
         nba = await compute_next_best_action_for_lead(
             db=db,
             user_id=user_id,
@@ -274,7 +274,7 @@ async def chat_completion(
     try:
         from app.supabase_client import get_supabase_client
 
-        db = get_supabase_client()
+        db = get_supabase()
         intent_handler = ChatIntentHandler(db=db, user_id=str(user_id))
 
         for intent_name, intent_config in CHAT_INTENTS.items():
@@ -360,7 +360,7 @@ async def chat_completion(
     # 3. User-Adaptive Prompt: Personalisiere basierend auf User-Learning-Profile
     try:
         from app.supabase_client import get_supabase_client
-        db_client = get_supabase_client()
+        db_client = get_supabase()
         user_context = await load_user_learning_context(user_id, db_client)
         
         # Lead-Kontext für Personalisierung
@@ -459,7 +459,7 @@ async def chat_completion(
             from app.services.user_learning_service import UserLearningService
             from app.supabase_client import get_supabase_client
             
-            db = get_supabase_client()
+            db = get_supabase()
             learning_service = UserLearningService(db)
             
             # Track Response (wird später für Learning verwendet)

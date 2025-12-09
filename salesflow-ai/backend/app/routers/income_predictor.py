@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.core.deps import get_current_user
-from app.supabase_client import get_supabase_client
+from ..core.deps import get_supabase
 
 router = APIRouter(prefix="/income-predictor", tags=["income-predictor"])
 
@@ -42,7 +42,7 @@ class Scenario(BaseModel):
 @router.get("/predict", response_model=PredictionResult)
 async def predict_income(current_user=Depends(get_current_user)):
     """Predict future income based on current activity."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
 
@@ -227,7 +227,7 @@ async def get_scenarios(current_user=Depends(get_current_user)):
 @router.get("/history")
 async def get_income_history(months: int = 6, current_user=Depends(get_current_user)):
     """Get income history for charts."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     history = []
 

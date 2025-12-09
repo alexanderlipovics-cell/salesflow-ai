@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app.core.deps import get_current_user
-from app.supabase_client import get_supabase_client, SupabaseNotConfiguredError
+from ..core.deps import get_supabase
 
 router = APIRouter(prefix="/proposals", tags=["proposals"])
 
@@ -101,7 +101,7 @@ def _calculate_totals(
 
 def _ensure_supabase():
     try:
-        return get_supabase_client()
+        return get_supabase()
     except SupabaseNotConfiguredError as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

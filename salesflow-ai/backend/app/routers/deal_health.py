@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.core.deps import get_current_user
-from app.supabase_client import get_supabase_client
+from ..core.deps import get_supabase
 
 
 router = APIRouter(prefix="/deal-health", tags=["deal-health"])
@@ -44,7 +44,7 @@ def _parse_iso_date(value: str) -> date | None:
 @router.get("/check", response_model=DealHealthSummary)
 async def check_deal_health(current_user=Depends(get_current_user)):
     """Check health of all active deals."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     result = (
         supabase.table("leads")

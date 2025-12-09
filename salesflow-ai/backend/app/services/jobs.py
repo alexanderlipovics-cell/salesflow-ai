@@ -6,7 +6,7 @@ Automated tasks that run on schedule to make the AI proactive.
 
 from datetime import datetime, timedelta
 import logging
-from ..database import get_supabase_client
+from ..core.deps import get_supabase
 from .notifications import create_notification, log_job_start, log_job_complete
 
 logger = logging.getLogger(__name__)

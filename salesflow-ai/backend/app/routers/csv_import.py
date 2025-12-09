@@ -6,8 +6,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
-from app.supabase_client import get_supabase_client
+from ..core.deps import get_current_user, get_supabase
 
 
 router = APIRouter(prefix="/csv-import", tags=["csv-import"])
@@ -158,7 +157,7 @@ async def import_contacts(
     current_user=Depends(get_current_user),
 ):
     """Parste Kontakte in Leads übernehmen."""
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     user_id = _extract_user_id(current_user)
 
     imported = 0
