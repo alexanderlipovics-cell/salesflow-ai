@@ -141,12 +141,15 @@ const LeadDiscoveryPage: FC = () => {
       if (!accessToken) return;
       try {
         setSourcesLoading(true);
-        const res = await fetch("/api/lead-discovery/sources", {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/lead-discovery/sources`,
+          {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
-          },
-        });
+            },
+          }
+        );
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -166,14 +169,17 @@ const LeadDiscoveryPage: FC = () => {
   const apiFetch = async (path: string, options: RequestInit = {}) => {
     if (!accessToken) throw new Error("Kein Auth-Token vorhanden.");
 
-    const res = await fetch(path, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        ...(options.headers || {}),
-      },
-    });
+    const res = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}${path}`,
+      {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          ...(options.headers || {}),
+        },
+      }
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");

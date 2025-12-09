@@ -21,7 +21,7 @@ export default function IntegrationsPage() {
 
   const fetchApiKeys = async () => {
     try {
-      const res = await fetch("/api/zapier/api-keys", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/zapier/api-keys`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
       });
       const data = await res.json();
@@ -32,7 +32,7 @@ export default function IntegrationsPage() {
   };
 
   const createKey = async () => {
-    const res = await fetch("/api/zapier/api-keys", {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/zapier/api-keys`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -47,7 +47,7 @@ export default function IntegrationsPage() {
 
   const revokeKey = async (id: string) => {
     if (!window.confirm("API Key wirklich löschen?")) return;
-    await fetch(`/api/zapier/api-keys/${id}`, {
+    await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/zapier/api-keys/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
     });

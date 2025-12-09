@@ -58,20 +58,23 @@ export async function generateObjectionBrainResult(
   input: ObjectionBrainInput,
   personaKey?: "speed" | "balanced" | "relationship"
 ): Promise<ObjectionBrainResult> {
-  const response = await fetch("/api/objection-brain/generate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      vertical: input.vertical ?? null,
-      channel: input.channel ?? null,
-      objection: input.objection,
-      context: input.context ?? null,
-      language: "de",
-      persona_key: personaKey ?? null,
-    }),
-  });
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/objection-brain/generate`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        vertical: input.vertical ?? null,
+        channel: input.channel ?? null,
+        objection: input.objection,
+        context: input.context ?? null,
+        language: "de",
+        persona_key: personaKey ?? null,
+      }),
+    }
+  );
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -93,23 +96,26 @@ export async function generateObjectionBrainResult(
 export async function logObjectionUsage(
   input: ObjectionLogInput
 ): Promise<ObjectionLogResult> {
-  const response = await fetch("/api/objection-brain/log", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      lead_id: input.leadId ?? null,
-      vertical: input.vertical ?? null,
-      channel: input.channel ?? null,
-      objection_text: input.objectionText,
-      chosen_variant_label: input.chosenVariantLabel,
-      chosen_message: input.chosenMessage,
-      model_reasoning: input.modelReasoning ?? null,
-      outcome: input.outcome ?? null,
-      source: input.source ?? "objection_brain_page",
-    }),
-  });
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/objection-brain/log`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        lead_id: input.leadId ?? null,
+        vertical: input.vertical ?? null,
+        channel: input.channel ?? null,
+        objection_text: input.objectionText,
+        chosen_variant_label: input.chosenVariantLabel,
+        chosen_message: input.chosenMessage,
+        model_reasoning: input.modelReasoning ?? null,
+        outcome: input.outcome ?? null,
+        source: input.source ?? "objection_brain_page",
+      }),
+    }
+  );
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");

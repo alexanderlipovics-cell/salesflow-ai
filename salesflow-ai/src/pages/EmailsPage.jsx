@@ -19,7 +19,10 @@ const EmailsPage = () => {
 
   const loadAccounts = async () => {
     try {
-      const res = await fetch("/api/emails/accounts", { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/accounts`,
+        { credentials: "include" }
+      );
       const data = await res.json();
       setAccounts(data.accounts || []);
     } catch (e) {
@@ -31,7 +34,10 @@ const EmailsPage = () => {
     setLoading(true);
     try {
       const query = leadId ? `?lead_id=${leadId}` : "";
-      const res = await fetch(`/api/emails/${query}`, { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/${query}`,
+        { credentials: "include" }
+      );
       const data = await res.json();
       setEmails(data.emails || []);
       if (data.emails?.length) {
@@ -47,7 +53,10 @@ const EmailsPage = () => {
   const triggerSync = async () => {
     setSyncing(true);
     try {
-      await fetch("/api/emails/sync", { method: "POST", credentials: "include" });
+      await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/sync`,
+        { method: "POST", credentials: "include" }
+      );
       await loadEmails(leadIdFromUrl);
     } catch (e) {
       console.error("Sync fehlgeschlagen", e);

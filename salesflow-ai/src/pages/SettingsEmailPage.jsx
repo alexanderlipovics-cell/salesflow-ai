@@ -11,7 +11,10 @@ const SettingsEmailPage = () => {
   const loadAccounts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/emails/accounts", { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/accounts`,
+        { credentials: "include" }
+      );
       const data = await res.json();
       setAccounts(data.accounts || []);
     } catch (e) {
@@ -23,7 +26,10 @@ const SettingsEmailPage = () => {
 
   const connect = async (provider) => {
     try {
-      const res = await fetch(`/api/emails/connect/${provider}`, { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/connect/${provider}`,
+        { credentials: "include" }
+      );
       const data = await res.json();
       if (data.auth_url) {
         window.location.href = data.auth_url;
@@ -34,7 +40,10 @@ const SettingsEmailPage = () => {
   };
 
   const disconnect = async (id) => {
-    await fetch(`/api/emails/accounts/${id}`, { method: "DELETE", credentials: "include" });
+    await fetch(
+      `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/accounts/${id}`,
+      { method: "DELETE", credentials: "include" }
+    );
     await loadAccounts();
   };
 

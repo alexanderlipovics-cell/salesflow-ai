@@ -43,7 +43,10 @@ const EmailComposer = ({
   const fetchTemplates = async () => {
     setLoadingTemplates(true);
     try {
-      const res = await fetch("/api/emails/templates", { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/templates`,
+        { credentials: "include" }
+      );
       const data = await res.json();
       setTemplates(data.templates || []);
     } catch (e) {
@@ -66,18 +69,21 @@ const EmailComposer = ({
     if (!to || !subject) return;
     setSending(true);
     try {
-      const res = await fetch("/api/emails/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          to,
-          subject,
-          body_html: body,
-          lead_id: leadId,
-          track_opens: true,
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/emails/send`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            to,
+            subject,
+            body_html: body,
+            lead_id: leadId,
+            track_opens: true,
+          }),
+        }
+      );
       if (!res.ok) {
         throw new Error("E-Mail konnte nicht gesendet werden");
       }

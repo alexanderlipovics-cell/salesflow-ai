@@ -107,13 +107,16 @@ export const DelayMasterPanel: React.FC = () => {
         last_template_id: lastTemplateId,
       };
 
-      const response = await fetch("/api/delay/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/delay/generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Fehler beim Erzeugen der Delay-Nachricht.");
