@@ -16,7 +16,7 @@ import { ToastProvider } from "./components/Toast";
 import { legacyRouteRedirects } from './config/navigation';
 import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage.tsx";
-import FinancePage from "./pages/FinancePage";
+import FinancePage from "./pages/FinancePage.tsx";
 
 // Add this component for legacy route redirects
 const LegacyRouteHandler = () => {
