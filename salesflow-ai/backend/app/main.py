@@ -251,6 +251,7 @@ from .routers.notifications import router as notifications_router  # 🔔 Backgr
 from .routers.stakeholder import router as stakeholder_router  # 🧭 Stakeholder Mapping
 from .routers.finance import router as finance_router  # 💰 Finance Module
 from .routers.performance_insights import router as performance_insights_router  # 📈 Performance Insights
+from .routers.push import router as push_router  # 📱 Push Notifications
 from .routers.income_predictor import router as income_predictor_router  # 📈 Income Predictor
 from .routers.gamification import router as gamification_router  # 🏆 Gamification
 from .routers.lead_qualifier import router as lead_qualifier_router  # 🧠 AI Lead Qualifier
@@ -311,6 +312,7 @@ app.include_router(objections_router, prefix="/api")  # 🧠 Objection Handling
 app.include_router(competitors_router, prefix="/api")  # 🛡️ Competitor Battle Cards
 app.include_router(cold_call_router, prefix="/api")  # 📞 Kaltakquise-Assistent
 app.include_router(performance_insights_router, prefix="/api")  # 📈 Performance Insights
+app.include_router(push_router)  # 📱 Push Notifications (has own prefix)
 app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
 app.include_router(lead_qualifier_router)  # 🧠 AI Lead Qualifier (hat bereits /api/lead-qualifier prefix)
 app.include_router(lead_discovery_router)  # 🔍 Lead Discovery Engine (hat bereits /api/lead-discovery prefix)

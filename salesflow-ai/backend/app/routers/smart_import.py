@@ -359,7 +359,7 @@ Regeln:
             result = (
                 supabase.table("leads")
                 .select("id, name")
-                .eq("user_id", str(current_user.id))
+                .eq("user_id", str(current_user["id"]))
                 .ilike("name", f"%{search_name}%")
                 .limit(1)
                 .execute()
@@ -425,7 +425,7 @@ async def save_lead_from_analysis(
         supabase = get_supabase_client()
 
         lead_data = {
-            "user_id": str(current_user.id),
+            "user_id": str(current_user["id"]),
             "name": request.lead.name,
             "first_name": request.lead.first_name,
             "last_name": request.lead.last_name,
@@ -494,7 +494,7 @@ async def update_lead_from_reply(
             supabase.table("leads")
             .update(update_data)
             .eq("id", lead_id)
-            .eq("user_id", str(current_user.id))
+            .eq("user_id", str(current_user["id"]))
             .execute()
         )
 

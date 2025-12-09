@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
+import {
+  LayoutDashboard,
   Users,
-  Zap, 
-  Crosshair, 
-  MapPin, 
-  MessageSquare, 
-  UploadCloud, 
-  Menu, 
+  Zap,
+  Crosshair,
+  MapPin,
+  MessageSquare,
+  UploadCloud,
+  Menu,
   X,
   Settings,
   BarChart3,
@@ -24,11 +24,48 @@ import {
   Calculator
 } from 'lucide-react';
 import { useFeatures } from '../hooks/useFeatures';
+import { setupForegroundHandler } from '../services/pushNotifications';
+import toast from 'react-hot-toast';
 
 export const AppShell: React.FC = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { hasFeature } = useFeatures();
+
+  useEffect(() => {
+    // Setup foreground notification handler
+    const unsubscribe = setupForegroundHandler((payload) => {
+      const { title, body } = payload.notification || {};
+
+      // Show toast for foreground notifications
+      toast.custom((t) => (
+        <div
+          className={`${
+            t.visible ? 'animate-enter' : 'animate-leave'
+          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+        >
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900">{title}</p>
+                <p className="mt-1 text-sm text-gray-500">{body}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex border-l border-gray-200">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-blue-600 hover:text-blue-500"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ), { duration: 5000 });
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Die bereinigte Navigations-Struktur
   const navigation = [

@@ -141,7 +141,7 @@ async def save_stakeholder_as_contact(
     last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
     contact_data = {
-        "user_id": str(current_user.id),
+        "user_id": str(current_user["id"]),
         "name": payload.name,
         "first_name": first_name,
         "last_name": last_name,

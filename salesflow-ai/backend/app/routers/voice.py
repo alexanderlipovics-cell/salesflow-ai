@@ -228,7 +228,7 @@ Regeln:
 
     if intent == "CREATE_LEAD" and command.get("lead_name"):
         lead_data = {
-            "user_id": str(current_user.id),
+            "user_id": str(current_user["id"]),
             "name": command["lead_name"],
             "company": command.get("company"),
             "phone": command.get("phone"),
@@ -260,7 +260,7 @@ Regeln:
         search = (
             supabase.table("leads")
             .select("id, name")
-            .eq("user_id", str(current_user.id))
+            .eq("user_id", str(current_user["id"]))
             .ilike("name", f"%{command['lead_name']}%")
             .limit(1)
             .execute()
@@ -287,7 +287,7 @@ Regeln:
         search = (
             supabase.table("leads")
             .select("id, name")
-            .eq("user_id", str(current_user.id))
+            .eq("user_id", str(current_user["id"]))
             .ilike("name", f"%{command['lead_name']}%")
             .limit(1)
             .execute()
@@ -317,7 +317,7 @@ Regeln:
         search = (
             supabase.table("leads")
             .select("*")
-            .eq("user_id", str(current_user.id))
+            .eq("user_id", str(current_user["id"]))
             .ilike("name", f"%{command['lead_name']}%")
             .limit(1)
             .execute()

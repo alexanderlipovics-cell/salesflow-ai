@@ -65,7 +65,7 @@ async def start_power_hour(
     active = (
         supabase.table("power_hour_sessions")
         .select("id")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .eq("is_active", True)
         .execute()
     )
@@ -81,7 +81,7 @@ async def start_power_hour(
     streak_result = (
         supabase.table("user_stats")
         .select("power_hour_streak")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .single()
         .execute()
     )
@@ -129,7 +129,7 @@ async def update_progress(
         supabase.table("power_hour_sessions")
         .select("*")
         .eq("id", session_id)
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .single()
         .execute()
     )
@@ -191,7 +191,7 @@ async def end_power_hour(
         supabase.table("power_hour_sessions")
         .select("*")
         .eq("id", session_id)
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .single()
         .execute()
     )
@@ -218,7 +218,7 @@ async def end_power_hour(
     today_sessions = (
         supabase.table("power_hour_sessions")
         .select("id")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .gte("started_at", today)
         .neq("id", session_id)
         .execute()
@@ -274,7 +274,7 @@ async def get_power_hour_stats(
     sessions = (
         supabase.table("power_hour_sessions")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .eq("is_active", False)
         .execute()
     )
@@ -300,7 +300,7 @@ async def get_power_hour_stats(
     streak_result = (
         supabase.table("user_stats")
         .select("power_hour_streak, power_hour_longest_streak")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .single()
         .execute()
     )
@@ -332,7 +332,7 @@ async def get_active_session(
     result = (
         supabase.table("power_hour_sessions")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .eq("is_active", True)
         .single()
         .execute()

@@ -33,7 +33,7 @@ async def save_consent(
     ua = request.headers.get("user-agent", "unknown")
 
     record = await service.update_consent(
-        user_id=str(current_user.id),
+        user_id=str(current_user["id"]),
         consent_data=payload.categories,
         ip_address=ip,
         user_agent=ua,
@@ -41,7 +41,7 @@ async def save_consent(
 
     return {
         "status": "ok",
-        "user_id": str(current_user.id),
+        "user_id": str(current_user["id"]),
         "consent_version": record.consent_version,
         "created_at": record.created_at,
         "categories": record.consent_data,

@@ -109,7 +109,7 @@ async def create_transaction(
     supabase = get_supabase_client()
 
     transaction = {
-        "user_id": str(current_user.id),
+        "user_id": str(current_user["id"]),
         "tx_type": data.tx_type,
         "amount": float(data.amount),
         "date": data.date.isoformat(),
@@ -141,7 +141,7 @@ async def list_transactions(
     query = (
         supabase.table("finance_transactions")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .order("date", desc=True)
         .limit(limit)
     )
@@ -171,7 +171,7 @@ async def get_summary(
     result = (
         supabase.table("finance_transactions")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .gte("date", from_date.isoformat())
         .lte("date", to_date.isoformat())
         .execute()
@@ -208,7 +208,7 @@ async def get_summary_by_category(
     result = (
         supabase.table("finance_transactions")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .gte("date", from_date.isoformat())
         .lte("date", to_date.isoformat())
         .execute()
@@ -313,7 +313,7 @@ async def add_mileage(
     profile = (
         supabase.table("user_business_profile")
         .select("country")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .single()
         .execute()
     )
@@ -324,7 +324,7 @@ async def add_mileage(
     amount = float(entry.distance_km) * rate
 
     mileage_data = {
-        "user_id": str(current_user.id),
+        "user_id": str(current_user["id"]),
         "date": entry.date.isoformat(),
         "start_location": entry.start_location,
         "end_location": entry.end_location,
@@ -352,7 +352,7 @@ async def list_mileage(
     query = (
         supabase.table("finance_mileage")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .order("date", desc=True)
     )
 
@@ -386,7 +386,7 @@ async def get_tax_export(
     tx_result = (
         supabase.table("finance_transactions")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .gte("date", from_date)
         .lte("date", to_date)
         .execute()
@@ -396,7 +396,7 @@ async def get_tax_export(
     ml_result = (
         supabase.table("finance_mileage")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .gte("date", from_date)
         .lte("date", to_date)
         .execute()

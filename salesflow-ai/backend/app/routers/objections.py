@@ -223,7 +223,7 @@ async def track_objection_result(
         supabase.table("user_objections")
         .select("success_count, fail_count")
         .eq("id", objection_id)
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .single()
         .execute()
     )

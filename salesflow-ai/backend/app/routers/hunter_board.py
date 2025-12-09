@@ -74,7 +74,7 @@ async def get_hunter_board_data(
     query = (
         supabase.table("leads")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .eq("status", "active")
     )
 

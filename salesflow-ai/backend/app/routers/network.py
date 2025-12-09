@@ -26,7 +26,7 @@ def _extract_user_id(current_user: Any) -> str:
             or current_user.get("sub")
         )
     if hasattr(current_user, "id"):
-        return str(current_user.id)
+        return str(current_user["id"])
     return str(current_user)
 
 

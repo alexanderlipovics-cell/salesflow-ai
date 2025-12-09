@@ -7,6 +7,7 @@ Handles notification creation, queuing, and delivery for background jobs.
 from datetime import datetime
 from typing import Optional
 import logging
+from .firebase import send_push_to_user
 
 logger = logging.getLogger(__name__)
 
@@ -20,31 +21,15 @@ async def create_notification(
     data: dict = None
 ) -> dict:
     """
-    Create a notification in the queue.
-    In Week 3, this will also send push notifications.
-
-    Args:
-        db: Supabase client
-        user_id: User UUID
-        type: Notification type (overdue_followups, hot_lead, churn_risk, etc.)
-        title: Notification title
-        body: Notification body text
-        data: Additional data (optional)
-
-    Returns:
-        Dict with success status and notification_id
+    Create a notification and send push notification.
     """
 
-    # Check if user has this notification type enabled
+    # Check preferences (existing code)
     prefs = await db.from_("user_notification_preferences").select(
         "*"
     ).eq("user_id", user_id).single().execute()
 
-    # Default preferences if not set
-    if not prefs.data:
-        prefs_data = {}
-    else:
-        prefs_data = prefs.data
+    prefs_data = prefs.data or {}
 
     # Check notification type preference
     type_mapping = {
@@ -62,7 +47,7 @@ async def create_notification(
         logger.info(f"Notification type {type} disabled for user {user_id}")
         return {"skipped": True, "reason": "notification_disabled"}
 
-    # Check quiet hours
+    # Check quiet hours (existing code)
     now = datetime.now().time()
     quiet_start = prefs_data.get("quiet_hours_start", "22:00")
     quiet_end = prefs_data.get("quiet_hours_end", "07:00")
@@ -72,18 +57,20 @@ async def create_notification(
     if isinstance(quiet_end, str):
         quiet_end = datetime.strptime(quiet_end, "%H:%M").time()
 
-    # Check if in quiet hours (skip daily_briefing from quiet hours check)
+    in_quiet_hours = False
     if type != "daily_briefing":
         if quiet_start > quiet_end:  # Spans midnight
             if now >= quiet_start or now <= quiet_end:
-                logger.info(f"Quiet hours active for user {user_id}")
-                return {"skipped": True, "reason": "quiet_hours"}
+                in_quiet_hours = True
         else:
             if quiet_start <= now <= quiet_end:
-                logger.info(f"Quiet hours active for user {user_id}")
-                return {"skipped": True, "reason": "quiet_hours"}
+                in_quiet_hours = True
 
-    # Create notification
+    if in_quiet_hours:
+        logger.info(f"Quiet hours active for user {user_id}")
+        return {"skipped": True, "reason": "quiet_hours"}
+
+    # Create notification in queue
     result = await db.from_("notification_queue").insert({
         "user_id": user_id,
         "type": type,
@@ -96,14 +83,35 @@ async def create_notification(
 
     notification_id = result.data[0]["id"] if result.data else None
 
-    logger.info(f"Created notification {notification_id} for user {user_id}: {title}")
+    # ═══════════════════════════════════════════════════════════
+    # NEW: Send Push Notification
+    # ═══════════════════════════════════════════════════════════
 
-    # TODO Week 3: Send push notification here
-    # await send_push_notification(user_id, title, body, data)
+    push_result = await send_push_to_user(
+        db=db,
+        user_id=user_id,
+        title=title,
+        body=body,
+        data={
+            "notification_id": notification_id,
+            "type": type,
+            **(data or {})
+        }
+    )
+
+    # Update notification status based on push result
+    if push_result.get("success"):
+        await db.from_("notification_queue").update({
+            "status": "sent",
+            "sent_at": datetime.now().isoformat()
+        }).eq("id", notification_id).execute()
+
+    logger.info(f"Notification {notification_id}: push={'sent' if push_result.get('success') else 'failed'}")
 
     return {
         "success": True,
-        "notification_id": notification_id
+        "notification_id": notification_id,
+        "push_result": push_result
     }
 
 

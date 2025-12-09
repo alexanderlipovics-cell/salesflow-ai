@@ -56,7 +56,7 @@ async def screenshot_to_lead(
 
     ctx = RequestContext(
         tenant_id=current_user.tenant_id,
-        user_id=current_user.id,
+        user_id=current_user["id"],
         request_id=getattr(request.state, "request_id", None),
     )
 
@@ -86,7 +86,7 @@ async def chat_to_lead(
 ):
     ctx = RequestContext(
         tenant_id=current_user.tenant_id,
-        user_id=current_user.id,
+        user_id=current_user["id"],
         request_id=getattr(request.state, "request_id", None),
     )
     service = LeadService(db)
@@ -115,7 +115,7 @@ async def generate_short_followup(
 ):
     ctx = RequestContext(
         tenant_id=current_user.tenant_id,
-        user_id=current_user.id,
+        user_id=current_user["id"],
         request_id=getattr(request.state, "request_id", None),
     )
     ai = DomainAIService(db)

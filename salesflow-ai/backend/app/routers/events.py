@@ -73,7 +73,7 @@ async def replay_batch_events(
     try:
         count = await replay_events(
             db,
-            tenant_id=tenant_id or current_user.tenant_id,
+            tenant_id=tenant_id or current_user.get("tenant_id"),
             event_type=event_type,
             since=since,
             limit=limit,

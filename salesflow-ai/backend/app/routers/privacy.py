@@ -23,7 +23,7 @@ async def export_my_data(
     current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     service = ConsentService(db)
-    data = await service.request_data_export(user_id=str(current_user.id))
+    data = await service.request_data_export(user_id=str(current_user["id"]))
     return data
 
 @router.post("/delete")
@@ -32,7 +32,7 @@ async def request_deletion(
     current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     service = ConsentService(db)
-    ok = await service.request_data_deletion(user_id=str(current_user.id))
+    ok = await service.request_data_deletion(user_id=str(current_user["id"]))
     return {"success": ok}
 
 @router.post("/restrict")
@@ -41,7 +41,7 @@ async def restrict_processing(
     current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     service = ConsentService(db)
-    ok = await service.restrict_processing(user_id=str(current_user.id))
+    ok = await service.restrict_processing(user_id=str(current_user["id"]))
     return {"success": ok}
 
 @router.get("/compliance")
@@ -50,5 +50,5 @@ async def compliance_status(
     current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     service = ConsentService(db)
-    status = await service.check_compliance_status(user_id=str(current_user.id))
+    status = await service.check_compliance_status(user_id=str(current_user["id"]))
     return status

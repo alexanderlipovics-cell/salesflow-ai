@@ -49,7 +49,7 @@ async def check_deal_health(current_user=Depends(get_current_user)):
     result = (
         supabase.table("leads")
         .select("*")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .eq("status", "active")
         .execute()
     )

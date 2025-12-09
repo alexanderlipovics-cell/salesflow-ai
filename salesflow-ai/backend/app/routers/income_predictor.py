@@ -49,7 +49,7 @@ async def predict_income(current_user=Depends(get_current_user)):
     leads = (
         supabase.table("leads")
         .select("id, created_at, temperature, deal_value")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .gte("created_at", thirty_days_ago)
         .execute()
     )
@@ -60,7 +60,7 @@ async def predict_income(current_user=Depends(get_current_user)):
     income = (
         supabase.table("finance_transactions")
         .select("amount")
-        .eq("user_id", str(current_user.id))
+        .eq("user_id", str(current_user["id"]))
         .eq("tx_type", "income")
         .gte("date", thirty_days_ago)
         .execute()
@@ -240,7 +240,7 @@ async def get_income_history(months: int = 6, current_user=Depends(get_current_u
         income = (
             supabase.table("finance_transactions")
             .select("amount")
-            .eq("user_id", str(current_user.id))
+            .eq("user_id", str(current_user["id"]))
             .eq("tx_type", "income")
             .gte("date", month_start.isoformat())
             .lte("date", month_end.isoformat())
