@@ -5,10 +5,13 @@ import {
   Check,
   ChevronDown,
   Clipboard,
+  LayoutGrid,
   Loader2,
   Mail,
   MessageCircle,
+  MoreHorizontal,
   RefreshCw,
+  Rows3,
   Rocket,
   Send,
   Sparkles,
@@ -32,6 +35,12 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { generateDeepLink } from '@/services/magicDeepLinkService';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import FollowUpTemplateManagerPage from './FollowUpTemplateManagerPage';
 
 // ─────────────────────────────────────────────────────────────────
@@ -131,6 +140,7 @@ const isDueThisWeek = (dateString: string | null) => {
  * Gruppiert Tasks nach Dringlichkeit
  */
 type TaskGroup = 'overdue' | 'today' | 'upcoming';
+type ViewMode = 'grid' | 'list';
 
 const groupTasks = (tasks: ReturnType<typeof useFollowUpTasks>['tasks']) => {
   const groups: Record<TaskGroup, typeof tasks> = {
@@ -163,6 +173,43 @@ const groupTasks = (tasks: ReturnType<typeof useFollowUpTasks>['tasks']) => {
   });
   
   return groups;
+};
+
+const getPersonalizedMessageForTask = (
+  task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+  overrides: FollowUpTemplateOverrideLookup
+) => {
+  const lead = task.lead;
+  const template = getFollowUpTemplateByKey(task.template_key);
+  const phaseDisplay = template ? getPhaseDisplay(template.phase) : null;
+
+  const overrideKey = buildOverrideKey(task.template_key, lead?.vertical);
+  const overrideTemplate = overrides[overrideKey];
+
+  let personalizedMessage: string;
+
+  if (overrideTemplate) {
+    let message = overrideTemplate.template_message;
+
+    if (lead?.name) {
+      const firstName = lead.name.split(' ')[0];
+      message = message.replace(/\{\{\s*name\s*\}\}/gi, firstName);
+      message = message.replace(/\[Name\]/g, firstName);
+    } else {
+      message = message.replace(/,\s*\{\{\s*name\s*\}\}\s*:/g, ':');
+      message = message.replace(/,\s*\{\{\s*name\s*\}\}\s*,/g, ',');
+      message = message.replace(/,\s*\{\{\s*name\s*\}\}(\s|$)/g, '$1');
+      message = message.replace(/\{\{\s*name\s*\}\}[,:]\s*/g, '');
+      message = message.replace(/\{\{\s*name\s*\}\}\s*/g, '');
+      message = message.replace(/\[Name\]\s*/g, '');
+    }
+
+    personalizedMessage = message;
+  } else {
+    personalizedMessage = buildFollowUpMessage(template, lead?.name, lead?.vertical, task.note);
+  }
+
+  return { personalizedMessage, template, phaseDisplay };
 };
 
 /**
@@ -267,6 +314,7 @@ export default function FollowUpsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [magicSendError, setMagicSendError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates'>('due');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Leads für das Dropdown laden
   useEffect(() => {
@@ -580,7 +628,7 @@ export default function FollowUpsPage() {
   return (
     <div className="min-h-screen bg-slate-900 px-4 py-8 pb-24 text-slate-50">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
             <Mail className="h-6 w-6" />
@@ -591,7 +639,28 @@ export default function FollowUpsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-1">
+            <Button
+              size="sm"
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              className="flex items-center gap-1"
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Grid
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              className="flex items-center gap-1"
+              onClick={() => setViewMode('list')}
+            >
+              <Rows3 className="h-4 w-4" />
+              Liste
+            </Button>
+          </div>
+
           <Button
             onClick={handleMagicSendAll}
             className="bg-gradient-to-r from-purple-500 to-indigo-600"
@@ -729,6 +798,7 @@ export default function FollowUpsPage() {
                   copiedId={copiedId}
                   overrides={overrides}
                   isGenerating={isGenerating}
+                  viewMode={viewMode}
                 />
               )}
               
@@ -746,6 +816,7 @@ export default function FollowUpsPage() {
                   copiedId={copiedId}
                   overrides={overrides}
                   isGenerating={isGenerating}
+                  viewMode={viewMode}
                 />
               )}
               
@@ -763,6 +834,7 @@ export default function FollowUpsPage() {
                   copiedId={copiedId}
                   overrides={overrides}
                   isGenerating={isGenerating}
+                  viewMode={viewMode}
                 />
               )}
             </div>
