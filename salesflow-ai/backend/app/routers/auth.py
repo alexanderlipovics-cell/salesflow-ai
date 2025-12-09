@@ -3,7 +3,7 @@ Authentication router for SalesFlow AI Backend.
 Handles login, signup, token refresh, password reset, and user profile.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 import logging
 import secrets
@@ -322,7 +322,7 @@ async def reset_password(data: dict, supabase: Client = Depends(get_supabase)) -
     except Exception:
         token_time = datetime.utcnow()
 
-    if datetime.utcnow() - token_time > timedelta(hours=24):
+    if datetime.now(timezone.utc) - token_time > timedelta(hours=24):
         raise HTTPException(status_code=400, detail="Token abgelaufen. Bitte fordere einen neuen an.")
 
     user_id = token_row.get("user_id")
