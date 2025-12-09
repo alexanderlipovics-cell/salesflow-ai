@@ -552,21 +552,28 @@ const ChatPage = () => {
       const intentDetected = data?.intent_detected || data?.detected_intent || null;
       const intentDescription = data?.intent_description || data?.intent || null;
 
-      const stakeholderDetection = detectNewStakeholder(reply);
-      if (stakeholderDetection?.name) {
-        const normalizedName = stakeholderDetection.name.toLowerCase();
-        if (!lastStakeholderName || lastStakeholderName !== normalizedName) {
-          setLastStakeholderName(normalizedName);
-          setStakeholderCandidate({
-            name: stakeholderDetection.name,
-            company: stakeholderDetection.company || parsedLeadContext?.company || "",
-            context: stakeholderDetection.context,
-            leadId:
-              parsedLeadContext?.id ||
-              parsedLeadContext?.lead_id ||
-              parsedLeadContext?.leadId ||
-              null,
-          });
+      const userAskedToCreate =
+        intentDetected === "CREATE_LEAD" ||
+        intentDetected === "CREATE_FOLLOWUP" ||
+        /anlegen|erstellen|follow-?up/i.test(messageText || "");
+
+      if (userAskedToCreate) {
+        const stakeholderDetection = detectNewStakeholder(reply);
+        if (stakeholderDetection?.name) {
+          const normalizedName = stakeholderDetection.name.toLowerCase();
+          if (!lastStakeholderName || lastStakeholderName !== normalizedName) {
+            setLastStakeholderName(normalizedName);
+            setStakeholderCandidate({
+              name: stakeholderDetection.name,
+              company: stakeholderDetection.company || parsedLeadContext?.company || "",
+              context: stakeholderDetection.context,
+              leadId:
+                parsedLeadContext?.id ||
+                parsedLeadContext?.lead_id ||
+                parsedLeadContext?.leadId ||
+                null,
+            });
+          }
         }
       }
 
