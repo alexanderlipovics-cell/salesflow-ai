@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/ai", tags=["AI"])
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: Optional[str] = None
     session_id: Optional[str] = None
     conversation_history: Optional[List[Dict[str, Any]]] = None
     lead_id: Optional[str] = None
@@ -32,7 +32,6 @@ class ChatResponse(BaseModel):
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: Request,
-    payload: ChatRequest,
     current_user=Depends(get_current_user),
     db=Depends(get_supabase),
 ):
@@ -41,51 +40,64 @@ async def chat(
     try:
         body = await request.json()
         logger.info(f"AI Chat request body: {body}")
+
+        # Extract message (allow fallback key names)
+        message = body.get("message") or body.get("prompt")
+        if not message:
+            raise HTTPException(status_code=400, detail="No message provided")
+
+        session_id = body.get("session_id") or body.get("sessionId")
+        user_id = getattr(current_user, "id", None) or current_user.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User-Kontext fehlt")
+
+        if not session_id:
+            session_id = str(uuid.uuid4())
+            db.table("ai_chat_sessions").insert(
+                {
+                    "id": session_id,
+                    "user_id": user_id,
+                }
+            ).execute()
+
+        conversation_history = body.get("conversation_history") or body.get("messages") or body.get("history")
+        if conversation_history and not isinstance(conversation_history, list):
+            logger.warning("conversation_history provided but not a list; ignoring")
+            conversation_history = None
+
+        if conversation_history:
+            message_history = conversation_history
+        else:
+            history = (
+                db.table("ai_chat_messages")
+                .select("role, content")
+                .eq("session_id", session_id)
+                .order("created_at")
+                .execute()
+            )
+            message_history = (
+                [{"role": m.get("role"), "content": m.get("content")} for m in history.data]
+                if history and history.data
+                else []
+            )
+
+        result = await run_sales_agent(
+            message=message,
+            user_id=user_id,
+            db=db,
+            session_id=session_id,
+            message_history=message_history,
+        )
+
+        return ChatResponse(
+            message=result["message"],
+            tools_used=result["tools_used"],
+            session_id=session_id,
+        )
+
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.warning(f"AI Chat could not parse request body for logging: {e}")
-
-    user_id = getattr(current_user, "id", None) or current_user.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User-Kontext fehlt")
-
-    session_id = payload.session_id
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        db.table("ai_chat_sessions").insert(
-            {
-                "id": session_id,
-                "user_id": user_id,
-            }
-        ).execute()
-
-    # If the frontend sends conversation_history, prefer that; otherwise fall back to stored history
-    if payload.conversation_history:
-        message_history = payload.conversation_history
-    else:
-        history = (
-            db.table("ai_chat_messages")
-            .select("role, content")
-            .eq("session_id", session_id)
-            .order("created_at")
-            .execute()
-        )
-        message_history = (
-            [{"role": m.get("role"), "content": m.get("content")} for m in history.data]
-            if history and history.data
-            else []
-        )
-
-    result = await run_sales_agent(
-        message=payload.message,
-        user_id=user_id,
-        db=db,
-        session_id=session_id,
-        message_history=message_history,
-    )
-
-    return ChatResponse(
-        message=result["message"],
-        tools_used=result["tools_used"],
-        session_id=session_id,
-    )
+        logger.error(f"AI Chat error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
