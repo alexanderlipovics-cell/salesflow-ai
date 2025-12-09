@@ -18,6 +18,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  const isRecovery = typeof window !== "undefined" && window.location.hash.includes("type=recovery");
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -29,6 +30,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         </div>
       </div>
     );
+  }
+
+  // Bei Passwort-Recovery nicht redirecten (Supabase Hash-Flow)
+  if (isRecovery) {
+    return <>{children}</>;
   }
 
   // Redirect to login if not authenticated

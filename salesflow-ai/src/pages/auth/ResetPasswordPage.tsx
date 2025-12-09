@@ -10,18 +10,39 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isValidToken, setIsValidToken] = useState(false);
+  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent) => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session && window.location.hash.includes("type=recovery")) {
+        setIsValidToken(true);
+      } else if (session) {
+        setIsValidToken(true);
+      } else {
+        setError("Ungültiger oder abgelaufener Link. Bitte fordere einen neuen an.");
+      }
+      setChecking(false);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent) => {
       if (event === "PASSWORD_RECOVERY") {
-        // User clicked the reset link - Supabase processed token
-        // No-op: ready to set new password
+        setIsValidToken(true);
+        setChecking(false);
       }
     });
 
+    checkSession();
+
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -47,10 +68,19 @@ export default function ResetPasswordPage() {
       setError(error.message);
     } else {
       setSuccess(true);
+      await supabase.auth.signOut();
       setTimeout(() => navigate("/login"), 2000);
     }
     setLoading(false);
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-white">Überprüfe Link...</div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -58,6 +88,20 @@ export default function ResetPasswordPage() {
         <div className="bg-slate-800 p-8 rounded-lg max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-white mb-4">✅ Passwort geändert!</h1>
           <p className="text-slate-300">Du wirst zum Login weitergeleitet...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isValidToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="bg-slate-800 p-8 rounded-lg max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">❌ Link ungültig</h1>
+          <p className="text-slate-300 mb-6">{error}</p>
+          <Button onClick={() => navigate("/forgot-password")} className="bg-emerald-500">
+            Neuen Link anfordern
+          </Button>
         </div>
       </div>
     );

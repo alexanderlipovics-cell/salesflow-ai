@@ -209,11 +209,13 @@ const App = () => {
                   <LegacyRouteHandler />
                   <Suspense fallback={<PageLoader />}>
                   <Routes>
+                    {/* Password Reset muss Hash-Token verarbeiten (vor allen anderen) */}
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
+
                     {/* Public Routes - Auth Pages */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/auth" element={<AuthPage />} />
                     
                     {/* Marketing/Landing */}
