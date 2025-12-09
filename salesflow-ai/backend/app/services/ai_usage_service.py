@@ -48,10 +48,21 @@ class AIUsageService:
         
         # Get current month usage
         month_start = date.today().replace(day=1).isoformat()
-        usage = supabase.table('ai_usage').select('total_tokens, request_count').eq('user_id', self.user_id).gte('date', month_start).execute()
-        
-        total_tokens = sum(u.get('total_tokens', 0) for u in usage.data) if usage.data else 0
-        total_requests = sum(u.get('request_count', 0) for u in usage.data) if usage.data else 0
+        try:
+            usage = (
+                supabase.table('ai_usage')
+                .select('total_tokens, request_count')
+                .eq('user_id', self.user_id)
+                .gte('created_at', month_start)
+                .execute()
+            )
+            total_tokens = sum(u.get('total_tokens', 0) for u in usage.data) if usage.data else 0
+            total_requests = sum(u.get('request_count', 0) for u in usage.data) if usage.data else 0
+        except Exception as e:
+            # Fallback: erlauben, wenn Schema unerwartet ist
+            logger.warning(f"Usage check failed (ai_usage): {e}")
+            total_tokens = 0
+            total_requests = 0
         
         return {
             'tier': tier,
