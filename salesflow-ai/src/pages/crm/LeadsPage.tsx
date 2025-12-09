@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LeadForm } from '../../components/forms/LeadForm';
 
 type Lead = {
   id: string;
@@ -36,6 +37,7 @@ const LeadsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
   const [showAddLead, setShowAddLead] = useState(false);
+  const [creatingLead, setCreatingLead] = useState(false);
 
   const views = [
     { id: 'all', label: 'Alle Leads', icon: Users, count: leads.length },
@@ -72,6 +74,37 @@ const LeadsPage = () => {
       setLeads([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateLead = async (data: any) => {
+    setCreatingLead(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: data.fullName,
+          email: data.email,
+          company: data.company,
+          budget: data.budget,
+          notes: data.notes,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Lead konnte nicht erstellt werden (${res.status})`);
+      }
+      await fetchLeads();
+      setShowAddLead(false);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : 'Lead konnte nicht erstellt werden.');
+    } finally {
+      setCreatingLead(false);
     }
   };
 
@@ -235,10 +268,17 @@ const LeadsPage = () => {
 
       {showAddLead && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="font-semibold mb-3">Neuer Lead</h3>
-            <p className="text-sm text-gray-600 mb-4">Lead-Form (Platzhalter).</p>
-            <Button onClick={() => setShowAddLead(false)}>Schließen</Button>
+          <div className="bg-gray-950 rounded-xl p-4 border border-white/10 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Neuer Lead</h3>
+              <Button variant="ghost" onClick={() => setShowAddLead(false)}>
+                Schließen
+              </Button>
+            </div>
+            <LeadForm onSubmit={handleCreateLead} />
+            {creatingLead && (
+              <div className="mt-3 text-sm text-gray-400">Lead wird erstellt …</div>
+            )}
           </div>
         </div>
       )}
