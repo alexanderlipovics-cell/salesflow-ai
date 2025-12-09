@@ -367,13 +367,25 @@ class ToolExecutor:
 
     async def _web_search(self, query: str, count: int = 10) -> dict:
         """Search the web for current information (Brave Search)."""
-        from app.ai.tools.web_search import web_search as brave_web_search
-        logger.info(f"BRAVE_API_KEY configured: {bool(os.getenv('BRAVE_SEARCH_API_KEY'))}")
-        result = await brave_web_search(query=query, count=count)
-        logger.info(f"Web search result: {result}")
-        if not result.get("success", False):
-            return {"error": result.get("error", "Web search fehlgeschlagen"), "results": result.get("results", [])}
-        return result
+        logger.info("=== WEB_SEARCH TOOL CALLED ===")
+        logger.info(f"Args received: query={query}, count={count}")
+        try:
+            from app.ai.tools.web_search import web_search as ws_func
+            logger.info("web_search function imported successfully")
+            logger.info(f"Calling web_search with query='{query}', count={count}")
+            result = await ws_func(query=query, count=count)
+            logger.info(f"web_search returned: {result}")
+            if not result.get("success", False):
+                return {"error": result.get("error", "Web search fehlgeschlagen"), "results": result.get("results", [])}
+            return result
+        except ImportError as e:
+            logger.error(f"Failed to import web_search: {e}")
+            return {"success": False, "error": f"Import error: {e}", "results": []}
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"web_search exception: {type(e).__name__}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {"success": False, "error": str(e), "results": []}
 
     async def _search_nearby_places(
         self,
