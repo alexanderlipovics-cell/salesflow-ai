@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { AuthChangeEvent } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? "https://salesflow-ai.onrender.com" : "http://localhost:8000");
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -10,41 +12,17 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [isValidToken, setIsValidToken] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session && window.location.hash.includes("type=recovery")) {
-        setIsValidToken(true);
-      } else if (session) {
-        setIsValidToken(true);
-      } else {
-        setError("Ungültiger oder abgelaufener Link. Bitte fordere einen neuen an.");
-      }
-      setChecking(false);
-    };
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setIsValidToken(true);
-        setChecking(false);
-      }
-    });
-
-    checkSession();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    if (!token) {
+      setError("Kein Token gefunden. Bitte fordere einen neuen Link an.");
+    }
+    setChecking(false);
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,16 +40,25 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.updateUser({ password });
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || "Fehler beim Zurücksetzen");
+      }
+
       setSuccess(true);
-      await supabase.auth.signOut();
       setTimeout(() => navigate("/login"), 2000);
+    } catch (err: any) {
+      setError(err.message || "Ein Fehler ist aufgetreten");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (checking) {
@@ -93,15 +80,15 @@ export default function ResetPasswordPage() {
     );
   }
 
-  if (!isValidToken) {
+  if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
         <div className="bg-slate-800 p-8 rounded-lg max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-white mb-4">❌ Link ungültig</h1>
           <p className="text-slate-300 mb-6">{error}</p>
-          <Button onClick={() => navigate("/forgot-password")} className="bg-emerald-500">
-            Neuen Link anfordern
-          </Button>
+          <Link to="/forgot-password">
+            <Button className="bg-emerald-500 hover:bg-emerald-600">Neuen Link anfordern</Button>
+          </Link>
         </div>
       </div>
     );

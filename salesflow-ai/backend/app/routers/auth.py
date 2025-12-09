@@ -3,9 +3,12 @@ Authentication router for SalesFlow AI Backend.
 Handles login, signup, token refresh, password reset, and user profile.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Dict
 import logging
+import secrets
+import os
+import resend
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -32,6 +35,7 @@ from ..schemas.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 
 @router.post("/signup", response_model=SignupResponse)
@@ -257,23 +261,80 @@ async def logout() -> Dict[str, str]:
 
 @router.post("/request-password-reset")
 async def request_password_reset(
-    email: str,
+    data: dict,
     supabase: Client = Depends(get_supabase),
 ) -> Dict[str, str]:
     """
     Request password reset.
     In production, this would send an email with reset link.
     """
-    result = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
-    # Prüfe auf None oder fehlende data-Attribute
-    if result and result.data:
-        # TODO: Generate reset token and send email
-        # For now, just return success to avoid email enumeration
-        pass
+    email = (data or {}).get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email erforderlich")
 
-    return {
-        "message": "If an account with this email exists, a password reset link has been sent."
-    }
+    result = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
+    if result and result.data:
+        user_id = result.data["id"]
+        token = secrets.token_urlsafe(32)
+        try:
+            supabase.table("password_reset_tokens").insert(
+                {"user_id": user_id, "token": token, "created_at": datetime.utcnow().isoformat()}
+            ).execute()
+            reset_link = f"https://aura-os-topaz.vercel.app/reset-password?token={token}"
+            try:
+                resend.emails.send(
+                    {
+                        "from": "onboarding@resend.dev",
+                        "to": [email],
+                        "subject": "Passwort zurücksetzen - SalesFlow AI",
+                        "html": f"<p>Klicke hier: <a href='{reset_link}'>{reset_link}</a></p>",
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Email failed: {e}")
+        except Exception as e:
+            logger.error(f"Failed to store password reset token: {e}")
+
+    return {"message": "If an account with this email exists, a password reset link has been sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(data: dict, supabase: Client = Depends(get_supabase)) -> Dict[str, str]:
+    """Reset password using token."""
+    token = data.get("token")
+    new_password = data.get("password")
+
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token und Passwort erforderlich")
+
+    token_result = (
+        supabase.table("password_reset_tokens").select("*").eq("token", token).maybe_single().execute()
+    )
+
+    if not token_result or not token_result.data:
+        raise HTTPException(status_code=400, detail="Ungültiger oder abgelaufener Token")
+
+    token_row = token_result.data
+    created_at = token_row.get("created_at")
+
+    try:
+        token_time = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+    except Exception:
+        token_time = datetime.utcnow()
+
+    if datetime.utcnow() - token_time > timedelta(hours=24):
+        raise HTTPException(status_code=400, detail="Token abgelaufen. Bitte fordere einen neuen an.")
+
+    user_id = token_row.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Token ungültig (kein User).")
+
+    hashed = hash_password(new_password)
+
+    supabase.table("users").update({"password_hash": hashed}).eq("id", user_id).execute()
+    supabase.table("password_reset_tokens").delete().eq("token", token).execute()
+
+    return {"message": "Passwort erfolgreich geändert"}
 
 
 @router.get("/me", response_model=UserProfile)

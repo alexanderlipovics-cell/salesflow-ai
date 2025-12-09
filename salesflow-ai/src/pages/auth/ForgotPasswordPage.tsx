@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? "https://salesflow-ai.onrender.com" : "http://localhost:8000");
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -14,16 +17,24 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      const response = await fetch(`${API_URL}/auth/request-password-reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || "Fehler beim Senden");
+      }
+
       setSent(true);
+    } catch (err: any) {
+      setError(err.message || "Ein Fehler ist aufgetreten");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (sent) {
