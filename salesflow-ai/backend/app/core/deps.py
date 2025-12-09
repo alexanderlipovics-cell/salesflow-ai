@@ -110,8 +110,14 @@ async def get_current_user(
     In Produktion sollten diese Werte definitiv über ein echtes Auth-System kommen.
     """
 
-    org_id = x_org_id or "00000000-0000-0000-0000-000000000000"
-    user_id = x_user_id or "00000000-0000-0000-0000-000000000001"
+    org_id = x_org_id
+    user_id = x_user_id
+
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Es wurde kein User-Kontext übergeben (Header X-User-Id fehlt).",
+        )
 
     if not org_id:
         raise HTTPException(
@@ -124,7 +130,7 @@ async def get_current_user(
         "team_member_id": user_id,
         "user_id": user_id,
         "role": x_user_role or "owner",
-        "name": x_user_name or "Default User",
+        "name": x_user_name or "Unbekannter Nutzer",
     }
 
 
