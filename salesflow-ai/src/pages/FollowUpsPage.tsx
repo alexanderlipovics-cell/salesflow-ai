@@ -7,11 +7,11 @@ import {
   Clipboard,
   LayoutGrid,
   Loader2,
+  List,
   Mail,
   MessageCircle,
   MoreHorizontal,
   RefreshCw,
-  Rows3,
   Rocket,
   Send,
   Sparkles,
@@ -32,7 +32,6 @@ import {
 } from '@/config/followupSequence';
 import { startStandardFollowUpSequenceForLead } from '@/services/followUpService';
 import { supabaseClient } from '@/lib/supabaseClient';
-import { generateDeepLink } from '@/services/magicDeepLinkService';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -656,7 +655,7 @@ export default function FollowUpsPage() {
               className="flex items-center gap-1"
               onClick={() => setViewMode('list')}
             >
-              <Rows3 className="h-4 w-4" />
+              <List className="h-4 w-4" />
               Liste
             </Button>
           </div>
@@ -861,6 +860,7 @@ export default function FollowUpsPage() {
                   copiedId={copiedId}
                   overrides={overrides}
                   isGenerating={isGenerating}
+                  viewMode={viewMode}
                 />
               )}
               {groupedWeekTasks.upcoming.length > 0 && (
@@ -876,6 +876,7 @@ export default function FollowUpsPage() {
                   copiedId={copiedId}
                   overrides={overrides}
                   isGenerating={isGenerating}
+                  viewMode={viewMode}
                 />
               )}
             </div>
@@ -955,6 +956,7 @@ interface TaskGroupSectionProps {
   copiedId: string | null;
   overrides: FollowUpTemplateOverrideLookup;
   isGenerating: boolean;
+  viewMode: ViewMode;
 }
 
 function TaskGroupSection({
@@ -969,6 +971,7 @@ function TaskGroupSection({
   copiedId,
   overrides,
   isGenerating,
+  viewMode,
 }: TaskGroupSectionProps) {
   return (
     <div>
@@ -979,22 +982,35 @@ function TaskGroupSection({
         <span className="text-xs text-slate-500">({tasks.length})</span>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {tasks.map((task) => (
-          <FollowUpTaskCard
-            key={task.id}
-            task={task}
-            onMarkAs={onMarkAs}
-            onCopyMessage={onCopyMessage}
-            onMagicSend={onMagicSend}
-            onManualWrite={onManualWrite}
-            isProcessing={processingId === task.id}
-            isGenerating={isGenerating}
-            isCopied={copiedId === task.id}
-            overrides={overrides}
-          />
-        ))}
-      </div>
+      {viewMode === 'grid' ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {tasks.map((task) => (
+            <FollowUpTaskCard
+              key={task.id}
+              task={task}
+              onMarkAs={onMarkAs}
+              onCopyMessage={onCopyMessage}
+              onMagicSend={onMagicSend}
+              onManualWrite={onManualWrite}
+              isProcessing={processingId === task.id}
+              isGenerating={isGenerating}
+              isCopied={copiedId === task.id}
+              overrides={overrides}
+            />
+          ))}
+        </div>
+      ) : (
+        <TaskListTable
+          tasks={tasks}
+          onMarkAs={onMarkAs}
+          onCopyMessage={onCopyMessage}
+          onMagicSend={onMagicSend}
+          onManualWrite={onManualWrite}
+          processingId={processingId}
+          isGenerating={isGenerating}
+          overrides={overrides}
+        />
+      )}
     </div>
   );
 }
@@ -1029,80 +1045,54 @@ function FollowUpTaskCard({
   overrides,
 }: FollowUpTaskCardProps) {
   const lead = task.lead;
-  const template = getFollowUpTemplateByKey(task.template_key);
-  const phaseDisplay = template ? getPhaseDisplay(template.phase) : null;
+  const { personalizedMessage, template, phaseDisplay } = getPersonalizedMessageForTask(task, overrides);
   const dueInfo = getDueLabel(task.due_at);
-  
-  // DB-Override für diesen Step + Vertical suchen
-  const overrideKey = buildOverrideKey(task.template_key, lead?.vertical);
-  const overrideTemplate = overrides[overrideKey];
-  
-  // Personalisierte Nachricht bauen:
-  // 1. Prüfen ob DB-Override existiert → template_message nutzen
-  // 2. Sonst Standard buildFollowUpMessage (Config-basiert)
-  let personalizedMessage: string;
-  
-  if (overrideTemplate) {
-    // DB-Override nutzen
-    let message = overrideTemplate.template_message;
-    
-    // {{name}} Platzhalter ersetzen
-    if (lead?.name) {
-      const firstName = lead.name.split(' ')[0];
-      message = message.replace(/\{\{\s*name\s*\}\}/gi, firstName);
-      message = message.replace(/\[Name\]/g, firstName);
-    } else {
-      // Platzhalter entfernen
-      message = message.replace(/,\s*\{\{\s*name\s*\}\}\s*:/g, ':');
-      message = message.replace(/,\s*\{\{\s*name\s*\}\}\s*,/g, ',');
-      message = message.replace(/,\s*\{\{\s*name\s*\}\}(\s|$)/g, '$1');
-      message = message.replace(/\{\{\s*name\s*\}\}[,:]\s*/g, '');
-      message = message.replace(/\{\{\s*name\s*\}\}\s*/g, '');
-      message = message.replace(/\[Name\]\s*/g, '');
-    }
-    
-    personalizedMessage = message;
-  } else {
-    // Standard Config-basierte Nachricht
-    personalizedMessage = buildFollowUpMessage(template, lead?.name, lead?.vertical, task.note);
-  }
-  
-  const contact = {
-    phone: lead?.phone || undefined,
-    instagram: lead?.instagram || undefined,
-    facebook: lead?.facebook || undefined,
-    email: lead?.email || undefined,
-    name: lead?.name || undefined,
-    company: lead?.company || undefined,
-    vertical: lead?.vertical || undefined,
-  };
+  const displayName = lead?.name || lead?.email || 'Neuer Kontakt';
+  const displayCompany = lead?.company || '';
+  const [showFullMessage, setShowFullMessage] = useState(false);
 
-  const whatsappLink = generateDeepLink('whatsapp', contact, personalizedMessage);
-  const instagramLink = generateDeepLink('instagram', contact, personalizedMessage);
-  const emailLink = generateDeepLink('email', contact, personalizedMessage, { emailSubject: 'Follow-up' });
+  const statusBorder = dueInfo.isOverdue
+    ? 'border-l-red-500'
+    : dueInfo.isToday
+      ? 'border-l-yellow-500'
+      : 'border-l-slate-600';
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-700 bg-slate-800 p-5 shadow-lg transition-all hover:border-slate-600">
-      {/* Header: Lead Info */}
-      <div className="mb-4">
+    <div
+      className={`relative overflow-hidden rounded-xl border border-slate-700 bg-slate-800/80 p-4 shadow-sm transition-all hover:border-slate-600 border-l-4 ${statusBorder}`}
+    >
+      <div className="mb-3">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white">
-              {lead?.name || 'Unbekannter Lead'}
+            <h3 className="text-base font-semibold text-white">
+              {displayName}
             </h3>
-            <p className="text-sm text-slate-400">
-              {lead?.company || 'Keine Firma'}
+            <p className="text-xs text-slate-400">
+              {displayCompany}
             </p>
           </div>
-          <span className="rounded bg-slate-900 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            {lead?.vertical || 'Generic'}
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span className="rounded bg-slate-900 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              {lead?.vertical || 'Generic'}
+            </span>
+            <div
+              className={`flex items-center gap-2 text-[11px] font-medium ${
+                dueInfo.isOverdue
+                  ? 'text-red-400'
+                  : dueInfo.isToday
+                    ? 'text-amber-400'
+                    : 'text-emerald-400'
+              }`}
+            >
+              <CalendarClock className="h-3 w-3" />
+              <span>Fällig: {dueInfo.label}</span>
+            </div>
+          </div>
         </div>
         
-        {/* Template Label & Phase Badge */}
         {template && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-white">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-white leading-none">
               {template.label}
             </span>
             {phaseDisplay && (
@@ -1112,139 +1102,223 @@ function FollowUpTaskCard({
             )}
           </div>
         )}
-        
-        {/* Due Date Badge */}
-        <div className={`mt-2 flex items-center gap-2 text-xs font-medium ${
-          dueInfo.isOverdue 
-            ? 'text-red-400' 
-            : dueInfo.isToday 
-              ? 'text-amber-400' 
-              : 'text-emerald-400'
-        }`}>
-          <CalendarClock className="h-3 w-3" />
-          <span>Fällig: {dueInfo.label}</span>
-        </div>
       </div>
 
-      {/* Message Preview */}
       {personalizedMessage && (
-        <div className="mb-4">
-          <div className="rounded-lg bg-slate-900/70 p-3">
-            <div className="mb-2 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-500">
-              <MessageCircle className="h-3 w-3" />
-              Nachricht
-            </div>
-            <p className="text-sm leading-relaxed text-slate-300">
-              {personalizedMessage}
-            </p>
+        <div className="mb-3 rounded-lg border border-slate-700 bg-slate-900/70 p-3">
+          <div className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+            <MessageCircle className="h-3 w-3" />
+            Nachricht
           </div>
-          
-          {/* Copy & Channel Buttons */}
-          <div className="mt-2 flex flex-wrap gap-2">
+          <p
+            className={`text-sm leading-relaxed text-slate-200 ${showFullMessage ? '' : 'line-clamp-2'}`}
+          >
+            {personalizedMessage}
+          </p>
+          {personalizedMessage.length > 140 && (
             <button
-              onClick={() => onCopyMessage(task.id, personalizedMessage)}
-              className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                isCopied
-                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                  : 'border-slate-600 text-slate-300 hover:bg-slate-700'
-              }`}
+              onClick={() => setShowFullMessage((prev) => !prev)}
+              className="mt-1 text-xs font-medium text-amber-400 hover:text-amber-300"
             >
-              {isCopied ? (
-                <>
-                  <Check className="h-4 w-4" />
-                  Kopiert!
-                </>
-              ) : (
-                <>
-                  <Clipboard className="h-4 w-4" />
-                  Kopieren
-                </>
-              )}
+              {showFullMessage ? 'Weniger anzeigen' : 'Mehr...'}
             </button>
-            
-            {whatsappLink && (
-              <a
-                className="flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400 transition hover:bg-emerald-500/20"
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <MessageCircle className="h-4 w-4" />
-              WhatsApp
-              </a>
-            )}
-
-            {instagramLink && (
-              <a
-                className="flex items-center gap-2 rounded-lg border border-pink-500/50 bg-pink-500/10 px-3 py-2 text-sm font-medium text-pink-200 transition hover:bg-pink-500/20"
-                href={instagramLink}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Instagram
-              </a>
-            )}
-
-            {emailLink && (
-              <a
-                className="flex items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-500/20"
-                href={emailLink}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Mail className="h-4 w-4" />
-                E-Mail
-              </a>
-            )}
-          </div>
+          )}
         </div>
       )}
 
-      {/* Magic Send Actions */}
-      <div className="mt-3 flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onMagicSend(task, personalizedMessage)}
-          className="text-purple-600 hover:bg-purple-50"
-          disabled={isGenerating}
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-          ) : (
-            <Sparkles className="w-4 h-4 mr-1" />
-          )}
-          Magic Send
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => onManualWrite(task, personalizedMessage)}>
-          Manuell
-        </Button>
-      </div>
+      <ActionButtons
+        onSend={() => onMagicSend(task, personalizedMessage)}
+        onDone={() => onMarkAs(task.id, 'done')}
+        onCopy={() => onCopyMessage(task.id, personalizedMessage)}
+        onManual={() => onManualWrite(task, personalizedMessage)}
+        onSkip={() => onMarkAs(task.id, 'skipped')}
+        isProcessing={isProcessing}
+        isGenerating={isGenerating}
+        disableCopy={!personalizedMessage}
+        isCopied={isCopied}
+      />
+    </div>
+  );
+}
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 border-t border-slate-700 pt-4">
-        <button
-          onClick={() => onMarkAs(task.id, 'skipped')}
-          disabled={isProcessing}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-600 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+interface TaskListTableProps {
+  tasks: ReturnType<typeof useFollowUpTasks>['tasks'];
+  onMarkAs: (id: string, status: 'done' | 'skipped') => Promise<void>;
+  onCopyMessage: (taskId: string, message: string) => Promise<void>;
+  onMagicSend: (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => Promise<void>;
+  onManualWrite: (
+    task: ReturnType<typeof useFollowUpTasks>['tasks'][0],
+    fallbackMessage?: string
+  ) => void;
+  processingId: string | null;
+  isGenerating: boolean;
+  overrides: FollowUpTemplateOverrideLookup;
+}
+
+function TaskListTable({
+  tasks,
+  onMarkAs,
+  onCopyMessage,
+  onMagicSend,
+  onManualWrite,
+  processingId,
+  isGenerating,
+  overrides,
+}: TaskListTableProps) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+      <table className="min-w-full text-sm">
+        <thead className="bg-slate-800 text-[11px] uppercase text-slate-400">
+          <tr>
+            <th className="px-4 py-2 text-left font-semibold">Name</th>
+            <th className="px-4 py-2 text-left font-semibold">Firma</th>
+            <th className="px-4 py-2 text-left font-semibold">Status</th>
+            <th className="px-4 py-2 text-left font-semibold">Fällig</th>
+            <th className="px-4 py-2 text-left font-semibold">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-800">
+          {tasks.map((task) => {
+            const lead = task.lead;
+            const { personalizedMessage, template } = getPersonalizedMessageForTask(task, overrides);
+            const dueInfo = getDueLabel(task.due_at);
+            const displayName = lead?.name || lead?.email || 'Neuer Kontakt';
+            const displayCompany = lead?.company || '';
+            const statusColor = dueInfo.isOverdue
+              ? 'text-red-400'
+              : dueInfo.isToday
+                ? 'text-amber-400'
+                : 'text-slate-300';
+
+            return (
+              <tr key={task.id} className="hover:bg-slate-800/60">
+                <td className="px-4 py-3">
+                  <div className="text-sm font-semibold text-white">{displayName}</div>
+                  <div className="text-xs text-slate-500">{template?.label || 'Follow-up'}</div>
+                </td>
+                <td className="px-4 py-3 text-slate-300">
+                  {displayCompany || '–'}
+                </td>
+                <td className="px-4 py-3">
+                  <div className={`flex items-center gap-2 text-sm ${statusColor}`}>
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        dueInfo.isOverdue
+                          ? 'bg-red-400'
+                          : dueInfo.isToday
+                            ? 'bg-amber-400'
+                            : 'bg-slate-500'
+                      }`}
+                    />
+                    <span>{dueInfo.label}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-slate-200">
+                  {formatDate(task.due_at)}
+                </td>
+                <td className="px-4 py-3">
+                  <ActionButtons
+                    onSend={() => onMagicSend(task, personalizedMessage)}
+                    onDone={() => onMarkAs(task.id, 'done')}
+                    onCopy={() => onCopyMessage(task.id, personalizedMessage)}
+                    onManual={() => onManualWrite(task, personalizedMessage)}
+                    onSkip={() => onMarkAs(task.id, 'skipped')}
+                    isProcessing={processingId === task.id}
+                    isGenerating={isGenerating}
+                    disableCopy={!personalizedMessage}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+interface ActionButtonsProps {
+  onSend: () => void;
+  onDone: () => void;
+  onCopy: () => void;
+  onManual: () => void;
+  onSkip: () => void;
+  isProcessing: boolean;
+  isGenerating: boolean;
+  disableCopy?: boolean;
+  isCopied?: boolean;
+}
+
+function ActionButtons({
+  onSend,
+  onDone,
+  onCopy,
+  onManual,
+  onSkip,
+  isProcessing,
+  isGenerating,
+  disableCopy,
+  isCopied,
+}: ActionButtonsProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        onClick={onSend}
+        className="bg-indigo-500 hover:bg-indigo-600 text-white"
+        disabled={isGenerating}
+        size="sm"
+      >
+        {isGenerating ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <Send className="w-4 h-4 mr-2" />
+        )}
+        Senden
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="border-green-500 text-green-400 hover:bg-green-500/10"
+        onClick={onDone}
+        disabled={isProcessing}
+      >
+        <Check className="w-4 h-4 mr-1" />
+        Erledigt
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 border border-slate-700 text-slate-300 hover:bg-slate-700"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="border border-slate-700 bg-slate-800 text-slate-100 shadow-lg"
         >
-          <SkipForward className="h-4 w-4" />
-          Überspringen
-        </button>
-        <button
-          onClick={() => onMarkAs(task.id, 'done')}
-          disabled={isProcessing}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isProcessing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="h-4 w-4" />
-          )}
-          Erledigt
-        </button>
-      </div>
+          <DropdownMenuItem
+            onClick={onCopy}
+            disabled={disableCopy}
+            className="cursor-pointer focus:bg-slate-700"
+          >
+            <Clipboard className="mr-2 h-4 w-4" />
+            {isCopied ? 'Kopiert!' : 'Kopieren'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onManual} className="cursor-pointer focus:bg-slate-700">
+            Manuell
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onSkip} className="cursor-pointer focus:bg-slate-700">
+            <SkipForward className="mr-2 h-4 w-4" />
+            Überspringen
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
