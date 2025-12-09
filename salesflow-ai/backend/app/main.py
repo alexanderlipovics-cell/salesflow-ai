@@ -164,9 +164,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://localhost:5174",
         "https://aura-os-topaz.vercel.app",
         "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
-        "https://*.vercel.app",  # Allow all Vercel preview deployments
+        "https://aura-4kej8wk1c-sales-flow-ais-projects.vercel.app",
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
