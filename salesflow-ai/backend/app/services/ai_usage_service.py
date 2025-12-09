@@ -14,20 +14,23 @@ class AIUsageService:
         return self.supabase
     
     async def track_usage(self, model: str, input_tokens: int, output_tokens: int):
-        """Track AI usage for billing and limits"""
-        supabase = await self._get_client()
-        cost = self._calculate_cost(model, input_tokens, output_tokens)
-        today = date.today().isoformat()
-        
-        # Upsert usage record
-        supabase.rpc('increment_ai_usage', {
-            'p_user_id': self.user_id,
-            'p_date': today,
-            'p_model': model,
-            'p_input_tokens': input_tokens,
-            'p_output_tokens': output_tokens,
-            'p_cost': cost
-        }).execute()
+        """Track AI usage for billing and limits (best-effort, non-blocking)."""
+        try:
+            supabase = await self._get_client()
+            cost = self._calculate_cost(model, input_tokens, output_tokens)
+            today = date.today().isoformat()
+
+            # Best-effort: if rpc or schema fails, do not block
+            supabase.rpc('increment_ai_usage', {
+                'p_user_id': self.user_id,
+                'p_date': today,
+                'p_model': model,
+                'p_input_tokens': input_tokens,
+                'p_output_tokens': output_tokens,
+                'p_cost': cost
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Usage tracking failed (non-blocking): {e}")
     
     async def check_limits(self) -> dict:
         """Check if user is within their limits"""
