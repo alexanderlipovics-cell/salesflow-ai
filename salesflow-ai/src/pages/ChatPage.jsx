@@ -506,7 +506,7 @@ const ChatPage = () => {
       const response = await fetch(
         isLiveRequest
           ? `${API_BASE_URL}/api/copilot/live-assist`
-          : `${API_BASE_URL}/ai/chief/chat`,
+          : `${API_BASE_URL}/api/ai/chat`,
         {
           method: "POST",
           headers: {
