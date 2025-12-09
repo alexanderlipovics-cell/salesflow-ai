@@ -207,21 +207,11 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": "Search the internet for people, companies, MLM leaders, LinkedIn profiles, Instagram accounts, or any other information. Use this to find new contacts, research people, or look up info online.",
+            "description": "Suche im Internet nach Personen, Firmen, LinkedIn Profilen, Instagram Accounts, MLM Leadern. IMMER nutzen wenn User nach Leads/Kontakten im Internet fragt.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The search query"
-                    },
-                    "count": {
-                        "type": "integer",
-                        "description": "Number of results (default 10, max 20)",
-                        "default": 10,
-                        "maximum": 20,
-                        "minimum": 1
-                    }
+                    "query": {"type": "string", "description": "Suchbegriff"}
                 },
                 "required": ["query"]
             }

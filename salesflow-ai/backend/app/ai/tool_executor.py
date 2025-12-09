@@ -2,6 +2,9 @@ from typing import Any, Dict
 import json
 from datetime import datetime, timedelta
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ToolExecutor:
@@ -361,7 +364,7 @@ class ToolExecutor:
     async def _web_search(self, query: str, count: int = 10) -> dict:
         """Search the web for current information (Brave Search)."""
         from app.ai.tools.web_search import web_search as brave_web_search
-
+        logger.info(f"BRAVE_API_KEY configured: {bool(os.getenv('BRAVE_SEARCH_API_KEY'))}")
         result = await brave_web_search(query=query, count=count)
         if not result.get("success", False):
             return {"error": result.get("error", "Web search fehlgeschlagen"), "results": result.get("results", [])}
