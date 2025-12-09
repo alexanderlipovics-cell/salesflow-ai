@@ -34,15 +34,17 @@ class AIUsageService:
         supabase = await self._get_client()
 
         # Get user's subscription tier
-        profile = supabase.table('profiles').select('subscription_tier').eq('id', self.user_id).single().execute()
-        tier = profile.data.get('subscription_tier', 'free') if profile.data else 'free'
+        profile_result = supabase.table('profiles').select('subscription_tier').eq('id', self.user_id).execute()
+        profile = profile_result.data[0] if profile_result.data else {"subscription_tier": "free"}
+        tier = profile.get('subscription_tier', 'free')
         
         # Get tier limits
-        limits = supabase.table('subscription_limits').select('*').eq('tier', tier).single().execute()
-        if not limits.data:
-            limits_data = {'monthly_tokens': 50000, 'monthly_requests': 100, 'allowed_models': ['gpt-4o-mini']}
-        else:
-            limits_data = limits.data
+        limits_result = supabase.table('subscription_limits').select('*').eq('tier', tier).execute()
+        limits_data = (
+            limits_result.data[0]
+            if limits_result and limits_result.data
+            else {'monthly_tokens': 50000, 'monthly_requests': 100, 'allowed_models': ['gpt-4o-mini']}
+        )
         
         # Get current month usage
         month_start = date.today().replace(day=1).isoformat()
