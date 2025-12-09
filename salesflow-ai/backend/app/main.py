@@ -265,6 +265,7 @@ from .routers.interactions import router as interactions_router  # 📊 User Int
 from .routers.dashboard import router as dashboard_router  # 📊 Dashboard Data
 from .api.zapier import router as zapier_router  # 🔌 Zapier Integration
 from .routers.ai_usage import router as ai_usage_router  # 🧾 AI Usage Limits
+from .routers.stubs import router as stubs_router  # Temporary stub endpoints
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -333,6 +334,7 @@ app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions
 app.include_router(dashboard_router, prefix="/api")  # 📊 Dashboard Data
 app.include_router(zapier_router)  # 🔌 Zapier Integration (Router bringt eigenes Prefix mit)
 app.include_router(ai_usage_router)  # 🧾 AI Usage Status
+app.include_router(stubs_router)  # Temporary stub endpoints
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert

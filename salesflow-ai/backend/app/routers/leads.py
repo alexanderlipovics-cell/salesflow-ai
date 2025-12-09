@@ -61,10 +61,14 @@ class LeadCreate(BaseModel):
 
 
 @router.get("")
-async def get_leads(filter: Optional[str] = None):
+async def get_leads(filter: Optional[str] = None, current_user: User = Depends(get_current_active_user)):
     try:
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+
         db = get_supabase()
-        query = db.table("leads").select("*")
+        query = db.table("leads").select("*").eq("user_id", user_id)
 
         if filter:
             today = date.today().isoformat()

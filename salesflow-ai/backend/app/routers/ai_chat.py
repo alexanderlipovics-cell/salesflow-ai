@@ -4,7 +4,8 @@ from typing import Optional, List
 import uuid
 
 from app.ai.agent import run_sales_agent
-from app.core.deps import get_current_user, get_supabase
+from app.core.security.main import get_current_user
+from app.core.deps import get_supabase
 
 router = APIRouter(prefix="/api/ai", tags=["AI"])
 
