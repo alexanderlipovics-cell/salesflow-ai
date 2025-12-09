@@ -290,49 +290,86 @@ async def delete_lead(lead_id: str):
 
 
 @router.post("/import")
-async def import_leads_csv(
-    file: UploadFile = File(...),
-    mapping: str = Form(...),
+async def import_leads(
+    request: Request,
+    file: UploadFile = File(None),
+    mapping: str = Form(None),
     skip_duplicates: bool = Form(True),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
-    Import leads from CSV file.
-    POST /api/leads/import
-    Form data: file (CSV), mapping (JSON string), skip_duplicates (boolean)
+    Bulk-Import für Leads.
+
+    Unterstützt:
+    - JSON Body: { "leads": [ ... ] }
+    - Multipart Upload wie bisher (file + mapping)
     """
     try:
-        # Parse mapping
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+
+        content_type = request.headers.get("content-type", "")
+
+        # JSON-basierter Import (neues Verhalten für UI)
+        if content_type.startswith("application/json"):
+            try:
+                data = await request.json()
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+            leads = data.get("leads", [])
+            if not isinstance(leads, list):
+                raise HTTPException(status_code=400, detail="Leads payload must be a list")
+
+            db = get_supabase()
+            imported = 0
+            errors = 0
+
+            for lead in leads:
+                try:
+                    lead_data = {
+                        "user_id": user_id,
+                        "name": lead.get("name", "Unbekannt"),
+                        "email": lead.get("email"),
+                        "phone": lead.get("phone"),
+                        "company": lead.get("company"),
+                        "status": lead.get("status", "new"),
+                        "temperature": lead.get("temperature", "warm"),
+                        "notes": lead.get("notes"),
+                        "source": lead.get("source", "csv_import"),
+                    }
+                    lead_data = {k: v for k, v in lead_data.items() if v is not None}
+                    db.table("leads").insert(lead_data).execute()
+                    imported += 1
+                except Exception as e:
+                    logger.debug(f"Lead import skipped: {e}")
+                    errors += 1
+                    continue
+
+            return {"imported": imported, "errors": errors, "total": len(leads)}
+
+        # Fallback: bestehender CSV-Upload (multipart)
+        if not file or not mapping:
+            raise HTTPException(status_code=400, detail="File and mapping are required for CSV import")
+
         try:
             column_mapping = json.loads(mapping)
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid mapping JSON")
 
-        # Validate file type
-        if not file.filename.lower().endswith(('.csv', '.xlsx', '.xls')):
+        if not file.filename.lower().endswith((".csv", ".xlsx", ".xls")):
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
 
-        # Read file content
         file_content = await file.read()
-
-        # Get user ID
-        user_id = _extract_user_id(current_user)
-        if not user_id:
-            raise HTTPException(status_code=401, detail="User not authenticated")
-
-        # Get database client
         db = get_supabase()
-
-        # Create import service
         import_service = CSVImportService(db)
-
-        # Import the data
         result = import_service.import_from_csv(
             file_content=file_content,
             filename=file.filename,
             mapping=column_mapping,
             user_id=user_id,
-            skip_duplicates=skip_duplicates
+            skip_duplicates=skip_duplicates,
         )
 
         return {
@@ -340,9 +377,11 @@ async def import_leads_csv(
             "imported": result.imported,
             "duplicates": result.duplicates,
             "errors": result.errors,
-            "total_rows": result.total_rows
+            "total_rows": result.total_rows,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Import error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

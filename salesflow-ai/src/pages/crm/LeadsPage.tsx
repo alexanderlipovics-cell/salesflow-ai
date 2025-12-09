@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle } from "lucide-react";
+import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle, Upload } from "lucide-react";
 import LeadsKanban from "@/components/leads/LeadsKanban";
 import { Button } from "@/components/ui/button";
 import { LeadForm } from "@/components/forms/LeadForm";
+import ImportLeadsDialog from "@/components/leads/ImportLeadsDialog";
+import LeadActionModal from "@/components/leads/LeadActionModal";
 
 type Lead = {
   id: string;
@@ -48,6 +50,11 @@ const LeadsPage = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showAddLead, setShowAddLead] = useState(false);
   const [creatingLead, setCreatingLead] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [actionModal, setActionModal] = useState<{ open: boolean; action: "whatsapp" | "email" | "call" | null }>({
+    open: false,
+    action: null,
+  });
 
   useEffect(() => {
     fetchLeads();
@@ -175,6 +182,14 @@ const LeadsPage = () => {
                 <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
+
+            <button
+              onClick={() => setImportDialogOpen(true)}
+              className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold hover:bg-slate-700"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </button>
 
             <button
               onClick={() => setShowAddLead(true)}
@@ -315,13 +330,22 @@ const LeadsPage = () => {
             </div>
 
             <div className="mt-6 flex gap-2">
-              <button className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold hover:bg-green-700 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setActionModal({ open: true, action: "call" })}
+                className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold hover:bg-green-700 flex items-center justify-center gap-2"
+              >
                 <Phone className="h-4 w-4" /> Anrufen
               </button>
-              <button className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setActionModal({ open: true, action: "email" })}
+                className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
                 <Mail className="h-4 w-4" /> Email
               </button>
-              <button className="flex-1 rounded-lg bg-pink-600 px-3 py-2 text-sm font-semibold hover:bg-pink-700 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setActionModal({ open: true, action: "whatsapp" })}
+                className="flex-1 rounded-lg bg-pink-600 px-3 py-2 text-sm font-semibold hover:bg-pink-700 flex items-center justify-center gap-2"
+              >
                 <MessageCircle className="h-4 w-4" /> WhatsApp
               </button>
             </div>
@@ -353,6 +377,22 @@ const LeadsPage = () => {
           </div>
         </div>
       )}
+
+      <ImportLeadsDialog
+        isOpen={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onImportComplete={() => {
+          fetchLeads();
+          setImportDialogOpen(false);
+        }}
+      />
+
+      <LeadActionModal
+        isOpen={actionModal.open}
+        onClose={() => setActionModal({ open: false, action: null })}
+        lead={selectedLead}
+        action={actionModal.action}
+      />
     </div>
   );
 };
