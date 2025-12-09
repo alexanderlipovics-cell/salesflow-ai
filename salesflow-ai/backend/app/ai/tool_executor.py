@@ -31,6 +31,8 @@ class ToolExecutor:
             "handle_objection": self._handle_objection,
             "create_lead": self._create_lead,
             "create_task": self._create_task,
+            "create_followup": self._create_followup,
+            "create_follow_up": self._create_followup,
             "log_interaction": self._log_interaction,
             "update_lead_status": self._update_lead_status,
             "start_power_hour": self._start_power_hour,
@@ -595,6 +597,80 @@ class ToolExecutor:
                 "success": False,
                 "error": str(e),
             }
+
+    async def _create_followup(self, args: dict, user_id: str = None, db=None) -> dict:
+        """Create a follow-up for a lead with required fields."""
+        try:
+            db = db or self.db
+            user_id = user_id or self.user_id
+            lead_id = args.get("lead_id")
+
+            # Resolve lead by name if no id provided
+            if not lead_id:
+                lead_name = args.get("lead_name") or args.get("name")
+                if lead_name:
+                    result = (
+                        db.table("leads")
+                        .select("id")
+                        .ilike("name", f"%{lead_name}%")
+                        .eq("user_id", user_id)
+                        .limit(1)
+                        .execute()
+                    )
+                    if result.data:
+                        lead_id = result.data[0]["id"]
+                        logger.info(f"Found lead by name: {lead_name} -> {lead_id}")
+
+            if not lead_id:
+                return {"success": False, "error": "Kein Lead gefunden. Bitte Lead-Name angeben."}
+
+            # Parse due/scheduled date (optional)
+            due_date = args.get("due_date") or args.get("scheduled_for") or args.get("date")
+            scheduled = None
+            if due_date in ["morgen", "tomorrow"]:
+                scheduled = datetime.now() + timedelta(days=1)
+            elif due_date in ["heute", "today"]:
+                scheduled = datetime.now()
+            elif due_date:
+                try:
+                    scheduled = datetime.fromisoformat(due_date)
+                except Exception:  # noqa: BLE001
+                    scheduled = datetime.now() + timedelta(days=1)
+
+            followup_data = {
+                "lead_id": lead_id,
+                "user_id": user_id,
+                "channel": args.get("channel") or "whatsapp",
+                "message": args.get("message") or args.get("content") or "Follow-up geplant",
+                "status": "pending",
+                "sent_at": None,
+                "is_automated": False,
+                "gpt_generated": True,
+            }
+
+            if scheduled:
+                followup_data["scheduled_for"] = scheduled.isoformat()
+
+            logger.info(f"Creating follow-up with data: {followup_data}")
+
+            result = db.table("follow_ups").insert(followup_data).execute()
+
+            if result.data:
+                logger.info(f"Follow-up created successfully: {result.data[0]}")
+                return {
+                    "success": True,
+                    "message": f"✅ Follow-up für {due_date or 'morgen'} gespeichert!",
+                    "followup_id": result.data[0].get("id"),
+                }
+
+            return {"success": False, "error": "Keine Daten zurückgegeben"}
+
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Create follow-up FAILED: {type(e).__name__}: {e}")
+            import traceback
+
+            logger.error(traceback.format_exc())
+            return {"success": False, "error": str(e)}
 
     async def _log_interaction(
         self,
