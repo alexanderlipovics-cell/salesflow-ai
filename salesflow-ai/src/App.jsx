@@ -119,6 +119,7 @@ const SequencesPage = lazy(() => import("./pages/SequencesPage"));
 const ProposalsPage = lazy(() => import("./pages/ProposalsPage"));
 const EmailsPage = lazy(() => import("./pages/EmailsPage"));
 const SettingsEmailPage = lazy(() => import("./pages/SettingsEmailPage"));
+const ApprovalInboxPage = lazy(() => import("./pages/ApprovalInboxPage"));
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -267,6 +268,7 @@ const App = () => {
                       <Route path="lead-qualifier" element={<Navigate to="/leads?view=qualifier" replace />} />
                       <Route path="lead-discovery" element={<Navigate to="/leads?view=discovery" replace />} />
                       <Route path="settings/ai" element={<Navigate to="/settings?tab=ai" replace />} />
+                      <Route path="inbox" element={<ApprovalInboxPage />} />
                       <Route path="gtm-copy" element={<GtmCopyAssistantPage />} />
                       <Route
                         path="leads/prospects"

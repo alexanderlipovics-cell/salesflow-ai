@@ -2,6 +2,8 @@ from datetime import datetime
 import json
 import os
 import logging
+import hashlib
+import re
 
 from openai import AsyncOpenAI
 
@@ -12,11 +14,100 @@ from .model_router import ModelRouter, ModelTier
 from .intent_detector import IntentDetector
 from .cost_tracker import CostTracker
 from ..services.ai_usage_service import AIUsageService
+from ..services.collective_intelligence_engine import CollectiveIntelligenceEngine
+from ..services.conversation_service import ConversationService
 
 logger = logging.getLogger(__name__)
 
 client = None
 router = ModelRouter()
+_ = (CollectiveIntelligenceEngine, ConversationService)  # silence unused import warnings
+
+
+def anonymize_message(message: str, lead_name: str = None, company: str = None, phone: str = None, email: str = None) -> str:
+    """Replace PII with placeholders for learning."""
+    result = message
+
+    if lead_name:
+        result = re.sub(re.escape(lead_name), "{{name}}", result, flags=re.IGNORECASE)
+        first_name = lead_name.split()[0] if lead_name else ""
+        if first_name:
+            result = re.sub(r"\b" + re.escape(first_name) + r"\b", "{{name}}", result, flags=re.IGNORECASE)
+
+    if company:
+        result = re.sub(re.escape(company), "{{company}}", result, flags=re.IGNORECASE)
+    if phone:
+        result = re.sub(re.escape(phone), "{{phone}}", result, flags=re.IGNORECASE)
+    if email:
+        result = re.sub(re.escape(email), "{{email}}", result, flags=re.IGNORECASE)
+
+    return result
+
+
+async def find_similar_successes(db, vertical: str, step: int, channel: str, limit: int = 5) -> list:
+    """Find similar messages that had positive outcomes."""
+    try:
+        result = (
+            db.table("message_outcomes")
+            .select("*")
+            .eq("vertical", vertical)
+            .gte("outcome_score", 5)
+            .order("outcome_score", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return result.data or []
+    except Exception as e:
+        logger.warning(f"Could not find similar successes: {e}")
+        return []
+
+
+async def log_message_outcome(
+    db,
+    user_id: str,
+    lead_id: str,
+    message: str,
+    vertical: str,
+    channel: str,
+    step: int,
+    outcome: str,
+    lead_name: str = None,
+    company: str = None,
+):
+    """Log message outcome for learning."""
+    try:
+        template = anonymize_message(message, lead_name, company)
+        message_hash = hashlib.md5(template.encode()).hexdigest()
+
+        score_map = {
+            "sent": 1,
+            "opened": 3,
+            "responded": 10,
+            "positive": 15,
+            "booked": 25,
+            "closed": 50,
+            "no_response": -2,
+            "negative": -5,
+        }
+        score = score_map.get(outcome, 0)
+
+        db.table("message_outcomes").insert(
+            {
+                "user_id": user_id,
+                "lead_id": lead_id,
+                "message_template": template,
+                "message_hash": message_hash,
+                "vertical": vertical,
+                "channel": channel,
+                "sequence_step": step,
+                "outcome": outcome,
+                "outcome_score": score,
+            }
+        ).execute()
+
+        logger.info(f"Logged outcome: {outcome} (score: {score}) for lead {lead_id}")
+    except Exception as e:
+        logger.error(f"Failed to log outcome: {e}")
 
 def get_client():
     global client
@@ -78,6 +169,30 @@ async def run_sales_agent(
     user_context["current_revenue"] = sum([d.get("value") or 0 for d in revenue_data])
 
     system_prompt = build_system_prompt(user_context)
+
+    # Find similar successful messages for context
+    similar_successes = []
+    if user_context.get("vertical"):
+        try:
+            similar_successes = await find_similar_successes(
+                db,
+                vertical=user_context.get("vertical", "network"),
+                step=user_context.get("sequence_step", 1),
+                channel="whatsapp",
+                limit=3,
+            )
+        except Exception as e:
+            logger.warning(f"Similarity lookup failed: {e}")
+
+    # Add to system prompt if we have examples
+    if similar_successes:
+        success_examples = "\n".join(
+            [f"- {s['message_template']} (Score: {s['outcome_score']})" for s in similar_successes]
+        )
+        system_prompt += (
+            f"\n\n## ERFOLGREICHE BEISPIELE AUS UNSERER DATENBANK:\n"
+            f"{success_examples}\n\nNutze diese als Inspiration für deinen Stil."
+        )
 
     messages = [{"role": "system", "content": system_prompt}]
 
