@@ -612,17 +612,38 @@ class ToolExecutor:
         channel: str = "whatsapp",
         message: str = None,
     ) -> dict:
-        """Erstellt ein Follow-up mit minimalen Angaben."""
+        """Erstellt ein Follow-up mit minimalen Angaben und legt es in lead_tasks an."""
         try:
+            def _next_weekday(target_weekday: int, now_dt: datetime) -> datetime:
+                """Get next occurrence of weekday (0=Mon)."""
+                days_ahead = (target_weekday - now_dt.weekday() + 7) % 7
+                days_ahead = 7 if days_ahead == 0 else days_ahead
+                return now_dt + timedelta(days=days_ahead)
+
             due_date_str = (due_date or "").lower()
             now = datetime.now(timezone.utc)
 
+            # Relative / keyword parsing
             if "tomorrow" in due_date_str or "morgen" in due_date_str:
                 parsed_due = now + timedelta(days=1)
-            elif "3 day" in due_date_str or "3 tag" in due_date_str or "3 tage" in due_date_str:
+            elif "3 day" in due_date_str or "3 tag" in due_date_str or "3 tage" in due_date_str or "in 3 tagen" in due_date_str:
                 parsed_due = now + timedelta(days=3)
-            elif "week" in due_date_str or "woche" in due_date_str or "nächste" in due_date_str:
+            elif "week" in due_date_str or "woche" in due_date_str or "nächste" in due_date_str or "next week" in due_date_str:
                 parsed_due = now + timedelta(days=7)
+            elif "montag" in due_date_str:
+                parsed_due = _next_weekday(0, now)
+            elif "dienstag" in due_date_str:
+                parsed_due = _next_weekday(1, now)
+            elif "mittwoch" in due_date_str:
+                parsed_due = _next_weekday(2, now)
+            elif "donnerstag" in due_date_str:
+                parsed_due = _next_weekday(3, now)
+            elif "freitag" in due_date_str:
+                parsed_due = _next_weekday(4, now)
+            elif "samstag" in due_date_str:
+                parsed_due = _next_weekday(5, now)
+            elif "sonntag" in due_date_str:
+                parsed_due = _next_weekday(6, now)
             else:
                 try:
                     parsed_due = datetime.fromisoformat(due_date_str)
@@ -644,24 +665,27 @@ class ToolExecutor:
                 lead_id = result.data[0]["id"]
                 resolved_name = result.data[0]["name"]
 
-            follow_up_data = {
-                "user_id": self.user_id,
+            task_data = {
                 "lead_id": lead_id,
-                "due_date": parsed_due.isoformat(),
-                "channel": channel or "whatsapp",
-                "message": message or "",
-                "status": "pending",
+                "user_id": self.user_id,
+                "task_type": "follow_up",
+                "status": "open",
+                "template_key": channel or "whatsapp",
+                "due_at": parsed_due.isoformat(),
+                "note": message or f"Follow-up für {resolved_name}",
             }
 
-            insert_result = self.db.table("follow_ups").insert(follow_up_data).execute()
+            insert_result = self.db.table("lead_tasks").insert(task_data).execute()
 
             if not insert_result or not insert_result.data:
                 return {"success": False, "error": "Follow-up konnte nicht erstellt werden"}
 
-            formatted_date = parsed_due.strftime("%d.%m.%Y")
+            weekday_names = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+            weekday_label = weekday_names[parsed_due.weekday()]
+            date_str = parsed_due.strftime("%d.%m.%Y")
             return {
                 "success": True,
-                "message": f"✅ Follow-up für **{resolved_name}** am **{formatted_date}** geplant!",
+                "message": f"✅ Follow-up für {resolved_name} am {weekday_label}, den {date_str}, geplant!",
             }
         except Exception as e:  # noqa: BLE001
             logger.error(f"Create follow-up FAILED: {type(e).__name__}: {e}")
