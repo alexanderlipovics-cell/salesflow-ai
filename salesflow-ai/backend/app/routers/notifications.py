@@ -9,7 +9,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
-from ..dependencies import get_current_user, get_supabase
+from ..core.deps import get_current_user, get_supabase
 
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 
