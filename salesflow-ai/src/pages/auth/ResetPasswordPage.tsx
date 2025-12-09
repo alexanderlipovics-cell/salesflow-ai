@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import type { AuthChangeEvent } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent) => {
       if (event === "PASSWORD_RECOVERY") {
         // User clicked the reset link - Supabase processed token
         // No-op: ready to set new password
@@ -70,22 +70,22 @@ export default function ResetPasswordPage() {
         <p className="text-slate-400 mb-6">Gib dein neues Passwort ein.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
+          <input
             type="password"
             placeholder="Neues Passwort"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-slate-700 border-slate-600 text-white"
+            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
 
-          <Input
+          <input
             type="password"
             placeholder="Passwort bestätigen"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="bg-slate-700 border-slate-600 text-white"
+            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
 
           {error && <p className="text-red-400 text-sm">{error}</p>}

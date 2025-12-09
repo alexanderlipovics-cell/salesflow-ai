@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -50,13 +49,13 @@ export default function ForgotPasswordPage() {
         <p className="text-slate-400 mb-6">Gib deine Email ein und wir senden dir einen Link.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
+          <input
             type="email"
             placeholder="deine@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-slate-700 border-slate-600 text-white"
+            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
