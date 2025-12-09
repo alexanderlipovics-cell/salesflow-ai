@@ -40,6 +40,7 @@ async def chat(
     try:
         body = await request.json()
         logger.info(f"AI Chat request body: {body}")
+        logger.info(f"AI Chat current_user: {current_user}")
 
         # Extract message (allow fallback key names)
         message = body.get("message") or body.get("prompt")
@@ -47,12 +48,11 @@ async def chat(
             raise HTTPException(status_code=400, detail="No message provided")
 
         session_id = body.get("session_id") or body.get("sessionId")
-    logger.info(f"AI Chat current_user: {current_user}")
-    user_id = (
-        current_user.get("sub")
-        or current_user.get("id")
-        or current_user.get("user_id")
-    )
+        user_id = (
+            current_user.get("sub")
+            or current_user.get("id")
+            or current_user.get("user_id")
+        )
         if not user_id:
             raise HTTPException(status_code=400, detail="User-Kontext fehlt")
 
