@@ -111,6 +111,8 @@ const VideoMeetingsPage = lazy(() => import("./pages/VideoMeetingsPage"));
 const SquadChallengeManager = lazy(() => import("./pages/SquadChallengeManager"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
 const MagicSendDemo = lazy(() => import("./pages/MagicSendDemo"));
 const FollowUpAnalyticsPage = lazy(() => import("./pages/FollowUpAnalyticsPage"));
 const SequencesPage = lazy(() => import("./pages/SequencesPage"));
@@ -210,6 +212,8 @@ const App = () => {
                     {/* Public Routes - Auth Pages */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/auth" element={<AuthPage />} />
                     
                     {/* Marketing/Landing */}
