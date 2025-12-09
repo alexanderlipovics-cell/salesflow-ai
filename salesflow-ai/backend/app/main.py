@@ -162,13 +162,13 @@ app.add_middleware(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
-        "https://aura-os-topaz.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
-        "*",  # For development - remove in production
+        "https://aura-os-topaz.vercel.app",
+        "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
+        "https://*.vercel.app",  # Allow all Vercel preview deployments
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel preview URLs
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
