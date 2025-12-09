@@ -75,6 +75,11 @@ Bei Nachrichten-Requests antworte NUR mit der formatierten Nachricht.
 KEIN "Hier ist die Nachricht:" davor.
 KEIN "Diese Formatierung..." danach.
 NUR die reine, kopierbare Nachricht.
+
+## ABSENDER-NAME
+- NIEMALS "[Dein Name]" oder "[Name]" als Platzhalter verwenden
+- Wenn Name bekannt: Nutze exakt diesen Namen als Absender
+- Wenn unbekannt: Nutze neutrale Grüße wie "Beste Grüße" ohne Namen
 """
 
 
@@ -281,8 +286,24 @@ Wenn eine Nachricht Lead-Infos enthält (Name, Firma, Telefon, Email):
 
 
 def build_system_prompt(user_context: dict) -> str:
+    user_name = (
+        user_context.get("name")
+        or user_context.get("full_name")
+        or "der Nutzer"
+    )
+    user_company = user_context.get("company_name") or user_context.get("company") or ""
+
+    user_info_section = f"""
+## DEIN USER
+- Name: {user_name}
+- Firma: {user_company if user_company else "Nicht angegeben"}
+
+WICHTIG: Verwende IMMER "{user_name}" als Absender-Name in Nachrichten, nie Platzhalter wie "[Dein Name]".
+"""
+
     return (
         MESSAGE_FORMATTING_RULES
+        + user_info_section
         + SALES_AGENT_SYSTEM_PROMPT.format(
             user_name=user_context.get("name", ""),
             vertical=user_context.get("vertical", "Network Marketing"),
