@@ -207,13 +207,20 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": "Suche aktuelle Informationen im Internet. Nutze für: Firmen-News, Markt-Infos, Konkurrenz-Analyse, aktuelle Events.",
+            "description": "Search the internet for people, companies, MLM leaders, LinkedIn profiles, Instagram accounts, or any other information. Use this to find new contacts, research people, or look up info online.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Suchbegriff"
+                        "description": "The search query"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "description": "Number of results (default 10, max 20)",
+                        "default": 10,
+                        "maximum": 20,
+                        "minimum": 1
                     }
                 },
                 "required": ["query"]

@@ -358,39 +358,14 @@ class ToolExecutor:
     # EXTERNAL DATA
     # ─────────────────────────────────────────────────────────
 
-    async def _web_search(self, query: str) -> dict:
-        """Search the web for current information."""
+    async def _web_search(self, query: str, count: int = 10) -> dict:
+        """Search the web for current information (Brave Search)."""
+        from app.ai.tools.web_search import web_search as brave_web_search
 
-        import httpx
-
-        api_key = os.getenv("BRAVE_API_KEY") or os.getenv("SERP_API_KEY")
-
-        if not api_key:
-            return {"error": "Web search nicht konfiguriert", "results": []}
-
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    "https://api.search.brave.com/res/v1/web/search",
-                    headers={"X-Subscription-Token": api_key},
-                    params={"q": query, "count": 5},
-                )
-
-                data = response.json()
-
-                return {
-                    "query": query,
-                    "results": [
-                        {
-                            "title": r.get("title"),
-                            "description": r.get("description"),
-                            "url": r.get("url"),
-                        }
-                        for r in data.get("web", {}).get("results", [])[:5]
-                    ],
-                }
-        except Exception as e:  # noqa: BLE001
-            return {"error": str(e), "results": []}
+        result = await brave_web_search(query=query, count=count)
+        if not result.get("success", False):
+            return {"error": result.get("error", "Web search fehlgeschlagen"), "results": result.get("results", [])}
+        return result
 
     async def _search_nearby_places(
         self,
