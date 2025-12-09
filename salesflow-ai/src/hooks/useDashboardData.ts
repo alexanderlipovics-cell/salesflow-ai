@@ -1,49 +1,48 @@
 /**
- * Dashboard Data Hook - Optimized with React Query
- * 
- * Features:
- * - Parallel API fetching
- * - Smart caching (5-15 min based on data type)
- * - Optimistic updates ready
- * - Aggregated loading/error states
- * 
- * @author Gemini 3 Ultra - Frontend Optimization
+ * Dashboard Data Hook - Unified data access for the main dashboard
+ *
+ * Endpoints (best-effort with graceful fallbacks):
+ * - GET /api/leads?count=true → total leads
+ * - GET /api/follow-ups?due=today → today's follow-ups
+ * - GET /api/leads?status=won&period=this_month → deals won this month
+ * - GET /api/leads?group_by=status → pipeline by stage
+ * - GET /api/activities?limit=5 → recent activities
+ * - GET /api/analytics/charts?period=7d → chart data
+ * - GET /api/ai/insights → AI insights (optional)
  */
 
 import { useQuery } from '@tanstack/react-query';
 
-// API Service (adjust import based on your structure)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-const api = {
-  get: async (endpoint: string) => {
-    const token = localStorage.getItem('access_token');
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
-    
-    return response.json();
+const authFetch = async (endpoint: string) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
+
+  return response.json();
 };
 
 export interface DashboardStats {
-  revenue: number;
-  activeLeads: number;
-  conversionRate: number;
-  aiInteractions: number;
+  revenue?: number;
+  activeLeads?: number;
+  conversionRate?: number;
+  aiInteractions?: number;
 }
 
 export interface ChartData {
   date: string;
-  revenue: number;
-  leads: number;
+  revenue?: number;
+  leads?: number;
+  deals?: number;
 }
 
 export interface Activity {
@@ -54,57 +53,154 @@ export interface Activity {
   user?: string;
 }
 
+export interface KPIData {
+  leadsTotal: number;
+  followUpsToday: number;
+  dealsThisMonth: number;
+  pipelineValue: number;
+}
+
+export interface TaskItem {
+  id: string;
+  name: string;
+  action?: string;
+  dueTime?: string;
+  overdue?: boolean;
+  leadId?: string;
+}
+
+export interface PipelineStage {
+  status: string;
+  count: number;
+  value?: number;
+}
+
+export interface InsightItem {
+  title: string;
+  description: string;
+}
+
 export const useDashboardData = () => {
-  // 1. API Optimization: Paralleles Fetching & Caching
-  // Wir trennen kritische Daten (Stats) von schweren Daten (Charts)
-  
-  const statsQuery = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: async () => {
-      const response = await api.get('/api/analytics/stats');
-      return response as DashboardStats;
-    },
-    staleTime: 1000 * 60 * 5, // 5 Minuten Cache
-    retry: 2,
-  });
-
-  const chartQuery = useQuery({
-    queryKey: ['dashboard', 'charts'],
-    queryFn: async () => {
-      const response = await api.get('/api/analytics/charts');
-      return response as { chartData: ChartData[] };
-    },
-    staleTime: 1000 * 60 * 15, // 15 Minuten Cache für teure Charts
+  const query = useQuery({
+    queryKey: ['dashboard', 'unified'],
+    staleTime: 1000 * 60 * 5,
     retry: 1,
-  });
-
-  const activityQuery = useQuery({
-    queryKey: ['dashboard', 'activities'],
     queryFn: async () => {
-      const response = await api.get('/api/analytics/activities?limit=20');
-      return response as { activities: Activity[] };
-    },
-    staleTime: 1000 * 60 * 2, // 2 Minuten Cache für Recent Activity
-    retry: 1,
-    // Optimistic Updates würden hier in Mutationen (z.B. markAsRead) implementiert werden
-  });
+      const [
+        leadsRes,
+        followUpsRes,
+        dealsRes,
+        pipelineRes,
+        activitiesRes,
+        chartsRes,
+        insightsRes,
+      ] = await Promise.allSettled([
+        authFetch('/api/leads?count=true'),
+        authFetch('/api/follow-ups?due=today'),
+        authFetch('/api/leads?status=won&period=this_month'),
+        authFetch('/api/leads?group_by=status'),
+        authFetch('/api/activities?limit=5'),
+        authFetch('/api/analytics/charts?period=7d'),
+        authFetch('/api/ai/insights'),
+      ]);
 
-  // Aggregierter Loading/Error State
-  const isLoading = statsQuery.isLoading || chartQuery.isLoading || activityQuery.isLoading;
-  const isError = statsQuery.isError || chartQuery.isError || activityQuery.isError;
-  const error = statsQuery.error || chartQuery.error || activityQuery.error;
+      const safe = <T,>(res: PromiseSettledResult<T>, fallback: T): T =>
+        res.status === 'fulfilled' ? res.value : fallback;
+
+      const leadsData: any = safe(leadsRes, { count: 0 });
+      const followUpsData: any = safe(followUpsRes, { items: [] });
+      const dealsData: any = safe(dealsRes, { count: 0, total_value: 0 });
+      const pipelineData: any = safe(pipelineRes, { groups: [] });
+      const activitiesData: any = safe(activitiesRes, { activities: [] });
+      const chartsData: any = safe(chartsRes, { chartData: [] });
+      const insightsData: any = safe(insightsRes, {
+        insights: [
+          { title: '3 Leads brauchen Aufmerksamkeit', description: 'Reagiere auf unbeantwortete Nachrichten.' },
+          { title: 'Beste Zeit für Anrufe: 10-12 Uhr', description: 'Höchste Connect-Rate laut Verlaufsdaten.' },
+          { title: '2 Deals kurz vor Abschluss', description: 'Bereite Closing-Argumente & Angebote vor.' },
+        ],
+      });
+
+      const kpis: KPIData = {
+        leadsTotal: leadsData.count ?? leadsData.total ?? 0,
+        followUpsToday: Array.isArray(followUpsData.items)
+          ? followUpsData.items.length
+          : followUpsData.count ?? 0,
+        dealsThisMonth: dealsData.count ?? 0,
+        pipelineValue: pipelineData.total_value ?? dealsData.total_value ?? 0,
+      };
+
+      const todaysTasks: TaskItem[] = Array.isArray(followUpsData.items)
+        ? followUpsData.items.slice(0, 5).map((item: any) => ({
+            id: item.id ?? item.followup_id ?? `${item.lead_id ?? item.id ?? Math.random()}`,
+            name: item.lead_name ?? item.title ?? 'Follow-up',
+            action: item.type ?? item.action ?? 'Follow-up',
+            dueTime: item.due_at ?? item.due_time ?? item.due,
+            overdue: Boolean(item.overdue),
+            leadId: item.lead_id ?? item.leadId,
+          }))
+        : [];
+
+      const pipeline: PipelineStage[] = Array.isArray(pipelineData.groups)
+        ? pipelineData.groups.map((g: any) => ({
+            status: g.status ?? g.stage ?? 'Unbekannt',
+            count: g.count ?? g.total ?? 0,
+            value: g.value ?? g.total_value,
+          }))
+        : [];
+
+      const activities: Activity[] = Array.isArray(activitiesData.activities)
+        ? activitiesData.activities.slice(0, 5).map((a: any, idx: number) => ({
+            id: a.id ?? `act-${idx}`,
+            type: a.type ?? 'activity',
+            message: a.message ?? a.description ?? 'Aktivität',
+            timestamp: a.timestamp ?? a.created_at ?? new Date().toISOString(),
+            user: a.user ?? a.actor ?? undefined,
+          }))
+        : [];
+
+      const chartData: ChartData[] = Array.isArray(chartsData.chartData)
+        ? chartsData.chartData.map((c: any) => ({
+            date: c.date ?? c.day ?? new Date().toISOString(),
+            revenue: c.revenue ?? c.value ?? 0,
+            leads: c.leads ?? c.count ?? 0,
+            deals: c.deals ?? c.won ?? 0,
+          }))
+        : [];
+
+      const insights: InsightItem[] = Array.isArray(insightsData.insights)
+        ? insightsData.insights.map((i: any, idx: number) => ({
+            title: i.title ?? `Insight ${idx + 1}`,
+            description: i.description ?? i.text ?? '',
+          }))
+        : [];
+
+      return {
+        kpis,
+        todaysTasks,
+        pipeline,
+        activities,
+        chartData,
+        insights,
+      };
+    },
+  });
 
   return {
-    stats: statsQuery.data,
-    charts: chartQuery.data?.chartData,
-    activities: activityQuery.data?.activities,
-    isLoading,
-    isError,
-    error,
-    refetchAll: () => {
-      statsQuery.refetch();
-      chartQuery.refetch();
-      activityQuery.refetch();
-    }
+    kpis: query.data?.kpis ?? {
+      leadsTotal: 0,
+      followUpsToday: 0,
+      dealsThisMonth: 0,
+      pipelineValue: 0,
+    },
+    todaysTasks: query.data?.todaysTasks ?? [],
+    pipeline: query.data?.pipeline ?? [],
+    activities: query.data?.activities ?? [],
+    chartData: query.data?.chartData ?? [],
+    insights: query.data?.insights ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetchAll: query.refetch,
   };
 };

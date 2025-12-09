@@ -99,7 +99,6 @@ const ClosingCoachPage = lazy(() => import("./pages/ClosingCoachPage"));
 const LeadQualifierPage = lazy(() => import("./pages/LeadQualifierPage"));
 const LeadDiscoveryPage = lazy(() => import("./pages/LeadDiscoveryPage"));
 const ChooseVerticalPage = lazy(() => import("./pages/ChooseVerticalPage"));
-const DashboardRouterPage = lazy(() => import("./pages/DashboardRouterPage"));
 const TeamCoachPage = lazy(() => import("./pages/TeamCoachPage"));
 const MarketingLandingPage = lazy(() => import("./pages/MarketingLandingPage"));
 const CompactLandingPage = lazy(() => import("./pages/CompactLandingPage"));
@@ -244,8 +243,7 @@ const App = () => {
                       <Route path="chat" element={<ChatPage />} />
                       <Route path="daily-command" element={<DailyCommandPage />} />
                       <Route path="hunter" element={<HunterPage />} />
-                      <Route path="dashboard" element={<DashboardRouterPage />} />
-                      <Route path="dashboard/complete" element={<DashboardPage />} />
+                      <Route path="dashboard" element={<DashboardPage />} />
                       <Route path="choose-vertical" element={<ChooseVerticalPage />} />
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
