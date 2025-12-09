@@ -282,7 +282,7 @@ async def request_password_reset(
             ).execute()
             reset_link = f"https://aura-os-topaz.vercel.app/reset-password?token={token}"
             try:
-                resend.emails.send(
+                resend.Emails.send(
                     {
                         "from": "onboarding@resend.dev",
                         "to": [email],
