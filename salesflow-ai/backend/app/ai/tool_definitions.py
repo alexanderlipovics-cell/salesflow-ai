@@ -330,28 +330,33 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "create_lead",
-            "description": "Erstelle einen Lead aus Chat-Kontext (Name, Firma, Kontakt).",
+            "description": "Erstellt einen neuen Lead. NUR name ist required - erstelle sofort!",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "name": {"type": "string", "description": "Name des Leads"},
-                    "email": {"type": "string", "description": "E-Mail des Leads"},
-                    "phone": {"type": "string", "description": "Telefonnummer"},
-                    "company": {"type": "string", "description": "Firma"},
-                    "status": {
-                        "type": "string",
-                        "enum": ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"],
-                        "description": "Lead-Status"
-                    },
-                    "temperature": {
-                        "type": "string",
-                        "enum": ["hot", "warm", "cold"],
-                        "description": "Lead-Temperatur"
-                    },
-                    "source": {"type": "string", "description": "Quelle, z.B. ai_chat"},
-                    "notes": {"type": "string", "description": "Notizen / Kontext"}
+                    "phone": {"type": "string", "description": "Telefonnummer (optional)"},
+                    "email": {"type": "string", "description": "Email (optional)"},
+                    "notes": {"type": "string", "description": "Notizen (optional)"}
                 },
                 "required": ["name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_follow_up",
+            "description": "Plant ein Follow-up. Erstelle sofort mit verfügbaren Infos.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_name": {"type": "string", "description": "Name des Leads"},
+                    "due_date": {"type": "string", "description": "Wann: 'tomorrow', 'in 3 days', '2024-01-15'"},
+                    "channel": {"type": "string", "enum": ["whatsapp", "email", "call"], "default": "whatsapp"},
+                    "message": {"type": "string", "description": "Notiz zum Follow-up"}
+                },
+                "required": ["lead_name", "due_date"]
             }
         }
     },

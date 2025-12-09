@@ -1,6 +1,6 @@
 from typing import Any, Dict
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import logging
 
@@ -31,8 +31,8 @@ class ToolExecutor:
             "handle_objection": self._handle_objection,
             "create_lead": self._create_lead,
             "create_task": self._create_task,
-            "create_followup": self._create_followup,
-            "create_follow_up": self._create_followup,
+            "create_followup": self._create_follow_up,
+            "create_follow_up": self._create_follow_up,
             "log_interaction": self._log_interaction,
             "update_lead_status": self._update_lead_status,
             "start_power_hour": self._start_power_hour,
@@ -490,42 +490,49 @@ class ToolExecutor:
 
     async def _create_lead(
         self,
-        name: str = None,
-        email: str = None,
+        name: str,
         phone: str = None,
-        company: str = None,
-        status: str = "new",
-        temperature: str = "warm",
-        source: str = "ai_chat",
+        email: str = None,
         notes: str = None,
     ) -> dict:
-        """Create a new lead from chat context."""
+        """Erstellt einen Lead - nur Name required."""
         try:
             lead_data = {
                 "user_id": self.user_id,
-                "name": name or "Unbekannt",
-                "email": email,
+                "name": name,
                 "phone": phone,
-                "company": company,
-                "status": status or "new",
-                "temperature": temperature or "warm",
-                "source": source or "ai_chat",
-                "notes": notes or "",
+                "email": email,
+                "notes": notes,
+                "status": "new",
+                "temperature": "cold",
+                "source": "ai_chat",
             }
 
             lead_data = {k: v for k, v in lead_data.items() if v is not None}
 
-            logger.info(f"Creating lead: {lead_data}")
             result = self.db.table("leads").insert(lead_data).execute()
+            lead = result.data[0] if result and result.data else None
 
-            if result.data:
-                lead = result.data[0]
-                return {
-                    "success": True,
-                    "lead_id": lead.get("id"),
-                    "message": f"✅ Lead '{lead_data['name']}' erfolgreich gespeichert!",
-                }
-            return {"success": False, "error": "Keine Daten zurückgegeben"}
+            if not lead:
+                return {"success": False, "error": "Lead konnte nicht erstellt werden"}
+
+            response = f"✅ Lead **{name}** erstellt!"
+
+            if phone:
+                response += f"\n📱 Telefon: {phone}"
+            if email:
+                response += f"\n📧 Email: {email}"
+
+            if phone:
+                response += "\n\nSoll ich eine WhatsApp-Nachricht vorbereiten?"
+            elif not phone and not email:
+                response += "\n\nHast du eine Telefonnummer oder Email? Dann kann ich dir eine Nachricht vorbereiten."
+
+            return {
+                "success": True,
+                "lead_id": lead.get("id"),
+                "message": response,
+            }
         except Exception as e:  # noqa: BLE001
             logger.error(f"Create lead error: {e}")
             return {"success": False, "error": str(e)}
@@ -598,73 +605,64 @@ class ToolExecutor:
                 "error": str(e),
             }
 
-    async def _create_followup(self, args: dict, user_id: str = None, db=None) -> dict:
-        """Create a follow-up for a lead with required fields."""
+    async def _create_follow_up(
+        self,
+        lead_name: str,
+        due_date: str,
+        channel: str = "whatsapp",
+        message: str = None,
+    ) -> dict:
+        """Erstellt ein Follow-up mit minimalen Angaben."""
         try:
-            db = db or self.db
-            user_id = user_id or self.user_id
-            lead_id = args.get("lead_id")
+            due_date_str = (due_date or "").lower()
+            now = datetime.now(timezone.utc)
 
-            # Resolve lead by name if no id provided
-            if not lead_id:
-                lead_name = args.get("lead_name") or args.get("name")
-                if lead_name:
-                    result = (
-                        db.table("leads")
-                        .select("id")
-                        .ilike("name", f"%{lead_name}%")
-                        .eq("user_id", user_id)
-                        .limit(1)
-                        .execute()
-                    )
-                    if result.data:
-                        lead_id = result.data[0]["id"]
-                        logger.info(f"Found lead by name: {lead_name} -> {lead_id}")
-
-            if not lead_id:
-                return {"success": False, "error": "Kein Lead gefunden. Bitte Lead-Name angeben."}
-
-            # Parse due/scheduled date (optional)
-            due_date = args.get("due_date") or args.get("scheduled_for") or args.get("date")
-            scheduled = None
-            if due_date in ["morgen", "tomorrow"]:
-                scheduled = datetime.now() + timedelta(days=1)
-            elif due_date in ["heute", "today"]:
-                scheduled = datetime.now()
-            elif due_date:
+            if "tomorrow" in due_date_str or "morgen" in due_date_str:
+                parsed_due = now + timedelta(days=1)
+            elif "3 day" in due_date_str or "3 tag" in due_date_str or "3 tage" in due_date_str:
+                parsed_due = now + timedelta(days=3)
+            elif "week" in due_date_str or "woche" in due_date_str or "nächste" in due_date_str:
+                parsed_due = now + timedelta(days=7)
+            else:
                 try:
-                    scheduled = datetime.fromisoformat(due_date)
-                except Exception:  # noqa: BLE001
-                    scheduled = datetime.now() + timedelta(days=1)
+                    parsed_due = datetime.fromisoformat(due_date_str)
+                except Exception:
+                    parsed_due = now + timedelta(days=1)
 
-            followup_data = {
+            lead_id = None
+            resolved_name = lead_name
+            result = (
+                self.db.table("leads")
+                .select("id, name")
+                .eq("user_id", self.user_id)
+                .ilike("name", f"%{lead_name}%")
+                .limit(1)
+                .execute()
+            )
+
+            if result and result.data:
+                lead_id = result.data[0]["id"]
+                resolved_name = result.data[0]["name"]
+
+            follow_up_data = {
+                "user_id": self.user_id,
                 "lead_id": lead_id,
-                "user_id": user_id,
-                "channel": args.get("channel") or "whatsapp",
-                "message": args.get("message") or args.get("content") or "Follow-up geplant",
+                "due_date": parsed_due.isoformat(),
+                "channel": channel or "whatsapp",
+                "message": message or "",
                 "status": "pending",
-                "sent_at": None,
-                "is_automated": False,
-                "gpt_generated": True,
             }
 
-            if scheduled:
-                followup_data["scheduled_for"] = scheduled.isoformat()
+            insert_result = self.db.table("follow_ups").insert(follow_up_data).execute()
 
-            logger.info(f"Creating follow-up with data: {followup_data}")
+            if not insert_result or not insert_result.data:
+                return {"success": False, "error": "Follow-up konnte nicht erstellt werden"}
 
-            result = db.table("follow_ups").insert(followup_data).execute()
-
-            if result.data:
-                logger.info(f"Follow-up created successfully: {result.data[0]}")
-                return {
-                    "success": True,
-                    "message": f"✅ Follow-up für {due_date or 'morgen'} gespeichert!",
-                    "followup_id": result.data[0].get("id"),
-                }
-
-            return {"success": False, "error": "Keine Daten zurückgegeben"}
-
+            formatted_date = parsed_due.strftime("%d.%m.%Y")
+            return {
+                "success": True,
+                "message": f"✅ Follow-up für **{resolved_name}** am **{formatted_date}** geplant!",
+            }
         except Exception as e:  # noqa: BLE001
             logger.error(f"Create follow-up FAILED: {type(e).__name__}: {e}")
             import traceback
