@@ -106,6 +106,38 @@ async def get_pending_leads():
         return {"leads": [], "count": 0, "error": str(e)}
 
 
+@router.get("/{lead_id}")
+async def get_lead(lead_id: str, current_user: User = Depends(get_current_active_user)):
+    """
+    Einzelnen Lead holen.
+    GET /api/leads/{lead_id}
+    """
+    try:
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+
+        db = get_supabase()
+        result = (
+            db.table("leads")
+            .select("*")
+            .eq("id", lead_id)
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Lead not found")
+
+        return result.data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Get lead error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/")
 @router.post("")
 async def create_lead(request: Request, current_user: User = Depends(get_current_active_user)):
@@ -141,7 +173,7 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
 
         # Flexibles Mapping - akzeptiere beide Namenskonventionen
         data = {
-            "name": lead_data.get("name", "Unbekannt"),
+            "name": lead_data.get("name") or lead_data.get("fullName") or "Unbekannt",
             "platform": lead_data.get("platform", "WhatsApp"),
             "status": lead_data.get("status", "NEW"),
             "temperature": lead_data.get("temperature", 50),
