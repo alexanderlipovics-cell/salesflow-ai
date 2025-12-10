@@ -87,6 +87,7 @@ const NetworkGraphPage = lazy(() =>
   import("./pages/NetworkGraphPage").then((m) => ({ default: m.NetworkGraphPage }))
 );
 const NetworkSettingsPage = lazy(() => import("./pages/NetworkSettingsPage"));
+const BusinessSettingsPage = lazy(() => import("./pages/BusinessSettingsPage"));
 const RoleplayDojoPage = lazy(() =>
   import("./pages/RoleplayDojoPage").then((m) => ({ default: m.RoleplayDojoPage }))
 );
@@ -255,6 +256,7 @@ const App = () => {
                       <Route path="choose-vertical" element={<ChooseVerticalPage />} />
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="settings/business" element={<BusinessSettingsPage />} />
                       <Route path="integrations" element={<IntegrationsPage />} />
                       <Route path="settings/email" element={<Navigate to="/settings?tab=email" replace />} />
                       <Route path="billing" element={<BillingManagement />} />

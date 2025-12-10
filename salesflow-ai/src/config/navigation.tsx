@@ -14,7 +14,8 @@ import {
   Handshake,
   Network,
   DollarSign,
-  Settings
+  Settings,
+  Building2
 } from 'lucide-react';
 
 
@@ -31,6 +32,7 @@ export const navigationItems = [
   { name: 'Netzwerk', href: '/network', icon: Network },
   { name: 'Finanzen', href: '/finance', icon: DollarSign },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Mein Business', href: '/settings/business', icon: Building2 },
 ];
 
 

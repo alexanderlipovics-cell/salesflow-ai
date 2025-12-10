@@ -318,9 +318,17 @@ def build_system_prompt(user_context: dict) -> str:
 WICHTIG: Verwende IMMER "{user_name}" als Absender-Name in Nachrichten, nie Platzhalter wie "[Dein Name]".
 """
 
+    knowledge_section = ""
+    if user_context.get("user_knowledge"):
+        knowledge_section = f"""
+## USER BUSINESS WISSEN
+{user_context.get("user_knowledge")}
+"""
+
     return (
         MESSAGE_FORMATTING_RULES
         + user_info_section
+        + knowledge_section
         + SALES_AGENT_SYSTEM_PROMPT.format(
             user_name=user_context.get("name", ""),
             vertical=user_context.get("vertical", "Network Marketing"),

@@ -238,6 +238,7 @@ from .routers.user_learning import router as user_learning_router  # 🧠 User L
 from .routers.genealogy import router as genealogy_router  # 🌳 Genealogy Tree & Downline
 from .routers.commissions import router as commissions_router  # 💰 Provisions-Tracker & Rechnungsgenerator
 from .routers.network import router as network_router  # 🧭 Network Dashboard & Team
+from .routers.knowledge import router as knowledge_router  # 🧠 User Business Knowledge
 from .routers.settings import router as settings_router  # ⚙️ User Settings (Vertical/Plan)
 from .routers.closing_coach import router as closing_coach_router  # 🎯 Closing Coach
 from .routers.power_hour import router as power_hour_router  # ⚡ Power Hour Sprint
@@ -308,6 +309,7 @@ app.include_router(user_learning_router, prefix="/api")  # 🧠 User Learning & 
 app.include_router(genealogy_router, prefix="/api")  # 🌳 Genealogy Tree & Downline
 app.include_router(commissions_router, prefix="/api")  # 💰 Provisions-Tracker & Rechnungsgenerator
 app.include_router(network_router, prefix="/api")  # 🧭 Network Dashboard & Team
+app.include_router(knowledge_router, prefix="/api")  # 🧠 User Business Knowledge
 app.include_router(settings_router, prefix="/api")  # ⚙️ User Settings (Vertical/Plan)
 app.include_router(meeting_prep_router, prefix="/api")  # 🧠 Meeting Prep
 app.include_router(closing_coach_router, prefix="/api")  # 🎯 Closing Coach

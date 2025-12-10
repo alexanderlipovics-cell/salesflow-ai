@@ -154,6 +154,59 @@ async def run_sales_agent(
             user_context["company_name"] = company.data.get("name")
             user_context["company_knowledge"] = company.data.get("knowledge_base", "")
 
+    # User-uploaded knowledge base (products, docs, objections, scripts)
+    try:
+        knowledge_result = (
+            db.table("user_knowledge")
+            .select("*")
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+
+        if knowledge_result and knowledge_result.data:
+            data = knowledge_result.data
+            context_parts = []
+
+            if data.get("company_name"):
+                context_parts.append(f"## Firma: {data['company_name']}")
+                if data.get("company_description"):
+                    context_parts.append(data["company_description"])
+
+            if data.get("products"):
+                context_parts.append("\n## Produkte:")
+                for p in data["products"]:
+                    context_parts.append(f"\n### {p.get('name')}")
+                    if p.get("description"):
+                        context_parts.append(p["description"])
+                    if p.get("price"):
+                        context_parts.append(f"Preis: {p['price']}")
+                    if p.get("benefits"):
+                        context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
+                    if p.get("objections"):
+                        for obj in p["objections"]:
+                            context_parts.append(
+                                f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
+                            )
+
+            if data.get("custom_objections"):
+                context_parts.append("\n## Einwandbehandlung:")
+                for obj in data["custom_objections"]:
+                    context_parts.append(
+                        f"- '{obj.get('objection', '')}' → {obj.get('response', '')}"
+                    )
+
+            if data.get("documents"):
+                context_parts.append("\n## Dokumente:")
+                for doc in data["documents"]:
+                    context_parts.append(f"\n### {doc.get('filename')}")
+                    content = (doc.get("content") or "")[:2000]
+                    context_parts.append(content)
+
+            user_context["user_knowledge"] = "\n".join(context_parts)
+    except Exception as e:  # pragma: no cover - defensive
+        logger.warning(f"Could not load user knowledge: {e}")
+
     start_of_month = datetime.now().replace(day=1)
     revenue = (
         db.table("deals")
