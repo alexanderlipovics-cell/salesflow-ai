@@ -258,6 +258,7 @@ from .routers.income_predictor import router as income_predictor_router  # 📈 
 from .routers.gamification import router as gamification_router  # 🏆 Gamification
 from .routers.lead_qualifier import router as lead_qualifier_router  # 🧠 AI Lead Qualifier
 from .routers.lead_discovery import router as lead_discovery_router  # 🔍 Lead Discovery Engine
+from .routers.lead_analysis import router as lead_analysis_router  # 🧠 Lead Deep Scan Intelligence
 from .routers.meeting_prep import router as meeting_prep_router  # 🧠 Meeting Prep
 from .routers.voice import router as voice_router  # 🗣️ Voice Transcription
 from .routers.proposals import router as proposals_router  # 📄 Angebots-PDFs
@@ -322,6 +323,7 @@ app.include_router(push_router)  # 📱 Push Notifications (has own prefix)
 app.include_router(gamification_router, prefix="/api")  # 🏆 Gamification
 app.include_router(lead_qualifier_router)  # 🧠 AI Lead Qualifier (hat bereits /api/lead-qualifier prefix)
 app.include_router(lead_discovery_router)  # 🔍 Lead Discovery Engine (hat bereits /api/lead-discovery prefix)
+app.include_router(lead_analysis_router, prefix="/api")  # 🧠 Lead Deep Scan Intelligence
 app.include_router(vision_router, prefix="/api")  # 🤖 Claude Vision für Screenshots
 app.include_router(smart_import_router, prefix="/api")  # 🧠 Smart Chat Import
 app.include_router(csv_import_router, prefix="/api")  # 🧠 CSV/VCF Import

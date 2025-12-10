@@ -8,7 +8,8 @@ import docx
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user, get_supabase
+from ..core.security import get_current_active_user
+from ..core.deps import get_supabase
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
 
@@ -131,7 +132,7 @@ def extract_text_from_docx(file_content: bytes) -> str:
 
 
 @router.get("")
-async def get_knowledge(user=Depends(get_current_user), supabase=Depends(get_supabase)):
+async def get_knowledge(user=Depends(get_current_active_user), supabase=Depends(get_supabase)):
     """Get user's complete knowledge base."""
     user_id = _extract_user_id(user)
     try:
@@ -167,7 +168,7 @@ async def get_knowledge(user=Depends(get_current_user), supabase=Depends(get_sup
 
 @router.put("/company")
 async def update_company_info(
-    data: CompanyInfo, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    data: CompanyInfo, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Update company information."""
     user_id = _extract_user_id(user)
@@ -203,7 +204,7 @@ async def update_company_info(
 
 @router.post("/products")
 async def add_product(
-    product: Product, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    product: Product, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Add a new product."""
     user_id = _extract_user_id(user)
@@ -238,7 +239,7 @@ async def add_product(
 async def update_product(
     product_id: str,
     product: Product,
-    user=Depends(get_current_user),
+    user=Depends(get_current_active_user),
     supabase=Depends(get_supabase),
 ):
     """Update an existing product."""
@@ -277,7 +278,7 @@ async def update_product(
 
 @router.delete("/products/{product_id}")
 async def delete_product(
-    product_id: str, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    product_id: str, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Delete a product."""
     user_id = _extract_user_id(user)
@@ -306,7 +307,7 @@ async def delete_product(
 @router.post("/documents")
 async def upload_document(
     file: UploadFile = File(...),
-    user=Depends(get_current_user),
+    user=Depends(get_current_active_user),
     supabase=Depends(get_supabase),
 ):
     """Upload and extract text from PDF or Word document."""
@@ -379,7 +380,7 @@ async def upload_document(
 
 @router.delete("/documents/{doc_id}")
 async def delete_document(
-    doc_id: str, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    doc_id: str, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Delete a document."""
     user_id = _extract_user_id(user)
@@ -407,7 +408,7 @@ async def delete_document(
 
 @router.post("/objections")
 async def add_objection(
-    objection: Objection, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    objection: Objection, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Add a custom objection handler."""
     user_id = _extract_user_id(user)
@@ -440,7 +441,7 @@ async def add_objection(
 
 @router.delete("/objections/{obj_id}")
 async def delete_objection(
-    obj_id: str, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    obj_id: str, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Delete a custom objection."""
     user_id = _extract_user_id(user)
@@ -468,7 +469,7 @@ async def delete_objection(
 
 @router.get("/for-ai")
 async def get_knowledge_for_ai(
-    user=Depends(get_current_user), supabase=Depends(get_supabase)
+    user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
     """Get formatted knowledge for AI context injection."""
     user_id = _extract_user_id(user)

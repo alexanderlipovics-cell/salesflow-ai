@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
+from ..core.security import get_current_active_user
 from ..core.deps import get_supabase
 
 router = APIRouter(prefix="/network", tags=["network"])
@@ -118,9 +118,9 @@ def format_time_ago(timestamp_str: str) -> str:
 # ═════════ DASHBOARD ═════════
 @router.get("/dashboard")
 async def get_network_dashboard(
-    user=Depends(get_current_user), supabase=Depends(get_supabase)
+    user=Depends(get_current_active_user), supabase=Depends(get_supabase)
 ):
-    user_id = str(user.id)
+    user_id = str(user.get("sub"))
 
     settings_result = (
         supabase.table("network_settings").select("*").eq("user_id", user_id).execute()
@@ -250,11 +250,13 @@ async def get_network_dashboard(
 
 # ═════════ SETUP & SETTINGS ═════════
 @router.get("/has-setup")
-async def check_has_setup(user=Depends(get_current_user), supabase=Depends(get_supabase)):
+async def check_has_setup(
+    user=Depends(get_current_active_user), supabase=Depends(get_supabase)
+):
     result = (
         supabase.table("network_settings")
         .select("has_completed_setup")
-        .eq("user_id", str(user.id))
+        .eq("user_id", str(user.get("sub")))
         .execute()
     )
     if result.data and result.data[0].get("has_completed_setup"):
@@ -264,9 +266,11 @@ async def check_has_setup(user=Depends(get_current_user), supabase=Depends(get_s
 
 @router.post("/setup")
 async def setup_network(
-    data: NetworkSetup, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    data: NetworkSetup,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
 ):
-    user_id = str(user.id)
+    user_id = str(user.get("sub"))
     existing = supabase.table("network_settings").select("id").eq("user_id", user_id).execute()
 
     settings_data = {
@@ -291,11 +295,13 @@ async def setup_network(
 
 
 @router.get("/settings")
-async def get_network_settings(user=Depends(get_current_user), supabase=Depends(get_supabase)):
+async def get_network_settings(
+    user=Depends(get_current_active_user), supabase=Depends(get_supabase)
+):
     result = (
         supabase.table("network_settings")
         .select("*")
-        .eq("user_id", str(user.id))
+        .eq("user_id", str(user.get("sub")))
         .execute()
     )
     if result.data:
@@ -313,9 +319,11 @@ async def get_network_settings(user=Depends(get_current_user), supabase=Depends(
 
 @router.put("/settings")
 async def update_network_settings(
-    data: NetworkSetup, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    data: NetworkSetup,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
 ):
-    user_id = str(user.id)
+    user_id = str(user.get("sub"))
     existing = supabase.table("network_settings").select("id").eq("user_id", user_id).execute()
 
     settings_data = {
@@ -341,12 +349,12 @@ async def update_network_settings(
 # ═════════ TEAM MEMBERS ═════════
 @router.get("/team")
 async def get_team_members(
-    user=Depends(get_current_user),
+    user=Depends(get_current_active_user),
     supabase=Depends(get_supabase),
     leg: Optional[str] = None,
     active_only: bool = False,
 ):
-    query = supabase.table("team_members").select("*").eq("user_id", str(user.id))
+    query = supabase.table("team_members").select("*").eq("user_id", str(user.get("sub")))
     if leg:
         query = query.eq("leg", leg)
     if active_only:
@@ -363,10 +371,12 @@ async def get_team_members(
 
 @router.post("/team")
 async def add_team_member(
-    member: TeamMemberCreate, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    member: TeamMemberCreate,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
 ):
     member_data = {
-        "user_id": str(user.id),
+        "user_id": str(user.get("sub")),
         "name": member.name,
         "email": member.email,
         "phone": member.phone,
@@ -383,7 +393,7 @@ async def add_team_member(
     if result.data:
         supabase.table("team_activity").insert(
             {
-                "user_id": str(user.id),
+                "user_id": str(user.get("sub")),
                 "event_type": "new_partner",
                 "team_member_id": result.data[0]["id"],
                 "member_name": member.name,
@@ -395,17 +405,21 @@ async def add_team_member(
 
 
 @router.delete("/team/{member_id}")
-async def delete_team_member(member_id: str, user=Depends(get_current_user), supabase=Depends(get_supabase)):
-    supabase.table("team_members").delete().eq("id", member_id).eq("user_id", str(user.id)).execute()
+async def delete_team_member(
+    member_id: str, user=Depends(get_current_active_user), supabase=Depends(get_supabase)
+):
+    supabase.table("team_members").delete().eq("id", member_id).eq("user_id", str(user.get("sub"))).execute()
     return {"success": True}
 
 
 # ═════════ LEAD CONVERSION ═════════
 @router.post("/convert-lead")
 async def convert_lead_to_partner(
-    data: LeadConversion, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    data: LeadConversion,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
 ):
-    user_id = str(user.id)
+    user_id = str(user.get("sub"))
     lead_result = (
         supabase.table("leads").select("*").eq("id", data.lead_id).eq("user_id", user_id).execute()
     )
@@ -453,9 +467,11 @@ async def convert_lead_to_partner(
 # ═════════ CSV IMPORT ═════════
 @router.post("/import")
 async def import_team_csv(
-    data: ImportRequest, user=Depends(get_current_user), supabase=Depends(get_supabase)
+    data: ImportRequest,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
 ):
-    user_id = str(user.id)
+    user_id = str(user.get("sub"))
     imported = 0
     errors = []
 
@@ -488,11 +504,13 @@ async def import_team_csv(
 
 # ═════════ RANK PROGRESS ═════════
 @router.get("/rank-progress")
-async def get_rank_progress(user=Depends(get_current_user), supabase=Depends(get_supabase)):
+async def get_rank_progress(
+    user=Depends(get_current_active_user), supabase=Depends(get_supabase)
+):
     result = (
         supabase.table("network_settings")
         .select("*")
-        .eq("user_id", str(user.id))
+        .eq("user_id", str(user.get("sub")))
         .execute()
     )
     if not result.data:

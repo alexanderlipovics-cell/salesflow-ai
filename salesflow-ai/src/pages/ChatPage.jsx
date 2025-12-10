@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Shield, Sparkles, Upload, User, Volume2, VolumeX, Camera } from "lucide-react";
+import { Bot, Loader2, Mic, MicOff, Paperclip, Send, Shield, Sparkles, Upload, User, Volume2, VolumeX, Camera, Zap, Target, Check, AlertTriangle, TrendingUp, Save } from "lucide-react";
 import { useVoice } from "../hooks/useVoice";
 import AnalysisCard from '../components/chat/AnalysisCard';
 import { useSmartImport } from '../hooks/useSmartImport';
@@ -146,6 +146,11 @@ const ChatPage = () => {
   const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  // Deep Scan State
+  const [isScanning, setIsScanning] = useState(false);
+  const [leadAnalysis, setLeadAnalysis] = useState(null);
+  const [scanError, setScanError] = useState(null);
+  const [savingLead, setSavingLead] = useState(false);
 
   const showSuggestions = messages.length <= 1 && !isLoading;
 
@@ -254,6 +259,8 @@ const ChatPage = () => {
 
     return [...prioritized, ...additional];
   }, [parsedLeadContext]);
+
+  const hasLeadContextError = !parsedLeadContext || typeof parsedLeadContext !== "object";
 
   const detectNewStakeholder = (text) => {
     if (!text) return null;
@@ -838,7 +845,7 @@ const ChatPage = () => {
   };
 
   // New handlers for AnalysisCard
-  const handleSaveLead = async (analysis) => {
+  const handleAnalysisSaveLead = async (analysis) => {
     try {
       const result = await saveLead(analysis);
       // Add success message to chat
@@ -883,6 +890,131 @@ const ChatPage = () => {
 
     setTimeout(() => setImportStatus(null), 4000);
     event.target.value = "";
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // DEEP SCAN & LEAD ACTIONS
+  // ═══════════════════════════════════════════════════════════════
+
+  const handleDeepScan = async () => {
+    let leadId = null;
+    try {
+      const parsed = JSON.parse(leadContext || "{}");
+      leadId = parsed.id || parsed.lead_id;
+    } catch (e) {}
+
+    if (!leadId) {
+      setScanError("Kein Lead mit ID gefunden. Speichere zuerst den Lead.");
+      return;
+    }
+
+    setIsScanning(true);
+    setLeadAnalysis(null);
+    setScanError(null);
+
+    try {
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`${API_BASE_URL}/api/lead-analysis/deep-scan`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ lead_id: leadId }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setLeadAnalysis(result);
+        setContextPanel("intelligence"); // Wechsel zu Ergebnissen
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `scan-${Date.now()}`,
+            role: "assistant",
+            content: `🧠 **Deep Scan für ${result.name || 'Lead'}:** ${result.disc_profile?.primary_type || 'Analysiert'}. Closing: ${result.closing_probability || 50}%`,
+          },
+        ]);
+      } else {
+        setScanError(result.detail || "Analyse fehlgeschlagen");
+      }
+    } catch (error) {
+      console.error("Deep scan failed:", error);
+      setScanError("Verbindungsfehler");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleSaveLead = async () => {
+    if (!parsedLeadContext || hasLeadContextError) return;
+    
+    setSavingLead(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`${API_BASE_URL}/api/leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: parsedLeadContext.name || "Unbekannt",
+          company: parsedLeadContext.company || "",
+          status: parsedLeadContext.status || "new",
+          notes: parsedLeadContext.notes || parsedLeadContext.next_step || "",
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.id) {
+        // Update context with new ID
+        const updatedContext = { ...parsedLeadContext, id: result.id, lead_id: result.id };
+        setLeadContext(JSON.stringify(updatedContext, null, 2));
+        
+        setMessages((prev) => [...prev, {
+          id: `save-${Date.now()}`,
+          role: "assistant",
+          content: `✅ Lead **${parsedLeadContext.name}** wurde gespeichert! Du kannst jetzt Deep Scan nutzen.`,
+        }]);
+      } else {
+        throw new Error(result.detail || "Speichern fehlgeschlagen");
+      }
+    } catch (error) {
+      console.error("Save failed:", error);
+      setMessages((prev) => [...prev, {
+        id: `error-${Date.now()}`,
+        role: "assistant", 
+        content: `❌ Fehler beim Speichern: ${error.message}`,
+      }]);
+    } finally {
+      setSavingLead(false);
+    }
+  };
+
+  const renderDISCBar = () => {
+    if (!leadAnalysis?.disc_profile) return null;
+    const { dominant, influential, steady, conscientious } = leadAnalysis.disc_profile;
+    const total = dominant + influential + steady + conscientious || 100;
+    
+    return (
+      <div className="space-y-2">
+        <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
+          <div className="h-full bg-red-500" style={{ width: `${(dominant/total)*100}%` }} />
+          <div className="h-full bg-yellow-500" style={{ width: `${(influential/total)*100}%` }} />
+          <div className="h-full bg-green-500" style={{ width: `${(steady/total)*100}%` }} />
+          <div className="h-full bg-blue-500" style={{ width: `${(conscientious/total)*100}%` }} />
+        </div>
+        <div className="flex justify-between text-[10px] text-slate-500">
+          <span className="text-red-400">D:{dominant}</span>
+          <span className="text-yellow-400">I:{influential}</span>
+          <span className="text-green-400">S:{steady}</span>
+          <span className="text-blue-400">C:{conscientious}</span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1124,7 +1256,7 @@ const ChatPage = () => {
             {analysisResult && (
               <AnalysisCard
                 analysis={analysisResult}
-                onSaveLead={handleSaveLead}
+                onSaveLead={handleAnalysisSaveLead}
                 onClose={clearAnalysis}
                 onCopy={(text, field) => console.log('Copied:', field)}
                 onMagicSend={handleMagicSend}
@@ -1344,11 +1476,11 @@ const ChatPage = () => {
                 <h2 className="text-lg font-semibold text-slate-50">
                   {contextPanel === "lead"
                     ? "Lead-Kontext"
-                    : "Bestandskunden importieren"}
+                    : "Lead Intelligence"}
                 </h2>
               </div>
               <div className="inline-flex gap-2 rounded-full bg-slate-900/60 p-1 text-xs font-semibold text-slate-400">
-                {["lead", "import"].map((panel) => (
+                {["lead", "intelligence"].map((panel) => (
                   <button
                     key={panel}
                     type="button"
@@ -1360,7 +1492,7 @@ const ChatPage = () => {
                         : "text-slate-400 hover:text-slate-100"
                     )}
                   >
-                    {panel === "lead" ? "Lead" : "Import"}
+                    {panel === "lead" ? "Lead" : "🧠 Scan"}
                   </button>
                 ))}
               </div>
@@ -1373,7 +1505,7 @@ const ChatPage = () => {
                 </p>
                 <LeadContextSummary
                   entries={leadContextEntries}
-                  hasError={!parsedLeadContext}
+                  hasError={hasLeadContextError}
                   onEdit={() => setIsEditingLeadContext(true)}
                 />
 
@@ -1416,6 +1548,78 @@ const ChatPage = () => {
                   </button>
                 )}
 
+                {/* ═══ QUICK ACTIONS ═══ */}
+                {parsedLeadContext && !hasLeadContextError && (
+                  <div className="pt-4 mt-4 border-t border-slate-800 space-y-3">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Aktionen
+                    </p>
+                    
+                    {/* Save Lead Button - Prominent wenn keine ID */}
+                    {!parsedLeadContext.id && !parsedLeadContext.lead_id && (
+                      <button
+                        onClick={handleSaveLead}
+                        disabled={savingLead}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-colors disabled:opacity-50"
+                      >
+                        {savingLead ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Speichere...</>
+                        ) : (
+                          <><Save className="w-4 h-4" /> Lead speichern</>
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Action Grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={handleDeepScan}
+                        disabled={isScanning || (!parsedLeadContext.id && !parsedLeadContext.lead_id)}
+                        className={clsx(
+                          "flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-all",
+                          parsedLeadContext.id || parsedLeadContext.lead_id
+                            ? "bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30"
+                            : "bg-slate-800/50 border border-slate-700/50 text-slate-500 cursor-not-allowed"
+                        )}
+                      >
+                        <Zap className={clsx("w-3 h-3", isScanning && "animate-spin")} />
+                        {isScanning ? "Scannt..." : "Deep Scan"}
+                      </button>
+                      
+                      <button
+                        onClick={() => setInput(`Schreibe ein Follow-up für ${parsedLeadContext.name}`)}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
+                      >
+                        <Send className="w-3 h-3" />
+                        Follow-up
+                      </button>
+                      
+                      <button
+                        onClick={() => setInput(`Wie behandle ich Einwände bei ${parsedLeadContext.name}?`)}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
+                      >
+                        <Shield className="w-3 h-3" />
+                        Einwände
+                      </button>
+                      
+                      <button
+                        onClick={() => setInput(`Gib mir eine Abschluss-Strategie für ${parsedLeadContext.name}`)}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
+                      >
+                        <TrendingUp className="w-3 h-3" />
+                        Strategie
+                      </button>
+                    </div>
+                    
+                    {/* Hint wenn kein Lead gespeichert */}
+                    {!parsedLeadContext.id && !parsedLeadContext.lead_id && (
+                      <p className="text-[10px] text-slate-500 text-center">
+                        💡 Speichere den Lead um Deep Scan zu nutzen
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {contextSaved && (
                   <p className="text-center text-xs text-emerald-200">
                     ✓ Kontext gespeichert
@@ -1423,25 +1627,116 @@ const ChatPage = () => {
                 )}
               </div>
             ) : (
+              /* ═══ INTELLIGENCE PANEL (ersetzt Import) ═══ */
               <div className="space-y-4">
-                <p className="text-sm text-slate-300">
-                  Lade CSV-Listen hoch. Sales Flow AI segmentiert automatisch.
-                </p>
-                <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-800 bg-slate-950/60 px-4 py-8 text-sm text-slate-300 hover:border-emerald-500/40">
-                  <Upload className="h-8 w-8 text-slate-400" />
-                  <span>CSV oder XLSX ablegen</span>
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx"
-                    className="hidden"
-                    onChange={handleImport}
-                  />
-                </label>
-                {importStatus && (
-                  <p className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-300">
-                    {importStatus}
+                
+                {/* Header mit Scan Button */}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-400">
+                    KI-Analyse des aktuellen Leads
                   </p>
+                  <button
+                    onClick={handleDeepScan}
+                    disabled={isScanning}
+                    className={clsx(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      isScanning
+                        ? "bg-violet-600/50 text-violet-300"
+                        : "bg-violet-600 hover:bg-violet-500 text-white"
+                    )}
+                  >
+                    <Zap className={clsx("w-3 h-3", isScanning && "animate-spin")} />
+                    {isScanning ? "..." : "Neu scannen"}
+                  </button>
+                </div>
+
+                {/* Error */}
+                {scanError && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200 text-sm">
+                    {scanError}
+                  </div>
                 )}
+
+                {/* Results */}
+                {leadAnalysis ? (
+                  <div className="space-y-3">
+                    
+                    {/* Closing Score */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                      <span className="text-sm text-slate-400">Closing-Chance</span>
+                      <span className={clsx(
+                        "text-xl font-bold",
+                        leadAnalysis.closing_probability >= 70 ? "text-green-400" :
+                        leadAnalysis.closing_probability >= 40 ? "text-yellow-400" : "text-red-400"
+                      )}>
+                        {leadAnalysis.closing_probability}%
+                      </span>
+                    </div>
+
+                    {/* DISC */}
+                    <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-xs text-slate-500">DISC-Profil</span>
+                        <span className="text-xs font-semibold text-blue-400">
+                          {leadAnalysis.disc_profile?.primary_type}
+                        </span>
+                      </div>
+                      {renderDISCBar()}
+                      <p className="text-xs text-slate-400 mt-2">
+                        {leadAnalysis.disc_profile?.description}
+                      </p>
+                    </div>
+
+                    {/* Do's */}
+                    <div className="p-3 rounded-xl bg-green-500/5 border border-green-500/20">
+                      <h4 className="text-xs font-bold text-green-400 mb-2 flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Do's
+                      </h4>
+                      <ul className="space-y-1">
+                        {leadAnalysis.dos?.map((item, i) => (
+                          <li key={i} className="text-xs text-slate-300">• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Don'ts */}
+                    <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                      <h4 className="text-xs font-bold text-red-400 mb-2 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Don'ts
+                      </h4>
+                      <ul className="space-y-1">
+                        {leadAnalysis.donts?.map((item, i) => (
+                          <li key={i} className="text-xs text-slate-300">• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Strategie */}
+                    {leadAnalysis.recommended_approach && (
+                      <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                        <h4 className="text-xs font-bold text-violet-400 mb-2 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Empfehlung
+                        </h4>
+                        <p className="text-xs text-slate-200">
+                          {leadAnalysis.recommended_approach}
+                        </p>
+                      </div>
+                    )}
+
+                  </div>
+                ) : (
+                  /* Empty State */
+                  <div className="text-center py-8">
+                    <Target className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                    <p className="text-sm text-slate-500">
+                      Noch kein Scan durchgeführt
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Wähle einen Lead und starte Deep Scan
+                    </p>
+                  </div>
+                )}
+
               </div>
             )}
           </div>
