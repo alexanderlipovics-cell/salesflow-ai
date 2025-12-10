@@ -20,6 +20,8 @@ class ToolExecutor:
             "query_leads": self._query_leads,
             "get_lead_details": self._get_lead_details,
             "query_follow_ups": self._query_follow_ups,
+            "get_followup_suggestions": self._get_followup_suggestions,
+            "start_followup_flow": self._start_followup_flow,
             "get_performance_stats": self._get_performance_stats,
             "get_commission_status": self._get_commission_status,
             "get_churn_risks": self._get_churn_risks,
@@ -165,6 +167,72 @@ class ToolExecutor:
         return {
             "count": len(result.data) if result and result.data else 0,
             "follow_ups": result.data if result else [],
+        }
+
+    async def _get_followup_suggestions(self, limit: int = 5) -> Any:
+        """Hole fällige Follow-up Vorschläge (Supabase)."""
+        now = datetime.utcnow().isoformat()
+
+        result = (
+            self.db.table("followup_suggestions")
+            .select("*, leads(name, company, phone)")
+            .eq("user_id", self.user_id)
+            .eq("status", "pending")
+            .lte("due_at", now)
+            .order("due_at")
+            .limit(limit)
+            .execute()
+        )
+
+        if not result.data:
+            return "Keine Follow-ups fällig! 🎉 Du bist auf dem neuesten Stand."
+
+        suggestions = result.data
+        response = f"📋 **{len(suggestions)} Follow-ups fällig:**\n\n"
+
+        for i, s in enumerate(suggestions, 1):
+            lead = s.get("leads", {}) or {}
+            response += f"{i}. **{lead.get('name', 'Unbekannt')}**"
+            if lead.get("company"):
+                response += f" ({lead['company']})"
+            response += f"\n   📝 {s.get('reason', 'Follow-up')}\n"
+            snippet = (s.get("suggested_message") or "").strip()
+            if len(snippet) > 80:
+                snippet = snippet[:80] + "..."
+            response += f"   💬 _{snippet}_\n\n"
+
+        response += "Soll ich dir die Nachrichten vorbereiten oder einen davon überspringen?"
+        return response
+
+    async def _start_followup_flow(self, lead_id: str, flow: str) -> Any:
+        """Startet Follow-up Flow und setzt nächste Stage."""
+        rule = (
+            self.db.table("followup_rules")
+            .select("*")
+            .eq("flow", flow)
+            .eq("stage", 0)
+            .single()
+            .execute()
+        )
+
+        if not rule.data:
+            return {"error": f"Flow '{flow}' nicht gefunden"}
+
+        next_followup = datetime.utcnow() + timedelta(days=rule.data["wait_days"])
+
+        self.db.table("leads").update(
+            {
+                "flow": flow,
+                "follow_up_stage": 0,
+                "next_follow_up_at": next_followup.isoformat(),
+                "last_outreach_at": datetime.utcnow().isoformat(),
+            }
+        ).eq("id", lead_id).eq("user_id", self.user_id).execute()
+
+        return {
+            "success": True,
+            "message": f"Flow '{flow}' gestartet",
+            "next_followup_at": next_followup.isoformat(),
         }
 
     async def _get_performance_stats(

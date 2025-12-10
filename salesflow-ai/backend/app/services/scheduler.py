@@ -27,6 +27,7 @@ def setup_scheduler():
         send_daily_briefing,
         power_hour_reminder
     )
+    from .jobs import generate_all_suggestions  # optional background Follow-up Generator
 
     # FollowUp Checker - every 4 hours
     scheduler.add_job(
@@ -87,6 +88,15 @@ def setup_scheduler():
         CronTrigger(hour=14, minute=50),
         id="power_hour_reminder_afternoon",
         name="Power Hour Reminder (Afternoon)",
+        replace_existing=True
+    )
+
+    # Follow-up Suggestions Generator - every 15 minutes
+    scheduler.add_job(
+        generate_all_suggestions,
+        IntervalTrigger(minutes=15),
+        id="generate_all_suggestions",
+        name="Generate Follow-up Suggestions",
         replace_existing=True
     )
 

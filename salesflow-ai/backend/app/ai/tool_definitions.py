@@ -98,6 +98,45 @@ SALES_AGENT_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "get_followup_suggestions",
+            "description": "Holt die fälligen Follow-up Vorschläge für heute. Nutze dies wenn der User nach Follow-ups fragt.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Anzahl der Vorschläge (default 5)",
+                        "default": 5
+                    }
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "start_followup_flow",
+            "description": "Startet einen Follow-up Flow für einen Lead. Flows: COLD_NO_REPLY, INTERESTED_LATER",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_id": {
+                        "type": "string",
+                        "description": "ID des Leads"
+                    },
+                    "flow": {
+                        "type": "string",
+                        "enum": ["COLD_NO_REPLY", "INTERESTED_LATER"],
+                        "description": "Welcher Flow gestartet werden soll"
+                    }
+                },
+                "required": ["lead_id", "flow"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_performance_stats",
             "description": "Hole Performance-Statistiken des Users. Nutze für: Wie lief mein Tag/Woche/Monat, Conversion Rates, Aktivitäten.",
             "parameters": {

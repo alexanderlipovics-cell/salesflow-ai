@@ -480,11 +480,33 @@ async def power_hour_reminder():
         await log_job_complete(db, job_id, error=str(e))
 
 
+# ═══════════════════════════════════════════════════════════
+# JOB 7: FOLLOW-UP SUGGESTION GENERATOR (placeholder)
+# ═══════════════════════════════════════════════════════════
+
+async def generate_all_suggestions():
+    """
+    Placeholder für globale Follow-up Vorschlags-Generierung.
+    Aktuell nur Logging – kann später mit Supabase-Flow befüllt werden.
+    """
+    db = get_supabase_client()
+    job_id = await log_job_start(db, "generate_all_suggestions")
+
+    try:
+        # Die eigentliche Generierung wird vom Follow-up Router übernommen.
+        await log_job_complete(db, job_id, metadata={"status": "noop"})
+        logger.info("generate_all_suggestions executed (noop)")
+    except Exception as e:
+        logger.error(f"generate_all_suggestions failed: {e}")
+        await log_job_complete(db, job_id, error=str(e))
+
+
 __all__ = [
     "check_follow_ups",
     "update_lead_scores",
     "detect_churn_risks",
     "track_goals",
     "send_daily_briefing",
-    "power_hour_reminder"
+    "power_hour_reminder",
+    "generate_all_suggestions",
 ]

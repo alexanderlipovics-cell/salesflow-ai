@@ -13,6 +13,7 @@ import { QuickActions } from "../components/dashboard/QuickActions";
 import { TodaysTasks } from "../components/dashboard/TodaysTasks";
 import { PipelineOverview } from "../components/dashboard/PipelineOverview";
 import { AIInsights } from "../components/dashboard/AIInsights";
+import FollowupWidget from "../components/dashboard/FollowupWidget";
 import ActivityFeed from "../components/dashboard/ActivityFeed";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, Tooltip, Legend } from "recharts";
 import { useAuth } from "../context/AuthContext";
@@ -149,6 +150,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
+            <FollowupWidget />
             <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-5 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
               <div className="mb-3 text-lg font-semibold text-white">AI Insights</div>
               <AIInsights

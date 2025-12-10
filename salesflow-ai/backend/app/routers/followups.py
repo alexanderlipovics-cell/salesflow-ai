@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 
 from app.models.followup import (
@@ -28,6 +28,8 @@ from app.repositories.followup_repository_mock import InMemoryFollowUpRepository
 from app.services.followup_engine import FollowUpEngine
 from app.services.timezone_service import DefaultTimezoneService
 from app.services.ai_router_dummy import DummyAIRouter
+from app.core.security import get_current_active_user
+from app.core.deps import get_supabase
 import uuid
 import time
 import logging
@@ -389,4 +391,308 @@ async def debug_leads(
     ]
 
 
-__all__ = ["router"]
+# ═══════════════════════════════════════════════════════════════
+# Follow-up V2 (Supabase-backed) - /followups
+# ═══════════════════════════════════════════════════════════════
+
+
+class SuggestionAction(BaseModel):
+    action: str  # 'send', 'skip', 'snooze'
+    snooze_days: Optional[int] = None
+    edited_message: Optional[str] = None
+
+
+class StartFlowRequest(BaseModel):
+    lead_id: str
+    flow: str  # 'COLD_NO_REPLY' or 'INTERESTED_LATER'
+
+
+router_v2 = APIRouter(prefix="/followups", tags=["followups"])
+
+
+def _get_user_id(user: Any) -> str:
+    if isinstance(user, dict):
+        return str(user.get("sub") or user.get("id") or user.get("user_id"))
+    if hasattr(user, "id"):
+        return str(getattr(user, "id"))
+    return str(user)
+
+
+@router_v2.get("/pending")
+async def get_pending_suggestions_v2(
+    limit: int = 10,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Hole alle fälligen Follow-up Vorschläge."""
+    user_id = _get_user_id(user)
+    now = datetime.utcnow().isoformat()
+
+    result = (
+        supabase.table("followup_suggestions")
+        .select("*, leads(name, company, status, phone, email)")
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .lte("due_at", now)
+        .order("due_at")
+        .limit(limit)
+        .execute()
+    )
+
+    suggestions = result.data or []
+    return {"suggestions": suggestions, "count": len(suggestions)}
+
+
+@router_v2.get("/today")
+async def get_todays_followups_v2(
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Alle Follow-ups für heute (für Dashboard Widget)."""
+    user_id = _get_user_id(user)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    today_end = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
+
+    result = (
+        supabase.table("followup_suggestions")
+        .select("*, leads(name, company, phone)")
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .gte("due_at", today_start)
+        .lte("due_at", today_end)
+        .execute()
+    )
+
+    suggestions = result.data or []
+    return {"today": suggestions, "count": len(suggestions)}
+
+
+@router_v2.post("/suggestions/{suggestion_id}/action")
+async def handle_suggestion_v2(
+    suggestion_id: str,
+    action: SuggestionAction,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Bearbeite einen Follow-up Vorschlag."""
+    user_id = _get_user_id(user)
+    now = datetime.utcnow()
+
+    sug_result = (
+        supabase.table("followup_suggestions")
+        .select("*")
+        .eq("id", suggestion_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+
+    if not sug_result.data:
+        raise HTTPException(status_code=404, detail="Suggestion nicht gefunden")
+
+    suggestion = sug_result.data
+
+    if action.action == "send":
+        supabase.table("followup_suggestions").update(
+            {
+                "status": "sent",
+                "sent_at": now.isoformat(),
+                "suggested_message": action.edited_message or suggestion["suggested_message"],
+            }
+        ).eq("id", suggestion_id).execute()
+
+        rule = (
+            supabase.table("followup_rules")
+            .select("*")
+            .eq("flow", suggestion["flow"])
+            .eq("stage", suggestion["stage"])
+            .single()
+            .execute()
+        )
+
+        if rule.data:
+            next_followup = now + timedelta(days=rule.data["wait_days"])
+            supabase.table("leads").update(
+                {
+                    "follow_up_stage": rule.data["next_stage"],
+                    "next_follow_up_at": next_followup.isoformat(),
+                    "last_outreach_at": now.isoformat(),
+                    "status": rule.data["next_status"],
+                }
+            ).eq("id", suggestion["lead_id"]).eq("user_id", user_id).execute()
+
+        return {"success": True, "message": "Follow-up als gesendet markiert"}
+
+    if action.action == "skip":
+        supabase.table("followup_suggestions").update({"status": "skipped"}).eq("id", suggestion_id).execute()
+        return {"success": True, "message": "Follow-up übersprungen"}
+
+    if action.action == "snooze":
+        snooze_days = action.snooze_days or 1
+        snooze_until = now + timedelta(days=snooze_days)
+
+        supabase.table("followup_suggestions").update(
+            {
+                "status": "snoozed",
+                "snoozed_until": snooze_until.isoformat(),
+                "due_at": snooze_until.isoformat(),
+            }
+        ).eq("id", suggestion_id).execute()
+
+        return {"success": True, "message": f"Follow-up um {snooze_days} Tag(e) verschoben"}
+
+    raise HTTPException(status_code=400, detail="Unbekannte Aktion")
+
+
+@router_v2.post("/start-flow")
+async def start_flow_for_lead_v2(
+    request: StartFlowRequest,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Startet einen Follow-up Flow für einen Lead."""
+    user_id = _get_user_id(user)
+
+    rule = (
+        supabase.table("followup_rules")
+        .select("*")
+        .eq("flow", request.flow)
+        .eq("stage", 0)
+        .single()
+        .execute()
+    )
+
+    if not rule.data:
+        raise HTTPException(status_code=400, detail=f"Flow '{request.flow}' nicht gefunden")
+
+    next_followup = datetime.utcnow() + timedelta(days=rule.data["wait_days"])
+
+    supabase.table("leads").update(
+        {
+            "flow": request.flow,
+            "follow_up_stage": 0,
+            "next_follow_up_at": next_followup.isoformat(),
+            "last_outreach_at": datetime.utcnow().isoformat(),
+        }
+    ).eq("id", request.lead_id).eq("user_id", user_id).execute()
+
+    return {"success": True, "message": f"Flow '{request.flow}' gestartet", "next_followup_at": next_followup.isoformat()}
+
+
+@router_v2.post("/generate")
+async def generate_suggestions_v2(
+    background_tasks: BackgroundTasks,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Generiert Follow-up Vorschläge für fällige Leads (manueller Trigger)."""
+    user_id = _get_user_id(user)
+    background_tasks.add_task(generate_suggestions_for_user, user_id, supabase)
+    return {"success": True, "message": "Vorschläge werden generiert..."}
+
+
+def generate_suggestions_for_user(user_id: str, supabase):
+    """Background Task: Generiert Vorschläge."""
+    now = datetime.utcnow()
+
+    leads_result = (
+        supabase.table("leads")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("do_not_contact", False)
+        .lte("next_follow_up_at", now.isoformat())
+        .not_.is_("flow", None)
+        .execute()
+    )
+
+    if not leads_result.data:
+        return
+
+    for lead in leads_result.data:
+        existing = (
+            supabase.table("followup_suggestions")
+            .select("id")
+            .eq("lead_id", lead["id"])
+            .eq("status", "pending")
+            .execute()
+        )
+        if existing.data:
+            continue
+
+        rule = (
+            supabase.table("followup_rules")
+            .select("*, message_templates(*)")
+            .eq("flow", lead.get("flow"))
+            .eq("stage", lead.get("follow_up_stage"))
+            .single()
+            .execute()
+        )
+
+        if not rule.data:
+            continue
+
+        if not rule.data.get("template_key"):
+            next_followup = now + timedelta(days=rule.data["wait_days"])
+            supabase.table("leads").update(
+                {"follow_up_stage": rule.data["next_stage"], "next_follow_up_at": next_followup.isoformat()}
+            ).eq("id", lead["id"]).execute()
+            continue
+
+        template_body = rule.data.get("message_templates", {}).get("body", "")
+        message = template_body.replace("{name}", lead.get("name", ""))
+
+        supabase.table("followup_suggestions").insert(
+            {
+                "user_id": user_id,
+                "lead_id": lead["id"],
+                "flow": lead.get("flow"),
+                "stage": lead.get("follow_up_stage"),
+                "template_key": rule.data.get("template_key"),
+                "channel": lead.get("preferred_channel", "WHATSAPP"),
+                "suggested_message": message,
+                "reason": rule.data.get("description", f"Stage {lead.get('follow_up_stage')}"),
+                "due_at": now.isoformat(),
+                "status": "pending",
+            }
+        ).execute()
+
+
+@router_v2.get("/templates")
+async def get_templates_v2(
+    user=Depends(get_current_active_user),  # noqa: ARG001 - reserved for future tenant scoping
+    supabase=Depends(get_supabase),
+):
+    """Alle verfügbaren Templates."""
+    result = supabase.table("message_templates").select("*").eq("is_active", True).execute()
+    return {"templates": result.data or []}
+
+
+@router_v2.get("/stats")
+async def get_followup_stats_v2(
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Statistiken für Follow-ups."""
+    user_id = _get_user_id(user)
+
+    pending = (
+        supabase.table("followup_suggestions")
+        .select("id", count="exact")
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .execute()
+    )
+
+    sent_this_week = (
+        supabase.table("followup_suggestions")
+        .select("id", count="exact")
+        .eq("user_id", user_id)
+        .eq("status", "sent")
+        .gte("sent_at", (datetime.utcnow() - timedelta(days=7)).isoformat())
+        .execute()
+    )
+
+    return {"pending_count": pending.count or 0, "sent_this_week": sent_this_week.count or 0}
+
+
+__all__ = ["router", "router_v2"]

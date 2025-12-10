@@ -215,7 +215,7 @@ from .routers.ai_followup import router as ai_followup_router  # 🧠 Magic Send
 from .routers.idps import router as idps_router  # IDPS: Intelligent DM Persistence System
 from .routers.chat_import import router as chat_import_router  # 🆕 Chat Import für Networker
 from .routers.screenshot_import import router as screenshot_router  # 🆕 Screenshot-to-Lead Magic
-from .routers.followups import router as followups_router  # 🆕 GPT Follow-Up Engine
+from .routers.followups import router as followups_router, router_v2 as followups_router_v2  # 🆕 GPT Follow-Up Engine
 from .routers.sequences import router as sequences_router  # 🆕 Follow-up Sequenzen
 from .routers.team_templates import router as team_templates_router  # 🆕 Team Duplikation
 from .routers.lead_hunter import router as lead_hunter_router  # 🆕 Lead Hunter für Networker
@@ -288,6 +288,7 @@ app.include_router(idps_router, prefix="/api")  # IDPS: Intelligent DM Persisten
 app.include_router(chat_import_router, prefix="/api")  # 🆕 Chat Import für Networker
 app.include_router(screenshot_router, prefix="/api")  # 🆕 Screenshot-to-Lead Magic (GPT-4o Vision)
 app.include_router(followups_router, prefix="/api")  # 🆕 GPT Follow-Up Engine
+app.include_router(followups_router_v2, prefix="/api")  # 🆕 Follow-Up Suggestions V2
 app.include_router(sequences_router, prefix="/api")  # 🆕 Follow-up Sequenzen
 app.include_router(team_templates_router, prefix="/api")  # 🆕 Team Duplikation System
 app.include_router(lead_hunter_router, prefix="/api")  # 🆕 Lead Hunter für Networker
