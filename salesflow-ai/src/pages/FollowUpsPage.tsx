@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { endOfWeek, isWithinInterval, parseISO, startOfWeek } from 'date-fns';
 import {
   AlertTriangle,
   CalendarClock,
@@ -119,20 +120,10 @@ const isDueToday = (dateString: string | null) => {
 
 const isDueThisWeek = (dateString: string | null) => {
   if (!dateString) return false;
-  const dueDate = new Date(dateString);
-  const today = new Date();
-
-  const dayOfWeek = today.getDay(); // 0 = Sunday
-  const diffToMonday = (dayOfWeek + 6) % 7; // convert so Monday=0
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - diffToMonday);
-  monday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  return dueDate >= monday && dueDate <= sunday;
+  const dueDate = parseISO(dateString);
+  const start = startOfWeek(new Date(), { weekStartsOn: 1 }); // Montag
+  const end = endOfWeek(new Date(), { weekStartsOn: 1 }); // Sonntag
+  return isWithinInterval(dueDate, { start, end });
 };
 
 /**
