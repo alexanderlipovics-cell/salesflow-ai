@@ -274,6 +274,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
+        "https://salesflow-system.com",
+        "https://www.salesflow-system.com",
         "https://aura-os-topaz.vercel.app",
         "https://aura-os-git-main-sales-flow-ais-projects.vercel.app",
         "https://aura-4kej8wk1c-sales-flow-ais-projects.vercel.app",
