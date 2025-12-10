@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle, Upload } from "lucide-react";
+import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle, Upload, Pencil } from "lucide-react";
 import LeadsKanban from "@/components/leads/LeadsKanban";
 import { Button } from "@/components/ui/button";
 import { LeadForm } from "@/components/forms/LeadForm";
 import ImportLeadsDialog from "@/components/leads/ImportLeadsDialog";
 import LeadActionModal from "@/components/leads/LeadActionModal";
+import LeadEditModal from "@/components/leads/LeadEditModal";
 
 type Lead = {
   id: string;
@@ -14,6 +15,17 @@ type Lead = {
   company?: string | null;
   status?: string | null;
   score?: number | null;
+  position?: string | null;
+  notes?: string | null;
+  source?: string | null;
+  instagram?: string | null;
+  linkedin?: string | null;
+  whatsapp?: string | null;
+  twitter?: string | null;
+  tiktok?: string | null;
+  facebook?: string | null;
+  website?: string | null;
+  tags?: string[] | null;
   lastActivity?: string | null;
   nextAction?: string | null;
 };
@@ -48,6 +60,7 @@ const LeadsPage = () => {
   const [status, setStatus] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "board">("table");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [showAddLead, setShowAddLead] = useState(false);
   const [creatingLead, setCreatingLead] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -78,6 +91,17 @@ const LeadsPage = () => {
         company: l.company,
         status: l.status || "new",
         score: l.score ?? l.temperature ?? null,
+        position: l.position || l.title || null,
+        notes: l.notes || l.description || null,
+        source: l.source || null,
+        instagram: l.instagram || l.instagram_handle || null,
+        linkedin: l.linkedin || l.linkedin_url || null,
+        whatsapp: l.whatsapp || null,
+        twitter: l.twitter || null,
+        tiktok: l.tiktok || null,
+        facebook: l.facebook || null,
+        website: l.website || null,
+        tags: l.tags || null,
         lastActivity: l.last_activity || l.last_contact,
         nextAction: l.next_action || "Nächster Schritt offen",
       }));
@@ -136,6 +160,26 @@ const LeadsPage = () => {
     } finally {
       setCreatingLead(false);
     }
+  };
+
+  const handleUpdateLead = async (data: Partial<Lead>) => {
+    if (!editingLead) return;
+    const token = localStorage.getItem("access_token");
+    const response = await fetch(`/api/leads/${editingLead.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error("Lead konnte nicht aktualisiert werden");
+    }
+
+    await fetchLeads();
+    setSelectedLead((prev) => (prev && prev.id === editingLead.id ? { ...prev, ...data } : prev));
   };
 
   return (
@@ -275,9 +319,20 @@ const LeadsPage = () => {
                       <td className="px-4 py-4 text-gray-300">{lead.nextAction || "–"}</td>
                       <td className="px-4 py-4 text-gray-400 text-sm">{lead.lastActivity || "–"}</td>
                       <td className="px-4 py-4">
-                        <button className="rounded p-2 hover:bg-slate-800">
-                          <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingLead(lead);
+                            }}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-gray-200"
+                          >
+                            <Pencil className="h-3 w-3" /> Bearbeiten
+                          </button>
+                          <button className="rounded p-2 hover:bg-slate-800">
+                            <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -348,6 +403,12 @@ const LeadsPage = () => {
               >
                 <MessageCircle className="h-4 w-4" /> WhatsApp
               </button>
+              <button
+                onClick={() => setEditingLead(selectedLead)}
+                className="flex-1 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold hover:bg-slate-700 flex items-center justify-center gap-2"
+              >
+                <Pencil className="h-4 w-4" /> Bearbeiten
+              </button>
             </div>
 
             <div className="mt-6">
@@ -393,6 +454,18 @@ const LeadsPage = () => {
         lead={selectedLead}
         action={actionModal.action}
       />
+
+      {editingLead && (
+        <LeadEditModal
+          lead={editingLead}
+          isOpen={!!editingLead}
+          onClose={() => setEditingLead(null)}
+          onSave={async (data) => {
+            await handleUpdateLead(data);
+            setEditingLead(null);
+          }}
+        />
+      )}
     </div>
   );
 };

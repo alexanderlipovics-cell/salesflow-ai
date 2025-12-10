@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Bell, Send, Clock, X } from "lucide-react";
+import { Bell, Clock, X, MessageCircle, Instagram, Linkedin, Mail, Check } from "lucide-react";
+import { oneClickSend } from "@/utils/deepLinks";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -7,16 +8,22 @@ interface Suggestion {
   id: string;
   suggested_message: string;
   reason: string;
+  channel?: string;
   leads: {
     name: string;
     company?: string;
     phone?: string;
+    email?: string;
+    instagram?: string;
+    linkedin?: string;
+    whatsapp?: string;
   };
 }
 
 export default function FollowupWidget() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSuggestions();
@@ -50,6 +57,59 @@ export default function FollowupWidget() {
     fetchSuggestions();
   };
 
+  const getChannelIcon = (channel?: string) => {
+    switch ((channel || "").toLowerCase()) {
+      case "instagram":
+        return <Instagram className="w-3 h-3 text-pink-500" />;
+      case "linkedin":
+        return <Linkedin className="w-3 h-3 text-blue-500" />;
+      case "email":
+        return <Mail className="w-3 h-3 text-gray-300" />;
+      default:
+        return <MessageCircle className="w-3 h-3 text-green-500" />;
+    }
+  };
+
+  const handleSend = async (suggestion: Suggestion) => {
+    const channel = (suggestion.channel || "whatsapp").toLowerCase();
+    let platform: "whatsapp" | "instagram" | "linkedin" | "email" = "whatsapp";
+    let contact = "";
+
+    switch (channel) {
+      case "instagram":
+        platform = "instagram";
+        contact = suggestion.leads.instagram || "";
+        break;
+      case "linkedin":
+        platform = "linkedin";
+        contact = suggestion.leads.linkedin || "";
+        break;
+      case "email":
+        platform = "email";
+        contact = suggestion.leads.email || "";
+        break;
+      default:
+        platform = "whatsapp";
+        contact = suggestion.leads.whatsapp || suggestion.leads.phone || "";
+        break;
+    }
+
+    if (!contact) {
+      alert(`Keine ${channel} Kontaktdaten für ${suggestion.leads.name} vorhanden`);
+      return;
+    }
+
+    const result = await oneClickSend(platform, contact, suggestion.suggested_message);
+    if (!result.success) {
+      alert(result.error || "Fehler beim Senden");
+      return;
+    }
+
+    setCopiedId(suggestion.id);
+    setTimeout(() => setCopiedId(null), 3000);
+    await handleAction(suggestion.id, "send");
+  };
+
   if (loading) return <div className="animate-pulse h-32 bg-slate-800 rounded-xl" />;
 
   return (
@@ -79,10 +139,11 @@ export default function FollowupWidget() {
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleAction(s.id, "send")}
+                  onClick={() => handleSend(s)}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-medium text-white"
                 >
-                  <Send className="w-3 h-3" /> Senden
+                  {copiedId === s.id ? <Check className="w-3 h-3" /> : getChannelIcon(s.channel)}
+                  {copiedId === s.id ? "Kopiert!" : "Senden"}
                 </button>
                 <button
                   onClick={() => handleAction(s.id, "snooze", 1)}

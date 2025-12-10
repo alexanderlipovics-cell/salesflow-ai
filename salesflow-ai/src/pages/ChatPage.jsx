@@ -576,25 +576,26 @@ const ChatPage = () => {
         intentDetected === "CREATE_FOLLOWUP" ||
         /anlegen|erstellen|follow-?up/i.test(messageText || "");
 
-      if (ENABLE_STAKEHOLDER_DETECTION && userAskedToCreate) {
-        const stakeholderDetection = detectNewStakeholder(reply);
-        if (stakeholderDetection?.name) {
-          const normalizedName = stakeholderDetection.name.toLowerCase();
-          if (!lastStakeholderName || lastStakeholderName !== normalizedName) {
-            setLastStakeholderName(normalizedName);
-            setStakeholderCandidate({
-              name: stakeholderDetection.name,
-              company: stakeholderDetection.company || parsedLeadContext?.company || "",
-              context: stakeholderDetection.context,
-              leadId:
-                parsedLeadContext?.id ||
-                parsedLeadContext?.lead_id ||
-                parsedLeadContext?.leadId ||
-                null,
-            });
-          }
-        }
-      }
+      // Stakeholder-Erkennung temporär deaktiviert, um falsche Dialoge zu verhindern
+      // if (ENABLE_STAKEHOLDER_DETECTION && userAskedToCreate) {
+      //   const stakeholderDetection = detectNewStakeholder(reply);
+      //   if (stakeholderDetection?.name) {
+      //     const normalizedName = stakeholderDetection.name.toLowerCase();
+      //     if (!lastStakeholderName || lastStakeholderName !== normalizedName) {
+      //       setLastStakeholderName(normalizedName);
+      //       setStakeholderCandidate({
+      //         name: stakeholderDetection.name,
+      //         company: stakeholderDetection.company || parsedLeadContext?.company || "",
+      //         context: stakeholderDetection.context,
+      //         leadId:
+      //           parsedLeadContext?.id ||
+      //           parsedLeadContext?.lead_id ||
+      //           parsedLeadContext?.leadId ||
+      //           null,
+      //       });
+      //     }
+      //   }
+      // }
 
       setMessages((prev) => [
         ...prev,
