@@ -4,6 +4,8 @@ import { Users, Clock, Flame, AlertTriangle, Loader2, Upload } from 'lucide-reac
 import LeadFilters from '../components/leads/LeadFilters';
 import LeadCard from '../components/leads/LeadCard';
 import { Button } from '../components/ui/button';
+import LeadToPartnerModal from '../components/network/LeadToPartnerModal';
+import { useAuth } from '../context/AuthContext';
 
 interface Lead {
   id: string;
@@ -21,10 +23,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 
 const LeadList = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<'today' | 'hot' | 'overdue' | 'all'>('today');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showLeadToPartner, setShowLeadToPartner] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  const isNetworker =
+    user?.vertical === 'network' ||
+    user?.vertical === 'network_marketing' ||
+    user?.profile?.vertical === 'network' ||
+    user?.profile?.vertical === 'network_marketing' ||
+    user?.role === 'mlm';
 
   useEffect(() => {
     fetchLeads();
@@ -60,6 +72,19 @@ const LeadList = () => {
 
   const handleLeadClick = (leadId: string) => {
     navigate(`/leads/${leadId}`);
+  };
+
+  const handleConvert = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowLeadToPartner(true);
+  };
+
+  const handleConverted = () => {
+    if (selectedLead) {
+      setLeads((prev) => prev.filter((l) => l.id !== selectedLead.id));
+    }
+    setSelectedLead(null);
+    setShowLeadToPartner(false);
   };
 
   return (
@@ -142,12 +167,25 @@ const LeadList = () => {
                   key={lead.id}
                   lead={lead}
                   onClick={() => handleLeadClick(lead.id)}
+                  showConvert={isNetworker && lead.status !== 'converted'}
+                  onConvertClick={handleConvert}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {showLeadToPartner && selectedLead && (
+        <LeadToPartnerModal
+          lead={selectedLead}
+          onClose={() => {
+            setSelectedLead(null);
+            setShowLeadToPartner(false);
+          }}
+          onConvert={handleConverted}
+        />
+      )}
     </div>
   );
 };

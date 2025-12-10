@@ -86,6 +86,7 @@ const NetworkDashboard = lazy(() => import("./pages/NetworkDashboard"));
 const NetworkGraphPage = lazy(() =>
   import("./pages/NetworkGraphPage").then((m) => ({ default: m.NetworkGraphPage }))
 );
+const NetworkSettingsPage = lazy(() => import("./pages/NetworkSettingsPage"));
 const RoleplayDojoPage = lazy(() =>
   import("./pages/RoleplayDojoPage").then((m) => ({ default: m.RoleplayDojoPage }))
 );
@@ -313,6 +314,7 @@ const App = () => {
                       <Route path="churn-radar" element={<ChurnRadarPage />} />
                       <Route path="network-graph" element={<NetworkGraphPage />} />
                       <Route path="network" element={<NetworkDashboard />} />
+                      <Route path="network/settings" element={<NetworkSettingsPage />} />
                       <Route path="roleplay-dojo" element={<RoleplayDojoPage />} />
                       <Route path="magic-send" element={<MagicSendDemo />} />
                       <Route path="compensation-simulator" element={<CompensationSimulatorPage />} />

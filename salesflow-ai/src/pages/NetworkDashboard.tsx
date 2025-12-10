@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Users,
   TrendingUp,
@@ -12,11 +12,16 @@ import {
   GitBranch,
   DollarSign,
   Zap,
+  RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ZINZINO_RANKS, ZINZINO_KPIS } from "../config/zinzinoRanks";
 import { useAuth } from "../context/AuthContext";
+import MLMOnboarding from "../components/network/MLMOnboarding";
+import SyncReminderBanner from "../components/network/SyncReminderBanner";
+import QuickUpdateModal from "../components/network/QuickUpdateModal";
+import LeadToPartnerModal from "../components/network/LeadToPartnerModal";
 
 // Mock data für MVP - später durch API ersetzen
 const MOCK_DATA = {
@@ -58,7 +63,64 @@ const MOCK_DATA = {
 
 export default function NetworkDashboard() {
   const { user: authUser } = useAuth();
-  const [data] = useState(MOCK_DATA);
+  const [data, setData] = useState(MOCK_DATA);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
+  const [showSyncReminder, setShowSyncReminder] = useState(false);
+  const [showQuickUpdate, setShowQuickUpdate] = useState(false);
+  const [showLeadToPartner, setShowLeadToPartner] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+
+  useEffect(() => {
+    checkSetup();
+    const shouldShowReminder = checkSyncReminder();
+    setShowSyncReminder(shouldShowReminder);
+  }, []);
+
+  const checkSetup = async () => {
+    try {
+      const response = await fetch("/api/network/has-setup");
+      const { has_setup } = await response.json();
+      setShowOnboarding(!has_setup);
+    } catch (error) {
+      console.error("Setup check failed:", error);
+    } finally {
+      setCheckingSetup(false);
+    }
+  };
+
+  const checkSyncReminder = () => {
+    const today = new Date();
+    const lastDismiss = localStorage.getItem("lastMLMSyncDismiss");
+    const lastSync = localStorage.getItem("lastMLMSync");
+
+    if (lastDismiss) {
+      const dismissDate = new Date(lastDismiss);
+      if (
+        dismissDate.getMonth() === today.getMonth() &&
+        dismissDate.getFullYear() === today.getFullYear()
+      ) {
+        return false;
+      }
+    }
+
+    if (today.getDate() <= 5) return true;
+
+    if (lastSync) {
+      const syncDate = new Date(lastSync);
+      const daysSinceSync = Math.floor(
+        (today.getTime() - syncDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysSinceSync > 30;
+    }
+
+    return true;
+  };
+
+  const fetchDashboardData = () => {
+    // Placeholder: In echter Implementierung Daten neu laden
+    setData((prev) => ({ ...prev }));
+  };
 
   const currentRank = ZINZINO_RANKS[data.user.current_rank];
   const nextRank = ZINZINO_RANKS[data.user.current_rank + 1];
@@ -90,15 +152,50 @@ export default function NetworkDashboard() {
     authUser?.email?.split("@")[0] ||
     "Partner";
 
+  if (checkingSetup) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (showOnboarding) {
+    return <MLMOnboarding onComplete={() => setShowOnboarding(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Netzwerk Dashboard
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Willkommen zurück, {firstName}. Dein Zinzino Business auf einen Blick.
-        </p>
+      <div className="mb-8 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Netzwerk Dashboard
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              Willkommen zurück, {firstName}. Dein Zinzino Business auf einen Blick.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowQuickUpdate(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Quick Update
+            </button>
+          </div>
+        </div>
+
+        {showSyncReminder && (
+          <SyncReminderBanner
+            onDismiss={() => setShowSyncReminder(false)}
+            onQuickUpdate={() => {
+              setShowSyncReminder(false);
+              setShowQuickUpdate(true);
+            }}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -435,6 +532,24 @@ export default function NetworkDashboard() {
           </div>
         </div>
       </div>
+
+      {showQuickUpdate && (
+        <QuickUpdateModal
+          onClose={() => setShowQuickUpdate(false)}
+          onSave={() => fetchDashboardData()}
+        />
+      )}
+
+      {showLeadToPartner && selectedLead && (
+        <LeadToPartnerModal
+          lead={selectedLead}
+          onClose={() => {
+            setShowLeadToPartner(false);
+            setSelectedLead(null);
+          }}
+          onConvert={() => fetchDashboardData()}
+        />
+      )}
     </div>
   );
 }

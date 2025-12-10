@@ -50,6 +50,38 @@ class TeamStats(BaseModel):
     total_group_volume: float
 
 
+class NetworkSetup(BaseModel):
+    current_rank: int
+    team_size: int = 0
+    left_leg_credits: int = 0
+    right_leg_credits: int = 0
+    z4f_customers: int = 0
+    pcp: int = 0
+    personal_credits: int = 0
+
+
+class TeamMemberImport(BaseModel):
+    name: str
+    email: Optional[str] = None
+    rank: str = "Partner"
+    leg: str = "left"
+    credits: int = 0
+    status: str = "active"
+    joined_at: Optional[str] = None
+
+
+class ImportRequest(BaseModel):
+    team_members: List[TeamMemberImport]
+
+
+class LeadConversion(BaseModel):
+    lead_id: str
+    leg: str  # 'left' or 'right'
+    rank: int = 0
+    personal_credits: int = 0
+    notes: Optional[str] = None
+
+
 @router.get("/team")
 async def get_team(current_user=Depends(get_current_user)):
     """Hole das Team/Downline des Nutzers."""
@@ -166,6 +198,36 @@ async def add_team_member(
     result = supabase.table("team_members").insert(member_data).execute()
 
     return {"success": True, "member": result.data[0] if result.data else None}
+
+
+@router.post("/convert-lead")
+async def convert_lead_to_partner(
+    data: LeadConversion, current_user=Depends(get_current_user)
+):
+    """Convert a lead to a team partner (placeholder, replace with Supabase logic)."""
+    user_id = _extract_user_id(current_user)
+    try:
+        team_member = {
+            "user_id": user_id,
+            "name": "Lead Name",
+            "email": "lead@email.com",
+            "leg": data.leg,
+            "rank_id": data.rank,
+            "personal_credits": data.personal_credits,
+            "joined_at": datetime.now().isoformat(),
+            "is_active": True,
+            "notes": data.notes,
+            "source": "lead_conversion",
+            "original_lead_id": data.lead_id,
+        }
+        # TODO: Insert into team_members and update lead status in Supabase
+        return {
+            "success": True,
+            "message": "Lead erfolgreich zu Partner konvertiert",
+            "team_member": team_member,
+        }
+    except Exception as exc:  # pragma: no cover - defensive
+        return {"success": False, "error": str(exc)}
 
 
 @router.get("/rank-progress")
@@ -372,4 +434,58 @@ async def get_team_tree(current_user=Depends(get_current_user)):
         )
 
     return {"tree": tree, "total_members": len(members)}
+
+
+@router.post("/setup")
+async def setup_network(data: NetworkSetup, user=Depends(get_current_user)):
+    """Initial setup from onboarding flow (Mock placeholder)."""
+    return {
+        "success": True,
+        "message": "Network settings saved",
+        "data": data.dict(),
+    }
+
+
+@router.get("/settings")
+async def get_network_settings(user=Depends(get_current_user)):
+    """Get user's network settings (Mock placeholder)."""
+    return {
+        "current_rank": 4,
+        "pcp": 8,
+        "personal_credits": 45,
+        "left_leg_credits": 380,
+        "right_leg_credits": 240,
+        "z4f_customers": 2,
+        "company": "zinzino",
+    }
+
+
+@router.put("/settings")
+async def update_network_settings(data: NetworkSetup, user=Depends(get_current_user)):
+    """Update network settings manually (Mock placeholder)."""
+    return {"success": True, "message": "Settings updated", "data": data.dict()}
+
+
+@router.post("/import")
+async def import_team_csv(data: ImportRequest, user=Depends(get_current_user)):
+    """Import team members from CSV (Mock placeholder)."""
+    try:
+        imported = 0
+        errors = []
+
+        for member in data.team_members:
+            if not member.name:
+                errors.append("Zeile übersprungen: Kein Name")
+                continue
+            imported += 1
+
+        return {"success": len(errors) == 0, "imported": imported, "errors": errors}
+    except Exception as e:  # pragma: no cover - defensive
+        return {"success": False, "imported": 0, "errors": [str(e)]}
+
+
+@router.get("/has-setup")
+async def check_has_setup(user=Depends(get_current_user)):
+    """Check if user has completed network setup (Mock placeholder)."""
+    return {"has_setup": False}
 

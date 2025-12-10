@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { Mail, Phone, Calendar, Clock, AlertTriangle, UserPlus } from 'lucide-react';
 import LeadQuickActions from './LeadQuickActions';
 import WhatsAppButton from '../WhatsAppButton';
 
@@ -18,9 +18,11 @@ interface Lead {
 interface LeadCardProps {
   lead: Lead;
   onClick: () => void;
+  onConvertClick?: (lead: Lead) => void;
+  showConvert?: boolean;
 }
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick }) => {
+const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick, onConvertClick, showConvert }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'hot':
@@ -155,6 +157,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick }) => {
         email={lead.email}
         phone={lead.phone}
       />
+
+      {showConvert && onConvertClick && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onConvertClick(lead);
+          }}
+          className="mt-4 inline-flex items-center gap-2 px-3 py-2 text-sm text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+        >
+          <UserPlus className="w-4 h-4" />
+          Zu Partner machen
+        </button>
+      )}
     </div>
   );
 };

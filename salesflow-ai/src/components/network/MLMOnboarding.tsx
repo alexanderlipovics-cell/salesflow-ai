@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Award,
   Users,
   GitBranch,
-  Upload,
   ChevronRight,
   ChevronLeft,
   Check,
@@ -36,7 +34,6 @@ export default function MLMOnboarding({ onComplete }: { onComplete: () => void }
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const totalSteps = 4;
 
