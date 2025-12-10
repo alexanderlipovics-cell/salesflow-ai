@@ -146,6 +146,7 @@ const ChatPage = () => {
   const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  const ENABLE_STAKEHOLDER_DETECTION = false; // disable auto stakeholder dialog
   // Deep Scan State
   const [isScanning, setIsScanning] = useState(false);
   const [leadAnalysis, setLeadAnalysis] = useState(null);
@@ -575,7 +576,7 @@ const ChatPage = () => {
         intentDetected === "CREATE_FOLLOWUP" ||
         /anlegen|erstellen|follow-?up/i.test(messageText || "");
 
-      if (userAskedToCreate) {
+      if (ENABLE_STAKEHOLDER_DETECTION && userAskedToCreate) {
         const stakeholderDetection = detectNewStakeholder(reply);
         if (stakeholderDetection?.name) {
           const normalizedName = stakeholderDetection.name.toLowerCase();
