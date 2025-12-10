@@ -42,7 +42,10 @@ export default function MLMOnboarding({ onComplete }: { onComplete: () => void }
     try {
       const response = await fetch("/api/network/setup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+        },
         body: JSON.stringify(data),
       });
 
