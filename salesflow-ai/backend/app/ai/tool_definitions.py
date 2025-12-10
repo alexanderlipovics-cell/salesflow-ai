@@ -460,32 +460,42 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "log_interaction",
-            "description": "Logge eine Interaktion mit einem Lead.",
+            "description": "Speichert eine Kundeninteraktion (Gespräch, Meeting, Call) automatisch. IMMER aufrufen wenn der User über ein Gespräch berichtet.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "lead_id": {
-                        "type": "string"
-                    },
-                    "lead_name": {
-                        "type": "string"
-                    },
+                    "lead_name_or_id": {"type": "string", "description": "Name oder ID des Leads"},
                     "interaction_type": {
                         "type": "string",
-                        "enum": ["call", "email", "meeting", "message", "note"],
+                        "enum": ["call", "meeting", "whatsapp", "email", "video_call", "linkedin", "instagram", "sms", "in_person"],
                         "description": "Art der Interaktion"
                     },
-                    "outcome": {
-                        "type": "string",
-                        "enum": ["positive", "neutral", "negative", "no_answer"],
-                        "description": "Ergebnis"
-                    },
-                    "notes": {
-                        "type": "string",
-                        "description": "Notizen zur Interaktion"
-                    }
+                    "summary": {"type": "string", "description": "Kurze Zusammenfassung in 1-2 Sätzen"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Relevante Tags ohne #"},
+                    "key_facts": {"type": "object", "description": "Extrahierte Fakten (arbeitgeber, position, alter, budget, etc.)"},
+                    "outcome": {"type": "string", "enum": ["positive", "neutral", "negative", "follow_up_needed"], "default": "neutral"},
+                    "next_steps": {"type": "array", "items": {"type": "string"}},
+                    "lead_updates": {"type": "object", "description": "Lead-Felder zum Updaten (company, position, etc.)"},
+                    "create_followup": {"type": "boolean", "description": "Automatisch Follow-up erstellen?", "default": True},
+                    "followup_days": {"type": "integer", "description": "In wie vielen Tagen Follow-up", "default": 3}
                 },
-                "required": ["interaction_type"]
+                "required": ["lead_name_or_id", "interaction_type", "summary"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_customer_protocol",
+            "description": "Erstellt ein freundliches Protokoll zum Senden an den Kunden. NUR aufrufen wenn User explizit ein Protokoll anfragt.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_name_or_id": {"type": "string"},
+                    "tone": {"type": "string", "enum": ["formal", "friendly", "casual"], "default": "friendly"},
+                    "include_next_steps": {"type": "boolean", "default": True}
+                },
+                "required": ["lead_name_or_id"]
             }
         }
     },

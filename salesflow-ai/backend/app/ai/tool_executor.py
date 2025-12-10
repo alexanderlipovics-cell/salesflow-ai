@@ -928,6 +928,8 @@ class ToolExecutor:
         outcome: str = "neutral",
         next_steps: Optional[List[str]] = None,
         lead_updates: Optional[Dict[str, Any]] = None,
+        create_followup: bool = True,
+        followup_days: int = 3,
     ) -> str:
         """Speichert eine Interaktion und aktualisiert den Lead."""
 
@@ -983,6 +985,23 @@ class ToolExecutor:
             lead_update_data["tags"] = merged_tags
 
         self.db.table("leads").update(lead_update_data).eq("id", lead["id"]).execute()
+
+        if create_followup and outcome in {"positive", "follow_up_needed"}:
+            try:
+                await self._insert_followup_suggestion(
+                    lead_id=lead["id"],
+                    lead_name=lead.get("name"),
+                    message=f"Follow-up nach {interaction_type} mit {lead.get('name') or 'Lead'}",
+                    channel="WHATSAPP",
+                    due_at=datetime.utcnow() + timedelta(days=followup_days or 3),
+                    flow="MANUAL",
+                    reason=f"Automatisch nach {interaction_type} erstellt",
+                    title=f"Follow-up nach {interaction_type}",
+                    priority="medium",
+                    source="chief",
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Auto-followup creation failed: %s", exc, exc_info=True)
 
         return json.dumps(
             {
