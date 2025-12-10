@@ -22,6 +22,7 @@ class ToolExecutor:
             "query_follow_ups": self._query_follow_ups,
             "get_followup_suggestions": self._get_followup_suggestions,
             "start_followup_flow": self._start_followup_flow,
+            "get_followup_stats": self._get_followup_stats,
             "get_performance_stats": self._get_performance_stats,
             "get_commission_status": self._get_commission_status,
             "get_churn_risks": self._get_churn_risks,
@@ -169,15 +170,15 @@ class ToolExecutor:
             "follow_ups": result.data if result else [],
         }
 
-    async def _get_followup_suggestions(self, limit: int = 5) -> Any:
+    async def _get_followup_suggestions(self, limit: int = 10, status: str = "pending") -> Any:
         """Hole fällige Follow-up Vorschläge (Supabase)."""
         now = datetime.utcnow().isoformat()
 
         result = (
             self.db.table("followup_suggestions")
-            .select("*, leads(name, company, phone)")
+            .select("*, leads(name, company, phone, email)")
             .eq("user_id", self.user_id)
-            .eq("status", "pending")
+            .eq("status", status)
             .lte("due_at", now)
             .order("due_at")
             .limit(limit)
@@ -185,7 +186,7 @@ class ToolExecutor:
         )
 
         if not result.data:
-            return "Keine Follow-ups fällig! 🎉 Du bist auf dem neuesten Stand."
+            return "🎉 Keine Follow-ups fällig! Du bist auf dem neuesten Stand."
 
         suggestions = result.data
         response = f"📋 **{len(suggestions)} Follow-ups fällig:**\n\n"
@@ -197,11 +198,11 @@ class ToolExecutor:
                 response += f" ({lead['company']})"
             response += f"\n   📝 {s.get('reason', 'Follow-up')}\n"
             snippet = (s.get("suggested_message") or "").strip()
-            if len(snippet) > 80:
-                snippet = snippet[:80] + "..."
+            if len(snippet) > 60:
+                snippet = snippet[:60] + "..."
             response += f"   💬 _{snippet}_\n\n"
 
-        response += "Soll ich dir die Nachrichten vorbereiten oder einen davon überspringen?"
+        response += "\nSoll ich eine Nachricht vorbereiten oder einen überspringen?"
         return response
 
     async def _start_followup_flow(self, lead_id: str, flow: str) -> Any:
@@ -234,6 +235,43 @@ class ToolExecutor:
             "message": f"Flow '{flow}' gestartet",
             "next_followup_at": next_followup.isoformat(),
         }
+
+    async def _get_followup_stats(self) -> Any:
+        """Holt Follow-up Statistiken."""
+        week_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
+
+        pending = (
+            self.db.table("followup_suggestions")
+            .select("id", count="exact")
+            .eq("user_id", self.user_id)
+            .eq("status", "pending")
+            .execute()
+        )
+
+        sent = (
+            self.db.table("followup_suggestions")
+            .select("id", count="exact")
+            .eq("user_id", self.user_id)
+            .eq("status", "sent")
+            .gte("sent_at", week_ago)
+            .execute()
+        )
+
+        in_flow = (
+            self.db.table("leads")
+            .select("id", count="exact")
+            .eq("user_id", self.user_id)
+            .not_.is_("flow", "null")
+            .execute()
+        )
+
+        return (
+            f"📊 **Follow-up Statistiken:**\n\n"
+            f"• **{pending.count or 0}** Follow-ups offen\n"
+            f"• **{sent.count or 0}** diese Woche gesendet\n"
+            f"• **{in_flow.count or 0}** Leads in aktiven Flows\n\n"
+            f"Frag mich nach den offenen Follow-ups um loszulegen!"
+        )
 
     async def _get_performance_stats(
         self,

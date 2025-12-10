@@ -99,14 +99,19 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "get_followup_suggestions",
-            "description": "Holt die fälligen Follow-up Vorschläge für heute. Nutze dies wenn der User nach Follow-ups fragt.",
+            "description": "Holt die fälligen Follow-up Vorschläge. Nutze dies wenn der User nach Follow-ups, Nachfassen, fälligen Aufgaben oder 'was muss ich heute tun' fragt.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "limit": {
                         "type": "integer",
-                        "description": "Anzahl der Vorschläge (default 5)",
-                        "default": 5
+                        "description": "Anzahl der Vorschläge (default 10)",
+                        "default": 10
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["pending", "sent", "skipped", "snoozed"],
+                        "description": "Filter nach Status (default: pending)"
                     }
                 }
             }
@@ -127,10 +132,21 @@ SALES_AGENT_TOOLS = [
                     "flow": {
                         "type": "string",
                         "enum": ["COLD_NO_REPLY", "INTERESTED_LATER"],
-                        "description": "Welcher Flow gestartet werden soll"
+                        "description": "Welcher Flow: COLD_NO_REPLY (keine Antwort) oder INTERESTED_LATER (später interessiert)"
                     }
                 },
                 "required": ["lead_id", "flow"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_followup_stats",
+            "description": "Holt Statistiken über Follow-ups: wie viele pending, wie viele diese Woche gesendet, etc.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
             }
         }
     },
