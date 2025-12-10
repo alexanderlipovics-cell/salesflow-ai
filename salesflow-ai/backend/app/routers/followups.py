@@ -420,20 +420,22 @@ def _get_user_id(user: Any) -> str:
 
 @router_v2.get("/pending")
 async def get_pending_suggestions_v2(
-    limit: int = 10,
+    limit: int = 50,
     user=Depends(get_current_active_user),
     supabase=Depends(get_supabase),
 ):
-    """Hole alle fälligen Follow-up Vorschläge."""
+    """Hole alle fälligen Follow-up Vorschläge (nächste 7 Tage)."""
     user_id = _get_user_id(user)
-    now = datetime.utcnow().isoformat()
+    
+    # Nächste 7 Tage laden statt nur heute
+    end_of_range = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
     result = (
         supabase.table("followup_suggestions")
         .select("*, leads(id, name, email, phone, company, status, whatsapp, instagram, linkedin)")
         .eq("user_id", user_id)
         .eq("status", "pending")
-        .lte("due_at", now)
+        .lte("due_at", end_of_range)
         .order("due_at")
         .limit(limit)
         .execute()
