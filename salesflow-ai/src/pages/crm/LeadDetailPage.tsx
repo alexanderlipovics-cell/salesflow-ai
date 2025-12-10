@@ -25,6 +25,7 @@ import {
 } from "@/types/lead";
 import { cn } from "@/lib/utils";
 import EmailComposer from "@/components/EmailComposer";
+import LeadEmails from "@/components/leads/LeadEmails";
 
 const LeadDetailPage = () => {
   const { leadId } = useParams<{ leadId: string }>();
@@ -153,6 +154,10 @@ const LeadDetailPage = () => {
             <h1 className="text-2xl font-semibold text-white">{lead.name}</h1>
             <p className="text-sm text-gray-400">Lead-Details</p>
           </div>
+
+          {leadId && (
+            <LeadEmails leadId={leadId} leadEmail={lead.email} />
+          )}
         </div>
         <div className="flex gap-2">
           {!isEditing ? (

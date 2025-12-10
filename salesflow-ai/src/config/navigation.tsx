@@ -15,7 +15,8 @@ import {
   Network,
   DollarSign,
   Settings,
-  Building2
+  Building2,
+  Mail,
 } from 'lucide-react';
 
 
@@ -27,6 +28,7 @@ export const navigationItems = [
   { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
+  { name: 'Emails', href: '/emails', icon: Mail },
   { name: 'Approval Inbox', href: '/inbox', icon: MessageSquare },
   { name: 'Kunden', href: '/leads/customers', icon: Handshake },
   { name: 'Netzwerk', href: '/network', icon: Network },
