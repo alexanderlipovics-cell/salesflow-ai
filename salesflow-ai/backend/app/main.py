@@ -13,6 +13,8 @@ os.environ["NO_PROXY"] = "*"
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from contextlib import asynccontextmanager
 import logging
 import sys
@@ -40,29 +42,136 @@ except ImportError as e:
     logging.warning(f"Could not import event handlers: {e}")
 
 
+scheduler = AsyncIOScheduler()
+
+
+async def scheduled_followup_generation():
+    """Background task to generate follow-up suggestions for all users."""
+    from app.supabase_client import get_supabase_client
+    from datetime import datetime, timezone
+    import uuid
+
+    try:
+        supabase = get_supabase_client()
+        print(f"[Scheduler] Starting follow-up generation at {datetime.now()}")
+
+        # Get all unique user_ids with active flows
+        result = supabase.table("leads").select("user_id").not_.is_("flow", "null").execute()
+        user_ids = list(set([lead["user_id"] for lead in result.data if lead.get("user_id")]))
+
+        suggestions_created = 0
+
+        for user_id in user_ids:
+            try:
+                # Find leads with due follow-ups for this user
+                leads_result = supabase.table("leads").select("*").eq(
+                    "user_id", user_id
+                ).not_.is_("flow", "null").lte(
+                    "next_follow_up_at", datetime.now(timezone.utc).isoformat()
+                ).or_("do_not_contact.is.null,do_not_contact.eq.false").execute()
+
+                for lead in leads_result.data:
+                    # Check if suggestion already exists
+                    existing = supabase.table("followup_suggestions").select("id").eq(
+                        "lead_id", lead["id"]
+                    ).eq("status", "pending").execute()
+
+                    if existing.data:
+                        continue  # Skip, already has pending suggestion
+
+                    # Get rule for current stage
+                    rule_result = supabase.table("followup_rules").select("*").eq(
+                        "flow", lead["flow"]
+                    ).eq("stage", lead.get("follow_up_stage", 0)).execute()
+
+                    if not rule_result.data:
+                        continue
+
+                    rule = rule_result.data[0]
+
+                    if not rule.get("template_key"):
+                        continue
+
+                    # Get template
+                    template_result = supabase.table("message_templates").select("*").eq(
+                        "step_key", rule["template_key"]
+                    ).execute()
+
+                    if not template_result.data:
+                        continue
+
+                    template = template_result.data[0]
+
+                    # Personalize message
+                    lead_name = lead.get("name", "").split()[0] if lead.get("name") else ""
+                    message = template["template_text"].replace("{name}", lead_name)
+                    if "{company}" in message:
+                        message = message.replace("{company}", lead.get("company", ""))
+
+                    # Calculate days since last contact
+                    days_waiting = 0
+                    if lead.get("last_outreach_at"):
+                        try:
+                            last_outreach = datetime.fromisoformat(lead["last_outreach_at"].replace("Z", "+00:00"))
+                            days_waiting = (datetime.now(timezone.utc) - last_outreach).days
+                        except Exception:
+                            pass
+
+                    # Create suggestion
+                    supabase.table("followup_suggestions").insert({
+                        "id": str(uuid.uuid4()),
+                        "user_id": user_id,
+                        "lead_id": lead["id"],
+                        "flow": lead["flow"],
+                        "stage": lead.get("follow_up_stage", 0),
+                        "template_key": rule["template_key"],
+                        "channel": lead.get("preferred_channel", "WHATSAPP"),
+                        "suggested_message": message,
+                        "reason": f"Keine Antwort seit {days_waiting} Tagen" if days_waiting > 0 else "Follow-up fällig",
+                        "due_at": datetime.now(timezone.utc).isoformat(),
+                        "status": "pending"
+                    }).execute()
+
+                    suggestions_created += 1
+
+            except Exception as e:
+                print(f"[Scheduler] Error for user {user_id}: {e}")
+
+        print(f"[Scheduler] Generated {suggestions_created} suggestions for {len(user_ids)} users")
+
+    except Exception as e:
+        print(f"[Scheduler] Error in scheduled_followup_generation: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager für Startup/Shutdown Events."""
-    # Startup
     logging.info("🚀 SalesFlow AI starting up...")
 
-    # Start background scheduler
+    # Bestehenden Scheduler aus Services starten (andere Background-Jobs)
     from .services.scheduler import setup_scheduler, shutdown_scheduler
     setup_scheduler()
     logging.info("📅 Background scheduler started")
 
-    # Event Handler sind bereits beim Import registriert
-    # Hier könnten weitere Startup-Tasks laufen:
-    # - Health Checks
-    # - Cache Warming
-    # - Background Tasks starten
+    # Follow-up Generator Scheduler starten
+    scheduler.add_job(
+        scheduled_followup_generation,
+        trigger=IntervalTrigger(minutes=15),
+        id="followup_generation",
+        name="Generate follow-up suggestions",
+        replace_existing=True
+    )
+    scheduler.start()
+    print("[Scheduler] Background scheduler started - running every 15 minutes")
 
     yield
 
-    # Shutdown
     logging.info("🛑 SalesFlow AI shutting down...")
     shutdown_scheduler()
     logging.info("📅 Background scheduler stopped")
+
+    scheduler.shutdown()
+    print("[Scheduler] Background scheduler stopped")
 
 
 # App erstellen

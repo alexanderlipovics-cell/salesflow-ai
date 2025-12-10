@@ -27,7 +27,7 @@ httpx>=0.25.0,<0.28.0
 # Background Tasks & Scheduling
 celery==5.3.6
 redis==5.0.1
-apscheduler==3.10.4
+apscheduler>=3.10.0
 
 # API Integrations
 facebook-sdk==3.1.0
