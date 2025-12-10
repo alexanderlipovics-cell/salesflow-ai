@@ -22,10 +22,10 @@ class InboxService:
         """Generate message drafts for all due follow-up tasks."""
         try:
             tasks = (
-                self.db.table("lead_tasks")
+                self.db.table("followup_suggestions")
                 .select("*, leads(*)")
                 .eq("user_id", self.user_id)
-                .eq("status", "open")
+                .eq("status", "pending")
                 .lte("due_at", datetime.now(timezone.utc).isoformat())
                 .execute()
             )
@@ -75,7 +75,7 @@ class InboxService:
                         "user_id": self.user_id,
                         "lead_id": task.get("lead_id"),
                         "task_id": task["id"],
-                        "channel": task.get("template_key") or "whatsapp",
+                        "channel": task.get("channel") or task.get("template_key") or "WHATSAPP",
                         "message": message,
                         "status": "pending",
                         "priority": priority,
@@ -201,7 +201,13 @@ class InboxService:
 
         if message_data.get("task_id"):
             try:
-                self.db.table("lead_tasks").update({"status": "done"}).eq("id", message_data["task_id"]).execute()
+                self.db.table("followup_suggestions").update(
+                    {
+                        "status": "sent",
+                        "sent_at": datetime.now(timezone.utc).isoformat(),
+                        "suggested_message": final_message,
+                    }
+                ).eq("id", message_data["task_id"]).execute()
             except Exception as e:
                 logger.warning(f"Failed to mark task {message_data.get('task_id')} as done: {e}")
 

@@ -199,6 +199,14 @@ followup_rules:
   description: TEXT
 ```
 
+## GESPRÄCHSPROTOKOLLE (AUTO-LOGGING + KUNDENPROTOKOLL)
+
+- Wenn der User über ein Gespräch/Meeting/Kontakt berichtet (z.B. "Hatte gerade ein Call mit Max", "Meeting mit Lisa war super"), rufe SOFORT das Tool `log_interaction` auf.
+- Extrahiere Fakten in `key_facts` (firma/arbeitgeber, position, alter, familie, budget, einwände, interessen, timing/deadline, einkommen, entscheider) und relevante `tags` (interesse, budget-XYZ, entscheider-*, timing-*, status, branche).
+- Speichere kurz und frage anschließend knapp, ob ein Follow-up erstellt werden soll (wenn outcome positiv oder follow_up_needed).
+- Zeige kein vollständiges Protokoll im Chat; Logging passiert im Hintergrund.
+- Wenn der User EXPLIZIT ein Protokoll zum Senden anfragt ("Schreib mir ein Protokoll für X", "Protokoll für Lisa"), rufe `generate_customer_protocol` auf und formatiere ein freundliches Kunden-Protokoll mit den gelieferten Daten (inkl. next_steps wenn vorhanden) und Hinweis "📋 Zum Kopieren bereit!".
+
 ### MESSAGE_TEMPLATES (Nachrichtenvorlagen)
 ```
 message_templates:
@@ -431,6 +439,19 @@ Erkenne diese Befehle:
 /help → Alle Commands anzeigen
 
 Bei /help: Liste alle Commands mit kurzer Beschreibung.
+
+############################################################
+
+📝 GESPRÄCHSPROTOKOLLE & AUTO-LOGGING
+
+############################################################
+
+- Wenn der User über ein Gespräch/Meeting/Call/Chat berichtet, rufe IMMER das Tool `log_interaction` auf und speichere alle Infos im Hintergrund.
+- Extrahiere Fakten als key_facts (arbeitgeber, position, alter, familie, budget, einwände, interessen, timing, entscheider) und generiere passende Tags (z.B. interessiert, budget-5000, timing-januar).
+- Antworte kurz und natürlich, z.B. "Alles notiert für Max! 📝 Soll ich einen Follow-up erstellen?" – kein langes Protokoll anzeigen.
+- Bei positivem Outcome immer Follow-up anbieten.
+- Wenn der User explizit ein Protokoll anfragt ("Protokoll für X", "Schreib mir ein Protokoll..."), rufe `generate_customer_protocol` auf und zeige das formatierte Kunden-Protokoll mit Hinweis "📋 Zum Kopieren bereit!".
+- Aktualisiere Leads automatisch mit neuen Feldern (company, position, phone, email) und Tags, wenn vorhanden.
 
 ############################################################
 

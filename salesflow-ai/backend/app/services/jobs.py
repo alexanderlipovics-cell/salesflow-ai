@@ -21,15 +21,15 @@ async def check_follow_ups():
     Checks for overdue follow-ups and leads without response.
     Creates notifications for users.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "check_follow_ups")
 
     try:
-        # Get all overdue tasks grouped by user
-        overdue = await db.from_("lead_tasks").select(
-            "id, title, due_date, user_id, lead_id, leads(name)"
+        # Get all overdue follow-up suggestions grouped by user
+        overdue = await db.from_("followup_suggestions").select(
+            "id, title, due_at, user_id, lead_id, leads(name)"
         ).eq("status", "pending").lt(
-            "due_date", datetime.now().isoformat()
+            "due_at", datetime.now().isoformat()
         ).execute()
 
         # Group by user
@@ -75,7 +75,7 @@ async def update_lead_scores():
     """
     Recalculates lead scores and flags newly hot leads.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "update_lead_scores")
 
     try:
@@ -190,7 +190,7 @@ async def detect_churn_risks():
     """
     Identifies customers at risk of churning.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "detect_churn_risks")
 
     try:
@@ -251,7 +251,7 @@ async def track_goals():
     """
     Compares current performance vs goals.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "track_goals")
 
     try:
@@ -338,7 +338,7 @@ async def send_daily_briefing():
     """
     Sends personalized morning briefing to all users.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "send_daily_briefing")
 
     try:
@@ -367,12 +367,12 @@ async def send_daily_briefing():
             user_name = user.data.get("name", "").split()[0] if user.data else ""
 
             # Get today's follow-ups
-            followups = await db.from_("lead_tasks").select(
+            followups = await db.from_("followup_suggestions").select(
                 "id"
             ).eq("user_id", user_id).eq("status", "pending").gte(
-                "due_date", today.isoformat()
+                "due_at", today.isoformat()
             ).lt(
-                "due_date", tomorrow.isoformat()
+                "due_at", tomorrow.isoformat()
             ).execute()
 
             # Get today's appointments (if calendar_events table exists)
@@ -389,10 +389,10 @@ async def send_daily_briefing():
                 appointment_count = 0
 
             # Get overdue tasks
-            overdue = await db.from_("lead_tasks").select(
+            overdue = await db.from_("followup_suggestions").select(
                 "id"
             ).eq("user_id", user_id).eq("status", "pending").lt(
-                "due_date", today.isoformat()
+                "due_at", today.isoformat()
             ).execute()
 
             # Build briefing
@@ -442,7 +442,7 @@ async def power_hour_reminder():
     """
     Reminds users about upcoming Power Hour.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "power_hour_reminder")
 
     try:
@@ -489,7 +489,7 @@ async def generate_all_suggestions():
     Placeholder für globale Follow-up Vorschlags-Generierung.
     Aktuell nur Logging – kann später mit Supabase-Flow befüllt werden.
     """
-    db = get_supabase_client()
+    db = get_supabase()
     job_id = await log_job_start(db, "generate_all_suggestions")
 
     try:

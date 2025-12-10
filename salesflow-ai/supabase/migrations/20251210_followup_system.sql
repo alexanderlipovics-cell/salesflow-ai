@@ -154,6 +154,82 @@ create policy "Users manage own suggestions"
   on followup_suggestions for all
   using (auth.uid() = user_id);
 
+-- Schema-Erweiterung für vereinheitlichte Follow-ups
+alter table if exists followup_suggestions
+  add column if not exists title text,
+  add column if not exists priority text default 'medium',
+  add column if not exists task_type text default 'follow_up',
+  add column if not exists created_by uuid,
+  add column if not exists source text default 'system';
+
+-- Zusätzlicher Index
+create index if not exists idx_fs_lead_id on followup_suggestions(lead_id);
+
+-- Migration: lead_tasks -> followup_suggestions (nur follow_up Tasks)
+insert into followup_suggestions (
+    id,
+    user_id,
+    lead_id,
+    flow,
+    stage,
+    template_key,
+    channel,
+    suggested_message,
+    reason,
+    due_at,
+    status,
+    title,
+    priority,
+    task_type,
+    source,
+    created_at,
+    created_by
+)
+select
+    lt.id,
+    lt.user_id,
+    lt.lead_id,
+    coalesce(lt.type, lt.task_type, 'MANUAL') as flow,
+    0 as stage,
+    coalesce(lt.template_key, 'MANUAL') as template_key,
+    upper(coalesce(lt.template_key, 'WHATSAPP')) as channel,
+    coalesce(lt.note, lt.description, lt.title, 'Follow-up') as suggested_message,
+    'Migriert aus lead_tasks' as reason,
+    coalesce(lt.due_at, lt.due_date, now() + interval '1 day') as due_at,
+    case
+        when lt.status in ('open', 'pending') then 'pending'
+        when lt.status in ('done', 'completed') then 'sent'
+        else 'pending'
+    end as status,
+    lt.title,
+    coalesce(lt.priority, 'medium') as priority,
+    coalesce(lt.task_type, lt.type, 'follow_up') as task_type,
+    'migrated' as source,
+    coalesce(lt.created_at, now()) as created_at,
+    lt.user_id as created_by
+from lead_tasks lt
+where coalesce(lt.task_type, lt.type) = 'follow_up'
+and not exists (
+    select 1 from followup_suggestions fs where fs.id = lt.id
+);
+
+-- 3b) lead_interactions Konsolidierung
+alter table if exists lead_interactions
+  add column if not exists user_id uuid,
+  add column if not exists source varchar default 'manual',
+  add column if not exists updated_at timestamptz;
+
+create index if not exists idx_li_user_lead on lead_interactions(user_id, lead_id);
+create index if not exists idx_li_interaction_at on lead_interactions(interaction_at desc);
+create index if not exists idx_li_type on lead_interactions(interaction_type);
+create index if not exists idx_li_user_id on lead_interactions(user_id);
+
+alter table if exists lead_interactions enable row level security;
+drop policy if exists "Users can manage own interactions" on lead_interactions;
+create policy "Users can manage own interactions"
+  on lead_interactions for all
+  using (user_id = auth.uid() or user_id is null);
+
 
 -- 4) leads extension
 alter table leads

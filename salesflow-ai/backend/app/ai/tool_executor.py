@@ -1,8 +1,9 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 import json
 from datetime import datetime, timedelta, timezone
 import os
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +35,10 @@ class ToolExecutor:
             "handle_objection": self._handle_objection,
             "create_lead": self._create_lead,
             "create_task": self._create_task,
-            "create_followup": self._create_follow_up,
-            "create_follow_up": self._create_follow_up,
+            "create_followup": self._create_followup_suggestion,
+            "create_follow_up": self._create_followup_suggestion,
             "log_interaction": self._log_interaction,
+            "generate_customer_protocol": self._generate_customer_protocol,
             "update_lead_status": self._update_lead_status,
             "start_power_hour": self._start_power_hour,
         }
@@ -136,34 +138,38 @@ class ToolExecutor:
         priority: str = "all",
         limit: int = 10,
     ) -> dict:
-        """Query follow-ups and tasks."""
+        """Query follow-ups from the unified followup_suggestions table."""
 
-        query = self.db.table("lead_tasks").select(
-            "id, title, description, due_date, priority, status, type, "
-            "lead_id, leads(name, company)"
-        ).eq("user_id", self.user_id).eq("status", "pending")
+        now = datetime.utcnow()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=0)
 
-        now = datetime.now()
+        query = (
+            self.db.table("followup_suggestions")
+            .select(
+                "id, title, due_at, priority, status, channel, flow, stage, template_key, "
+                "lead_id, suggested_message, leads(name, company)"
+            )
+            .eq("user_id", self.user_id)
+            .eq("status", "pending")
+        )
 
         if timeframe == "today":
-            query = query.gte("due_date", now.date().isoformat())
-            query = query.lt("due_date", (now.date() + timedelta(days=1)).isoformat())
+            query = query.gte("due_at", start_of_day.isoformat()).lte("due_at", end_of_day.isoformat())
         elif timeframe == "tomorrow":
-            tomorrow = now.date() + timedelta(days=1)
-            query = query.gte("due_date", tomorrow.isoformat())
-            query = query.lt("due_date", (tomorrow + timedelta(days=1)).isoformat())
+            tomorrow_start = (start_of_day + timedelta(days=1)).isoformat()
+            tomorrow_end = (end_of_day + timedelta(days=1)).isoformat()
+            query = query.gte("due_at", tomorrow_start).lte("due_at", tomorrow_end)
         elif timeframe == "this_week":
-            week_end = now.date() + timedelta(days=(6 - now.weekday()))
-            query = query.lte("due_date", week_end.isoformat())
+            week_end = end_of_day + timedelta(days=(6 - now.weekday()))
+            query = query.lte("due_at", week_end.isoformat())
         elif timeframe == "overdue":
-            query = query.lt("due_date", now.date().isoformat())
+            query = query.lt("due_at", now.isoformat())
 
         if priority != "all":
             query = query.eq("priority", priority)
 
-        query = query.order("due_date").limit(limit)
-
-        result = query.execute()
+        result = query.order("due_at").limit(limit).execute()
 
         return {
             "count": len(result.data) if result and result.data else 0,
@@ -643,19 +649,91 @@ class ToolExecutor:
             logger.error(f"Create lead error: {e}")
             return {"success": False, "error": str(e)}
 
-    async def _create_task(
-        self,
-        title: str,
-        lead_id: str = None,
-        lead_name: str = None,
-        description: str = None,
-        due_date: str = None,
-        priority: str = "medium",
-        type: str = "followup",
-    ) -> dict:
-        """Create a new task/follow-up."""
+    def _parse_due_datetime(self, due_date: str | None) -> datetime:
+        """Parst relative Angaben wie 'tomorrow', 'next_week' oder ISO-Strings."""
+        now = datetime.now(timezone.utc)
+        due_date_str = (due_date or "").lower()
 
+        def _next_weekday(target_weekday: int, now_dt: datetime) -> datetime:
+            """Get next occurrence of weekday (0=Mon)."""
+            days_ahead = (target_weekday - now_dt.weekday() + 7) % 7
+            days_ahead = 7 if days_ahead == 0 else days_ahead
+            return now_dt + timedelta(days=days_ahead)
+
+        if "tomorrow" in due_date_str or "morgen" in due_date_str:
+            return now + timedelta(days=1)
+        if "3 day" in due_date_str or "3 tag" in due_date_str or "3 tage" in due_date_str or "in 3 tagen" in due_date_str:
+            return now + timedelta(days=3)
+        if "week" in due_date_str or "woche" in due_date_str or "nächste" in due_date_str or "next week" in due_date_str:
+            return now + timedelta(days=7)
+        weekday_map = {
+            "montag": 0,
+            "dienstag": 1,
+            "mittwoch": 2,
+            "donnerstag": 3,
+            "freitag": 4,
+            "samstag": 5,
+            "sonntag": 6,
+        }
+        for key, value in weekday_map.items():
+            if key in due_date_str:
+                return _next_weekday(value, now)
+
+        if due_date_str in {"next_week"}:
+            return now + timedelta(days=7)
+        if due_date_str:
+            try:
+                return datetime.fromisoformat(due_date_str)
+            except Exception:
+                return now + timedelta(days=1)
+        return now + timedelta(days=1)
+
+    async def _find_lead_by_name_or_id(self, name_or_id: str) -> Optional[dict]:
+        """Findet Lead by UUID oder fuzzy Name (case-insensitive)."""
+        if not name_or_id:
+            return None
+
+        # Versuch als UUID
+        try:
+            uuid.UUID(name_or_id)
+            result = (
+                self.db.table("leads")
+                .select("*")
+                .eq("id", name_or_id)
+                .eq("user_id", self.user_id)
+                .single()
+                .execute()
+            )
+            if result.data:
+                return result.data
+        except ValueError:
+            pass
+
+        # Fuzzy Name-Suche
+        result = (
+            self.db.table("leads")
+            .select("*")
+            .eq("user_id", self.user_id)
+            .ilike("name", f"%{name_or_id}%")
+            .execute()
+        )
+
+        if result.data and len(result.data) == 1:
+            return result.data[0]
+
+        if result.data and len(result.data) > 1:
+            for lead in result.data:
+                if (lead.get("name") or "").lower() == name_or_id.lower():
+                    return lead
+            return result.data[0]
+
+        return None
+
+    def _resolve_lead(self, lead_id: str = None, lead_name: str = None) -> tuple[str | None, str | None]:
+        """Findet Lead anhand ID oder Name."""
         resolved_lead_id = lead_id
+        resolved_lead_name = lead_name
+
         if lead_name and not resolved_lead_id:
             search = (
                 self.db.table("leads")
@@ -668,19 +746,39 @@ class ToolExecutor:
 
             if search.data:
                 resolved_lead_id = search.data[0]["id"]
+                resolved_lead_name = search.data[0]["name"]
 
-        now = datetime.now()
-        if due_date == "tomorrow":
-            due = now + timedelta(days=1)
-        elif due_date == "next_week":
-            due = now + timedelta(days=7)
-        elif due_date:
-            try:
-                due = datetime.fromisoformat(due_date)
-            except Exception:  # noqa: BLE001
-                due = now + timedelta(days=1)
-        else:
-            due = now + timedelta(days=1)
+        return resolved_lead_id, resolved_lead_name
+
+    async def _create_task(
+        self,
+        title: str,
+        lead_id: str = None,
+        lead_name: str = None,
+        description: str = None,
+        due_date: str = None,
+        priority: str = "medium",
+        type: str = "followup",
+    ) -> dict:
+        """Create a new task or follow-up (writes follow-ups to followup_suggestions)."""
+
+        resolved_lead_id, resolved_lead_name = self._resolve_lead(lead_id, lead_name)
+        due = self._parse_due_datetime(due_date)
+
+        followup_type = (type or "followup").replace("-", "_")
+        if followup_type in {"followup", "follow_up"}:
+            return await self._insert_followup_suggestion(
+                lead_id=resolved_lead_id,
+                lead_name=resolved_lead_name or lead_name,
+                message=description or title,
+                channel="WHATSAPP",
+                due_at=due,
+                flow="MANUAL",
+                reason=description or "Follow-up von CHIEF erstellt",
+                title=title,
+                priority=priority,
+                source="chief",
+            )
 
         try:
             result = (
@@ -718,132 +816,282 @@ class ToolExecutor:
         channel: str = "whatsapp",
         message: str = None,
     ) -> dict:
-        """Erstellt ein Follow-up mit minimalen Angaben und legt es in lead_tasks an."""
+        """Erstellt einen Follow-up Vorschlag in followup_suggestions."""
+        return await self._create_followup_suggestion(
+            lead_name=lead_name,
+            due_date=due_date,
+            channel=channel,
+            message=message,
+        )
+
+    async def _create_followup_suggestion(
+        self,
+        lead_id: str = None,
+        lead_name: str = None,
+        message: str = None,
+        channel: str = "WHATSAPP",
+        due_date: str = None,
+        due_in_days: int = None,
+        flow: str = "MANUAL",
+        reason: str = None,
+        title: str = None,
+        priority: str = "medium",
+    ) -> dict:
+        """Unified helper for CHIEF follow-ups (writes to followup_suggestions)."""
         try:
-            def _next_weekday(target_weekday: int, now_dt: datetime) -> datetime:
-                """Get next occurrence of weekday (0=Mon)."""
-                days_ahead = (target_weekday - now_dt.weekday() + 7) % 7
-                days_ahead = 7 if days_ahead == 0 else days_ahead
-                return now_dt + timedelta(days=days_ahead)
+            resolved_lead_id, resolved_lead_name = self._resolve_lead(lead_id, lead_name)
+            if not resolved_lead_id:
+                return {"success": False, "error": "Lead nicht gefunden"}
 
-            due_date_str = (due_date or "").lower()
-            now = datetime.now(timezone.utc)
-
-            # Relative / keyword parsing
-            if "tomorrow" in due_date_str or "morgen" in due_date_str:
-                parsed_due = now + timedelta(days=1)
-            elif "3 day" in due_date_str or "3 tag" in due_date_str or "3 tage" in due_date_str or "in 3 tagen" in due_date_str:
-                parsed_due = now + timedelta(days=3)
-            elif "week" in due_date_str or "woche" in due_date_str or "nächste" in due_date_str or "next week" in due_date_str:
-                parsed_due = now + timedelta(days=7)
-            elif "montag" in due_date_str:
-                parsed_due = _next_weekday(0, now)
-            elif "dienstag" in due_date_str:
-                parsed_due = _next_weekday(1, now)
-            elif "mittwoch" in due_date_str:
-                parsed_due = _next_weekday(2, now)
-            elif "donnerstag" in due_date_str:
-                parsed_due = _next_weekday(3, now)
-            elif "freitag" in due_date_str:
-                parsed_due = _next_weekday(4, now)
-            elif "samstag" in due_date_str:
-                parsed_due = _next_weekday(5, now)
-            elif "sonntag" in due_date_str:
-                parsed_due = _next_weekday(6, now)
+            if due_in_days is not None:
+                due_at_dt = datetime.now(timezone.utc) + timedelta(days=due_in_days)
             else:
-                try:
-                    parsed_due = datetime.fromisoformat(due_date_str)
-                except Exception:
-                    parsed_due = now + timedelta(days=1)
+                due_at_dt = self._parse_due_datetime(due_date)
 
-            lead_id = None
-            resolved_name = lead_name
-            result = (
-                self.db.table("leads")
-                .select("id, name")
-                .eq("user_id", self.user_id)
-                .ilike("name", f"%{lead_name}%")
-                .limit(1)
-                .execute()
+            return await self._insert_followup_suggestion(
+                lead_id=resolved_lead_id,
+                lead_name=resolved_lead_name or lead_name,
+                message=message or f"Follow-up für {resolved_lead_name or 'Lead'}",
+                channel=channel,
+                due_at=due_at_dt,
+                flow=flow or "MANUAL",
+                reason=reason or "Von CHIEF erstellt",
+                title=title or f"Follow-up {resolved_lead_name or 'Lead'}",
+                priority=priority or "medium",
+                source="chief",
             )
-
-            if result and result.data:
-                lead_id = result.data[0]["id"]
-                resolved_name = result.data[0]["name"]
-
-            task_data = {
-                "lead_id": lead_id,
-                "user_id": self.user_id,
-                "task_type": "follow_up",
-                "status": "open",
-                "template_key": channel or "whatsapp",
-                "due_at": parsed_due.isoformat(),
-                "note": message or f"Follow-up für {resolved_name}",
-            }
-
-            insert_result = self.db.table("lead_tasks").insert(task_data).execute()
-
-            if not insert_result or not insert_result.data:
-                return {"success": False, "error": "Follow-up konnte nicht erstellt werden"}
-
-            weekday_names = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
-            weekday_label = weekday_names[parsed_due.weekday()]
-            date_str = parsed_due.strftime("%d.%m.%Y")
-            return {
-                "success": True,
-                "message": f"✅ Follow-up für {resolved_name} am {weekday_label}, den {date_str}, geplant!",
-            }
         except Exception as e:  # noqa: BLE001
-            logger.error(f"Create follow-up FAILED: {type(e).__name__}: {e}")
-            import traceback
-
-            logger.error(traceback.format_exc())
+            logger.error(f"Create follow-up FAILED: {type(e).__name__}: {e}", exc_info=True)
             return {"success": False, "error": str(e)}
+
+    async def _insert_followup_suggestion(
+        self,
+        *,
+        lead_id: str,
+        lead_name: str | None,
+        message: str,
+        channel: str,
+        due_at: datetime,
+        flow: str,
+        reason: str,
+        title: str,
+        priority: str,
+        source: str = "system",
+        template_key: str | None = None,
+    ) -> dict:
+        """Low-level insertion helper into followup_suggestions."""
+        if not lead_id:
+            return {"success": False, "error": "Lead ID fehlt"}
+
+        channel_value = (channel or "WHATSAPP").upper()
+        template = template_key or "CHIEF_GENERATED"
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "user_id": self.user_id,
+            "lead_id": lead_id,
+            "flow": flow or "MANUAL",
+            "stage": 0,
+            "template_key": template,
+            "channel": channel_value,
+            "suggested_message": message,
+            "reason": reason,
+            "due_at": due_at.isoformat() if isinstance(due_at, datetime) else due_at,
+            "status": "pending",
+            "title": title,
+            "priority": priority or "medium",
+            "task_type": "follow_up",
+            "source": source,
+            "created_at": datetime.utcnow().isoformat(),
+            "created_by": self.user_id,
+        }
+
+        result = self.db.table("followup_suggestions").insert(data).execute()
+
+        if not result or not result.data:
+            return {"success": False, "error": "Follow-up konnte nicht erstellt werden"}
+
+        date_str = due_at.strftime("%d.%m.%Y") if isinstance(due_at, datetime) else due_at
+        return {
+            "success": True,
+            "suggestion_id": result.data[0]["id"],
+            "message": f"✅ Follow-up für {lead_name or 'Lead'} am {date_str} geplant!",
+        }
 
     async def _log_interaction(
         self,
+        lead_name_or_id: str,
         interaction_type: str,
-        lead_id: str = None,
-        lead_name: str = None,
-        outcome: str = None,
-        notes: str = None,
-    ) -> dict:
-        """Log an interaction with a lead."""
+        summary: str,
+        tags: Optional[List[str]] = None,
+        key_facts: Optional[Dict[str, Any]] = None,
+        outcome: str = "neutral",
+        next_steps: Optional[List[str]] = None,
+        lead_updates: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Speichert eine Interaktion und aktualisiert den Lead."""
 
-        resolved_lead_id = lead_id
-        if lead_name and not resolved_lead_id:
-            search = (
-                self.db.table("leads")
-                .select("id")
-                .eq("user_id", self.user_id)
-                .ilike("name", f"%{lead_name}%")
-                .limit(1)
-                .execute()
+        lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        if not lead:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": f"Lead '{lead_name_or_id}' nicht gefunden",
+                    "action_needed": "ask_create_lead",
+                }
             )
 
-            if search.data:
-                resolved_lead_id = search.data[0]["id"]
-
-        self.db.table("lead_interactions").insert(
-            {
-                "user_id": self.user_id,
-                "lead_id": resolved_lead_id,
-                "type": interaction_type,
-                "outcome": outcome,
-                "notes": notes,
-                "created_at": datetime.now().isoformat(),
-            }
-        ).execute()
-
-        if resolved_lead_id:
-            self.db.table("leads").update(
-                {"last_contact": datetime.now().isoformat()}
-            ).eq("id", resolved_lead_id).execute()
-
-        return {
-            "success": True,
-            "message": f"✅ {interaction_type.capitalize()} geloggt",
+        now = datetime.utcnow()
+        details = {
+            "tags": tags or [],
+            "key_facts": key_facts or {},
+            "next_steps": next_steps or [],
+            "raw_notes": summary,
         }
+
+        interaction_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": self.user_id,
+            "lead_id": lead["id"],
+            "interaction_type": interaction_type,
+            "channel": interaction_type,
+            "summary": summary,
+            "details": details,
+            "outcome": outcome or "neutral",
+            "logged_by": "chief",
+            "source": "chief",
+            "interaction_at": now.isoformat(),
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        self.db.table("lead_interactions").insert(interaction_data).execute()
+
+        lead_update_data = {
+            "last_contact_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        if lead_updates:
+            lead_update_data.update(lead_updates)
+
+        if tags:
+            existing_tags = lead.get("tags") or []
+            if isinstance(existing_tags, str):
+                existing_tags = []
+            merged_tags = list({*existing_tags, *tags})
+            lead_update_data["tags"] = merged_tags
+
+        self.db.table("leads").update(lead_update_data).eq("id", lead["id"]).execute()
+
+        return json.dumps(
+            {
+                "success": True,
+                "lead_name": lead.get("name"),
+                "lead_id": lead.get("id"),
+                "interaction_saved": True,
+                "tags_added": tags or [],
+                "lead_updated": bool(lead_updates),
+                "outcome": outcome or "neutral",
+            }
+        )
+
+    async def _generate_customer_protocol(
+        self,
+        lead_name_or_id: str,
+        include_last_n_interactions: int = 1,
+        tone: str = "friendly",
+        include_next_steps: bool = True,
+        custom_points: Optional[List[str]] = None,
+    ) -> str:
+        """Aggregiert Interaktionen für ein Kunden-Protokoll."""
+
+        lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        if not lead:
+            return json.dumps(
+                {"success": False, "error": f"Lead '{lead_name_or_id}' nicht gefunden"}
+            )
+
+        interactions_result = (
+            self.db.table("lead_interactions")
+            .select("*")
+            .eq("lead_id", lead["id"])
+            .order("interaction_at", desc=True)
+            .limit(include_last_n_interactions or 1)
+            .execute()
+        )
+
+        interactions = interactions_result.data or []
+        if not interactions:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": f"Keine Gesprächsnotizen für {lead.get('name')} gefunden",
+                    "hint": "Erst ein Gespräch protokollieren bevor ein Protokoll erstellt werden kann",
+                }
+            )
+
+        user_result = (
+            self.db.table("profiles")
+            .select("full_name, first_name, email")
+            .eq("user_id", self.user_id)
+            .single()
+            .execute()
+        )
+        user = user_result.data or {}
+        user_name = user.get("full_name") or user.get("first_name") or (user.get("email") or "").split("@")[0]
+
+        all_key_facts: Dict[str, Any] = {}
+        all_next_steps: List[str] = []
+        all_tags: List[str] = []
+
+        normalized_interactions = []
+        for interaction in interactions:
+            details = interaction.get("details") or {}
+            if isinstance(details, str):
+                try:
+                    details = json.loads(details)
+                except Exception:
+                    details = {}
+
+            all_key_facts.update(details.get("key_facts", {}) or {})
+            all_next_steps.extend(details.get("next_steps", []) or [])
+            all_tags.extend(details.get("tags", []) or [])
+
+            normalized_interactions.append(
+                {
+                    "type": interaction.get("interaction_type"),
+                    "summary": interaction.get("summary"),
+                    "outcome": interaction.get("outcome"),
+                    "date": interaction.get("interaction_at"),
+                    "details": details,
+                }
+            )
+
+        all_next_steps = list(dict.fromkeys(all_next_steps))
+        all_tags = list(set(all_tags))
+
+        return json.dumps(
+            {
+                "success": True,
+                "lead": {
+                    "name": lead.get("name"),
+                    "first_name": lead.get("first_name") or (lead.get("name") or "").split()[0],
+                    "email": lead.get("email"),
+                    "company": lead.get("company"),
+                },
+                "interactions": normalized_interactions,
+                "aggregated": {
+                    "key_facts": all_key_facts,
+                    "next_steps": all_next_steps if include_next_steps else [],
+                    "tags": all_tags,
+                },
+                "custom_points": custom_points or [],
+                "tone": tone,
+                "user_name": user_name,
+                "protocol_type": "customer",
+            }
+        )
 
     async def _update_lead_status(
         self,

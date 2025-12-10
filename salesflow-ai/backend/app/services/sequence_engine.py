@@ -1,5 +1,6 @@
 import logging
 import random
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List
 
@@ -161,18 +162,28 @@ class SequenceEngine:
             message = template.get("template_message") if template else "Follow-up Nachricht"
             message = message.replace("{{name}}", first_name)
 
-            task_data = {
+            due_at = datetime.now(timezone.utc)
+            payload = {
+                "id": str(uuid.uuid4()),
                 "lead_id": lead.get("id"),
                 "user_id": lead.get("user_id"),
-                "task_type": "follow_up",
-                "status": "open",
+                "flow": lead.get("flow") or lead.get("sequence_status") or status or "SEQUENCE_ENGINE",
+                "stage": step or 0,
                 "template_key": template.get("template_key") if template else status,
-                "due_at": datetime.now(timezone.utc).isoformat(),
-                "note": message,
-                "sequence_step": step,
+                "channel": (lead.get("preferred_channel") or "WHATSAPP").upper(),
+                "suggested_message": message,
+                "reason": template.get("template_message") if template else f"Sequence step {status}",
+                "due_at": due_at.isoformat(),
+                "status": "pending",
+                "title": f"Follow-up {lead.get('name') or ''}".strip(),
+                "priority": lead.get("priority") or "medium",
+                "task_type": "follow_up",
+                "source": "sequence_engine",
+                "created_at": datetime.utcnow().isoformat(),
+                "created_by": lead.get("user_id"),
             }
 
-            self.db.table("lead_tasks").insert(task_data).execute()
+            self.db.table("followup_suggestions").insert(payload).execute()
         except Exception as exc:  # noqa: BLE001
             logger.error("_create_follow_up_task failed: %s", exc, exc_info=True)
 

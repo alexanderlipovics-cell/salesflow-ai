@@ -430,7 +430,7 @@ async def get_pending_suggestions_v2(
 
     result = (
         supabase.table("followup_suggestions")
-        .select("*, leads(name, company, status, phone, email)")
+        .select("*, leads(id, name, email, phone, company, status, whatsapp, instagram, linkedin)")
         .eq("user_id", user_id)
         .eq("status", "pending")
         .lte("due_at", now)
