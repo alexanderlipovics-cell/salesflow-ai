@@ -48,10 +48,13 @@ const LeadDetailPage = () => {
         name: lead.name,
         email: lead.email || "",
         phone: lead.phone,
+        company: lead.company || "",
         status: lead.status,
         source: lead.source,
         notes: lead.notes || "",
         temperature: lead.temperature,
+        instagram: (lead as any).instagram || "",
+        linkedin: (lead as any).linkedin || "",
       });
     }
   }, [lead, isEditing]);
@@ -222,6 +225,12 @@ const LeadDetailPage = () => {
                     <div className="text-white">{lead.company}</div>
                   </div>
                 )}
+                {lead.company && (
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-gray-500">Firma</div>
+                    <div className="text-white">{lead.company}</div>
+                  </div>
+                )}
                 <div>
                   <div className="text-xs uppercase tracking-wider text-gray-500">Status</div>
                   <span
@@ -242,6 +251,18 @@ const LeadDetailPage = () => {
                   <div>
                     <div className="text-xs uppercase tracking-wider text-gray-500">Notizen</div>
                     <div className="text-white whitespace-pre-wrap">{lead.notes}</div>
+                  </div>
+                )}
+                {(lead as any).instagram && (
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-gray-500">Instagram</div>
+                    <div className="text-white">{(lead as any).instagram}</div>
+                  </div>
+                )}
+                {(lead as any).linkedin && (
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-gray-500">LinkedIn</div>
+                    <div className="text-white">{(lead as any).linkedin}</div>
                   </div>
                 )}
               </div>
@@ -288,6 +309,19 @@ const LeadDetailPage = () => {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs uppercase tracking-wider text-gray-500">
+                    Firma
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.company || ""}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, company: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-salesflow-accent/70 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-gray-500">
                     Status
                   </label>
                   <select
@@ -320,6 +354,32 @@ const LeadDetailPage = () => {
                       setEditFormData({ ...editFormData, notes: e.target.value })
                     }
                     rows={4}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-salesflow-accent/70 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-gray-500">
+                    Instagram
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.instagram || ""}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, instagram: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-salesflow-accent/70 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-gray-500">
+                    LinkedIn
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.linkedin || ""}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, linkedin: e.target.value })
+                    }
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-salesflow-accent/70 focus:outline-none"
                   />
                 </div>

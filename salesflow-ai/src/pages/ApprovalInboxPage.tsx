@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import confetti from 'canvas-confetti';
+import { authService } from '@/services/authService';
 
 const buildAuthHeaders = () => {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken?.() || localStorage.getItem('access_token');
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
