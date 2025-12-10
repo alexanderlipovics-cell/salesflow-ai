@@ -207,7 +207,7 @@ message_templates:
   vertical: TEXT (network, b2b, etc.)
   channel: TEXT (WHATSAPP, INSTAGRAM, EMAIL)
   tone: TEXT (friendly, professional)
-  template_text: TEXT (Der Nachrichtentext mit {name}, {company} Platzhaltern)
+  template_text: TEXT (Der Nachrichtentext mit {{name}}, {{company}} Platzhaltern)
   language: TEXT (de, en)
   purpose: TEXT (first_contact, followup_stage_1, etc.)
   is_active: BOOLEAN
