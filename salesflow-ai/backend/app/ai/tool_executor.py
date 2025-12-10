@@ -1076,7 +1076,7 @@ class ToolExecutor:
         user_result = (
             self.db.table("profiles")
             .select("full_name, first_name, email")
-            .eq("user_id", self.user_id)
+            .eq("id", self.user_id)
             .single()
             .execute()
         )
