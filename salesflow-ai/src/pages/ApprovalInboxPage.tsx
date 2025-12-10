@@ -12,6 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import confetti from 'canvas-confetti';
 
+const buildAuthHeaders = () => {
+  const token = localStorage.getItem('access_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 interface Message {
   id: string;
   lead_id: string;
@@ -47,9 +55,8 @@ export default function ApprovalInboxPage() {
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
       const response = await fetch('/api/inbox/pending?limit=50', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: buildAuthHeaders(),
       });
       const data = await response.json();
       setMessages(data.messages || []);
@@ -70,10 +77,9 @@ export default function ApprovalInboxPage() {
 
   const generateDrafts = async () => {
     try {
-      const token = localStorage.getItem('access_token');
       await fetch('/api/inbox/generate-drafts', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: buildAuthHeaders(),
       });
       await fetchMessages();
     } catch (err) {
@@ -124,13 +130,9 @@ export default function ApprovalInboxPage() {
 
     setSending(true);
     try {
-      const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/inbox/${currentMessage.id}/approve`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: buildAuthHeaders(),
         body: JSON.stringify({
           edited_message: editMode ? editedMessage : null,
         }),
@@ -168,10 +170,9 @@ export default function ApprovalInboxPage() {
     if (!currentMessage || sending) return;
 
     try {
-      const token = localStorage.getItem('access_token');
       await fetch(`/api/inbox/${currentMessage.id}/skip`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: buildAuthHeaders(),
       });
 
       const newMessages = messages.filter((_, i) => i !== currentIndex);
