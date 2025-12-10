@@ -443,6 +443,15 @@ async def get_pending_suggestions_v2(
     return {"suggestions": suggestions, "count": len(suggestions)}
 
 
+@router_v2.get("/suggestions")
+async def get_suggestions_alias(
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Alias für /pending - Frontend Kompatibilität"""
+    return await get_pending_suggestions_v2(user=user, supabase=supabase)
+
+
 @router_v2.get("/today")
 async def get_todays_followups_v2(
     user=Depends(get_current_active_user),
