@@ -935,14 +935,29 @@ class ToolExecutor:
         print(f"[DEBUG] log_interaction called with lead='{lead_name_or_id}', type='{interaction_type}'")
 
         lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        lead_was_created = False
         if not lead:
-            return json.dumps(
-                {
-                    "success": False,
-                    "error": f"Lead '{lead_name_or_id}' nicht gefunden",
-                    "action_needed": "ask_create_lead",
-                }
-            )
+            new_lead_data = {
+                "id": str(uuid.uuid4()),
+                "user_id": self.user_id,
+                "name": lead_name_or_id,
+                "status": "contacted",
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            if lead_updates:
+                new_lead_data.update(lead_updates)
+
+            result = self.db.table("leads").insert(new_lead_data).execute()
+            lead = result.data[0] if result and result.data else None
+            lead_was_created = True
+            if not lead:
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": f"Lead '{lead_name_or_id}' konnte nicht angelegt werden",
+                        "action_needed": "ask_create_lead",
+                    }
+                )
 
         now = datetime.utcnow()
         details = {
@@ -1010,6 +1025,7 @@ class ToolExecutor:
                 "lead_name": lead.get("name"),
                 "lead_id": lead.get("id"),
                 "interaction_saved": True,
+                "lead_created": lead_was_created,
                 "tags_added": tags or [],
                 "lead_updated": bool(lead_updates),
                 "outcome": outcome or "neutral",
