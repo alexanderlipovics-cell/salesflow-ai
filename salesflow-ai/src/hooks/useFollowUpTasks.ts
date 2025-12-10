@@ -6,8 +6,11 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { supabaseClient } from "../lib/supabaseClient";
-import { scheduleNextLoopCheckinTask } from "../services/followUpService";
+import {
+  getFollowupSuggestions,
+  markFollowupSuggestion,
+  type FollowupSuggestionStatus,
+} from "../services/followUpService";
 import type { Lead, LeadTaskStatus, LeadTaskWithLead } from "../types/leadTasks";
 
 type FollowUpTaskCompletionStatus = Extract<LeadTaskStatus, "done" | "skipped">;
@@ -19,16 +22,7 @@ type FollowUpTaskCompletionStatus = Extract<LeadTaskStatus, "done" | "skipped">;
 /**
  * Raw row shape returned by Supabase when joining lead_tasks with leads.
  */
-type FollowUpTaskRow = {
-  id: string;
-  lead_id?: string | null;
-  task_type: string;
-  status: LeadTaskStatus;
-  template_key: string | null;
-  due_at: string | null;
-  note: string | null;
-  leads: Lead | null;
-};
+type FollowUpTaskRow = never;
 
 // ─────────────────────────────────────────────────────────────────
 // Helper Functions
@@ -45,43 +39,33 @@ const sortByDueDate = (a: LeadTaskWithLead, b: LeadTaskWithLead): number => {
 };
 
 /**
- * Maps raw Supabase rows to the application's LeadTaskWithLead shape.
- */
-const mapRowsToTasks = (data: FollowUpTaskRow[] | null): LeadTaskWithLead[] => {
-  if (!data) return [];
-
-  return data
-    .map((entry) => ({
-      id: entry.id,
-      lead_id: entry.lead_id,
-      task_type: entry.task_type,
-      status: entry.status,
-      template_key: entry.template_key,
-      due_at: entry.due_at,
-      note: entry.note ?? null,
-      lead: entry.leads ?? null,
-    }))
-    .sort(sortByDueDate);
-};
-
-/**
- * Fetches all open follow-up tasks from Supabase, including the related lead data.
- * @throws Error with descriptive message on failure
+ * Fetches follow-up suggestions from backend API and maps them
+ * to the existing LeadTaskWithLead shape used in the UI.
  */
 const fetchOpenFollowUpTasks = async (): Promise<LeadTaskWithLead[]> => {
-  const { data, error } = await supabaseClient
-    .from("lead_tasks")
-    .select("id, lead_id, task_type, status, template_key, due_at, note, leads(*)")
-    .eq("task_type", "follow_up")
-    .eq("status", "open")
-    .order("due_at", { ascending: true, nullsFirst: false });
+  const suggestions = await getFollowupSuggestions();
 
-  if (error) {
-    throw new Error(error.message ?? "Follow-up Aufgaben konnten nicht geladen werden.");
-  }
+  return (suggestions || [])
+    .map((sug) => {
+      const statusMap: Record<FollowupSuggestionStatus, LeadTaskStatus> = {
+        pending: "open",
+        sent: "done",
+        skipped: "skipped",
+        snoozed: "open",
+      };
 
-  // Supabase returns unknown shape, cast via unknown for type safety
-  return mapRowsToTasks(data as unknown as FollowUpTaskRow[] | null);
+      return {
+        id: sug.id,
+        lead_id: sug.lead_id,
+        task_type: "follow_up",
+        status: statusMap[sug.status] ?? "open",
+        template_key: sug.template_key,
+        due_at: sug.due_at,
+        note: sug.suggested_message ?? null,
+        lead: (sug as any).leads ?? null,
+      } satisfies LeadTaskWithLead;
+    })
+    .sort(sortByDueDate);
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -155,39 +139,9 @@ export const useFollowUpTasks = () => {
       }
 
       try {
-        // Update status in database
-        const { error: updateError } = await supabaseClient
-          .from("lead_tasks")
-          .update({ status: nextStatus })
-          .eq("id", taskId);
-
-        if (updateError) {
-          throw new Error(updateError.message ?? "Aufgabe konnte nicht aktualisiert werden.");
-        }
-
-        // Schedule next loop check-in if this is an rx_loop_checkin task marked as done
-        if (
-          nextStatus === "done" &&
-          taskToUpdate.task_type === "follow_up" &&
-          taskToUpdate.template_key === "rx_loop_checkin" &&
-          taskToUpdate.lead_id
-        ) {
-          try {
-            await scheduleNextLoopCheckinTask({
-              id: taskToUpdate.id,
-              lead_id: taskToUpdate.lead_id,
-              due_at: taskToUpdate.due_at,
-            });
-          } catch (scheduleErr) {
-            // Nicht die gesamte Operation rückgängig machen, aber Fehler melden
-            const scheduleMessage =
-              scheduleErr instanceof Error
-                ? scheduleErr.message
-                : "Loop-Check-in konnte nicht neu geplant werden.";
-            console.error("useFollowUpTasks scheduleNextLoopCheckinTask error:", scheduleMessage);
-            throw new Error("Loop-Check-in konnte nicht neu geplant werden: " + scheduleMessage);
-          }
-        }
+        // Update status via backend suggestion action
+        const action = nextStatus === "done" ? "send" : "skip";
+        await markFollowupSuggestion(taskId, action);
       } catch (err) {
         // Rollback on failure
         setTasks(previousTasks);

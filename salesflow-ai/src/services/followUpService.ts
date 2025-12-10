@@ -64,6 +64,48 @@ export interface SnoozeResponse {
 }
 
 // ============================================
+// FOLLOW-UP SUGGESTIONS (Supabase-backed)
+// ============================================
+
+export interface FollowupSuggestionV2Lead {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  status?: string | null;
+  instagram?: string | null;
+  linkedin?: string | null;
+  whatsapp?: string | null;
+}
+
+export type FollowupSuggestionStatus = 'pending' | 'sent' | 'skipped' | 'snoozed';
+
+export interface FollowupSuggestionV2 {
+  id: string;
+  user_id: string;
+  lead_id: string;
+  flow: string;
+  stage: number;
+  template_key: string;
+  channel: string;
+  suggested_message: string;
+  reason: string;
+  due_at: string;
+  status: FollowupSuggestionStatus;
+  sent_at?: string;
+  snoozed_until?: string;
+  created_at?: string;
+  leads?: FollowupSuggestionV2Lead; // joined lead data
+}
+
+export interface FollowupStats {
+  pending_count: number;
+  sent_this_week: number;
+  active_flows?: number;
+}
+
+// ============================================
 // API FUNCTIONS
 // ============================================
 
@@ -172,6 +214,39 @@ export async function scheduleNextLoopCheckinTask(task: {
       next_due_at: nextDue 
     };
   }
+}
+
+// ============================================
+// V2 Suggestions (Backend API)
+// ============================================
+
+export async function getFollowupSuggestions(): Promise<FollowupSuggestionV2[]> {
+  const response = await apiClient.get<{ suggestions: FollowupSuggestionV2[] }>(
+    API_ENDPOINTS.FOLLOWUPS.PENDING,
+    { skipCache: true }
+  );
+  return response.data.suggestions ?? [];
+}
+
+export async function markFollowupSuggestion(
+  id: string,
+  action: 'send' | 'skip' | 'snooze',
+  options?: { snooze_days?: number; edited_message?: string }
+): Promise<void> {
+  await apiClient.post(
+    API_ENDPOINTS.FOLLOWUPS.SUGGESTION_ACTION(id),
+    {
+      action,
+      snooze_days: options?.snooze_days,
+      edited_message: options?.edited_message,
+    },
+    { skipCache: true }
+  );
+}
+
+export async function getFollowupStats(): Promise<FollowupStats> {
+  const response = await apiClient.get<FollowupStats>(API_ENDPOINTS.FOLLOWUPS.STATS, { skipCache: true });
+  return response.data;
 }
 
 // ============================================

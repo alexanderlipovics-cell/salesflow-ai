@@ -26,6 +26,9 @@ export const API_ENDPOINTS = {
     BATCH_GENERATE: '/follow-ups/batch/generate',
     DEBUG_INFO: '/follow-ups/debug/info',
     DEBUG_LEADS: '/follow-ups/debug/leads',
+    PENDING: '/followups/pending',
+    SUGGESTION_ACTION: (id: string) => `/followups/suggestions/${id}/action`,
+    STATS: '/followups/stats',
   },
 
   // ============================================
