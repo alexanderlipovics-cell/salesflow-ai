@@ -19,16 +19,16 @@ export const API_ENDPOINTS = {
   // FOLLOW-UP ENGINE (GPT-5.1)
   // ============================================
   FOLLOWUPS: {
-    TODAY: '/follow-ups/today',
-    GET: (leadId: string) => `/follow-ups/${leadId}`,
-    GENERATE: (leadId: string) => `/follow-ups/${leadId}/generate`,
-    SNOOZE: (leadId: string) => `/follow-ups/${leadId}/snooze`,
-    BATCH_GENERATE: '/follow-ups/batch/generate',
-    DEBUG_INFO: '/follow-ups/debug/info',
-    DEBUG_LEADS: '/follow-ups/debug/leads',
-    PENDING: '/followups/pending',
-    SUGGESTION_ACTION: (id: string) => `/followups/suggestions/${id}/action`,
-    STATS: '/followups/stats',
+    TODAY: '/api/follow-ups/today',
+    GET: (leadId: string) => `/api/follow-ups/${leadId}`,
+    GENERATE: (leadId: string) => `/api/follow-ups/${leadId}/generate`,
+    SNOOZE: (leadId: string) => `/api/follow-ups/${leadId}/snooze`,
+    BATCH_GENERATE: '/api/follow-ups/batch/generate',
+    DEBUG_INFO: '/api/follow-ups/debug/info',
+    DEBUG_LEADS: '/api/follow-ups/debug/leads',
+    PENDING: '/api/followups/pending',
+    SUGGESTION_ACTION: (id: string) => `/api/followups/suggestions/${id}/action`,
+    STATS: '/api/followups/stats',
   },
 
   // ============================================
