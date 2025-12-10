@@ -932,6 +932,7 @@ class ToolExecutor:
         followup_days: int = 3,
     ) -> str:
         """Speichert eine Interaktion und aktualisiert den Lead."""
+        print(f"[DEBUG] log_interaction called with lead='{lead_name_or_id}', type='{interaction_type}'")
 
         lead = await self._find_lead_by_name_or_id(lead_name_or_id)
         if not lead:
