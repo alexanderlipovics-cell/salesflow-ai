@@ -1,375 +1,176 @@
-from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
-from ..core.deps import get_supabase
+from app.core.security.main import get_current_user
 
 router = APIRouter(prefix="/network", tags=["network"])
 
 
-def _ensure_supabase():
-    try:
-        return get_supabase()
-    except SupabaseNotConfiguredError as exc:  # pragma: no cover
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+class TeamMember(BaseModel):
+    id: str
+    name: str
+    email: Optional[str]
+    rank_id: int
+    rank_name: str
+    leg: str  # 'left' or 'right'
+    joined_at: datetime
+    is_active: bool
+    personal_credits: int
+    team_credits: int
 
 
-def _extract_user_id(current_user: Any) -> str:
-    """Ermittle die user_id unabhängig vom Format."""
-    if isinstance(current_user, dict):
-        return str(
-            current_user.get("user_id")
-            or current_user.get("id")
-            or current_user.get("sub")
-        )
-    if hasattr(current_user, "id"):
-        return str(current_user["id"])
-    return str(current_user)
-
-
-class TeamMemberCreate(BaseModel):
-    member_name: str
-    member_email: Optional[str] = None
-    member_phone: Optional[str] = None
-    sponsor_id: Optional[str] = None
-    rank: str = "Starter"
-    status: str = "active"
-    joined_at: Optional[date] = None
-
-
-class TeamStats(BaseModel):
-    total_team: int
-    direct_partners: int
-    active_members: int
-    inactive_members: int
-    new_this_week: int
+class NetworkStats(BaseModel):
+    total_partners: int
+    active_partners: int
+    inactive_partners: int
     new_this_month: int
-    total_group_volume: float
+    total_customers: int
+    left_leg_credits: int
+    right_leg_credits: int
+    balanced_credits: int
+
+
+class RankProgress(BaseModel):
+    current_rank_id: int
+    current_rank_name: str
+    next_rank_id: Optional[int]
+    next_rank_name: Optional[str]
+    progress_percent: int
+    credits_needed: int
+    credits_current: int
+
+
+class DashboardResponse(BaseModel):
+    stats: NetworkStats
+    rank_progress: RankProgress
+    recent_activity: list
+    monthly_projection: dict
+    z4f_status: dict
+
+
+MOCK_NETWORK_DATA = {
+    "stats": {
+        "total_partners": 12,
+        "active_partners": 8,
+        "inactive_partners": 4,
+        "new_this_month": 2,
+        "total_customers": 47,
+        "left_leg_credits": 380,
+        "right_leg_credits": 240,
+        "balanced_credits": 620,
+    },
+    "rank_progress": {
+        "current_rank_id": 4,
+        "current_rank_name": "Silver",
+        "next_rank_id": 5,
+        "next_rank_name": "Gold",
+        "progress_percent": 41,
+        "credits_needed": 1500,
+        "credits_current": 620,
+    },
+    "recent_activity": [
+        {"type": "new_partner", "name": "Maria S.", "time": "2h ago"},
+        {"type": "rank_up", "name": "Thomas K.", "rank": "Bronze", "time": "1d ago"},
+        {"type": "order", "name": "Lisa M.", "amount": "€89", "time": "2d ago"},
+        {"type": "inactive_alert", "name": "Peter H.", "days": 14, "time": "3d ago"},
+    ],
+    "monthly_projection": {
+        "team_commission": 185,
+        "cash_bonus": 67,
+        "total": 252,
+    },
+    "z4f_status": {
+        "current": 2,
+        "target": 4,
+        "qualified": False,
+    },
+}
+
+
+@router.get("/dashboard")
+async def get_network_dashboard(user=Depends(get_current_user)):
+    """Get all MLM dashboard data in one call (Mock)."""
+    return MOCK_NETWORK_DATA
 
 
 @router.get("/team")
-async def get_team(current_user=Depends(get_current_user)):
-    """Hole das Team/Downline des Nutzers."""
-    supabase = _ensure_supabase()
-    user_id = _extract_user_id(current_user)
-
-    result = (
-        supabase.table("team_members")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("level")
-        .order("member_name")
-        .execute()
-    )
-
-    return {"team": result.data or []}
-
-
-@router.get("/team/stats")
-async def get_team_stats(current_user=Depends(get_current_user)) -> TeamStats:
-    """Aggregierte Team-Statistiken."""
-    supabase = _ensure_supabase()
-    user_id = _extract_user_id(current_user)
-
-    team = (
-        supabase.table("team_members")
-        .select("*")
-        .eq("user_id", user_id)
-        .execute()
-    )
-
-    members: List[Dict[str, Any]] = team.data or []
-
-    today = date.today()
-    week_ago = today - timedelta(days=7)
-    month_ago = today - timedelta(days=30)
-
-    direct = [
-        m for m in members if m.get("level") == 1 or m.get("sponsor_id") is None
-    ]
-    active = [m for m in members if m.get("status") == "active"]
-    inactive = [m for m in members if m.get("status") == "inactive"]
-
-    def _parse_joined_at(member: Dict[str, Any]) -> Optional[date]:
-        joined_at = member.get("joined_at")
-        if isinstance(joined_at, date):
-            return joined_at
-        if isinstance(joined_at, str):
-            try:
-                return date.fromisoformat(joined_at)
-            except ValueError:
-                return None
-        return None
-
-    new_week = [
-        m for m in members if (_parse_joined_at(m) or date.min) >= week_ago
-    ]
-    new_month = [
-        m for m in members if (_parse_joined_at(m) or date.min) >= month_ago
-    ]
-
-    total_gv = sum(float(m.get("group_volume") or 0) for m in members)
-
-    return TeamStats(
-        total_team=len(members),
-        direct_partners=len(direct),
-        active_members=len(active),
-        inactive_members=len(inactive),
-        new_this_week=len(new_week),
-        new_this_month=len(new_month),
-        total_group_volume=total_gv,
-    )
-
-
-@router.post("/team")
-async def add_team_member(
-    member: TeamMemberCreate, current_user=Depends(get_current_user)
+async def get_team_members(
+    user=Depends(get_current_user), leg: Optional[str] = None, active_only: bool = False
 ):
-    """Füge ein Teammitglied hinzu."""
-    supabase = _ensure_supabase()
-    user_id = _extract_user_id(current_user)
+    """Get team members with optional filtering (Mock)."""
+    mock_team = [
+        {
+            "id": "1",
+            "name": "Maria Schmidt",
+            "rank_name": "Bronze",
+            "leg": "left",
+            "is_active": True,
+            "personal_credits": 45,
+            "joined_at": "2024-08-15",
+        },
+        {
+            "id": "2",
+            "name": "Thomas Keller",
+            "rank_name": "Q-Team",
+            "leg": "right",
+            "is_active": True,
+            "personal_credits": 28,
+            "joined_at": "2024-09-20",
+        },
+        {
+            "id": "3",
+            "name": "Peter Huber",
+            "rank_name": "Partner",
+            "leg": "left",
+            "is_active": False,
+            "personal_credits": 0,
+            "joined_at": "2024-07-01",
+        },
+    ]
 
-    level = 1
-    if member.sponsor_id:
-        sponsor = (
-            supabase.table("team_members")
-            .select("level")
-            .eq("id", member.sponsor_id)
-            .single()
-            .execute()
-        )
-        if sponsor.data:
-            level = (sponsor.data.get("level") or 0) + 1
-        else:
-            raise HTTPException(
-                status_code=404, detail="Sponsor nicht gefunden"
-            )
+    if leg:
+        mock_team = [m for m in mock_team if m["leg"] == leg]
+    if active_only:
+        mock_team = [m for m in mock_team if m["is_active"]]
 
-    member_data = {
-        "user_id": user_id,
-        "member_name": member.member_name,
-        "member_email": member.member_email,
-        "member_phone": member.member_phone,
-        "sponsor_id": member.sponsor_id,
-        "level": level,
-        "rank": member.rank,
-        "status": member.status,
-        "joined_at": member.joined_at.isoformat()
-        if member.joined_at
-        else date.today().isoformat(),
-        "created_at": datetime.now().isoformat(),
-    }
-
-    result = supabase.table("team_members").insert(member_data).execute()
-
-    return {"success": True, "member": result.data[0] if result.data else None}
+    return {"team": mock_team, "total": len(mock_team)}
 
 
 @router.get("/rank-progress")
-async def get_rank_progress(current_user=Depends(get_current_user)):
-    """Status des Rang-Fortschritts."""
-    supabase = _ensure_supabase()
-    user_id = _extract_user_id(current_user)
-
-    settings = (
-        supabase.table("user_settings")
-        .select("*")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
-
-    if not settings.data:
-        return {
-            "current_rank": "Starter",
-            "next_rank": None,
-            "progress_percent": 0,
-            "requirements": [],
-        }
-
-    user_settings = settings.data
-    current_rank = user_settings.get("current_rank", "Starter")
-    pv = float(user_settings.get("personal_volume_monthly") or 0)
-    gv = float(user_settings.get("team_volume_monthly") or 0)
-
-    ranks = (
-        supabase.table("rank_definitions")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("rank_order")
-        .execute()
-    )
-
-    rank_list: List[Dict[str, Any]] = ranks.data or []
-
-    current_rank_data = None
-    next_rank_data = None
-
-    for i, rank in enumerate(rank_list):
-        if rank["rank_name"] == current_rank:
-            current_rank_data = rank
-            if i + 1 < len(rank_list):
-                next_rank_data = rank_list[i + 1]
-            break
-
-    if not next_rank_data:
-        return {
-            "current_rank": current_rank,
-            "next_rank": None,
-            "progress_percent": 100,
-            "requirements": [],
-            "message": "Du hast den höchsten Rang erreicht! 🏆",
-        }
-
-    requirements = []
-    total_progress = 0
-
-    if next_rank_data.get("pv_required"):
-        pv_req = float(next_rank_data["pv_required"])
-        pv_progress = min(100, (pv / pv_req) * 100) if pv_req > 0 else 100
-        requirements.append(
-            {
-                "name": "Personal Volume",
-                "current": pv,
-                "required": pv_req,
-                "progress": pv_progress,
-                "met": pv >= pv_req,
-            }
-        )
-        total_progress += pv_progress
-
-    if next_rank_data.get("gv_required"):
-        gv_req = float(next_rank_data["gv_required"])
-        gv_progress = min(100, (gv / gv_req) * 100) if gv_req > 0 else 100
-        requirements.append(
-            {
-                "name": "Group Volume",
-                "current": gv,
-                "required": gv_req,
-                "progress": gv_progress,
-                "met": gv >= gv_req,
-            }
-        )
-        total_progress += gv_progress
-
-    avg_progress = total_progress / len(requirements) if requirements else 0
-
-    return {
-        "current_rank": current_rank,
-        "next_rank": next_rank_data["rank_name"],
-        "progress_percent": round(avg_progress, 1),
-        "requirements": requirements,
-        "bonus_at_next_rank": next_rank_data.get("bonus_percent"),
-    }
-
-
-@router.get("/compensation-estimate")
-async def get_compensation_estimate(current_user=Depends(get_current_user)):
-    """Einfache Provisionsschätzung."""
-    supabase = _ensure_supabase()
-    user_id = _extract_user_id(current_user)
-
-    settings = (
-        supabase.table("user_settings")
-        .select("*")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
-
-    if not settings.data:
-        return {
-            "personal_volume": 0,
-            "team_volume": 0,
-            "estimated_commission": 0,
-            "breakdown": [],
-        }
-
-    pv = float(settings.data.get("personal_volume_monthly") or 0)
-    gv = float(settings.data.get("team_volume_monthly") or 0)
-    current_rank = settings.data.get("current_rank", "Starter")
-
-    rank = (
-        supabase.table("rank_definitions")
-        .select("bonus_percent")
-        .eq("user_id", user_id)
-        .eq("rank_name", current_rank)
-        .single()
-        .execute()
-    )
-
-    bonus_percent = (
-        float(rank.data.get("bonus_percent") or 5) if rank.data else 5
-    )
-
-    personal_commission = pv * 0.25
-    team_commission = gv * (bonus_percent / 100)
-    total = personal_commission + team_commission
-
-    return {
-        "personal_volume": pv,
-        "team_volume": gv,
-        "estimated_commission": round(total, 2),
-        "breakdown": [
-            {"name": "Personal (25%)", "amount": round(personal_commission, 2)},
-            {"name": f"Team ({bonus_percent}%)", "amount": round(team_commission, 2)},
-        ],
-        "current_rank": current_rank,
-        "rank_bonus_percent": bonus_percent,
-    }
+async def get_rank_progress(user=Depends(get_current_user)):
+    """Get detailed rank progress information (Mock)."""
+    return MOCK_NETWORK_DATA["rank_progress"]
 
 
 @router.get("/tree")
-async def get_team_tree(current_user=Depends(get_current_user)):
-    """Hole die Teamstruktur als Baum."""
-    supabase = _ensure_supabase()
-    user_id = _extract_user_id(current_user)
-
-    team = (
-        supabase.table("team_members")
-        .select("*")
-        .eq("user_id", user_id)
-        .execute()
-    )
-
-    members: List[Dict[str, Any]] = team.data or []
-
-    def build_tree(parent_id=None):
-        children = []
-        for member in members:
-            if member.get("sponsor_id") == parent_id:
-                node = {
-                    "id": member["id"],
-                    "name": member["member_name"],
-                    "rank": member.get("rank", "Starter"),
-                    "status": member.get("status", "active"),
-                    "pv": float(member.get("personal_volume") or 0),
-                    "gv": float(member.get("group_volume") or 0),
-                    "children": build_tree(member["id"]),
-                }
-                children.append(node)
-        return children
-
-    direct = [
-        m for m in members if m.get("sponsor_id") is None or m.get("level") == 1
-    ]
-
-    tree = []
-    for member in direct:
-        tree.append(
+async def get_genealogy_tree(user=Depends(get_current_user), depth: int = 3):
+    """Get genealogy tree structure for visualization (Mock)."""
+    mock_tree = {
+        "id": "user",
+        "name": "Du",
+        "rank": "Silver",
+        "children": [
             {
-                "id": member["id"],
-                "name": member["member_name"],
-                "rank": member.get("rank", "Starter"),
-                "status": member.get("status", "active"),
-                "pv": float(member.get("personal_volume") or 0),
-                "gv": float(member.get("group_volume") or 0),
-                "children": build_tree(member["id"]),
-            }
-        )
-
-    return {"tree": tree, "total_members": len(members)}
+                "id": "1",
+                "name": "Maria S.",
+                "rank": "Bronze",
+                "leg": "left",
+                "children": [
+                    {"id": "4", "name": "Anna K.", "rank": "Partner", "leg": "left", "children": []},
+                    {"id": "5", "name": "Max B.", "rank": "Q-Team", "leg": "right", "children": []},
+                ],
+            },
+            {
+                "id": "2",
+                "name": "Thomas K.",
+                "rank": "Q-Team",
+                "leg": "right",
+                "children": [],
+            },
+        ],
+    }
+    return mock_tree
 

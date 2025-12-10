@@ -28,7 +28,7 @@ export const navigationItems = [
   { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
   { name: 'Approval Inbox', href: '/inbox', icon: MessageSquare },
   { name: 'Kunden', href: '/leads/customers', icon: Handshake },
-  { name: 'Netzwerk', href: '/network', icon: Network, mlmOnly: true },
+  { name: 'Netzwerk', href: '/network', icon: Network },
   { name: 'Finanzen', href: '/finance', icon: DollarSign },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
