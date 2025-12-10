@@ -983,6 +983,7 @@ class ToolExecutor:
             "updated_at": now.isoformat(),
         }
 
+        print(f"[DEBUG] Inserting interaction: lead_id={lead.get('id')}, user_id={self.user_id}")
         self.db.table("lead_interactions").insert(interaction_data).execute()
 
         lead_update_data = {
