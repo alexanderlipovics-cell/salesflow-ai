@@ -969,22 +969,27 @@ class ToolExecutor:
 
         interaction_data = {
             "id": str(uuid.uuid4()),
-            "user_id": self.user_id,
-            "lead_id": lead["id"],
-            "interaction_type": interaction_type,
-            "channel": interaction_type,
-            "summary": summary,
+            "user_id": str(self.user_id),
+            "lead_id": str(lead["id"]),
+            "interaction_type": interaction_type or "meeting",
+            "channel": interaction_type or "meeting",
+            "summary": summary or "",
             "details": details,
             "outcome": outcome or "neutral",
             "logged_by": "chief",
             "source": "chief",
-            "interaction_at": now.isoformat(),
+            "interaction_at": now.isoformat() + "Z",
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
         }
 
-        print(f"[DEBUG] Inserting interaction: lead_id={lead.get('id')}, user_id={self.user_id}")
-        self.db.table("lead_interactions").insert(interaction_data).execute()
+        print(f"[DEBUG] Inserting interaction: lead_id={interaction_data['lead_id']}, user_id={interaction_data['user_id']}")
+        try:
+            result = self.db.table("lead_interactions").insert(interaction_data).execute()
+            print(f"[DEBUG] lead_interactions insert SUCCESS: {result.data}")
+        except Exception as e:  # noqa: BLE001
+            print(f"[ERROR] lead_interactions insert FAILED: {e}")
+            print(f"[ERROR] Data was: {interaction_data}")
 
         lead_update_data = {
             "last_contact_at": now.isoformat(),
