@@ -133,7 +133,7 @@ class ToolExecutor:
 
         lead = (
             self.db.table("leads")
-            .select("*, lead_interactions(*), lead_tasks(*)")
+            .select("*")
             .eq("id", resolved_lead_id)
             .single()
             .execute()

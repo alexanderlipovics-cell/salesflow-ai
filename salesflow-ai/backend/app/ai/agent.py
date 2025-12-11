@@ -26,13 +26,54 @@ router = ModelRouter()
 _ = CollectiveIntelligenceEngine  # silence unused import warnings
 
 
-def extract_names(message: str) -> list[str]:
-    """Einfache Heuristik um potenzielle Namen aus dem User-Text zu ziehen."""
+def extract_names(message: str) -> list:
+    """Extrahiert potenzielle Namen aus der Nachricht"""
+    import re
+
     if not message:
         return []
-    tokens = re.findall(r"\b[A-ZÄÖÜ][a-zäöüß]{2,}\b", message)
-    blacklist = {"Hallo", "Hey", "Hi", "Und", "Oder", "Was", "Wie"}
-    return [t for t in tokens if t not in blacklist]
+
+    message_clean = message.lower()
+    stop_words = [
+        "was",
+        "weißt",
+        "weist",
+        "du",
+        "zu",
+        "über",
+        "lead",
+        "kontakt",
+        "kunde",
+        "mein",
+        "meine",
+        "meinen",
+        "der",
+        "die",
+        "das",
+        "ein",
+        "eine",
+        "ist",
+        "hat",
+        "wie",
+        "wer",
+        "wo",
+        "wann",
+        "zeig",
+        "mir",
+        "info",
+        "informationen",
+        "details",
+        "daten",
+    ]
+
+    words = message_clean.split()
+    potential_names = [w for w in words if w not in stop_words and len(w) > 2]
+
+    capitalized = re.findall(r"[A-ZÄÖÜ][a-zäöüß]+", message)
+
+    all_names = potential_names + [n.lower() for n in capitalized]
+
+    return list(set(all_names))
 
 
 def determine_search_type(message: str, user_id: str, db) -> str:
