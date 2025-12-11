@@ -454,10 +454,10 @@ const OnboardingWizardPage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/daily-command")}
+            onClick={() => navigate("/ai-copilot")}
             className="flex flex-col items-start rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-4 text-left transition hover:border-emerald-500/50 hover:bg-emerald-500/15"
           >
-            <span className="text-sm font-semibold text-emerald-400">Daily Command öffnen</span>
+            <span className="text-sm font-semibold text-emerald-400">AI Copilot öffnen</span>
             <span className="mt-2 text-xs text-slate-400">
               Starte mit deiner Power-Hour-Liste – konzentrierter Output in 60 Minuten.
             </span>
@@ -468,10 +468,10 @@ const OnboardingWizardPage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/hunter")}
+            onClick={() => navigate("/leads")}
             className="flex flex-col items-start rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-4 text-left transition hover:border-slate-600 hover:bg-slate-800"
           >
-            <span className="text-sm font-semibold text-slate-100">Hunter Board</span>
+            <span className="text-sm font-semibold text-slate-100">Leads öffnen</span>
             <span className="mt-2 text-xs text-slate-400">
               Sieh deine heutigen Leads & Aufgaben auf einen Blick und arbeite sie strukturiert ab.
             </span>

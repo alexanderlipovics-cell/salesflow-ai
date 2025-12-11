@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { SignupForm } from '../components/auth/SignupForm';
 import { Sparkles } from 'lucide-react';
+import { supabaseClient } from '../lib/supabaseClient';
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,8 +26,15 @@ const SignupPage: React.FC = () => {
   ) => {
     try {
       await signup({ email, password, name, company });
-      // Redirect to dashboard after successful signup
-      navigate('/dashboard', { replace: true });
+      // Prüfe, ob Supabase bereits eine Session gesetzt hat
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      if (sessionData?.session) {
+        // Onboarding-Check später in Dashboard/Login; hier direkt ins Onboarding
+        navigate('/onboarding', { replace: true });
+      } else {
+        // Falls keine Session (z.B. E-Mail-Confirmation aktiviert)
+        navigate('/login', { replace: true });
+      }
     } catch (err) {
       // Error is handled by useAuth hook
       console.error('Signup failed:', err);
