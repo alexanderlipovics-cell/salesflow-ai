@@ -41,6 +41,11 @@ class ToolExecutor:
             "generate_customer_protocol": self._generate_customer_protocol,
             "update_lead_status": self._update_lead_status,
             "start_power_hour": self._start_power_hour,
+            "get_lead_history": self._get_lead_history,
+            "get_today_summary": self._get_today_summary,
+            "quick_update_lead": self._quick_update_lead,
+            "search_by_tag": self._search_by_tag,
+            "get_pipeline_stats": self._get_pipeline_stats,
         }
 
         if tool_name not in executor_map:
@@ -1218,5 +1223,254 @@ class ToolExecutor:
                 "contacts": goal_contacts or 5,
                 "duration": duration_minutes,
             },
+        }
+
+    # ═══════════════════════════════════════════════════════════
+    # QUICK WIN TOOLS
+    # ═══════════════════════════════════════════════════════════
+
+    async def _get_lead_history(
+        self,
+        lead_name_or_id: str,
+        limit: int = 20,
+    ) -> dict:
+        """Hole komplette Interaktionshistorie eines Leads."""
+        lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        if not lead:
+            return {"error": f"Lead '{lead_name_or_id}' nicht gefunden"}
+
+        interactions = (
+            self.db.table("lead_interactions")
+            .select("*")
+            .eq("lead_id", lead["id"])
+            .order("interaction_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+
+        followups = (
+            self.db.table("followup_suggestions")
+            .select("id, title, due_at, status, channel, suggested_message")
+            .eq("lead_id", lead["id"])
+            .order("due_at", desc=True)
+            .limit(10)
+            .execute()
+        )
+
+        return {
+            "lead": {
+                "id": lead.get("id"),
+                "name": lead.get("name"),
+                "company": lead.get("company"),
+                "status": lead.get("status"),
+                "temperature": lead.get("temperature"),
+                "tags": lead.get("tags", []),
+            },
+            "interactions": interactions.data if interactions else [],
+            "followups": followups.data if followups else [],
+            "total_interactions": len(interactions.data) if interactions else 0,
+        }
+
+    async def _get_today_summary(self) -> dict:
+        """Tagesübersicht: Follow-ups, Meetings, Hot Leads."""
+        now = datetime.utcnow()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=0)
+
+        # Heutige Follow-ups
+        followups = (
+            self.db.table("followup_suggestions")
+            .select("id, title, due_at, channel, lead_id, leads(name)")
+            .eq("user_id", self.user_id)
+            .eq("status", "pending")
+            .gte("due_at", start_of_day.isoformat())
+            .lte("due_at", end_of_day.isoformat())
+            .order("due_at")
+            .execute()
+        )
+
+        # Überfällige
+        overdue = (
+            self.db.table("followup_suggestions")
+            .select("id", count="exact")
+            .eq("user_id", self.user_id)
+            .eq("status", "pending")
+            .lt("due_at", start_of_day.isoformat())
+            .execute()
+        )
+
+        # Hot Leads
+        hot_leads = (
+            self.db.table("leads")
+            .select("id, name, company, status")
+            .eq("user_id", self.user_id)
+            .eq("temperature", "hot")
+            .not_.in_("status", ["won", "lost"])
+            .limit(5)
+            .execute()
+        )
+
+        # Heutige Meetings (falls calendar_events existiert)
+        meetings = []
+        try:
+            meetings_result = (
+                self.db.table("calendar_events")
+                .select("id, title, start_time, lead_id, leads(name)")
+                .eq("user_id", self.user_id)
+                .gte("start_time", start_of_day.isoformat())
+                .lte("start_time", end_of_day.isoformat())
+                .order("start_time")
+                .execute()
+            )
+            meetings = meetings_result.data if meetings_result else []
+        except Exception:
+            pass
+
+        return {
+            "date": now.strftime("%d.%m.%Y"),
+            "followups_today": len(followups.data) if followups else 0,
+            "followups": followups.data if followups else [],
+            "overdue_count": overdue.count if overdue else 0,
+            "hot_leads": hot_leads.data if hot_leads else [],
+            "meetings_today": len(meetings),
+            "meetings": meetings,
+        }
+
+    async def _quick_update_lead(
+        self,
+        lead_name_or_id: str,
+        status: str = None,
+        temperature: str = None,
+        add_tags: list = None,
+        remove_tags: list = None,
+        notes: str = None,
+    ) -> dict:
+        """Schnelles Lead-Update."""
+        lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        if not lead:
+            return {"error": f"Lead '{lead_name_or_id}' nicht gefunden"}
+
+        update_data = {"updated_at": datetime.utcnow().isoformat()}
+        changes = []
+
+        if status:
+            update_data["status"] = status
+            changes.append(f"Status → {status}")
+            if status in ["won", "lost"]:
+                update_data["closed_at"] = datetime.utcnow().isoformat()
+
+        if temperature:
+            update_data["temperature"] = temperature
+            changes.append(f"Temperatur → {temperature}")
+
+        if add_tags or remove_tags:
+            existing_tags = lead.get("tags") or []
+            if isinstance(existing_tags, str):
+                existing_tags = []
+
+            if add_tags:
+                existing_tags = list(set(existing_tags + add_tags))
+                changes.append(f"Tags hinzugefügt: {', '.join(add_tags)}")
+
+            if remove_tags:
+                existing_tags = [t for t in existing_tags if t not in remove_tags]
+                changes.append(f"Tags entfernt: {', '.join(remove_tags)}")
+
+            update_data["tags"] = existing_tags
+
+        if notes:
+            existing_notes = lead.get("notes") or ""
+            timestamp = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
+            update_data["notes"] = f"{existing_notes}\n\n[{timestamp}] {notes}".strip()
+            changes.append("Notiz hinzugefügt")
+
+        if len(update_data) > 1:  # mehr als nur updated_at
+            self.db.table("leads").update(update_data).eq("id", lead["id"]).execute()
+
+        return {
+            "success": True,
+            "lead_name": lead.get("name"),
+            "changes": changes,
+            "message": f"✅ {lead.get('name')} aktualisiert: {', '.join(changes)}" if changes else "Keine Änderungen",
+        }
+
+    async def _search_by_tag(
+        self,
+        tags: list,
+        match_all: bool = False,
+        status: str = "all",
+        limit: int = 20,
+    ) -> dict:
+        """Suche Leads nach Tags."""
+        query = (
+            self.db.table("leads")
+            .select("id, name, company, status, temperature, tags, last_contact_at")
+            .eq("user_id", self.user_id)
+        )
+
+        if status != "all":
+            query = query.eq("status", status)
+
+        # Tag-Filter: Supabase unterstützt contains für Arrays
+        if match_all:
+            # Alle Tags müssen vorhanden sein
+            query = query.contains("tags", tags)
+        else:
+            # Mindestens ein Tag (OR) - wir müssen einzeln filtern
+            query = query.overlaps("tags", tags)
+
+        result = query.order("last_contact_at", desc=True).limit(limit).execute()
+
+        return {
+            "searched_tags": tags,
+            "match_mode": "ALL" if match_all else "ANY",
+            "count": len(result.data) if result else 0,
+            "leads": result.data if result else [],
+        }
+
+    async def _get_pipeline_stats(self, include_values: bool = True) -> dict:
+        """Pipeline-Statistiken pro Stage."""
+        stages = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"]
+
+        pipeline = {}
+        total_value = 0
+        total_leads = 0
+
+        for stage in stages:
+            query = (
+                self.db.table("leads")
+                .select("id, deal_value", count="exact")
+                .eq("user_id", self.user_id)
+                .eq("status", stage)
+            )
+            result = query.execute()
+
+            count = result.count if result else 0
+            value = sum([l.get("deal_value") or 0 for l in (result.data or [])]) if include_values else 0
+
+            pipeline[stage] = {
+                "count": count,
+                "value": value if include_values else None,
+            }
+
+            if stage not in ["won", "lost"]:
+                total_leads += count
+                total_value += value
+
+        # Conversion Rate
+        won_count = pipeline.get("won", {}).get("count", 0)
+        lost_count = pipeline.get("lost", {}).get("count", 0)
+        closed_total = won_count + lost_count
+        win_rate = round((won_count / closed_total * 100), 1) if closed_total > 0 else 0
+
+        return {
+            "pipeline": pipeline,
+            "summary": {
+                "active_leads": total_leads,
+                "pipeline_value": total_value if include_values else None,
+                "win_rate": win_rate,
+                "won_this_period": won_count,
+                "lost_this_period": lost_count,
+            }
         }
 

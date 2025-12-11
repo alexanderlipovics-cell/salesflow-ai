@@ -549,6 +549,132 @@ SALES_AGENT_TOOLS = [
                 }
             }
         }
-    }
+    },
+    # ═══════════════════════════════════════════════════════════
+    # QUICK WIN TOOLS (neu)
+    # ═══════════════════════════════════════════════════════════
+    {
+        "type": "function",
+        "function": {
+            "name": "get_lead_history",
+            "description": "Zeigt alle Interaktionen und Aktivitäten eines Leads. Nutze wenn User fragt 'was war mit X', 'Geschichte von X', 'alle Gespräche mit X'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_name_or_id": {
+                        "type": "string",
+                        "description": "Name oder ID des Leads"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Max Anzahl Interaktionen"
+                    }
+                },
+                "required": ["lead_name_or_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_today_summary",
+            "description": "Gibt eine Zusammenfassung für heute: Follow-ups, Meetings, Hot Leads. Nutze bei 'was steht heute an', 'mein Tag', 'Tagesübersicht'.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "quick_update_lead",
+            "description": "Schnelles Update eines Leads: Status, Temperatur, Tags. Nutze bei 'setz X auf gewonnen', 'markiere als hot', 'füge Tag hinzu'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_name_or_id": {
+                        "type": "string",
+                        "description": "Name oder ID des Leads"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"],
+                        "description": "Neuer Status"
+                    },
+                    "temperature": {
+                        "type": "string",
+                        "enum": ["cold", "warm", "hot"],
+                        "description": "Neue Temperatur"
+                    },
+                    "add_tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Tags zum Hinzufügen"
+                    },
+                    "remove_tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Tags zum Entfernen"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Notiz anhängen"
+                    }
+                },
+                "required": ["lead_name_or_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_by_tag",
+            "description": "Suche Leads nach Tags. Nutze bei 'zeig mir alle Zinzino Leads', 'Leads mit Tag X', 'wer hat Tag Y'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Tags nach denen gesucht wird (OR-Verknüpfung)"
+                    },
+                    "match_all": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "True = alle Tags müssen matchen (AND)"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost", "all"],
+                        "default": "all"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20
+                    }
+                },
+                "required": ["tags"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_pipeline_stats",
+            "description": "Pipeline-Übersicht: Leads pro Stage, Conversion Rates, Deal Values. Nutze bei 'Pipeline Status', 'wie sieht meine Pipeline aus', 'Funnel Übersicht'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "include_values": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Deal-Werte mit einbeziehen"
+                    }
+                }
+            }
+        }
+    },
 ]
 
