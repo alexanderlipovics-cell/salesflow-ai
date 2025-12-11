@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
       if (userId) {
         const { data: profile } = await supabaseClient
           .from('users')
-          .select('onboarding_complete, vertical')
+          .select('onboarding_complete, vertical, name, email')
           .eq('id', userId)
           .single();
 

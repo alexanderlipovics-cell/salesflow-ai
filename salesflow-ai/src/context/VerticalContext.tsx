@@ -77,11 +77,11 @@ export function VerticalProvider({
       }
 
       // 2. User mit vertical_id laden
-      const { data: userData, error: userError } = await supabaseClient
-        .from("users")
-        .select("vertical_id")
-        .eq("id", currentUserId)
-        .single();
+        const { data: userData, error: userError } = await supabaseClient
+          .from("users")
+          .select("vertical")
+          .eq("id", currentUserId)
+          .single();
 
       if (userError) {
         console.warn("Error loading user vertical_id:", userError);
