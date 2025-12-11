@@ -110,9 +110,24 @@ const VoiceRecorder = ({
 
     try {
       const endpoint = '/api/voice/command';
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
-        : null;
+      let token = null;
+      if (typeof window !== 'undefined') {
+        // Debug: lokale Tokens prüfen
+        try {
+          console.log('All localStorage keys:', Object.keys(localStorage));
+          console.log('access_token:', localStorage.getItem('access_token'));
+          console.log('token:', localStorage.getItem('token'));
+          console.log('salesflow_token:', localStorage.getItem('salesflow_token'));
+        } catch {
+          /* ignore */
+        }
+
+        token =
+          localStorage.getItem('access_token') ||
+          localStorage.getItem('token') ||
+          localStorage.getItem('salesflow_token') ||
+          localStorage.getItem('refresh_token');
+      }
 
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
