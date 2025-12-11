@@ -258,6 +258,7 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
 
 
 @router.put("/{lead_id}")
+@router.patch("/{lead_id}")
 async def update_lead(lead_id: str, request: Request, current_user: User = Depends(get_current_active_user)):
     import json
     try:
