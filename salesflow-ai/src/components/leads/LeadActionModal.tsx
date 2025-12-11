@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { X, Send, Copy, Check, MessageCircle, Mail, Phone, Loader2 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 type LeadAction = "whatsapp" | "email" | "call" | null;
 
@@ -26,6 +27,15 @@ export default function LeadActionModal({ isOpen, onClose, lead, action }: LeadA
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { user } = useAuth();
+
+  const userFirstName = useMemo(() => {
+    const fromUser = (user as any)?.name || (user as any)?.user_metadata?.full_name || (user as any)?.email;
+    if (fromUser) {
+      return fromUser.split(" ")[0].split("@")[0] || "Dein Berater";
+    }
+    return "Dein Berater";
+  }, [user]);
 
   useEffect(() => {
     if (isOpen && lead && action) {
@@ -65,8 +75,58 @@ export default function LeadActionModal({ isOpen, onClose, lead, action }: LeadA
     return statusMap[status] || status;
   };
 
-  const getFallbackMessage = (currentLead: Lead) =>
-    `Hallo ${currentLead.name}!\n\nIch hoffe, es geht dir gut.\n\nIch wollte mich kurz melden und fragen, ob du noch Interesse an unserem Gespräch hast?\n\nLass mich wissen, wann es dir passt!\n\nBeste Grüße`;
+  const getMessageByStatus = (currentLead: Lead) => {
+    const leadName = currentLead.name?.split(" ")[0] || "du";
+    switch ((currentLead.status || "").toLowerCase()) {
+      case "new":
+      case "neu":
+        return `Hallo ${leadName}! 👋
+
+Ich bin neu in deinem Netzwerk und freue mich darauf, dich kennenzulernen.
+
+Hast du Lust, ein paar Minuten zu quatschen?`;
+
+      case "contacted":
+      case "kontaktiert":
+        return `Hey ${leadName}! 😊
+
+Ich wollte nochmal nachfragen, ob du Zeit hattest, über unser Gespräch nachzudenken?
+
+Lass mich wissen, wenn du Fragen hast!`;
+
+      case "qualified":
+      case "qualifiziert":
+        return `Hi ${leadName}! 🎯
+
+Basierend auf unserem Gespräch habe ich ein paar spannende Infos für dich.
+
+Wann passt es dir für einen kurzen Call?`;
+
+      case "proposal":
+      case "angebot":
+        return `Hallo ${leadName}! 📋
+
+Hast du dir das Angebot schon anschauen können?
+
+Ich beantworte gerne alle Fragen!`;
+
+      case "won":
+      case "kunde":
+        return `Hey ${leadName}! 🎉
+
+Willkommen im Team! Ich freue mich auf die Zusammenarbeit.
+
+Bei Fragen bin ich jederzeit für dich da!`;
+
+      default:
+        return `Hallo ${leadName}! 👋
+
+Ich hoffe, es geht dir gut!`;
+    }
+  };
+
+  const appendSignature = (text: string) =>
+    `${(text || "").trim()}\n\nHerzliche Grüße,\n${userFirstName}`;
 
   const generateMessage = async () => {
     if (!lead || !action) return;
@@ -91,7 +151,8 @@ export default function LeadActionModal({ isOpen, onClose, lead, action }: LeadA
       });
 
       const data = await response.json();
-      setMessage(data.response || data.message || getFallbackMessage(lead));
+      const rawMessage = data.response || data.message || getMessageByStatus(lead);
+      setMessage(appendSignature(rawMessage));
     } catch (error) {
       console.error("Failed to generate message:", error);
       setMessage(getFallbackMessage(lead));
