@@ -264,6 +264,19 @@ async def update_lead(lead_id: str, request: Request, current_user: User = Depen
     try:
         body = await request.body()
         lead = json.loads(body)
+
+        # Leere/Null-Felder bereinigen, insbesondere für UNIQUE-Felder
+        lead = {k: v for k, v in lead.items() if v is not None}
+
+        # E-Mail leer/null entfernen, um UNIQUE-Constraint-Probleme zu vermeiden
+        if "email" in lead and (lead["email"] is None or lead["email"] == ""):
+            lead.pop("email")
+
+        # Weitere Felder von Leerstrings befreien
+        fields_to_clean = ["email", "phone", "whatsapp", "instagram", "linkedin"]
+        for field in fields_to_clean:
+            if field in lead and lead[field] == "":
+                lead[field] = None
         
         db = get_supabase()
         existing = db.table("leads").select("id,status").eq("id", lead_id).maybe_single().execute()
