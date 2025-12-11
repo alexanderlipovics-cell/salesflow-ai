@@ -176,16 +176,16 @@ class ToolExecutor:
             "follow_ups": result.data if result else [],
         }
 
-    async def _get_followup_suggestions(self, limit: int = 10, status: str = "pending") -> Any:
-        """Hole fällige Follow-up Vorschläge (Supabase)."""
-        now = datetime.utcnow().isoformat()
+    async def _get_followup_suggestions(self, limit: int = 50, status: str = "pending") -> Any:
+        """Hole fällige Follow-up Vorschläge (nächste 7 Tage)."""
+        end_of_range = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
         result = (
             self.db.table("followup_suggestions")
             .select("*, leads(name, company, phone, email)")
             .eq("user_id", self.user_id)
             .eq("status", status)
-            .lte("due_at", now)
+            .lte("due_at", end_of_range)
             .order("due_at")
             .limit(limit)
             .execute()
