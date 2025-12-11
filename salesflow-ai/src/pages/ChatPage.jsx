@@ -519,6 +519,7 @@ const ChatPage = () => {
 
       const data = await response.json();
       console.log("API Response:", data);
+      console.log("Tool results:", data?.tool_results);
 
       if (!isLiveRequest && data?.session_id) {
         setSessionId(data.session_id);
@@ -533,14 +534,33 @@ const ChatPage = () => {
       const intentDetected = data?.intent_detected || data?.detected_intent || null;
       const intentDescription = data?.intent_description || data?.intent || null;
 
-      // Deep Link aus Tool-Resultaten (z.B. prepare_message) extrahieren
+      // Deep link extrahieren - mehrere mögliche Strukturen prüfen
       let deepLink = null;
+
+      // Variante 1: tool_results Array
       if (Array.isArray(data?.tool_results)) {
         const prepareResult = data.tool_results.find((t) => t?.name === "prepare_message");
         if (prepareResult?.result?.deep_link) {
           deepLink = prepareResult.result.deep_link;
         }
       }
+
+      // Variante 2: Direkt in der Response
+      if (!deepLink && data?.deep_link) {
+        deepLink = data.deep_link;
+      }
+
+      // Variante 3: Im message String nach mailto: oder wa.me suchen
+      if (!deepLink && typeof reply === "string") {
+        const mailtoMatch = reply.match(/mailto:[^\s\)]+/);
+        const waMatch = reply.match(/https:\/\/wa\.me\/[^\s\)]+/);
+        const instaMatch = reply.match(/https:\/\/instagram\.com\/[^\s\)]+/);
+        if (mailtoMatch) deepLink = mailtoMatch[0];
+        else if (waMatch) deepLink = waMatch[0];
+        else if (instaMatch) deepLink = instaMatch[0];
+      }
+
+      console.log("Extracted deep_link:", deepLink);
 
       const userAskedToCreate =
         intentDetected === "CREATE_LEAD" ||
@@ -1151,6 +1171,7 @@ const ChatPage = () => {
                   <div className="whitespace-pre-wrap break-words">
                     {message.content}
                   </div>
+                  {message.role === "assistant" && console.log("Message deep_link:", message.deep_link)}
                   {message.role === "assistant" && (
                     <WhatsAppMessageActions
                       message={message.content}
