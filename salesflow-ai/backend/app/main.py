@@ -373,6 +373,7 @@ from .routers.lead_discovery import router as lead_discovery_router  # 🔍 Lead
 from .routers.lead_analysis import router as lead_analysis_router  # 🧠 Lead Deep Scan Intelligence
 from .routers.meeting_prep import router as meeting_prep_router  # 🧠 Meeting Prep
 from .routers.voice import router as voice_router  # 🗣️ Voice Transcription
+from .routers.exports import router as exports_router  # ⬇️ File Exports (PDF/Excel/CSV)
 from .routers.proposals import router as proposals_router  # 📄 Angebots-PDFs
 from .routers.email_sync import router as email_sync_router  # 📧 Email Sync & Tracking
 from .routers.interactions import router as interactions_router  # 📊 User Interactions Tracking
@@ -448,6 +449,7 @@ app.include_router(magic_send_router, prefix="/api")  # 🔗 Magic Send Deep Lin
 app.include_router(notifications_router)  # 🔔 Background Notifications (has own prefix)
 app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mapping
 app.include_router(voice_router, prefix="/api/voice")  # 🗣️ Voice Transcription
+app.include_router(exports_router)  # ⬇️ File Exports
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
 app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracking
 app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking

@@ -31,6 +31,7 @@ from app.core.user_adaptive_prompts import (
     load_user_learning_context,
     build_user_adaptive_prompt,
 )
+from app.supabase_client import get_supabase
 from app.services.chat_intents import ChatIntentHandler, CHAT_INTENTS
 from ..db.session import get_db  # added for dependency availability
 from ..core.security import get_current_user_dict
@@ -357,11 +358,15 @@ async def chat_completion(
         logger.debug(f"Could not load vertical context (non-critical): {e}")
         # Weiter mit base_prompt ohne Vertical Context
     
+    user_context = None
+    user_display_name: Optional[str] = None
+
     # 3. User-Adaptive Prompt: Personalisiere basierend auf User-Learning-Profile
     try:
         from app.supabase_client import get_supabase_client
         db_client = get_supabase()
         user_context = await load_user_learning_context(user_id, db_client)
+        user_display_name = getattr(user_context, "user_name", None)
         
         # Lead-Kontext für Personalisierung
         lead_context = None
@@ -443,6 +448,30 @@ async def chat_completion(
         
         # AI-Antwort generieren
         reply = ai_client.generate(system_prompt, messages)
+
+        # Placeholder [Nutzer] durch echten Namen ersetzen, falls bekannt
+        if not user_display_name:
+            try:
+                db = get_supabase()
+                profile = (
+                    db.table("user_profiles")
+                    .select("full_name,name,first_name,last_name")
+                    .eq("user_id", user_id)
+                    .maybe_single()
+                    .execute()
+                )
+                if profile and profile.data:
+                    user_display_name = (
+                        profile.data.get("full_name")
+                        or profile.data.get("name")
+                        or profile.data.get("first_name")
+                        or None
+                    )
+            except Exception as e:
+                logger.debug(f"Could not load user name for placeholder: {e}")
+
+        if user_display_name:
+            reply = reply.replace("[Nutzer]", user_display_name)
         
         # AUTOPILOT: Outbound Message Event loggen (silent) mit A/B Tracking
         await log_message_event(

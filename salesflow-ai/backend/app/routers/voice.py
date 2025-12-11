@@ -172,7 +172,7 @@ async def text_to_speech(
     try:
         response = openai.audio.speech.create(
             model="tts-1",
-            voice="alloy",
+            voice="onyx",
             input=text,
         )
         audio_base64 = base64.b64encode(response.content).decode()

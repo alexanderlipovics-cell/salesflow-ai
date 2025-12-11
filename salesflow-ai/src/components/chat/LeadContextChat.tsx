@@ -23,6 +23,11 @@ import {
 import { useAIChat } from '@/hooks/useAIChat';
 
 const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const hasExportIntent = (message: string) => {
+  const text = (message || '').toLowerCase();
+  const keywords = ['hier ist dein', 'erstellt', 'export', 'pdf', 'excel', 'tabelle', 'angebot', 'angebot erstellt'];
+  return keywords.some((k) => text.includes(k));
+};
 import {
   QUICK_ACTIONS,
   TEMPERATURE_COLORS,
@@ -248,6 +253,7 @@ export function LeadContextChat({
 
   const [input, setInput] = useState('');
   const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
+  const [downloadLoadingId, setDownloadLoadingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -328,6 +334,48 @@ export function LeadContextChat({
     }
   };
 
+  const downloadFile = async (
+    endpoint: string,
+    body: Record<string, any>,
+    filename: string,
+  ) => {
+    setDownloadLoadingId(endpoint + filename);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download error', err);
+    } finally {
+      setDownloadLoadingId(null);
+    }
+  };
+
+  const downloadPDF = (content: string) =>
+    downloadFile('/api/exports/pdf', { content, title: 'CHIEF-Dokument' }, 'chief-dokument.pdf');
+
+  const downloadExcel = (content: string) =>
+    downloadFile('/api/exports/excel', { data: [{ content }], filename: 'chief-export' }, 'chief-export.xlsx');
+
+  const downloadCSV = (content: string) =>
+    downloadFile('/api/exports/csv', { data: [{ content }], filename: 'chief-export' }, 'chief-export.csv');
+
   // ─────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────
@@ -405,23 +453,52 @@ export function LeadContextChat({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                role={msg.role as 'user' | 'assistant'}
-                content={msg.content}
-                timestamp={new Date(msg.created_at).toLocaleTimeString('de-DE', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-                onSpeak={
-                  msg.role === 'assistant'
-                    ? () => speakResponse(msg.content, msg.id)
-                    : undefined
-                }
-                isSpeaking={ttsLoadingId === msg.id}
-              />
-            ))}
+            {messages.map((msg) => {
+              const exportIntent = msg.role === 'assistant' && hasExportIntent(msg.content);
+              return (
+                <div key={msg.id} className="space-y-2">
+                  <MessageBubble
+                    role={msg.role as 'user' | 'assistant'}
+                    content={msg.content}
+                    timestamp={new Date(msg.created_at).toLocaleTimeString('de-DE', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                    onSpeak={
+                      msg.role === 'assistant'
+                        ? () => speakResponse(msg.content, msg.id)
+                        : undefined
+                    }
+                    isSpeaking={ttsLoadingId === msg.id}
+                  />
+                  {exportIntent && (
+                    <div className="ml-12 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => downloadPDF(msg.content)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-60"
+                        disabled={downloadLoadingId !== null}
+                      >
+                        📄 Als PDF
+                      </button>
+                      <button
+                        onClick={() => downloadExcel(msg.content)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-60"
+                        disabled={downloadLoadingId !== null}
+                      >
+                        📊 Als Excel
+                      </button>
+                      <button
+                        onClick={() => downloadCSV(msg.content)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-60"
+                        disabled={downloadLoadingId !== null}
+                      >
+                        🧾 Als CSV
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {sending && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </div>
