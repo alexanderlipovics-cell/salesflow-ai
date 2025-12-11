@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.zapier import dispatch_webhook
+from app.services.activity_logger import ActivityLogger
 from ..core.security import get_current_active_user
 from ..db.session import get_db
 from ..models.user import User
@@ -237,6 +238,17 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
                 payload = dict(lead)
                 payload.setdefault("user_id", user_id)
                 await dispatch_webhook(user_id, "new_lead", payload)
+
+                # Activity Logging
+                activity = ActivityLogger(db, user_id)
+                await activity.log(
+                    action_type="created",
+                    entity_type="lead",
+                    entity_id=lead_id,
+                    entity_name=lead.get("name"),
+                    details={"source": "api"},
+                    source="ui",
+                )
         
         return {"success": True, "lead": result.data[0] if result.data else data}
         
@@ -272,6 +284,28 @@ async def update_lead(lead_id: str, request: Request, current_user: User = Depen
                     "changed_at": datetime.utcnow().isoformat(),
                 },
             )
+
+        if user_id:
+            activity = ActivityLogger(db, user_id)
+            updated_lead = result.data[0] if result and result.data else {}
+            update_data = lead
+            await activity.log(
+                action_type="updated",
+                entity_type="lead",
+                entity_id=lead_id,
+                entity_name=updated_lead.get("name"),
+                details={"fields_changed": list(update_data.keys())},
+                source="ui",
+            )
+            if update_data.get("status") == "won":
+                await activity.log(
+                    action_type="converted",
+                    entity_type="lead",
+                    entity_id=lead_id,
+                    entity_name=updated_lead.get("name"),
+                    details={"conversion_type": "sale"},
+                    source="ui",
+                )
         return {"lead": result.data[0], "success": True}
     except Exception as e:
         logger.exception(f"Update lead error: {e}")
@@ -279,10 +313,19 @@ async def update_lead(lead_id: str, request: Request, current_user: User = Depen
 
 
 @router.delete("/{lead_id}")
-async def delete_lead(lead_id: str):
+async def delete_lead(lead_id: str, current_user: User = Depends(get_current_active_user)):
     try:
         db = get_supabase()
         db.table("leads").delete().eq("id", lead_id).execute()
+        user_id = _extract_user_id(current_user)
+        if user_id:
+            activity = ActivityLogger(db, user_id)
+            await activity.log(
+                action_type="deleted",
+                entity_type="lead",
+                entity_id=lead_id,
+                source="ui",
+            )
         return {"message": "Lead gelöscht"}
     except Exception as e:
         logger.exception(f"Delete lead error: {e}")

@@ -30,6 +30,7 @@ from app.services.timezone_service import DefaultTimezoneService
 from app.services.ai_router_dummy import DummyAIRouter
 from app.core.security import get_current_active_user
 from app.core.deps import get_supabase
+from app.services.activity_logger import ActivityLogger
 import uuid
 import time
 import logging
@@ -532,10 +533,29 @@ async def handle_suggestion_v2(
                 }
             ).eq("id", suggestion["lead_id"]).eq("user_id", user_id).execute()
 
+        activity = ActivityLogger(supabase, user_id)
+        await activity.log(
+            action_type="completed",
+            entity_type="follow_up",
+            entity_id=suggestion_id,
+            entity_name=suggestion.get("title") or f"Follow-up für {suggestion.get('lead_id')}",
+            details={"action": "send", "lead_id": suggestion.get("lead_id")},
+            source="ui",
+        )
+
         return {"success": True, "message": "Follow-up als gesendet markiert"}
 
     if action.action == "skip":
         supabase.table("followup_suggestions").update({"status": "skipped"}).eq("id", suggestion_id).execute()
+        activity = ActivityLogger(supabase, user_id)
+        await activity.log(
+            action_type="updated",
+            entity_type="follow_up",
+            entity_id=suggestion_id,
+            entity_name=suggestion.get("title") or f"Follow-up für {suggestion.get('lead_id')}",
+            details={"action": "skip", "lead_id": suggestion.get("lead_id")},
+            source="ui",
+        )
         return {"success": True, "message": "Follow-up übersprungen"}
 
     if action.action == "snooze":
@@ -549,6 +569,16 @@ async def handle_suggestion_v2(
                 "due_at": snooze_until.isoformat(),
             }
         ).eq("id", suggestion_id).execute()
+
+        activity = ActivityLogger(supabase, user_id)
+        await activity.log(
+            action_type="updated",
+            entity_type="follow_up",
+            entity_id=suggestion_id,
+            entity_name=suggestion.get("title") or f"Follow-up für {suggestion.get('lead_id')}",
+            details={"action": "snooze", "lead_id": suggestion.get("lead_id"), "snooze_days": snooze_days},
+            source="ui",
+        )
 
         return {"success": True, "message": f"Follow-up um {snooze_days} Tag(e) verschoben"}
 
@@ -586,6 +616,16 @@ async def start_flow_for_lead_v2(
             "last_outreach_at": datetime.utcnow().isoformat(),
         }
     ).eq("id", request.lead_id).eq("user_id", user_id).execute()
+
+    activity = ActivityLogger(supabase, user_id)
+    await activity.log(
+        action_type="created",
+        entity_type="follow_up",
+        entity_id=request.lead_id,
+        entity_name=f"Flow {request.flow}",
+        details={"flow": request.flow, "stage": 0},
+        source="ui",
+    )
 
     return {"success": True, "message": f"Flow '{request.flow}' gestartet", "next_followup_at": next_followup.isoformat()}
 

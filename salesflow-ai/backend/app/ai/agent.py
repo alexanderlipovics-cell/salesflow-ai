@@ -15,6 +15,8 @@ from .intent_detector import IntentDetector
 from .cost_tracker import CostTracker
 from ..services.ai_usage_service import AIUsageService
 from ..services.collective_intelligence_engine import CollectiveIntelligenceEngine
+from app.services.user_learning_service import UserLearningService
+from ..services.activity_logger import ActivityLogger
 
 logger = logging.getLogger(__name__)
 
@@ -220,7 +222,42 @@ async def run_sales_agent(
     revenue_data = revenue.data if revenue else []
     user_context["current_revenue"] = sum([d.get("value") or 0 for d in revenue_data])
 
-    system_prompt = build_system_prompt(user_context)
+    # Activity & Learning Context
+    learning_context = ""
+    try:
+        activity_logger = ActivityLogger(db, user_id)
+        recent_activities = await activity_logger.get_recent(limit=10)
+    except Exception as e:
+        recent_activities = []
+        logger.warning(f"Could not load recent activities: {e}")
+
+    try:
+        learning_service = UserLearningService(db)
+        learning_insights = await learning_service.analyze_conversions(user_id, days_back=30)
+    except Exception as e:
+        learning_insights = []
+        logger.warning(f"Could not load learning insights: {e}")
+
+    # Letzte Aktivitäten
+    if recent_activities:
+        learning_context += "\n\nLETZTE USER-AKTIVITÄTEN:\n"
+        for act in recent_activities[:5]:
+            learning_context += (
+                f"- {act.get('action_type', 'unknown')} {act.get('entity_type', '')}: "
+                f"{act.get('entity_name', act.get('entity_id', ''))}\n"
+            )
+
+    # Learning Insights
+    if learning_insights:
+        learning_context += "\n\nERKENNTNISSE AUS ERFOLGREICHEN CONVERSIONS:\n"
+        for insight in learning_insights[:3]:
+            try:
+                confidence_pct = f"{insight.confidence:.0%}"
+            except Exception:
+                confidence_pct = str(insight.confidence)
+            learning_context += f"- {insight.pattern_type}: {insight.successful_value} (Confidence: {confidence_pct})\n"
+
+    system_prompt = build_system_prompt(user_context) + learning_context
 
     # Find similar successful messages for context
     similar_successes = []
