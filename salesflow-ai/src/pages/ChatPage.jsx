@@ -143,7 +143,6 @@ const ChatPage = () => {
   const [listError, setListError] = useState(null);
   const [isImportingList, setIsImportingList] = useState(false);
   const [sendModal, setSendModal] = useState({ open: false, message: "", lead: null });
-  const [activeCompetitorCard, setActiveCompetitorCard] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const ENABLE_STAKEHOLDER_DETECTION = false; // disable auto stakeholder dialog
@@ -402,41 +401,6 @@ const ChatPage = () => {
     setIsLiveMode(isLive);
   }, [input]);
 
-  const checkCompetitor = async (text) => {
-    const normalized = (text || "").trim();
-    if (!normalized) {
-      setActiveCompetitorCard(null);
-      return;
-    }
-
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/competitors/match?text=${encodeURIComponent(normalized)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Match request failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data?.found) {
-        setActiveCompetitorCard(data.card);
-      } else {
-        setActiveCompetitorCard(null);
-      }
-    } catch (error) {
-      console.error("Competitor match failed:", error);
-    }
-  };
-
   const handleSendMessage = async (event, customMessage = null) => {
     if (event) {
       event.preventDefault();
@@ -444,8 +408,6 @@ const ChatPage = () => {
 
     const messageText = customMessage || input.trim();
     if (!messageText) return;
-
-    setActiveCompetitorCard(null);
 
     // Detect meeting prep intent
     const meetingTarget = detectMeetingPrep(messageText);
@@ -607,8 +569,6 @@ const ChatPage = () => {
           intentDescription,
         },
       ]);
-
-      checkCompetitor(`${messageText}\n${reply}`);
 
       // Auto-Speak AI response if enabled
       if (autoSpeak && isTTSSupported) {
@@ -1208,37 +1168,6 @@ const ChatPage = () => {
                 )}
               </div>
             ))}
-
-            {/* Meeting Prep Card */}
-            {activeCompetitorCard && (
-              <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 my-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Shield className="w-5 h-5 text-orange-400" />
-                  <span className="font-bold text-orange-400">
-                    Battle Card: {activeCompetitorCard.competitor_name}
-                  </span>
-                </div>
-                {activeCompetitorCard.quick_response && (
-                  <p className="text-white font-medium mb-3">
-                    "{activeCompetitorCard.quick_response}"
-                  </p>
-                )}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase mb-2">Ihre Schwächen</p>
-                    {activeCompetitorCard.weaknesses?.map((w, i) => (
-                      <p key={i} className="text-sm text-gray-300">• {w.title}</p>
-                    ))}
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase mb-2">Unsere Stärken</p>
-                    {activeCompetitorCard.our_advantages?.map((a, i) => (
-                      <p key={i} className="text-sm text-green-300">✓ {a.title}</p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {meetingPrep && (
               <MeetingPrepCard

@@ -136,7 +136,7 @@ class ToolExecutor:
         self,
         timeframe: str = "today",
         priority: str = "all",
-        limit: int = 10,
+        limit: int = None,  # ← War: limit: int = 10
     ) -> dict:
         """Query follow-ups from the unified followup_suggestions table."""
 
@@ -154,6 +154,13 @@ class ToolExecutor:
             .eq("status", "pending")
         )
 
+        # Auto-determine limit based on timeframe
+        if limit is None:
+            if timeframe in ("all", "next_week", "this_week"):
+                limit = 100
+            else:
+                limit = 20
+
         if timeframe == "today":
             query = query.gte("due_at", start_of_day.isoformat()).lte("due_at", end_of_day.isoformat())
         elif timeframe == "tomorrow":
@@ -163,8 +170,13 @@ class ToolExecutor:
         elif timeframe == "this_week":
             week_end = end_of_day + timedelta(days=(6 - now.weekday()))
             query = query.lte("due_at", week_end.isoformat())
+        elif timeframe == "next_week":
+            next_week_start = start_of_day + timedelta(days=(7 - now.weekday()))
+            next_week_end = next_week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+            query = query.gte("due_at", next_week_start.isoformat()).lte("due_at", next_week_end.isoformat())
         elif timeframe == "overdue":
             query = query.lt("due_at", now.isoformat())
+        # timeframe == "all" → no date filter
 
         if priority != "all":
             query = query.eq("priority", priority)
