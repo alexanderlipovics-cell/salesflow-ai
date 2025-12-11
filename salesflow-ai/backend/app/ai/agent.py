@@ -85,10 +85,10 @@ def fetch_lead_context(message: str, user_id: str, db) -> str:
             tags = ", ".join(lead.get("tags") or []) if lead.get("tags") else ""
             contexts.append(
                 f"- {lead.get('name')} (Status: {lead.get('status')}, Temp: {lead.get('temperature')}) "
-                f"{f'Firma: {lead.get('company')}' if lead.get('company') else ''} "
-                f"{f'Email: {lead.get('email')}' if lead.get('email') else ''} "
-                f"{f'Phone: {lead.get('phone')}' if lead.get('phone') else ''} "
-                f"{f'Tags: {tags}' if tags else ''}"
+                f\"{f'Firma: {lead.get('company')}' if lead.get('company') else ''}\" " "
+                f\"{f'Email: {lead.get('email')}' if lead.get('email') else ''}\" " "
+                f\"{f'Phone: {lead.get('phone')}' if lead.get('phone') else ''}\" " "
+                f\"{f'Tags: {tags}' if tags else ''}\"
             )
 
     return "\n".join(contexts)
