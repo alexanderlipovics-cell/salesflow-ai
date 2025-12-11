@@ -53,6 +53,22 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
 
   useEffect(() => {
     if (lead) {
+    const parseTemperature = (temp: any): number => {
+      if (typeof temp === 'number') return temp;
+      if (typeof temp === 'string') {
+        const num = parseInt(temp, 10);
+        if (!isNaN(num)) return num;
+        const mapping: Record<string, number> = {
+          hot: 80,
+          warm: 60,
+          cold: 30,
+          frozen: 10,
+        };
+        return mapping[temp.toLowerCase()] ?? 50;
+      }
+      return 50;
+    };
+
       setFormData({
         name: lead.name || '',
         email: lead.email || '',
@@ -61,7 +77,7 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
         position: lead.position || '',
         notes: lead.notes || '',
         status: lead.status || 'new',
-        score: (lead as any).temperature ?? lead.score ?? 0,
+      score: parseTemperature((lead as any).temperature ?? lead.score ?? 0),
         source: lead.source || '',
         instagram: lead.instagram || '',
         linkedin: lead.linkedin || '',
