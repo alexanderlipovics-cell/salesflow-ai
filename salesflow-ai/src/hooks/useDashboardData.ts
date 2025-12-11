@@ -8,7 +8,6 @@
  * - GET /api/leads?group_by=status → pipeline by stage
  * - GET /api/activities?limit=5 → recent activities
  * - GET /api/analytics/charts?period=7d → chart data
- * - GET /api/ai/insights → AI insights (optional)
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -93,7 +92,6 @@ export const useDashboardData = () => {
         pipelineRes,
         activitiesRes,
         chartsRes,
-        insightsRes,
       ] = await Promise.allSettled([
         authFetch('/api/leads?count=true'),
         authFetch('/api/follow-ups?due=today'),
@@ -101,7 +99,6 @@ export const useDashboardData = () => {
         authFetch('/api/leads?group_by=status'),
         authFetch('/api/activities?limit=5'),
         authFetch('/api/analytics/charts?period=7d'),
-        authFetch('/api/ai/insights'),
       ]);
 
       const safe = <T,>(res: PromiseSettledResult<T>, fallback: T): T =>
@@ -113,10 +110,6 @@ export const useDashboardData = () => {
       const pipelineData: any = safe(pipelineRes, { groups: [] });
       const activitiesData: any = safe(activitiesRes, { activities: [] });
       const chartsData: any = safe(chartsRes, { chartData: [] });
-      const insightsData: any = safe(insightsRes, {
-        insights: [],
-      });
-
       const kpis: KPIData = {
         leadsTotal: leadsData.count ?? leadsData.total ?? 0,
         followUpsToday: Array.isArray(followUpsData.items)

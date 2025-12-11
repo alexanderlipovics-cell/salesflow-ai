@@ -2,8 +2,6 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { InsightItem } from "../../hooks/useDashboardData";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-
 interface Props {
   insights?: InsightItem[];
   isLoading?: boolean;
@@ -19,32 +17,8 @@ export const AIInsights: React.FC<Props> = ({ insights, isLoading: loadingProp, 
       setData(insights);
       return;
     }
-    const fetchInsights = async () => {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("access_token");
-        const res = await fetch(`${API_BASE_URL}/api/ai/insights`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const arr = Array.isArray(json.insights) ? json.insights : [];
-          setData(
-            arr.map((i: any, idx: number) => ({
-              title: i.title ?? `Insight ${idx + 1}`,
-              description: i.description ?? i.text ?? "",
-            }))
-          );
-        } else {
-          setData([]);
-        }
-      } catch {
-        setData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchInsights();
+    // Endpoint nicht verfügbar → keine Fetches, leere Liste
+    setData([]);
   }, [insights]);
 
   const loading = loadingProp ?? isLoading;

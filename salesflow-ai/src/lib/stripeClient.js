@@ -18,17 +18,27 @@ export const getStripe = () => {
 };
 
 const callStripeFunction = async (payload = {}) => {
-  const response = await fetch(STRIPE_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(STRIPE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data?.error || "Stripe-Service nicht verfügbar.");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      // Beta: Stripe-Service optional – bei 404 nicht blockieren
+      if (response.status === 404) {
+        console.warn("Stripe-Service nicht verfügbar (404) – wird übersprungen.");
+        return { unavailable: true };
+      }
+      throw new Error(data?.error || "Stripe-Service nicht verfügbar.");
+    }
+    return data;
+  } catch (err) {
+    console.warn("Stripe-Service Fehler, wird ignoriert:", err);
+    return { unavailable: true, error: err?.message };
   }
-  return data;
 };
 
 export const createCheckoutSession = async (options = {}) => {
