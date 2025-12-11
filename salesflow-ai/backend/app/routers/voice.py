@@ -5,6 +5,7 @@ import httpx
 import tempfile
 import json
 from datetime import datetime, timedelta
+import traceback
 from anthropic import Anthropic
 from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
@@ -136,6 +137,28 @@ async def transcribe_and_analyze(
 
 @router.post("/command")
 async def process_voice_command(
+    file: UploadFile = File(...),
+    current_user=Depends(get_current_user),
+):
+    """Wrapper mit Auth-Check und Fehler-Handling für Voice Commands."""
+    try:
+        user_id = (current_user or {}).get("sub") or (current_user or {}).get("id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User nicht authentifiziert")
+
+        normalized_user = dict(current_user or {})
+        normalized_user.setdefault("id", user_id)
+
+        return await _process_voice_command_inner(file=file, current_user=normalized_user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Voice command error: {e}")
+        print(traceback.format_exc())
+        return {"success": False, "error": str(e)}
+
+
+async def _process_voice_command_inner(
     file: UploadFile = File(...),
     current_user=Depends(get_current_user),
 ):
