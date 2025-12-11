@@ -53,9 +53,10 @@ const LeadDetailPage = () => {
         status: lead.status,
         source: lead.source,
         notes: lead.notes || "",
-        temperature: lead.temperature,
+        temperature: lead.temperature ?? (lead as any).score ?? null,
         instagram: (lead as any).instagram || "",
         linkedin: (lead as any).linkedin || "",
+        whatsapp: (lead as any).whatsapp || "",
       });
     }
   }, [lead, isEditing]);
@@ -68,7 +69,12 @@ const LeadDetailPage = () => {
 
   const handleSave = async () => {
     if (!leadId) return;
-    const result = await updateLead(leadId, editFormData);
+    const payload = { ...editFormData };
+    // ensure DB field names
+    if (payload && "temperature" in payload && payload.temperature === undefined) {
+      delete (payload as any).temperature;
+    }
+    const result = await updateLead(leadId, payload);
     if (result) {
       setIsEditing(false);
       refetch();

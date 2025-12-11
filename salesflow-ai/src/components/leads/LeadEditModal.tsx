@@ -61,7 +61,7 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
         position: lead.position || '',
         notes: lead.notes || '',
         status: lead.status || 'new',
-        score: lead.score || 0,
+        score: (lead as any).temperature ?? lead.score ?? 0,
         source: lead.source || '',
         instagram: lead.instagram || '',
         linkedin: lead.linkedin || '',
@@ -100,7 +100,31 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(formData);
+      const payload: Partial<Lead> & { temperature?: number } = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        position: formData.position,
+        status: formData.status,
+        temperature: formData.score, // score → temperature (DB-Feld)
+        notes: formData.notes,
+        source: formData.source,
+        whatsapp: formData.whatsapp,
+        instagram: formData.instagram,
+        linkedin: formData.linkedin,
+        website: formData.website,
+        tags: formData.tags,
+      };
+
+      Object.keys(payload).forEach((key) => {
+        const k = key as keyof typeof payload;
+        if (payload[k] === undefined) {
+          delete payload[k];
+        }
+      });
+
+      await onSave(payload);
       onClose();
     } catch (error) {
       console.error('Error saving lead:', error);
