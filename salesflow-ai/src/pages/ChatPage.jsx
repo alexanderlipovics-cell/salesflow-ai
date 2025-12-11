@@ -645,6 +645,50 @@ const ChatPage = () => {
     return cleaned;
   };
 
+  // Markdown-Links zu klickbaren Links konvertieren
+  const renderMessageWithLinks = (content) => {
+    if (!content) return null;
+
+    // Regex für Markdown Links: [text](url)
+    const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+
+    // Regex für rohe URLs
+    const urlRegex = /(https?:\/\/[^\s\)]+)/g;
+
+    // Erst Markdown-Links ersetzen
+    const processedContent = content.replace(markdownLinkRegex, (_match, text, url) => {
+      return `|||LINK|||${text}|||${url}|||ENDLINK|||`;
+    });
+
+    // Dann rohe URLs ersetzen (die nicht schon in Markdown waren)
+    const finalContent = processedContent.replace(urlRegex, (url) => {
+      if (url.includes("|||LINK|||")) return url; // bereits verarbeitet
+      return `|||LINK|||${url}|||${url}|||ENDLINK|||`;
+    });
+
+    // Jetzt in React-Elemente umwandeln
+    const segments = finalContent.split(/(\|\|\|LINK\|\|\|.*?\|\|\|ENDLINK\|\|\|)/);
+
+    return segments.map((segment, i) => {
+      const linkMatch = segment.match(/\|\|\|LINK\|\|\|(.+?)\|\|\|(.+?)\|\|\|ENDLINK\|\|\|/);
+      if (linkMatch) {
+        const [, text, url] = linkMatch;
+        return (
+          <a
+            key={i}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-400 hover:text-emerald-300 underline"
+          >
+            {text}
+          </a>
+        );
+      }
+      return segment;
+    });
+  };
+
   // Image upload handler
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -1189,7 +1233,7 @@ const ChatPage = () => {
                     </span>
                   )}
                   <div className="whitespace-pre-wrap break-words">
-                    {cleanMessageContent(message.content, message.deep_link)}
+                    {renderMessageWithLinks(cleanMessageContent(message.content, message.deep_link))}
                   </div>
                   {message.role === "assistant" && console.log("Message deep_link:", message.deep_link)}
                   {message.role === "assistant" && (
