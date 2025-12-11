@@ -31,7 +31,7 @@ from app.core.user_adaptive_prompts import (
     load_user_learning_context,
     build_user_adaptive_prompt,
 )
-from app.supabase_client import get_supabase
+from app.supabase_client import get_supabase_client
 from app.services.chat_intents import ChatIntentHandler, CHAT_INTENTS
 from ..db.session import get_db  # added for dependency availability
 from ..core.security import get_current_user_dict
@@ -364,7 +364,7 @@ async def chat_completion(
     # 3. User-Adaptive Prompt: Personalisiere basierend auf User-Learning-Profile
     try:
         from app.supabase_client import get_supabase_client
-        db_client = get_supabase()
+        db_client = get_supabase_client()
         user_context = await load_user_learning_context(user_id, db_client)
         user_display_name = getattr(user_context, "user_name", None)
         
@@ -452,7 +452,7 @@ async def chat_completion(
         # Placeholder [Nutzer] durch echten Namen ersetzen, falls bekannt
         if not user_display_name:
             try:
-                db = get_supabase()
+                db = get_supabase_client()
                 profile = (
                     db.table("user_profiles")
                     .select("full_name,name,first_name,last_name")
