@@ -642,7 +642,7 @@ SALES_AGENT_TOOLS = [
                     },
                     "match_all": {
                         "type": "boolean",
-                        "default": false,
+                        "default": False,
                         "description": "True = alle Tags müssen matchen (AND)"
                     },
                     "status": {
@@ -669,10 +669,105 @@ SALES_AGENT_TOOLS = [
                 "properties": {
                     "include_values": {
                         "type": "boolean",
-                        "default": true,
+                        "default": True,
                         "description": "Deal-Werte mit einbeziehen"
                     }
                 }
+            }
+        }
+    },
+    # ═══════════════════════════════════════════════════════════
+    # GOOGLE INTEGRATIONS
+    # ═══════════════════════════════════════════════════════════
+    {
+        "type": "function",
+        "function": {
+            "name": "research_company",
+            "description": "Recherchiere Infos über eine Firma via Google Places. Nutze bei 'was weißt du über Firma X', 'recherchiere Firma', 'Firmeninfo'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "company_name": {
+                        "type": "string",
+                        "description": "Name der Firma"
+                    },
+                    "location": {
+                        "type": "string",
+                        "description": "Optional: Stadt oder Region für bessere Ergebnisse"
+                    }
+                },
+                "required": ["company_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "schedule_meeting",
+            "description": "Plant ein Meeting im Kalender. Nutze bei 'plane Meeting mit X', 'Termin eintragen', 'Meeting am Donnerstag'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Titel des Meetings"
+                    },
+                    "lead_name_or_id": {
+                        "type": "string",
+                        "description": "Lead für den das Meeting ist"
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "Datum: 'tomorrow', 'morgen', 'next monday', 'nächsten Montag', '2025-01-15'"
+                    },
+                    "time": {
+                        "type": "string",
+                        "description": "Uhrzeit: '14:00', '2pm', '14 Uhr'"
+                    },
+                    "duration_minutes": {
+                        "type": "integer",
+                        "default": 30,
+                        "description": "Dauer in Minuten"
+                    },
+                    "location": {
+                        "type": "string",
+                        "description": "Ort oder 'Zoom'/'Google Meet'"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Notizen zum Meeting"
+                    }
+                },
+                "required": ["title", "date", "time"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "send_email",
+            "description": "Bereitet eine Email vor. Nutze bei 'schick Email an X', 'sende Nachricht per Email'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "to_email": {
+                        "type": "string",
+                        "description": "Empfänger Email"
+                    },
+                    "lead_name_or_id": {
+                        "type": "string",
+                        "description": "Alternativ: Lead (Email wird aus DB geholt)"
+                    },
+                    "subject": {
+                        "type": "string",
+                        "description": "Betreff"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Email-Text"
+                    }
+                },
+                "required": ["subject", "body"]
             }
         }
     },

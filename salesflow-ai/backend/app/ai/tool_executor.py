@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import logging
 import uuid
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,9 @@ class ToolExecutor:
             "quick_update_lead": self._quick_update_lead,
             "search_by_tag": self._search_by_tag,
             "get_pipeline_stats": self._get_pipeline_stats,
+            "research_company": self._research_company,
+            "schedule_meeting": self._schedule_meeting,
+            "send_email": self._send_email,
         }
 
         if tool_name not in executor_map:
@@ -1473,4 +1477,227 @@ class ToolExecutor:
                 "lost_this_period": lost_count,
             }
         }
+
+    # ═══════════════════════════════════════════════════════════
+    # GOOGLE INTEGRATIONS
+    # ═══════════════════════════════════════════════════════════
+
+    async def _research_company(
+        self,
+        company_name: str,
+        location: str = None,
+    ) -> dict:
+        """Recherchiere Firma via Google Places API."""
+        api_key = os.getenv("GOOGLE_PLACES_API_KEY")
+        if not api_key:
+            return {"error": "Google Places API nicht konfiguriert", "hint": "GOOGLE_PLACES_API_KEY in Environment setzen"}
+
+        query = f"{company_name} {location}" if location else company_name
+
+        try:
+            async with httpx.AsyncClient() as client:
+                # Text Search für Firmeninfos
+                search_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+                search_resp = await client.get(search_url, params={
+                    "query": query,
+                    "key": api_key,
+                })
+                search_data = search_resp.json()
+
+                if search_data.get("status") != "OK" or not search_data.get("results"):
+                    return {
+                        "found": False,
+                        "company_name": company_name,
+                        "message": f"Keine Ergebnisse für '{company_name}' gefunden"
+                    }
+
+                place = search_data["results"][0]
+                place_id = place.get("place_id")
+
+                # Details abrufen
+                details = {}
+                if place_id:
+                    details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+                    details_resp = await client.get(details_url, params={
+                        "place_id": place_id,
+                        "fields": "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,opening_hours,reviews,types",
+                        "key": api_key,
+                    })
+                    details_data = details_resp.json()
+                    if details_data.get("status") == "OK":
+                        details = details_data.get("result", {})
+
+                return {
+                    "found": True,
+                    "company": {
+                        "name": details.get("name") or place.get("name"),
+                        "address": details.get("formatted_address") or place.get("formatted_address"),
+                        "phone": details.get("formatted_phone_number"),
+                        "website": details.get("website"),
+                        "rating": details.get("rating"),
+                        "total_reviews": details.get("user_ratings_total"),
+                        "types": details.get("types", [])[:5],
+                        "opening_hours": details.get("opening_hours", {}).get("weekday_text", []),
+                    },
+                    "top_reviews": [
+                        {"text": r.get("text", "")[:200], "rating": r.get("rating")}
+                        for r in (details.get("reviews") or [])[:3]
+                    ],
+                }
+
+        except Exception as e:
+            logger.error(f"Google Places error: {e}")
+            return {"error": str(e), "found": False}
+
+    async def _schedule_meeting(
+        self,
+        title: str,
+        date: str,
+        time: str,
+        lead_name_or_id: str = None,
+        duration_minutes: int = 30,
+        location: str = None,
+        notes: str = None,
+    ) -> dict:
+        """Plant Meeting - speichert in DB."""
+
+        # Parse date/time
+        meeting_datetime = self._parse_meeting_datetime(date, time)
+
+        # Lead auflösen
+        lead = None
+        lead_id = None
+        if lead_name_or_id:
+            lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+            lead_id = lead.get("id") if lead else None
+
+        # In DB speichern
+        event_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": self.user_id,
+            "lead_id": lead_id,
+            "title": title,
+            "start_time": meeting_datetime.isoformat(),
+            "end_time": (meeting_datetime + timedelta(minutes=duration_minutes)).isoformat(),
+            "location": location,
+            "description": notes,
+            "status": "scheduled",
+            "created_at": datetime.utcnow().isoformat(),
+        }
+
+        try:
+            self.db.table("calendar_events").insert(event_data).execute()
+
+            return {
+                "success": True,
+                "event_id": event_data["id"],
+                "title": title,
+                "datetime": meeting_datetime.strftime("%d.%m.%Y um %H:%M"),
+                "duration": f"{duration_minutes} Minuten",
+                "lead": lead.get("name") if lead else None,
+                "location": location,
+                "message": f"✅ Meeting '{title}' am {meeting_datetime.strftime('%d.%m.%Y um %H:%M Uhr')} geplant!"
+            }
+        except Exception as e:
+            logger.error(f"Schedule meeting error: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _parse_meeting_datetime(self, date_str: str, time_str: str) -> datetime:
+        """Parst Datum und Zeit für Meetings."""
+        now = datetime.now(timezone.utc)
+        date_lower = (date_str or "").lower()
+
+        # Datum parsen
+        if "today" in date_lower or "heute" in date_lower:
+            target_date = now.date()
+        elif "tomorrow" in date_lower or "morgen" in date_lower:
+            target_date = (now + timedelta(days=1)).date()
+        elif "next" in date_lower or "nächst" in date_lower:
+            weekdays = {
+                "monday": 0, "montag": 0,
+                "tuesday": 1, "dienstag": 1,
+                "wednesday": 2, "mittwoch": 2,
+                "thursday": 3, "donnerstag": 3,
+                "friday": 4, "freitag": 4,
+                "saturday": 5, "samstag": 5,
+                "sunday": 6, "sonntag": 6,
+            }
+            for day_name, day_num in weekdays.items():
+                if day_name in date_lower:
+                    days_ahead = (day_num - now.weekday() + 7) % 7
+                    if days_ahead == 0:
+                        days_ahead = 7
+                    target_date = (now + timedelta(days=days_ahead)).date()
+                    break
+            else:
+                target_date = (now + timedelta(days=7)).date()
+        else:
+            try:
+                target_date = datetime.fromisoformat(date_str).date()
+            except Exception:
+                target_date = (now + timedelta(days=1)).date()
+
+        # Zeit parsen
+        time_lower = (time_str or "").lower().replace(" ", "").replace("uhr", "")
+        try:
+            if "pm" in time_lower:
+                hour = int(time_lower.replace("pm", "").replace(":", "")[:2])
+                if hour < 12:
+                    hour += 12
+                minute = 0
+            elif "am" in time_lower:
+                hour = int(time_lower.replace("am", "").replace(":", "")[:2])
+                minute = 0
+            elif ":" in time_str:
+                parts = time_str.replace("Uhr", "").replace("uhr", "").strip().split(":")
+                hour = int(parts[0])
+                minute = int(parts[1]) if len(parts) > 1 else 0
+            else:
+                hour = int(time_str.replace("Uhr", "").replace("uhr", "").strip())
+                minute = 0
+        except Exception:
+            hour, minute = 10, 0
+
+        return datetime(target_date.year, target_date.month, target_date.day, hour, minute, tzinfo=timezone.utc)
+
+    async def _send_email(
+        self,
+        subject: str,
+        body: str,
+        to_email: str = None,
+        lead_name_or_id: str = None,
+    ) -> dict:
+        """Bereitet Email vor - Gmail Integration TODO."""
+
+        # Email-Adresse ermitteln
+        recipient_email = to_email
+        lead = None
+
+        if not recipient_email and lead_name_or_id:
+            lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+            if lead:
+                recipient_email = lead.get("email")
+
+        if not recipient_email:
+            return {
+                "success": False,
+                "error": "Keine Email-Adresse gefunden",
+                "hint": "Gib eine Email-Adresse an oder wähle einen Lead mit Email"
+            }
+
+        # TODO: Echte Gmail API Integration
+        gmail_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
+
+        return {
+            "success": True,
+            "status": "prepared",
+            "to": recipient_email,
+            "lead": lead.get("name") if lead else None,
+            "subject": subject,
+            "body_preview": body[:100] + "..." if len(body) > 100 else body,
+            "gmail_configured": gmail_configured,
+            "message": f"📧 Email an {recipient_email} vorbereitet. Betreff: '{subject}'",
+            "hint": "Gmail OAuth noch nicht aktiviert - Email als Draft vorbereitet" if not gmail_configured else "Bereit zum Senden"
+        }
+
 
