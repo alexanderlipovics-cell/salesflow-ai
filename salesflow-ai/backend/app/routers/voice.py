@@ -13,7 +13,8 @@ from app.core.security.main import get_current_user
 from app.supabase_client import get_supabase_client
 from .smart_import import analyze_input, AnalyzeRequest
 
-router = APIRouter(prefix="/voice", tags=["voice"])
+# Prefix wird in main.py gesetzt, daher hier ohne Prefix
+router = APIRouter(tags=["voice"])
 
 
 ALLOWED_AUDIO_TYPES = [

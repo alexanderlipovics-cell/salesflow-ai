@@ -447,7 +447,7 @@ app.include_router(income_predictor_router, prefix="/api")  # 📈 Income Predic
 app.include_router(magic_send_router, prefix="/api")  # 🔗 Magic Send Deep Links
 app.include_router(notifications_router)  # 🔔 Background Notifications (has own prefix)
 app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mapping
-app.include_router(voice_router, prefix="/api")  # 🗣️ Voice Transcription
+app.include_router(voice_router, prefix="/api/voice")  # 🗣️ Voice Transcription
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
 app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracking
 app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking
