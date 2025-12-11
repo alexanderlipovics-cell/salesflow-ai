@@ -18,8 +18,11 @@ import {
   Phone,
   Mail,
   RefreshCw,
+  Volume2,
 } from 'lucide-react';
 import { useAIChat } from '@/hooks/useAIChat';
+
+const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 import {
   QUICK_ACTIONS,
   TEMPERATURE_COLORS,
@@ -64,10 +67,14 @@ function MessageBubble({
   role,
   content,
   timestamp,
+  onSpeak,
+  isSpeaking,
 }: {
   role: 'user' | 'assistant';
   content: string;
   timestamp?: string;
+  onSpeak?: () => void;
+  isSpeaking?: boolean;
 }) {
   const isUser = role === 'user';
 
@@ -94,7 +101,19 @@ function MessageBubble({
             : 'bg-slate-700 text-slate-100'
         }`}
       >
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+        <div className="flex items-start gap-2">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed flex-1">{content}</p>
+          {!isUser && onSpeak && (
+            <button
+              onClick={onSpeak}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-600/80 text-slate-100 hover:bg-slate-500 transition-colors"
+              title="Vorlesen"
+              disabled={isSpeaking}
+            >
+              <Volume2 className={`h-4 w-4 ${isSpeaking ? 'opacity-60' : ''}`} />
+            </button>
+          )}
+        </div>
         {timestamp && (
           <p className={`mt-1 text-[10px] ${isUser ? 'text-emerald-200' : 'text-slate-400'}`}>
             {timestamp}
@@ -228,6 +247,7 @@ export function LeadContextChat({
   } = useAIChat();
 
   const [input, setInput] = useState('');
+  const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -280,6 +300,32 @@ export function LeadContextChat({
   const handleNewChat = () => {
     clearChat();
     createSession(leadId, leadId ? 'lead_coaching' : 'general');
+  };
+
+  const speakResponse = async (text: string, messageId?: string) => {
+    if (!text) return;
+    setTtsLoadingId(messageId ?? null);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      const res = await fetch(`${API_URL}/api/voice/speak`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      const data = await res.json();
+      if (data?.audio) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+        void audio.play();
+      }
+    } catch (err) {
+      console.error('TTS error', err);
+    } finally {
+      setTtsLoadingId(null);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────
@@ -368,6 +414,12 @@ export function LeadContextChat({
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
+                onSpeak={
+                  msg.role === 'assistant'
+                    ? () => speakResponse(msg.content, msg.id)
+                    : undefined
+                }
+                isSpeaking={ttsLoadingId === msg.id}
               />
             ))}
             {sending && <TypingIndicator />}

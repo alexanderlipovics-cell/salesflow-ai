@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Body
 from typing import Optional
 import os
 import httpx
 import tempfile
 import json
+import base64
 from datetime import datetime, timedelta
 import traceback
 import openai
@@ -156,6 +157,30 @@ async def process_voice_command(
         print(f"Voice command error: {e}")
         print(traceback.format_exc())
         return {"success": False, "error": str(e)}
+
+
+@router.post("/speak")
+async def text_to_speech(
+    payload: dict = Body(...),
+    current_user=Depends(get_current_user),
+):
+    """Text-to-Speech für CHIEF-Antworten."""
+    text = (payload or {}).get("text", "")
+    if not text:
+        return {"error": "No text provided"}
+
+    try:
+        response = openai.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=text,
+        )
+        audio_base64 = base64.b64encode(response.content).decode()
+        return {"audio": audio_base64, "format": "mp3"}
+    except Exception as e:
+        print(f"TTS error: {e}")
+        print(traceback.format_exc())
+        return {"error": str(e)}
 
 
 async def _process_voice_command_inner(
