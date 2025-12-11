@@ -43,7 +43,7 @@ const DashboardPage: React.FC = () => {
 
         const { data: profile } = await supabaseClient
           .from("users")
-          .select("onboarding_complete, name, user_metadata")
+          .select("onboarding_complete, name, vertical, email")
           .eq("id", authUser.id)
           .single();
 
