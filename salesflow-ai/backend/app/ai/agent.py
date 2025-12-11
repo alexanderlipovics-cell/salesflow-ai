@@ -64,34 +64,50 @@ def determine_search_type(message: str, user_id: str, db) -> str:
 
 
 def fetch_lead_context(message: str, user_id: str, db) -> str:
-    """Sucht Leads anhand extrahierter Namen und gibt kurzen Kontext zurück."""
-    potential_names = extract_names(message)
-    contexts: list[str] = []
-
-    if not potential_names:
+    """Sucht Leads basierend auf Namen in der Nachricht."""
+    names = extract_names(message)
+    if not names:
         return ""
 
-    for name in itertools.islice(potential_names, 3):
-        result = (
-            db.table("leads")
-            .select("id, name, email, phone, company, status, temperature, tags, notes")
-            .eq("user_id", user_id)
-            .ilike("name", f"%{name}%")
-            .limit(1)
-            .execute()
-        )
-        if result.data:
-            lead = result.data[0]
-            tags = ", ".join(lead.get("tags") or []) if lead.get("tags") else ""
-            contexts.append(
-                f"- {lead.get('name')} (Status: {lead.get('status')}, Temp: {lead.get('temperature')}) "
-                f\"{f'Firma: {lead.get('company')}' if lead.get('company') else ''}\" " "
-                f\"{f'Email: {lead.get('email')}' if lead.get('email') else ''}\" " "
-                f\"{f'Phone: {lead.get('phone')}' if lead.get('phone') else ''}\" " "
-                f\"{f'Tags: {tags}' if tags else ''}\"
+    leads_found = []
+    for name in names:
+        try:
+            result = (
+                db.table("leads")
+                .select("*")
+                .eq("user_id", user_id)
+                .ilike("name", f"%{name}%")
+                .execute()
             )
+            if result.data:
+                leads_found.extend(result.data)
+        except Exception:
+            # still continue to next name
+            continue
 
-    return "\n".join(contexts)
+    if not leads_found:
+        return ""
+
+    context_parts: list[str] = []
+    for lead in leads_found:
+        parts: list[str] = []
+        parts.append(f"Name: {lead.get('name', 'Unbekannt')}")
+        if lead.get("email"):
+            parts.append(f"Email: {lead.get('email')}")
+        if lead.get("phone"):
+            parts.append(f"Telefon: {lead.get('phone')}")
+        if lead.get("company"):
+            parts.append(f"Firma: {lead.get('company')}")
+        if lead.get("status"):
+            parts.append(f"Status: {lead.get('status')}")
+        if lead.get("notes"):
+            parts.append(f"Notizen: {lead.get('notes')}")
+        if lead.get("whatsapp"):
+            parts.append(f"WhatsApp: {lead.get('whatsapp')}")
+
+        context_parts.append(" | ".join(parts))
+
+    return "\n".join(context_parts)
 
 
 def anonymize_message(message: str, lead_name: str = None, company: str = None, phone: str = None, email: str = None) -> str:
