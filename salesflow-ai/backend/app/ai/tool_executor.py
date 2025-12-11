@@ -49,7 +49,7 @@ class ToolExecutor:
             "get_pipeline_stats": self._get_pipeline_stats,
             "research_company": self._research_company,
             "schedule_meeting": self._schedule_meeting,
-            "send_email": self._send_email,
+            "prepare_message": self._prepare_message,
         }
 
         if tool_name not in executor_map:
@@ -1660,44 +1660,98 @@ class ToolExecutor:
 
         return datetime(target_date.year, target_date.month, target_date.day, hour, minute, tzinfo=timezone.utc)
 
-    async def _send_email(
+    async def _prepare_message(
         self,
-        subject: str,
-        body: str,
-        to_email: str = None,
-        lead_name_or_id: str = None,
+        lead_name_or_id: str,
+        channel: str,
+        message: str,
+        subject: str = None,
     ) -> dict:
-        """Bereitet Email vor - Gmail Integration TODO."""
+        """Bereitet Nachricht vor und gibt Deep Link zurück."""
+        from urllib.parse import quote, quote_plus
 
-        # Email-Adresse ermitteln
-        recipient_email = to_email
-        lead = None
-
-        if not recipient_email and lead_name_or_id:
-            lead = await self._find_lead_by_name_or_id(lead_name_or_id)
-            if lead:
-                recipient_email = lead.get("email")
-
-        if not recipient_email:
+        # Lead finden
+        lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        if not lead:
             return {
                 "success": False,
-                "error": "Keine Email-Adresse gefunden",
-                "hint": "Gib eine Email-Adresse an oder wähle einen Lead mit Email"
+                "error": f"Lead '{lead_name_or_id}' nicht gefunden"
             }
 
-        # TODO: Echte Gmail API Integration
-        gmail_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
+        channel = channel.lower()
+        deep_link = None
+        contact_info = None
+
+        if channel == "email":
+            email = lead.get("email")
+            if not email:
+                return {"success": False, "error": "Keine Email-Adresse beim Lead hinterlegt", "lead_name": lead.get("name")}
+            contact_info = email
+            subject_encoded = quote(subject or "Nachricht")
+            body_encoded = quote(message)
+            deep_link = f"mailto:{email}?subject={subject_encoded}&body={body_encoded}"
+
+        elif channel == "whatsapp":
+            phone = lead.get("phone") or lead.get("mobile") or lead.get("telefon")
+            if not phone:
+                return {"success": False, "error": "Keine Telefonnummer beim Lead hinterlegt", "lead_name": lead.get("name")}
+            # Nummer bereinigen (nur Zahlen, mit Ländervorwahl)
+            clean_phone = ''.join(filter(str.isdigit, str(phone)))
+            if clean_phone.startswith('0'):
+                clean_phone = '43' + clean_phone[1:]  # Österreich default
+            contact_info = phone
+            message_encoded = quote_plus(message)
+            deep_link = f"https://wa.me/{clean_phone}?text={message_encoded}"
+
+        elif channel == "instagram":
+            instagram = lead.get("instagram") or lead.get("instagram_handle") or lead.get("ig")
+            if not instagram:
+                return {"success": False, "error": "Kein Instagram-Handle beim Lead hinterlegt", "lead_name": lead.get("name")}
+            # @ entfernen falls vorhanden, URL-Teile entfernen
+            handle = str(instagram).lstrip('@').replace('https://instagram.com/', '').replace('https://www.instagram.com/', '').split('/')[0].split('?')[0]
+            contact_info = f"@{handle}"
+            deep_link = f"https://instagram.com/{handle}"
+
+        elif channel == "linkedin":
+            linkedin = lead.get("linkedin") or lead.get("linkedin_url") or lead.get("li")
+            if not linkedin:
+                return {"success": False, "error": "Kein LinkedIn-Profil beim Lead hinterlegt", "lead_name": lead.get("name")}
+            # Falls nur Username, URL bauen
+            if not str(linkedin).startswith('http'):
+                linkedin = f"https://linkedin.com/in/{linkedin}"
+            contact_info = linkedin
+            deep_link = linkedin
+
+        else:
+            return {"success": False, "error": f"Unbekannter Kanal: {channel}. Nutze: email, whatsapp, instagram, linkedin"}
+
+        # Interaktion loggen (non-blocking)
+        try:
+            self.db.table("lead_interactions").insert({
+                "id": str(uuid.uuid4()),
+                "lead_id": lead.get("id"),
+                "user_id": self.user_id,
+                "interaction_type": "message_prepared",
+                "channel": channel,
+                "notes": f"Nachricht vorbereitet: {message[:100]}",
+                "interaction_at": datetime.utcnow().isoformat(),
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Could not log interaction: {e}")
+
+        channel_emoji = {"email": "📧", "whatsapp": "💬", "instagram": "📸", "linkedin": "💼"}.get(channel, "📨")
+        channel_name = {"email": "Email", "whatsapp": "WhatsApp", "instagram": "Instagram DM", "linkedin": "LinkedIn"}.get(channel, channel)
 
         return {
             "success": True,
-            "status": "prepared",
-            "to": recipient_email,
-            "lead": lead.get("name") if lead else None,
-            "subject": subject,
-            "body_preview": body[:100] + "..." if len(body) > 100 else body,
-            "gmail_configured": gmail_configured,
-            "message": f"📧 Email an {recipient_email} vorbereitet. Betreff: '{subject}'",
-            "hint": "Gmail OAuth noch nicht aktiviert - Email als Draft vorbereitet" if not gmail_configured else "Bereit zum Senden"
+            "channel": channel,
+            "channel_name": channel_name,
+            "lead_name": lead.get("name"),
+            "contact_info": contact_info,
+            "message_preview": message[:200] + "..." if len(message) > 200 else message,
+            "deep_link": deep_link,
+            "message": f"{channel_emoji} **Nachricht für {lead.get('name')} via {channel_name} bereit!**\n\nAn: {contact_info}\n\n> {message[:150]}{'...' if len(message) > 150 else ''}\n\n👆 Klicke auf **Senden** um {channel_name} zu öffnen.",
         }
+
 
 

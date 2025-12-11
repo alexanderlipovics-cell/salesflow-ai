@@ -389,6 +389,17 @@ COMPANY KNOWLEDGE:
 
 {company_knowledge}
 
+MULTI-STEP AKTIONEN:
+Wenn der User mehrere Dinge in einer Anfrage will, führe sie nacheinander aus:
+- "Erstelle Lead X und bereite Nachricht vor" → 1. create_lead, 2. prepare_message
+- "Erstelle Follow-up und schreib WhatsApp" → 1. create_follow_up, 2. prepare_message
+
+Bei prepare_message: Generiere eine passende Nachricht basierend auf dem Kontext:
+- "Erstkontakt" → freundliche Vorstellung, Interesse wecken
+- "Follow-up" → an vorheriges Gespräch anknüpfen
+- "Reaktivierung" → lange nicht gehört, wieder in Kontakt kommen
+- "Terminbestätigung" → Termin bestätigen mit Details
+
 ############################################################
 
 🛠️ 16 POWER-MODULE

@@ -533,6 +533,15 @@ const ChatPage = () => {
       const intentDetected = data?.intent_detected || data?.detected_intent || null;
       const intentDescription = data?.intent_description || data?.intent || null;
 
+      // Deep Link aus Tool-Resultaten (z.B. prepare_message) extrahieren
+      let deepLink = null;
+      if (Array.isArray(data?.tool_results)) {
+        const prepareResult = data.tool_results.find((t) => t?.name === "prepare_message");
+        if (prepareResult?.result?.deep_link) {
+          deepLink = prepareResult.result.deep_link;
+        }
+      }
+
       const userAskedToCreate =
         intentDetected === "CREATE_LEAD" ||
         intentDetected === "CREATE_FOLLOWUP" ||
@@ -567,6 +576,7 @@ const ChatPage = () => {
           content: reply,
           intentDetected,
           intentDescription,
+          deep_link: deepLink,
         },
       ]);
 
@@ -1147,6 +1157,19 @@ const ChatPage = () => {
                       leadPhone={parsedLeadContext?.phone}
                       leadName={parsedLeadContext?.name}
                     />
+                  )}
+                  {message.role === "assistant" && message.deep_link && (
+                    <a
+                      href={message.deep_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      Jetzt senden
+                    </a>
                   )}
                   {message.role === "assistant" && message.content?.length > 50 && (
                     <button

@@ -745,29 +745,30 @@ SALES_AGENT_TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "send_email",
-            "description": "Bereitet eine Email vor. Nutze bei 'schick Email an X', 'sende Nachricht per Email'.",
+            "name": "prepare_message",
+            "description": "Bereitet eine Nachricht vor und gibt einen One-Click Link zurück. Funktioniert für Email, WhatsApp, Instagram, LinkedIn. Nutze bei 'schreib Email/WhatsApp/DM an X', 'kontaktiere X per...', 'Nachricht an X'.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "to_email": {
-                        "type": "string",
-                        "description": "Empfänger Email"
-                    },
                     "lead_name_or_id": {
                         "type": "string",
-                        "description": "Alternativ: Lead (Email wird aus DB geholt)"
+                        "description": "Lead-Name oder ID"
+                    },
+                    "channel": {
+                        "type": "string",
+                        "enum": ["email", "whatsapp", "instagram", "linkedin"],
+                        "description": "Kommunikationskanal"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Nachrichtentext"
                     },
                     "subject": {
                         "type": "string",
-                        "description": "Betreff"
-                    },
-                    "body": {
-                        "type": "string",
-                        "description": "Email-Text"
+                        "description": "Nur für Email: Betreff"
                     }
                 },
-                "required": ["subject", "body"]
+                "required": ["lead_name_or_id", "channel", "message"]
             }
         }
     },
