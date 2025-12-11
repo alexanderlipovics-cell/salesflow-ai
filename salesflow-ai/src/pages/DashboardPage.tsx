@@ -3,7 +3,7 @@
  * Clean, actionable, performance-focused
  */
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardData } from "../hooks/useDashboardData";
 import { DashboardSkeleton } from "../components/common/DashboardSkeleton";
@@ -18,6 +18,7 @@ import ActivityFeed from "../components/dashboard/ActivityFeed";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, Tooltip, Legend } from "recharts";
 import { useAuth } from "../context/AuthContext";
 import { Activity, ArrowDownRight, ArrowUpRight, Euro, Target, Users, Clock3 } from "lucide-react";
+import { supabaseClient } from "../lib/supabaseClient";
 
 const formatCurrency = (value: number) =>
   Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value || 0);
@@ -27,12 +28,60 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { kpis, todaysTasks, pipeline, activities, chartData, insights, isLoading } = useDashboardData();
   const hasTasksToday = (todaysTasks ?? []).length > 0;
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [userName, setUserName] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        const { data: userData } = await supabaseClient.auth.getUser();
+        const authUser = userData?.user;
+        if (!authUser) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const { data: profile } = await supabaseClient
+          .from("users")
+          .select("onboarding_complete, name, user_metadata")
+          .eq("id", authUser.id)
+          .single();
+
+        const nameFromProfile =
+          profile?.name ||
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          (authUser.email ? authUser.email.split("@")[0] : undefined);
+        setUserName(nameFromProfile || "Verkäufer");
+
+        if (!profile || profile.onboarding_complete === false) {
+          navigate("/onboarding", { replace: true });
+          return;
+        }
+      } catch {
+        // Falls etwas schiefgeht, weiter zum Dashboard aber mit Fallback-Namen
+        const fallback =
+          user?.first_name ||
+          user?.firstName ||
+          (user?.name ? user.name.split(" ")[0] : undefined) ||
+          (user?.email ? user.email.split("@")[0] : undefined) ||
+          "Verkäufer";
+        setUserName(fallback);
+      } finally {
+        setCheckingOnboarding(false);
+      }
+    };
+
+    checkOnboarding();
+  }, [navigate, user]);
 
   const firstName =
+    userName ||
     user?.first_name ||
     user?.firstName ||
     (user?.name ? user.name.split(" ")[0] : undefined) ||
-    "SalesFlow Pro";
+    (user?.email ? user.email.split("@")[0] : undefined) ||
+    "Verkäufer";
 
   const kpiCards = useMemo(
     () => [
@@ -94,7 +143,7 @@ const DashboardPage: React.FC = () => {
       </div>
     );
 
-  if (isLoading) {
+  if (isLoading || checkingOnboarding) {
     return <DashboardSkeleton />;
   }
 
