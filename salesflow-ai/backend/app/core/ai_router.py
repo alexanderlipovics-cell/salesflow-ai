@@ -42,7 +42,8 @@ def get_model_for_task(task_type: str) -> str:
     if task_type in VISION_TASKS:
         return VISION_MODEL
     if task_type in HAIKU_TASKS:
-        return "claude-haiku-4-5-20250101"
+        # Aktualisiertes Haiku-Modell
+        return "claude-haiku-4-5-20251001"
     return "claude-sonnet-4-20250514"
 
 
