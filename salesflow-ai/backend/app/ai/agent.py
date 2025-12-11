@@ -65,7 +65,9 @@ def determine_search_type(message: str, user_id: str, db) -> str:
 
 def fetch_lead_context(message: str, user_id: str, db) -> str:
     """Sucht Leads basierend auf Namen in der Nachricht."""
+    print(f"DEBUG fetch_lead_context: message={message}, user_id={user_id}")
     names = extract_names(message)
+    print(f"DEBUG extracted names: {names}")
     if not names:
         return ""
 
@@ -79,9 +81,12 @@ def fetch_lead_context(message: str, user_id: str, db) -> str:
                 .ilike("name", f"%{name}%")
                 .execute()
             )
+            count = len(result.data) if result and result.data else 0
+            print(f"DEBUG query for '{name}': found {count} leads")
             if result.data:
                 leads_found.extend(result.data)
-        except Exception:
+        except Exception as e:
+            print(f"DEBUG query for '{name}' failed: {e}")
             # still continue to next name
             continue
 
