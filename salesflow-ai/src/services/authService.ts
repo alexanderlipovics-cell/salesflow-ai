@@ -9,6 +9,8 @@
  * @author Frontend Auth Implementation
  */
 
+import { supabase } from "../lib/supabase";
+
 // Base URL - VITE_API_BASE_URL sollte OHNE /api sein (z.B. https://salesflow-ai.onrender.com)
 // Production: https://salesflow-ai.onrender.com
 // Development: http://localhost:8000
@@ -155,60 +157,59 @@ class AuthService {
    * Register new user
    */
   async signup(signupData: SignupData): Promise<AuthResponse> {
-    // Teile name in first_name und last_name auf
-    const nameParts = signupData.name.trim().split(/\s+/);
-    const first_name = nameParts[0] || '';
-    const last_name = nameParts.slice(1).join(' ') || '';
-
-    // Backend erwartet: email, password, first_name, last_name, company
-    const backendData = {
+    // Registriere über Supabase Auth (erstellt auch auth.users)
+    const { data, error } = await supabase.auth.signUp({
       email: signupData.email,
       password: signupData.password,
-      first_name: first_name,
-      last_name: last_name,
-      ...(signupData.company && { company: signupData.company }),
-    };
-
-    const response = await fetch(`${cleanBaseUrl}/api/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+      options: {
+        data: {
+          full_name: signupData.name,
+          company: signupData.company ?? null,
+        },
       },
-      body: JSON.stringify(backendData),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Registrierung fehlgeschlagen');
+    if (error) {
+      throw new Error(error.message || 'Registrierung fehlgeschlagen');
     }
 
-    const backendResponse = await response.json();
+    const authUser = data.user;
+    const session = data.session;
 
-    // Backend gibt zurück: { access_token, refresh_token, token_type, expires_in, user }
-    // Frontend erwartet: { user, tokens: { access_token, refresh_token, token_type, expires_in } }
-    const data: AuthResponse = {
-      user: {
-        id: backendResponse.user.id,
-        email: backendResponse.user.email,
-        name: `${backendResponse.user.first_name || ''} ${backendResponse.user.last_name || ''}`.trim(),
-        company: backendResponse.user.company,
-        role: backendResponse.user.role,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      },
-      tokens: {
-        access_token: backendResponse.access_token,
-        refresh_token: backendResponse.refresh_token,
-        token_type: backendResponse.token_type,
-        expires_in: backendResponse.expires_in,
-      },
-      message: 'Registrierung erfolgreich',
+    if (!authUser) {
+      throw new Error('Registrierung fehlgeschlagen: Kein Benutzer zurückgegeben.');
+    }
+
+    const tokens: AuthTokens = {
+      access_token: session?.access_token ?? '',
+      refresh_token: session?.refresh_token ?? '',
+      token_type: session?.token_type ?? 'bearer',
+      expires_in: session?.expires_in ?? 0,
     };
 
-    // Store tokens in localStorage
-    this.setTokens(data.tokens);
+    if (tokens.access_token && tokens.refresh_token) {
+      this.setTokens(tokens);
+    }
 
-    return data;
+    const fullName =
+      (authUser.user_metadata && (authUser.user_metadata.full_name || authUser.user_metadata.name)) ||
+      signupData.name;
+
+    const user: User = {
+      id: authUser.id,
+      email: authUser.email ?? signupData.email,
+      name: fullName,
+      company: authUser.user_metadata?.company ?? signupData.company,
+      role: authUser.role ?? 'authenticated',
+      is_active: true,
+      created_at: authUser.created_at ?? new Date().toISOString(),
+    };
+
+    return {
+      user,
+      tokens,
+      message: 'Registrierung erfolgreich',
+    };
   }
 
   /**

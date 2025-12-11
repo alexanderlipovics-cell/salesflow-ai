@@ -133,7 +133,7 @@ export const TodaysTasks: React.FC<Props> = ({ tasks, isLoading: loadingProp }) 
       <div className="pt-1 text-right">
         <button
           type="button"
-          onClick={() => navigate("/follow-ups")}
+          onClick={() => navigate("/leads")}
           className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
         >
           Alle anzeigen →

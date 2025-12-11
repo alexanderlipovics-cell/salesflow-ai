@@ -69,7 +69,9 @@ export const AIInsights: React.FC<Props> = ({ insights, isLoading: loadingProp, 
           key={idx}
           onClick={() => onInsightClick?.(insight)}
           className={`rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-indigo-500/10 p-4 shadow-[0_0_30px_rgba(34,211,238,0.1)] ${
-            onInsightClick ? "cursor-pointer hover:border-cyan-400/60 transition" : ""
+            onInsightClick || insight?.action
+              ? "cursor-pointer hover:border-cyan-400/60 hover:bg-cyan-500/15 transition"
+              : ""
           }`}
         >
           <div className="flex items-start gap-3">

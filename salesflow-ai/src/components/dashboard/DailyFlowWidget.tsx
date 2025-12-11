@@ -343,7 +343,16 @@ export const DailyFlowWidget: React.FC<DailyFlowWidgetProps> = ({
             className="text-center py-8"
           >
             <div className="text-4xl mb-2">📝</div>
-            <p className="text-white font-medium">Noch keine Aktivitäten. Erstelle deinen ersten Lead!</p>
+            <p className="text-white font-medium">
+              Noch keine Aktivitäten.{" "}
+              <button
+                type="button"
+                onClick={() => onQuickAction?.('new_lead')}
+                className="text-emerald-400 hover:text-emerald-300 underline"
+              >
+                Erstelle deinen ersten Lead!
+              </button>
+            </p>
             <p className="text-gray-400 text-sm">Leads oder Follow-ups erscheinen hier, sobald sie verfügbar sind.</p>
           </motion.div>
         )}

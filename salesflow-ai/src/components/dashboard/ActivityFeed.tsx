@@ -47,7 +47,15 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400">Noch keine Aktivitäten. Erstelle deinen ersten Lead!</p>
+        <p className="text-sm text-gray-400">
+          Noch keine Aktivitäten.{" "}
+          <a
+            href="/leads"
+            className="text-emerald-400 hover:text-emerald-300 underline"
+          >
+            Erstelle deinen ersten Lead!
+          </a>
+        </p>
       ) : (
         <div className="space-y-3">
           {items.map((item, index) => (
@@ -69,9 +77,12 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
         </div>
       )}
 
-      <button className="mt-4 w-full rounded-lg border border-white/10 bg-white/5 py-2 text-sm text-gray-400 transition-colors hover:bg-white/10 hover:text-white">
+      <a
+        href="/leads"
+        className="mt-4 block w-full rounded-lg border border-white/10 bg-white/5 py-2 text-center text-sm text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+      >
         Alle anzeigen
-      </button>
+      </a>
     </div>
   );
 };

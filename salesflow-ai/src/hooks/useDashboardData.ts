@@ -173,9 +173,9 @@ export const useDashboardData = () => {
 
       if (insights.length === 0 && (kpis.leadsTotal ?? 0) === 0) {
         insights = [
-          { title: 'Tipp: Erstelle deinen ersten Lead mit dem + Button', description: '' },
-          { title: 'Tipp: Importiere Kontakte per CSV', description: '' },
-          { title: 'Tipp: Frag den AI Copilot für Hilfe', description: '' },
+          { title: 'Tipp: Erstelle deinen ersten Lead mit dem + Button', description: '', action: 'leads' },
+          { title: 'Tipp: Importiere Kontakte per CSV', description: '', action: 'import' },
+          { title: 'Tipp: Frag den AI Copilot für Hilfe', description: '', action: 'ai-copilot' },
         ];
       }
 
