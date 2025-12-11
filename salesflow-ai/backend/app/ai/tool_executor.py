@@ -74,7 +74,7 @@ class ToolExecutor:
         company: str = None,
         tag: str = None,
         hot_only: bool = False,
-        limit: int = 10,
+        limit: int = 50,
         order_by: str = "last_contact",
     ) -> dict:
         """Query leads with filters."""
