@@ -215,20 +215,20 @@ Regeln:
 - Erkenne auch informelle Sprache ("leg an", "mach ne Notiz", "ruf an")
 - Bei Unsicherheit: NORMAL_CHAT mit der Frage"""
 
-        completion = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Du bist CHIEF, ein Sales-Assistent. Analysiere die Spracheingabe und gib eine hilfreiche Antwort als JSON wie beschrieben.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=500,
-            temperature=0.7,
-        )
+    completion = openai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Du bist CHIEF, ein Sales-Assistent. Analysiere die Spracheingabe und gib eine hilfreiche Antwort als JSON wie beschrieben.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=500,
+        temperature=0.7,
+    )
 
-        response_text = completion.choices[0].message.content.strip()
+    response_text = completion.choices[0].message.content.strip()
 
     if "```" in response_text:
         parts = response_text.split("```")
