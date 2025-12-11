@@ -6,8 +6,7 @@ import tempfile
 import json
 from datetime import datetime, timedelta
 import traceback
-from anthropic import Anthropic
-from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
+import openai
 
 from app.core.security.main import get_current_user
 from app.supabase_client import get_supabase_client
@@ -171,8 +170,6 @@ async def _process_voice_command_inner(
 
     text = transcription.get("text", "")
 
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
     today = datetime.now().strftime("%Y-%m-%d")
     tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -218,15 +215,20 @@ Regeln:
 - Erkenne auch informelle Sprache ("leg an", "mach ne Notiz", "ruf an")
 - Bei Unsicherheit: NORMAL_CHAT mit der Frage"""
 
-    model = get_model_for_task("detect_intent")
-    max_tokens = get_max_tokens_for_task("detect_intent")
-    message = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
-    )
+        completion = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Du bist CHIEF, ein Sales-Assistent. Analysiere die Spracheingabe und gib eine hilfreiche Antwort als JSON wie beschrieben.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=500,
+            temperature=0.7,
+        )
 
-    response_text = message.content[0].text.strip()
+        response_text = completion.choices[0].message.content.strip()
 
     if "```" in response_text:
         parts = response_text.split("```")
