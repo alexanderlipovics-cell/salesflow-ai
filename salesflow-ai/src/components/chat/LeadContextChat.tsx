@@ -6,20 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  Bot,
-  Send,
-  X,
-  Loader2,
-  User,
-  Sparkles,
-  Target,
-  Building2,
-  Phone,
-  Mail,
-  RefreshCw,
-  Volume2,
-} from 'lucide-react';
+import { Bot, Send, X, Loader2, User, Sparkles, RefreshCw, Volume2 } from 'lucide-react';
 import { useAIChat } from '@/hooks/useAIChat';
 
 const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -150,84 +137,6 @@ function QuickActionButton({
   );
 }
 
-function LeadContextHeader({
-  context,
-  leadName,
-}: {
-  context: ReturnType<typeof useAIChat>['leadContext'];
-  leadName?: string;
-}) {
-  if (!context) return null;
-
-  const { lead, score, followup_status } = context;
-  const tempColors = TEMPERATURE_COLORS[score.temperature] || TEMPERATURE_COLORS.warm;
-
-  return (
-    <div className="border-b border-slate-700 bg-slate-800/50 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700">
-            <Target className="h-5 w-5 text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white">
-              {lead.name || leadName || 'Unbekannter Lead'}
-            </h3>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              {lead.company && (
-                <span className="flex items-center gap-1">
-                  <Building2 className="h-3 w-3" />
-                  {lead.company}
-                </span>
-              )}
-              {lead.vertical && <span>• {lead.vertical}</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* Score Badge */}
-        <div className="flex items-center gap-2">
-          <span
-            className={`rounded-full border px-2.5 py-1 text-xs font-bold ${tempColors.bg} ${tempColors.text} ${tempColors.border}`}
-          >
-            {tempColors.label}
-          </span>
-          <span className="rounded-full bg-slate-700 px-2.5 py-1 text-xs font-bold text-slate-300">
-            {score.total_score}/100
-          </span>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-slate-400">
-        <span className="rounded bg-slate-700/50 px-2 py-0.5">
-          Phase: {followup_status.current_step || 'Nicht gestartet'}
-        </span>
-        <span className="rounded bg-slate-700/50 px-2 py-0.5">
-          Versuche: {followup_status.total_attempts}
-        </span>
-        {followup_status.reply_received && (
-          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-emerald-400">
-            ✓ Antwort erhalten
-          </span>
-        )}
-        {lead.phone && (
-          <span className="flex items-center gap-1 rounded bg-slate-700/50 px-2 py-0.5">
-            <Phone className="h-2.5 w-2.5" />
-            {lead.phone}
-          </span>
-        )}
-        {lead.email && (
-          <span className="flex items-center gap-1 rounded bg-slate-700/50 px-2 py-0.5">
-            <Mail className="h-2.5 w-2.5" />
-            {lead.email}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────
@@ -254,6 +163,7 @@ export function LeadContextChat({
   const [input, setInput] = useState('');
   const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
   const [downloadLoadingId, setDownloadLoadingId] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -288,7 +198,8 @@ export function LeadContextChat({
     if (!trimmed || sending) return;
 
     setInput('');
-    await sendMessage(trimmed);
+    await sendMessage(trimmed, uploadedImage || undefined);
+    setUploadedImage(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -382,7 +293,7 @@ export function LeadContextChat({
 
   const containerClasses = isModal
     ? 'fixed inset-0 z-50 flex flex-col bg-slate-900 md:inset-4 md:rounded-2xl md:border md:border-slate-700 md:shadow-2xl'
-    : 'flex h-full flex-col rounded-2xl border border-slate-700 bg-slate-900';
+    : 'flex h-full w-full max-w-5xl mx-auto flex-col rounded-2xl border border-slate-700 bg-slate-900';
 
   return (
     <div className={containerClasses}>
@@ -415,11 +326,6 @@ export function LeadContextChat({
           )}
         </div>
       </div>
-
-      {/* Lead Context Header */}
-      {leadContext && (
-        <LeadContextHeader context={leadContext} leadName={leadName} />
-      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -541,9 +447,26 @@ export function LeadContextChat({
             disabled={loading || sending}
             className="flex-1 resize-none rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
           />
+          <label className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setUploadedImage(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            📷
+          </label>
           <button
             onClick={handleSend}
-            disabled={!input.trim() || sending || loading}
+            disabled={(!input.trim() && !uploadedImage) || sending || loading}
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {sending ? (
@@ -553,6 +476,20 @@ export function LeadContextChat({
             )}
           </button>
         </div>
+        {uploadedImage && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="relative">
+              <img src={uploadedImage} alt="Upload Preview" className="max-h-20 rounded-lg border border-slate-700" />
+              <button
+                className="absolute -right-2 -top-2 rounded-full bg-slate-800 px-2 py-1 text-xs text-white shadow"
+                onClick={() => setUploadedImage(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <span className="text-xs text-slate-400">Bild wird mit der nächsten Nachricht gesendet.</span>
+          </div>
+        )}
         <p className="mt-2 text-center text-[10px] text-slate-500">
           Shift + Enter für neue Zeile • Enter zum Senden
         </p>

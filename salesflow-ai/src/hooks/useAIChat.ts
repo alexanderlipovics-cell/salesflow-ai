@@ -31,7 +31,7 @@ interface UseAIChatReturn {
   sending: boolean;
   error: string | null;
   createSession: (leadId?: string, sessionType?: ChatSessionType) => Promise<ChatSession>;
-  sendMessage: (content: string) => Promise<ChatMessage | null>;
+  sendMessage: (content: string, imageBase64?: string | null) => Promise<ChatMessage | null>;
   fetchLeadContext: (leadId: string) => Promise<LeadContext | null>;
   loadSession: (sessionId: string) => Promise<void>;
   clearChat: () => void;
@@ -291,7 +291,7 @@ export function useAIChat(initialLeadId?: string): UseAIChatReturn {
   /**
    * Sendet eine Nachricht und holt AI-Antwort
    */
-  const sendMessage = useCallback(async (content: string): Promise<ChatMessage | null> => {
+  const sendMessage = useCallback(async (content: string, imageBase64?: string | null): Promise<ChatMessage | null> => {
     if (!session) {
       setError('Keine aktive Session');
       return null;
@@ -330,7 +330,7 @@ export function useAIChat(initialLeadId?: string): UseAIChatReturn {
       // Call AI API
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${apiBase}/api/ai`, {
+      const response = await fetch(`${apiBase}/api/ai/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -339,6 +339,8 @@ export function useAIChat(initialLeadId?: string): UseAIChatReturn {
         body: JSON.stringify({
           messages: conversationHistory,
           engine: 'gpt',
+          message: content,
+          image: imageBase64,
         }),
       });
 
