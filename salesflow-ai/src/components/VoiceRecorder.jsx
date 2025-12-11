@@ -110,7 +110,9 @@ const VoiceRecorder = ({
 
     try {
       const endpoint = '/api/voice/command';
-      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      const token = typeof window !== 'undefined'
+        ? (localStorage.getItem('access_token') || localStorage.getItem('refresh_token'))
+        : null;
 
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
