@@ -625,6 +625,26 @@ const ChatPage = () => {
     handleSendMessage(null, action);
   };
 
+  // Entfernt lange Deep-Link-Fragmente aus der Nachricht, wenn ein Deep Link separat vorliegt
+  const cleanMessageContent = (content, hasDeepLink) => {
+    if (!content || !hasDeepLink) return content;
+
+    let cleaned = content
+      .replace(/\[.*?\]\(mailto:[^\)]+\)/g, "") // [text](mailto:...)
+      .replace(/\[.*?\]\(https:\/\/wa\.me[^\)]+\)/g, "") // [text](wa.me...)
+      .replace(/\[.*?\]\(https:\/\/instagram\.com[^\)]+\)/g, "") // [text](instagram...)
+      .replace(/\[.*?\]\(https:\/\/linkedin\.com[^\)]+\)/g, "") // [text](linkedin...)
+      .replace(/mailto:[^\s\)]+/g, "") // Rohe mailto: Links
+      .replace(/https:\/\/wa\.me\/[^\s\)]+/g, "") // Rohe wa.me Links
+      .replace(/👆 Klicke auf \*\*Senden\*\* um .* zu öffnen\./g, "") // Anweisung entfernen
+      .replace(/👉 Klicke \[hier[^\n]+/g, "") // "Klicke hier" Zeile entfernen
+      .replace(/und die Email zu öffnen!/g, "") // Rest entfernen
+      .replace(/\n{3,}/g, "\n\n") // Mehrfache Leerzeilen reduzieren
+      .trim();
+
+    return cleaned;
+  };
+
   // Image upload handler
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -1169,7 +1189,7 @@ const ChatPage = () => {
                     </span>
                   )}
                   <div className="whitespace-pre-wrap break-words">
-                    {message.content}
+                    {cleanMessageContent(message.content, message.deep_link)}
                   </div>
                   {message.role === "assistant" && console.log("Message deep_link:", message.deep_link)}
                   {message.role === "assistant" && (
@@ -1184,9 +1204,9 @@ const ChatPage = () => {
                       href={message.deep_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors"
+                      className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-emerald-500/25"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                       Jetzt senden
