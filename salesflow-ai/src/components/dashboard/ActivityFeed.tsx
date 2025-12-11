@@ -37,39 +37,7 @@ const iconFor = (type: string) => {
 };
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
-  const items =
-    activities && activities.length
-      ? activities
-      : [
-          {
-            id: "1",
-            type: "message",
-            message: "Neue Nachricht von Max Mustermann",
-            timestamp: new Date().toISOString(),
-            user: "Max M.",
-          },
-          {
-            id: "2",
-            type: "lead",
-            message: "Neuer Lead erstellt",
-            timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-            user: "Anna K.",
-          },
-          {
-            id: "3",
-            type: "sale",
-            message: "Deal abgeschlossen: €5.000",
-            timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-            user: "Tom S.",
-          },
-          {
-            id: "4",
-            type: "ai",
-            message: "AI Copilot Suggestion angewendet",
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            user: "Lisa M.",
-          },
-        ];
+  const items = activities && activities.length ? activities : [];
 
   return (
     <div className="h-full">
@@ -78,24 +46,28 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
         <p className="text-sm text-gray-400">Echtzeit Updates</p>
       </div>
 
-      <div className="space-y-3">
-        {items.map((item, index) => (
-          <div
-            key={item.id}
-            className="group flex items-start gap-3 rounded-lg border border-white/5 bg-white/5 p-3 transition-all hover:border-white/10 hover:bg-white/10"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className="mt-0.5 rounded-md bg-white/10 p-2">{iconFor(item.type)}</div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white transition-colors group-hover:text-emerald-400">
-                {item.message}
-              </p>
-              {item.user && <p className="mt-1 text-xs text-gray-500">{item.user}</p>}
+      {items.length === 0 ? (
+        <p className="text-sm text-gray-400">Noch keine Aktivitäten. Erstelle deinen ersten Lead!</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className="group flex items-start gap-3 rounded-lg border border-white/5 bg-white/5 p-3 transition-all hover:border-white/10 hover:bg-white/10"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="mt-0.5 rounded-md bg-white/10 p-2">{iconFor(item.type)}</div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white transition-colors group-hover:text-emerald-400">
+                  {item.message}
+                </p>
+                {item.user && <p className="mt-1 text-xs text-gray-500">{item.user}</p>}
+              </div>
+              <span className="text-xs text-gray-500">{formatRelative(item.timestamp)}</span>
             </div>
-            <span className="text-xs text-gray-500">{formatRelative(item.timestamp)}</span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <button className="mt-4 w-full rounded-lg border border-white/10 bg-white/5 py-2 text-sm text-gray-400 transition-colors hover:bg-white/10 hover:text-white">
         Alle anzeigen

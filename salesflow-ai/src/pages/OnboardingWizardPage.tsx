@@ -110,6 +110,8 @@ const OnboardingWizardPage: React.FC = () => {
   const [companyName, setCompanyName] = useState("");
   const [flagshipOffer, setFlagshipOffer] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState<"beginner" | "intermediate" | "pro">("beginner");
+  const [monthlyGoal, setMonthlyGoal] = useState<number>(5);
 
   // Knowledge-Werte initial übernehmen, falls vorhanden
   useEffect(() => {
@@ -153,6 +155,8 @@ const OnboardingWizardPage: React.FC = () => {
           company_name: companyName || knowledge?.company_name || null,
           target_audience: targetAudience || knowledge?.target_audience || null,
           products: flagshipOffer || knowledge?.products || null,
+          experience_level: experienceLevel,
+          monthly_goal: monthlyGoal ?? null,
         });
       } catch (err) {
         // Fehler wird im Hook gehandhabt, hier nur abfangen
@@ -165,13 +169,20 @@ const OnboardingWizardPage: React.FC = () => {
     } else {
       // Fertig → Vertical in Profile speichern, dann Weiterleitung
       try {
+        const { data: userData } = await supabaseClient.auth.getUser();
+        const userId = userData?.user?.id;
+
         const { error } = await supabaseClient
-          .from('profiles')
+          .from('users')
           .update({
             vertical: vertical,
+            company_name: companyName || null,
+            experience_level: experienceLevel,
+            monthly_goal: monthlyGoal ?? null,
+            onboarding_complete: true,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', user.id);
+          .eq('id', userId || user.id);
 
         if (error) {
           console.warn('Fehler beim Speichern der Vertical:', error);
@@ -180,7 +191,7 @@ const OnboardingWizardPage: React.FC = () => {
         console.warn('Fehler beim Speichern der Vertical:', err);
       }
 
-      navigate("/daily-command");
+      navigate("/dashboard");
     }
   };
 
@@ -390,6 +401,35 @@ const OnboardingWizardPage: React.FC = () => {
               onChange={(e) => setTargetAudience(e.target.value)}
               placeholder="z.B. Teamleiter mit 10–50 Vertrieblern, die Follow-ups und Leads besser nutzen wollen."
             />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">
+                Erfahrungslevel
+              </label>
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value as any)}
+              >
+                <option value="beginner">Anfänger</option>
+                <option value="intermediate">Fortgeschritten</option>
+                <option value="pro">Profi</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">
+                Monatliches Ziel (Abschlüsse)
+              </label>
+              <input
+                type="number"
+                min={0}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                value={monthlyGoal}
+                onChange={(e) => setMonthlyGoal(Number(e.target.value) || 0)}
+                placeholder="z.B. 10"
+              />
+            </div>
           </div>
         </div>
       );

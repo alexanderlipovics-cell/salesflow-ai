@@ -114,11 +114,7 @@ export const useDashboardData = () => {
       const activitiesData: any = safe(activitiesRes, { activities: [] });
       const chartsData: any = safe(chartsRes, { chartData: [] });
       const insightsData: any = safe(insightsRes, {
-        insights: [
-          { title: '3 Leads brauchen Aufmerksamkeit', description: 'Reagiere auf unbeantwortete Nachrichten.' },
-          { title: 'Beste Zeit für Anrufe: 10-12 Uhr', description: 'Höchste Connect-Rate laut Verlaufsdaten.' },
-          { title: '2 Deals kurz vor Abschluss', description: 'Bereite Closing-Argumente & Angebote vor.' },
-        ],
+        insights: [],
       });
 
       const kpis: KPIData = {
@@ -168,12 +164,20 @@ export const useDashboardData = () => {
           }))
         : [];
 
-      const insights: InsightItem[] = Array.isArray(insightsData.insights)
+      let insights: InsightItem[] = Array.isArray(insightsData.insights)
         ? insightsData.insights.map((i: any, idx: number) => ({
             title: i.title ?? `Insight ${idx + 1}`,
             description: i.description ?? i.text ?? '',
           }))
         : [];
+
+      if (insights.length === 0 && (kpis.leadsTotal ?? 0) === 0) {
+        insights = [
+          { title: 'Tipp: Erstelle deinen ersten Lead mit dem + Button', description: '' },
+          { title: 'Tipp: Importiere Kontakte per CSV', description: '' },
+          { title: 'Tipp: Frag den AI Copilot für Hilfe', description: '' },
+        ];
+      }
 
       return {
         kpis,

@@ -132,9 +132,18 @@ const SENTIMENT_BADGES: Record<string, { label: string; color: string }> = {
 };
 
 export const DailyFlowWidget: React.FC<DailyFlowWidgetProps> = ({
-  tasks = DEMO_TASKS,
-  stats = DEFAULT_STATS,
-  goalProgress = 52,
+  tasks = [],
+  stats = {
+    followups_due: 0,
+    followups_done: 0,
+    new_contacts_target: 0,
+    new_contacts_done: 0,
+    reactivations_target: 0,
+    reactivations_done: 0,
+    calls_scheduled: 0,
+    calls_done: 0,
+  },
+  goalProgress = 0,
   onTaskComplete,
   onTaskClick,
   onQuickAction,
@@ -333,9 +342,9 @@ export const DailyFlowWidget: React.FC<DailyFlowWidgetProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-8"
           >
-            <div className="text-4xl mb-2">🎉</div>
-            <p className="text-white font-medium">Alle Aufgaben erledigt!</p>
-            <p className="text-gray-400 text-sm">Du bist auf dem besten Weg zu deinem Ziel.</p>
+            <div className="text-4xl mb-2">📝</div>
+            <p className="text-white font-medium">Noch keine Aktivitäten. Erstelle deinen ersten Lead!</p>
+            <p className="text-gray-400 text-sm">Leads oder Follow-ups erscheinen hier, sobald sie verfügbar sind.</p>
           </motion.div>
         )}
       </div>

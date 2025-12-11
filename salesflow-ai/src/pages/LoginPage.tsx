@@ -10,6 +10,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { supabaseClient } from '../lib/supabaseClient';
 import { LoginForm } from '../components/auth/LoginForm';
 import { Sparkles } from 'lucide-react';
 
@@ -26,9 +27,24 @@ const LoginPage: React.FC = () => {
     try {
       console.log('LoginPage: Calling login function...');
       await login({ email, password });
+      // Onboarding Check
+      const { data: userData } = await supabaseClient.auth.getUser();
+      const userId = userData?.user?.id;
+      if (userId) {
+        const { data: profile } = await supabaseClient
+          .from('users')
+          .select('onboarding_complete, vertical')
+          .eq('id', userId)
+          .single();
+
+        if (!profile?.onboarding_complete) {
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+      }
+
       console.log('LoginPage: Login successful, navigating to:', from);
-      // Redirect to originally requested page or dashboard
-      navigate(from, { replace: true });
+      navigate(from ?? '/dashboard', { replace: true });
     } catch (err) {
       // Error is handled by useAuth hook
       console.error('LoginPage: Login failed:', err);
