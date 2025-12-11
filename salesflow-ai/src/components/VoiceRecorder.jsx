@@ -22,8 +22,6 @@ const VoiceRecorder = ({
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-
   const startRecording = async () => {
     try {
       setError(null);
@@ -112,6 +110,7 @@ const VoiceRecorder = ({
 
     try {
       const endpoint = '/api/voice/command';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
