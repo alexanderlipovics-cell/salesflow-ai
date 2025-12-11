@@ -649,22 +649,43 @@ class ToolExecutor:
             if not lead:
                 return {"success": False, "error": "Lead konnte nicht erstellt werden"}
 
-            response = f"✅ Lead **{name}** erstellt!"
+            lead_id = lead.get("id")
+            website = lead.get("website")
 
-            if phone:
-                response += f"\n📱 Telefon: {phone}"
-            if email:
-                response += f"\n📧 Email: {email}"
+            actions = [
+                {
+                    "action": "create_follow_up",
+                    "label": "📅 Follow-up in 3 Tagen",
+                    "params": {"lead_name": name, "days": 3, "task_type": "erstkontakt"},
+                },
+                {
+                    "action": "prepare_message",
+                    "label": "📧 Erstkontakt vorbereiten",
+                    "params": {"lead_name": name, "channel": "email" if email else "whatsapp" if phone else None},
+                }
+                if email or phone
+                else None,
+                {
+                    "action": "research_company",
+                    "label": "🔍 Firma recherchieren",
+                    "params": {"company_name": name},
+                }
+                if not phone and not email
+                else None,
+            ]
 
-            if phone:
-                response += "\n\nSoll ich eine WhatsApp-Nachricht vorbereiten?"
-            elif not phone and not email:
-                response += "\n\nHast du eine Telefonnummer oder Email? Dann kann ich dir eine Nachricht vorbereiten."
+            actions = [a for a in actions if a]
 
             return {
                 "success": True,
-                "lead_id": lead.get("id"),
-                "message": response,
+                "lead_id": lead_id,
+                "lead_name": name,
+                "has_email": bool(email),
+                "has_phone": bool(phone),
+                "has_website": bool(website),
+                "message": f"✅ Lead **{name}** erstellt!",
+                "suggested_actions": actions,
+                "next_step_hint": "Soll ich gleich einen Follow-up anlegen oder eine Nachricht vorbereiten?",
             }
         except Exception as e:  # noqa: BLE001
             logger.error(f"Create lead error: {e}")

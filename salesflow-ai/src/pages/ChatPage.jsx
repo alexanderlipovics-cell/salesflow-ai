@@ -647,46 +647,57 @@ const ChatPage = () => {
 
   // Markdown-Links zu klickbaren Links konvertieren
   const renderMessageWithLinks = (content) => {
-    if (!content) return null;
+    if (!content || typeof content !== "string") return content;
+
+    const parts = [];
+    let lastIndex = 0;
 
     // Regex für Markdown Links: [text](url)
-    const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+    const regex = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+    let match;
 
-    // Regex für rohe URLs
-    const urlRegex = /(https?:\/\/[^\s\)]+)/g;
-
-    // Erst Markdown-Links ersetzen
-    const processedContent = content.replace(markdownLinkRegex, (_match, text, url) => {
-      return `|||LINK|||${text}|||${url}|||ENDLINK|||`;
-    });
-
-    // Dann rohe URLs ersetzen (die nicht schon in Markdown waren)
-    const finalContent = processedContent.replace(urlRegex, (url) => {
-      if (url.includes("|||LINK|||")) return url; // bereits verarbeitet
-      return `|||LINK|||${url}|||${url}|||ENDLINK|||`;
-    });
-
-    // Jetzt in React-Elemente umwandeln
-    const segments = finalContent.split(/(\|\|\|LINK\|\|\|.*?\|\|\|ENDLINK\|\|\|)/);
-
-    return segments.map((segment, i) => {
-      const linkMatch = segment.match(/\|\|\|LINK\|\|\|(.+?)\|\|\|(.+?)\|\|\|ENDLINK\|\|\|/);
-      if (linkMatch) {
-        const [, text, url] = linkMatch;
-        return (
-          <a
-            key={i}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-emerald-400 hover:text-emerald-300 underline"
-          >
-            {text}
-          </a>
+    while ((match = regex.exec(content)) !== null) {
+      // Text vor dem Link hinzufügen
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`}>
+            {content.slice(lastIndex, match.index)}
+          </span>
         );
       }
-      return segment;
-    });
+
+      // Link hinzufügen
+      const linkText = match[1];
+      const url = match[2];
+      parts.push(
+        <a
+          key={`link-${match.index}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-400 hover:text-emerald-300 underline"
+          onClick={(e) => {
+            e.preventDefault();
+            window.open(url, "_blank", "noopener,noreferrer");
+          }}
+        >
+          {linkText}
+        </a>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Rest des Textes nach dem letzten Link
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>
+          {content.slice(lastIndex)}
+        </span>
+      );
+    }
+
+    return parts.length > 0 ? parts : content;
   };
 
   // Image upload handler
