@@ -4,6 +4,7 @@ import os
 import logging
 import hashlib
 import re
+import itertools
 
 from openai import AsyncOpenAI
 
@@ -23,6 +24,74 @@ logger = logging.getLogger(__name__)
 client = None
 router = ModelRouter()
 _ = CollectiveIntelligenceEngine  # silence unused import warnings
+
+
+def extract_names(message: str) -> list[str]:
+    """Einfache Heuristik um potenzielle Namen aus dem User-Text zu ziehen."""
+    if not message:
+        return []
+    tokens = re.findall(r"\b[A-ZÄÖÜ][a-zäöüß]{2,}\b", message)
+    blacklist = {"Hallo", "Hey", "Hi", "Und", "Oder", "Was", "Wie"}
+    return [t for t in tokens if t not in blacklist]
+
+
+def determine_search_type(message: str, user_id: str, db) -> str:
+    """Entscheidet, ob Lead-DB oder Web-Suche oder Knowledge genutzt wird."""
+    message_lower = (message or "").lower()
+
+    lead_keywords = ["lead", "kontakt", "kunde", "mein ", "meine ", "unser"]
+    if any(kw in message_lower for kw in lead_keywords):
+        return "leads_db"
+
+    web_keywords = ["was ist", "erkläre", "wie funktioniert", "im web", "google", "suche nach"]
+    if any(kw in message_lower for kw in web_keywords):
+        return "web_search"
+
+    potential_names = extract_names(message)
+    for name in potential_names:
+        lead = (
+            db.table("leads")
+            .select("id")
+            .eq("user_id", user_id)
+            .ilike("name", f"%{name}%")
+            .limit(1)
+            .execute()
+        )
+        if lead.data:
+            return "leads_db"
+
+    return "knowledge"
+
+
+def fetch_lead_context(message: str, user_id: str, db) -> str:
+    """Sucht Leads anhand extrahierter Namen und gibt kurzen Kontext zurück."""
+    potential_names = extract_names(message)
+    contexts: list[str] = []
+
+    if not potential_names:
+        return ""
+
+    for name in itertools.islice(potential_names, 3):
+        result = (
+            db.table("leads")
+            .select("id, name, email, phone, company, status, temperature, tags, notes")
+            .eq("user_id", user_id)
+            .ilike("name", f"%{name}%")
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            lead = result.data[0]
+            tags = ", ".join(lead.get("tags") or []) if lead.get("tags") else ""
+            contexts.append(
+                f"- {lead.get('name')} (Status: {lead.get('status')}, Temp: {lead.get('temperature')}) "
+                f"{f'Firma: {lead.get('company')}' if lead.get('company') else ''} "
+                f"{f'Email: {lead.get('email')}' if lead.get('email') else ''} "
+                f"{f'Phone: {lead.get('phone')}' if lead.get('phone') else ''} "
+                f"{f'Tags: {tags}' if tags else ''}"
+            )
+
+    return "\n".join(contexts)
 
 
 def anonymize_message(message: str, lead_name: str = None, company: str = None, phone: str = None, email: str = None) -> str:
@@ -238,6 +307,19 @@ async def run_sales_agent(
         learning_insights = []
         logger.warning(f"Could not load learning insights: {e}")
 
+    # Smart Routing: Lead vs Web vs Knowledge
+    search_type = determine_search_type(message, user_id, db)
+    lead_context_block = ""
+    if search_type == "leads_db":
+        try:
+            lead_ctx = fetch_lead_context(message, user_id, db)
+            if lead_ctx:
+                lead_context_block = f"\n\nLead aus CRM:\n{lead_ctx}"
+        except Exception as e:
+            logger.warning(f"Could not fetch lead context: {e}")
+    elif search_type == "web_search":
+        lead_context_block = "\n\nWeb-Ergebnisse: (keine Live-Suche ausgeführt)"
+
     # Letzte Aktivitäten
     if recent_activities:
         learning_context += "\n\nLETZTE USER-AKTIVITÄTEN:\n"
@@ -257,7 +339,7 @@ async def run_sales_agent(
                 confidence_pct = str(insight.confidence)
             learning_context += f"- {insight.pattern_type}: {insight.successful_value} (Confidence: {confidence_pct})\n"
 
-    system_prompt = build_system_prompt(user_context) + learning_context
+    system_prompt = build_system_prompt(user_context) + learning_context + lead_context_block
 
     # Find similar successful messages for context
     similar_successes = []
