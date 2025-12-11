@@ -560,8 +560,6 @@ const ChatPage = () => {
         else if (instaMatch) deepLink = instaMatch[0];
       }
 
-      console.log("Extracted deep_link:", deepLink);
-
       const userAskedToCreate =
         intentDetected === "CREATE_LEAD" ||
         intentDetected === "CREATE_FOLLOWUP" ||
@@ -1246,7 +1244,6 @@ const ChatPage = () => {
                   <div className="whitespace-pre-wrap break-words">
                     {renderMessageWithLinks(cleanMessageContent(message.content, message.deep_link))}
                   </div>
-                  {message.role === "assistant" && console.log("Message deep_link:", message.deep_link)}
                   {message.role === "assistant" && (
                     <WhatsAppMessageActions
                       message={message.content}
