@@ -142,6 +142,30 @@ const DashboardPage: React.FC = () => {
     loadUserName();
   }, [user]);
 
+  // Zusätzlicher Name-Lookup aus /api/auth/me (falls verfügbar)
+  useEffect(() => {
+    const fetchAuthMe = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+        const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data?.name || data?.full_name) {
+          const full = (data.name || data.full_name || "").trim();
+          if (full) {
+            setUserName((prev) => prev || full.split(" ")[0] || full);
+          }
+        }
+      } catch (err) {
+        console.warn("Dashboard: /api/auth/me failed", err);
+      }
+    };
+    fetchAuthMe();
+  }, []);
+
   const firstName =
     userName ||
     user?.first_name ||
@@ -149,6 +173,16 @@ const DashboardPage: React.FC = () => {
     (user?.name ? user.name.split(" ")[0] : undefined) ||
     (user?.email ? user.email.split("@")[0] : undefined) ||
     "User";
+
+  useEffect(() => {
+    console.log("[Dashboard] Greeting name debug", {
+      userName,
+      userFirstName: user?.first_name || user?.firstName,
+      userNameFull: user?.name,
+      userEmail: user?.email,
+      firstName,
+    });
+  }, [userName, user, firstName]);
 
   const kpiCards = useMemo(
     () => [

@@ -112,8 +112,18 @@ export const useDashboardData = () => {
       const chartsData: any = safe(chartsRes, { chartData: [] });
       // Debug-Logging für Lead-Anzahl
       console.log("[Dashboard] /api/leads?count=true raw", leadsData);
+      console.log("[Dashboard] leadsTotal calculation:", {
+        responseType: typeof leadsData,
+        isArray: Array.isArray(leadsData),
+        dataType: typeof leadsData?.data,
+        isDataArray: Array.isArray(leadsData?.data),
+        length: leadsData?.length || leadsData?.data?.length || leadsData?.items?.length,
+        hasCount: leadsData?.count,
+        hasTotal: leadsData?.total,
+      });
       const leadsTotal =
         (Array.isArray(leadsData?.items) ? leadsData.items.length : undefined) ??
+        (Array.isArray(leadsData?.data) ? leadsData.data.length : undefined) ??
         (Array.isArray(leadsData) ? leadsData.length : undefined) ??
         leadsData.count ??
         leadsData.total ??
