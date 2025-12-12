@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import type React from 'react';
 import { Bot, Send, X, Loader2, User, Sparkles, RefreshCw, Volume2 } from 'lucide-react';
 import { useAIChat } from '@/hooks/useAIChat';
 
@@ -161,6 +162,7 @@ export function LeadContextChat({
   } = useAIChat();
 
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
   const [downloadLoadingId, setDownloadLoadingId] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -225,9 +227,14 @@ export function LeadContextChat({
     if (!trimmed && !uploadedImage) return;
     if (sending) return;
 
+    setIsTyping(true);
     setInput('');
-    await sendMessage(trimmed, uploadedImage || undefined);
-    setUploadedImage(null);
+    try {
+      await sendMessage(trimmed, uploadedImage || undefined);
+    } finally {
+      setUploadedImage(null);
+      setIsTyping(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -433,7 +440,7 @@ export function LeadContextChat({
                 </div>
               );
             })}
-            {sending && <TypingIndicator />}
+            {(isTyping || sending) && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </div>
         )}
