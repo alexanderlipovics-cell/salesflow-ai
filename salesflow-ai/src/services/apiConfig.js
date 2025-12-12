@@ -95,7 +95,7 @@ export const getApiBaseUrl = () => {
   }
   
   // 4. Vite Environment Variable (höchste Priorität für Web)
-  if (typeof import !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) {
+  if (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) {
     const baseUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
     return `${baseUrl}/api`;
   }
