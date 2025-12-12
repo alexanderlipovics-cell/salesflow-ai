@@ -175,6 +175,22 @@ async def chat(
             logger.warning("conversation_history provided but not a list; ignoring")
             conversation_history = None
 
+        # User name fetch for personalization
+        user_name = "Ihr Berater"
+        try:
+            user_result = db.table("users").select("*").eq("id", user_id).maybe_single().execute()
+            logger.info(f"AI Chat user lookup for {user_id}: {user_result.data}")
+            if user_result and user_result.data:
+                user_data = user_result.data
+                user_name = (
+                    user_data.get("full_name")
+                    or user_data.get("name")
+                    or user_data.get("display_name")
+                    or "Ihr Berater"
+                )
+        except Exception as e:
+            logger.warning(f"AI Chat could not load user name for {user_id}: {e}")
+
         if conversation_history:
             message_history = conversation_history
         else:
@@ -204,7 +220,7 @@ async def chat(
                 logger.error(f"Vision request failed: {exc}", exc_info=True)
                 raise HTTPException(status_code=500, detail=f"Vision request failed: {exc}")
         else:
-            logger.info(f"AI Chat: calling run_sales_agent with user_id={user_id}")
+            logger.info(f"AI Chat: calling run_sales_agent with user_id={user_id}, user_name={user_name}")
             result = await run_sales_agent(
                 message=message,
                 user_id=user_id,
