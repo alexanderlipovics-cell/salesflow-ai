@@ -53,6 +53,7 @@ class ToolExecutor:
             "schedule_meeting": self._schedule_meeting,
             "prepare_message": self._prepare_message,
             "save_user_knowledge": self._save_user_knowledge,
+            "convert_to_customer": self._convert_to_customer,
         }
 
         if tool_name not in executor_map:
@@ -639,6 +640,7 @@ class ToolExecutor:
 
         lead_context = ""
         lead_data = None
+        interaction_context = ""
 
         if lead_id or lead_name:
             lead_data = await self._get_lead_details(lead_id=lead_id, lead_name=lead_name)
@@ -649,6 +651,25 @@ class ToolExecutor:
                 Letzter Kontakt: {lead_data.get('last_contact')}
                 Status: {lead_data.get('status')}
                 """
+                try:
+                    interactions = (
+                        self.db.table("lead_interactions")
+                        .select("*")
+                        .eq("lead_id", lead_data.get("id"))
+                        .order("created_at", desc=True)
+                        .limit(10)
+                        .execute()
+                    )
+                    items = interactions.data or []
+                    if items:
+                        interaction_context = "\n".join(
+                            [
+                                f"- {i.get('created_at')}: {i.get('interaction_type')} - {i.get('raw_notes') or i.get('summary') or ''}"
+                                for i in items
+                            ]
+                        )
+                except Exception as exc:
+                    logger.debug(f"Could not load interactions for message: {exc}")
 
         channel_guidelines = {
             "whatsapp": "Maximal 2-3 kurze Sätze. Casual, mit Emoji wenn passend.",
@@ -679,6 +700,7 @@ class ToolExecutor:
                 "type": type_guidelines.get(message_type),
             },
             "lead_context": lead_context.strip(),
+            "interaction_context": interaction_context,
             "note": "Implementiere OpenAI Call für echte Nachrichtengenerierung",
         }
 
@@ -1115,29 +1137,37 @@ class ToolExecutor:
             "message": f"✅ Follow-up für {lead_name or 'Lead'} am {date_str} geplant!",
         }
 
-    async def _log_interaction(
-        self,
-        lead_name_or_id: str,
-        interaction_type: str,
-        summary: str,
-        tags: Optional[List[str]] = None,
-        key_facts: Optional[Dict[str, Any]] = None,
-        outcome: str = "neutral",
-        next_steps: Optional[List[str]] = None,
-        lead_updates: Optional[Dict[str, Any]] = None,
-        create_followup: bool = True,
-        followup_days: int = 3,
-    ) -> str:
+    async def _log_interaction(self, params: dict) -> str:
         """Speichert eine Interaktion und aktualisiert den Lead."""
-        print(f"[DEBUG] log_interaction called with lead='{lead_name_or_id}', type='{interaction_type}'")
+        lead_name_or_id = params.get("lead_name") or params.get("lead_name_or_id")
+        lead_id = params.get("lead_id")
+        interaction_type = params.get("type") or params.get("interaction_type") or "meeting"
+        notes = params.get("notes") or params.get("summary") or ""
+        tags: Optional[List[str]] = params.get("tags") or []
+        key_facts: Optional[Dict[str, Any]] = params.get("key_facts") or {}
+        outcome: str = params.get("outcome") or params.get("sentiment") or "neutral"
+        next_steps_param = params.get("next_steps") or []
+        lead_updates: Optional[Dict[str, Any]] = params.get("lead_updates") or {}
+        create_followup: bool = params.get("create_followup", False)
+        followup_days: int = params.get("followup_days", 3)
+        objections = params.get("objections") or []
+        budget_mentioned = params.get("budget")
+        timeline_mentioned = params.get("timeline")
+        sentiment = params.get("sentiment") or outcome or "neutral"
 
-        lead = await self._find_lead_by_name_or_id(lead_name_or_id)
+        print(f"[DEBUG] log_interaction called with lead='{lead_name_or_id or lead_id}', type='{interaction_type}'")
+
+        lead = None
+        if lead_id:
+            lead = await self._find_lead_by_name_or_id(lead_id)
+        if not lead and lead_name_or_id:
+            lead = await self._find_lead_by_name_or_id(lead_name_or_id)
         lead_was_created = False
         if not lead:
             new_lead_data = {
                 "id": str(uuid.uuid4()),
                 "user_id": self.user_id,
-                "name": lead_name_or_id,
+                "name": lead_name_or_id or "Unbekannt",
                 "status": "contacted",
                 "created_at": datetime.utcnow().isoformat(),
             }
@@ -1160,8 +1190,11 @@ class ToolExecutor:
         details = {
             "tags": tags or [],
             "key_facts": key_facts or {},
-            "next_steps": next_steps or [],
-            "raw_notes": summary,
+            "next_steps": next_steps_param if isinstance(next_steps_param, list) else [next_steps_param] if next_steps_param else [],
+            "raw_notes": notes,
+            "objections": objections if isinstance(objections, list) else [],
+            "budget_mentioned": budget_mentioned,
+            "timeline_mentioned": timeline_mentioned,
         }
 
         interaction_data = {
@@ -1170,7 +1203,7 @@ class ToolExecutor:
             "lead_id": str(lead["id"]),
             "interaction_type": interaction_type or "meeting",
             "channel": interaction_type or "meeting",
-            "summary": summary or "",
+            "summary": notes[:500] if notes else "",
             "details": details,
             "outcome": outcome or "neutral",
             "logged_by": "chief",
@@ -1178,6 +1211,12 @@ class ToolExecutor:
             "interaction_at": now.isoformat() + "Z",
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
+            "raw_notes": notes,
+            "sentiment": sentiment,
+            "key_facts": key_facts if isinstance(key_facts, (list, dict)) else {},
+            "objections": objections if isinstance(objections, list) else [],
+            "budget_mentioned": budget_mentioned,
+            "timeline_mentioned": timeline_mentioned,
         }
 
         print(f"[DEBUG] Inserting interaction: lead_id={interaction_data['lead_id']}, user_id={interaction_data['user_id']}")
@@ -1196,6 +1235,11 @@ class ToolExecutor:
         if lead_updates:
             lead_update_data.update(lead_updates)
 
+        if notes:
+            existing_notes = lead.get("notes") or ""
+            combined_notes = (existing_notes + "\n" + notes).strip() if existing_notes else notes
+            lead_update_data.setdefault("notes", combined_notes)
+
         if tags:
             existing_tags = lead.get("tags") or []
             if isinstance(existing_tags, str):
@@ -1205,7 +1249,18 @@ class ToolExecutor:
 
         self.db.table("leads").update(lead_update_data).eq("id", lead["id"]).execute()
 
-        if create_followup and outcome in {"positive", "follow_up_needed"}:
+        # Temperature tweak based on sentiment
+        try:
+            if sentiment in {"positiv", "positive"}:
+                temperature = (lead.get("temperature") or 50) + 5
+                self.db.table("leads").update({"temperature": min(100, temperature)}).eq("id", lead["id"]).execute()
+            elif sentiment in {"negativ", "negative"}:
+                temperature = (lead.get("temperature") or 50) - 5
+                self.db.table("leads").update({"temperature": max(0, temperature)}).eq("id", lead["id"]).execute()
+        except Exception as exc:
+            logger.debug(f"Could not adjust temperature: {exc}")
+
+        if create_followup and outcome in {"positive", "positiv", "follow_up_needed"}:
             try:
                 await self._insert_followup_suggestion(
                     lead_id=lead["id"],
@@ -1338,6 +1393,8 @@ class ToolExecutor:
         lead_id: str = None,
         lead_name: str = None,
         reason: str = None,
+        customer_type: str = None,
+        customer_value: float = None,
     ) -> dict:
         """Update a lead's status."""
 
@@ -1363,12 +1420,72 @@ class ToolExecutor:
 
         if new_status in ["won", "lost"]:
             update_data["closed_at"] = datetime.now().isoformat()
+        if new_status == "won":
+            update_data["customer_since"] = datetime.now().isoformat()
+            if customer_type:
+                update_data["customer_type"] = customer_type
+            if customer_value is not None:
+                try:
+                    update_data["customer_value"] = float(customer_value)
+                except Exception:
+                    pass
 
         self.db.table("leads").update(update_data).eq("id", resolved_lead_id).execute()
 
         return {
             "success": True,
             "message": f"✅ Status auf '{new_status}' geändert",
+        }
+
+    async def _convert_to_customer(
+        self,
+        lead_id: str = None,
+        lead_name: str = None,
+        customer_type: str = "kunde",
+        initial_value: float = None,
+    ) -> dict:
+        """Konvertiert Lead zu Kunde (status=won)."""
+
+        resolved_lead_id = lead_id
+        if lead_name and not resolved_lead_id:
+            search = (
+                self.db.table("leads")
+                .select("id")
+                .eq("user_id", self.user_id)
+                .ilike("name", f"%{lead_name}%")
+                .limit(1)
+                .execute()
+            )
+            if search.data:
+                resolved_lead_id = search.data[0]["id"]
+            else:
+                return {"error": f"Lead '{lead_name}' nicht gefunden"}
+
+        if not resolved_lead_id:
+            return {"error": "lead_id oder lead_name benötigt"}
+
+        update_data = {
+            "status": "won",
+            "customer_since": datetime.now().isoformat(),
+            "customer_type": customer_type or "kunde",
+            "closed_at": datetime.now().isoformat(),
+        }
+        if initial_value is not None:
+            try:
+                update_data["customer_value"] = float(initial_value)
+                update_data["orders_count"] = 1
+                update_data["last_order_at"] = datetime.now().isoformat()
+            except Exception:
+                pass
+
+        self.db.table("leads").update(update_data).eq("id", resolved_lead_id).execute()
+
+        return {
+            "success": True,
+            "message": "✅ Lead wurde zum Kunden konvertiert",
+            "lead_id": resolved_lead_id,
+            "customer_type": update_data.get("customer_type"),
+            "customer_value": update_data.get("customer_value"),
         }
 
     async def _start_power_hour(
@@ -1901,6 +2018,28 @@ class ToolExecutor:
         else:
             return {"success": False, "error": f"Unbekannter Kanal: {channel}. Nutze: email, whatsapp, instagram, linkedin"}
 
+        # Bisherige Interaktionen laden
+        interaction_context = ""
+        try:
+            interactions = (
+                self.db.table("lead_interactions")
+                .select("*")
+                .eq("lead_id", lead.get("id"))
+                .order("created_at", desc=True)
+                .limit(10)
+                .execute()
+            )
+            items = interactions.data or []
+            if items:
+                interaction_context = "\n".join(
+                    [
+                        f"- {i.get('created_at')}: {i.get('interaction_type')} - {i.get('raw_notes') or i.get('summary') or ''}"
+                        for i in items
+                    ]
+                )
+        except Exception as exc:
+            logger.debug(f"Could not load interactions for prepare_message: {exc}")
+
         # Interaktion loggen (non-blocking)
         try:
             self.db.table("lead_interactions").insert({
@@ -1911,6 +2050,7 @@ class ToolExecutor:
                 "channel": channel,
                 "notes": f"Nachricht vorbereitet: {message[:100]}",
                 "interaction_at": datetime.utcnow().isoformat(),
+                "raw_notes": message[:500],
             }).execute()
         except Exception as e:
             logger.warning(f"Could not log interaction: {e}")
@@ -1927,6 +2067,7 @@ class ToolExecutor:
             "message_preview": message[:200] + "..." if len(message) > 200 else message,
             "deep_link": deep_link,
             "message": f"{channel_emoji} **Nachricht für {lead.get('name')} via {channel_name} bereit!**\n\nAn: {contact_info}\n\n> {message[:150]}{'...' if len(message) > 150 else ''}\n\n👆 Klicke auf **Senden** um {channel_name} zu öffnen.",
+            "interaction_context": interaction_context,
         }
 
 

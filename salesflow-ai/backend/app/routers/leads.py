@@ -2,7 +2,7 @@
 Leads Router für SalesFlow AI - Lead Management mit Follow-up System.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime, timedelta
@@ -66,6 +66,7 @@ async def get_leads(
     filter: Optional[str] = None,
     status: Optional[str] = None,
     period: Optional[str] = None,
+    customers: bool = Query(default=False, description="Wenn true → nur Kunden (status='won')"),
     current_user: User = Depends(get_current_active_user),
 ):
     try:
@@ -76,8 +77,10 @@ async def get_leads(
         db = get_supabase()
         query = db.table("leads").select("*").eq("user_id", user_id)
 
-        # Status-Filter (z.B. status=won)
-        if status:
+        # Kundenfilter
+        if customers:
+            query = query.eq("status", "won")
+        elif status:
             query = query.eq("status", status)
 
         # Perioden-Filter (z.B. period=this_month)
@@ -99,7 +102,13 @@ async def get_leads(
                 query = query.lt("next_follow_up", today).not_.is_("next_follow_up", None)
             # "all" oder unbekannter Filter = alle Leads
 
-        result = query.order("created_at", desc=True).execute()
+        if customers:
+            # Kunden nach customer_since (falls vorhanden) absteigend
+            query = query.order("customer_since", desc=True).order("created_at", desc=True)
+        else:
+            query = query.order("created_at", desc=True)
+
+        result = query.execute()
         return result.data
     except Exception as e:
         logger.exception(f"Get leads error: {e}")

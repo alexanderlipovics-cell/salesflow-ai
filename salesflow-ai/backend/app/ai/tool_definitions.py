@@ -510,26 +510,28 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "log_interaction",
-            "description": "Speichert eine Kundeninteraktion (Gespräch, Meeting, Call) automatisch. IMMER aufrufen wenn der User über ein Gespräch berichtet.",
+            "description": "Protokolliert ein Gespräch/Interaktion mit einem Lead. NUTZE DIESES TOOL AUTOMATISCH wenn der User ein Gespräch beschreibt.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "lead_name_or_id": {"type": "string", "description": "Name oder ID des Leads"},
-                    "interaction_type": {
+                    "lead_name": {"type": "string", "description": "Name des Leads"},
+                    "lead_id": {"type": "string", "description": "ID des Leads falls bekannt"},
+                    "type": {
                         "type": "string",
-                        "enum": ["call", "meeting", "whatsapp", "email", "video_call", "linkedin", "instagram", "sms", "in_person"],
+                        "enum": ["call", "meeting", "email", "whatsapp", "linkedin", "other"],
                         "description": "Art der Interaktion"
                     },
-                    "summary": {"type": "string", "description": "Kurze Zusammenfassung in 1-2 Sätzen"},
-                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Relevante Tags ohne #"},
-                    "key_facts": {"type": "object", "description": "Extrahierte Fakten (arbeitgeber, position, alter, budget, etc.)"},
-                    "outcome": {"type": "string", "enum": ["positive", "neutral", "negative", "follow_up_needed"], "default": "neutral"},
-                    "next_steps": {"type": "array", "items": {"type": "string"}},
-                    "lead_updates": {"type": "object", "description": "Lead-Felder zum Updaten (company, position, etc.)"},
-                    "create_followup": {"type": "boolean", "description": "Automatisch Follow-up erstellen?", "default": True},
-                    "followup_days": {"type": "integer", "description": "In wie vielen Tagen Follow-up", "default": 3}
+                    "notes": {"type": "string", "description": "Zusammenfassung des Gesprächs"},
+                    "sentiment": {"type": "string", "enum": ["positiv", "neutral", "negativ"]},
+                    "key_facts": {"type": "array", "items": {"type": "string"}, "description": "Wichtige Fakten aus dem Gespräch"},
+                    "objections": {"type": "array", "items": {"type": "string"}, "description": "Genannte Einwände"},
+                    "next_steps": {"type": "string", "description": "Vereinbarte nächste Schritte"},
+                    "budget": {"type": "number", "description": "Erwähntes Budget"},
+                    "timeline": {"type": "string", "description": "Erwähnte Timeline/Deadline"},
+                    "create_followup": {"type": "boolean", "description": "Soll ein Follow-up erstellt werden?"},
+                    "followup_days": {"type": "integer", "description": "In wie vielen Tagen Follow-up?"}
                 },
-                "required": ["lead_name_or_id", "interaction_type", "summary"]
+                "required": ["lead_name", "notes"]
             }
         }
     },
@@ -570,6 +572,14 @@ SALES_AGENT_TOOLS = [
                     "reason": {
                         "type": "string",
                         "description": "Grund für Status-Änderung (besonders bei 'lost')"
+                    },
+                    "customer_type": {
+                        "type": "string",
+                        "description": "Optional bei 'won': kunde oder teampartner"
+                    },
+                    "customer_value": {
+                        "type": "number",
+                        "description": "Optional: Bestellwert beim Gewinn"
                     }
                 },
                 "required": ["new_status"]
@@ -819,6 +829,37 @@ SALES_AGENT_TOOLS = [
                     }
                 },
                 "required": ["lead_name_or_id", "channel", "message"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "convert_to_customer",
+            "description": "Konvertiert einen Lead zum Kunden. Nutze wenn User sagt 'X ist jetzt Kunde' oder 'X hat gekauft'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_id": {
+                        "type": "string",
+                        "description": "ID des Leads (optional, sonst Suche per Name)"
+                    },
+                    "lead_name": {
+                        "type": "string",
+                        "description": "Name des Leads, wenn keine ID vorhanden"
+                    },
+                    "customer_type": {
+                        "type": "string",
+                        "enum": ["kunde", "teampartner"],
+                        "default": "kunde",
+                        "description": "Art des Kunden"
+                    },
+                    "initial_value": {
+                        "type": "number",
+                        "description": "Erster Bestellwert (optional)"
+                    }
+                },
+                "required": []
             }
         }
     },
