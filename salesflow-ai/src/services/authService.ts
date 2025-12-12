@@ -66,6 +66,9 @@ class AuthService {
    * Uses form-urlencoded format as required by OAuth2PasswordRequestForm
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    // Clear stale tokens before performing a fresh login to avoid race/old session issues
+    this.clearTokens();
+
     console.log('authService.login: Starting login request for email:', credentials.email);
     console.log('authService.login: API URL:', `${cleanBaseUrl}/api/auth/login`);
     

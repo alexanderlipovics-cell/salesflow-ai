@@ -134,6 +134,7 @@ const ChatPage = () => {
   const [isPreparingMeeting, setIsPreparingMeeting] = useState(false);
   const [extractedContact, setExtractedContact] = useState(null);
   const [, setUploadedImage] = useState(null);
+  const [isAnalyzingScreenshot, setIsAnalyzingScreenshot] = useState(false);
   const [stakeholderCandidate, setStakeholderCandidate] = useState(null);
   const [lastStakeholderName, setLastStakeholderName] = useState(null);
   const [listDetected, setListDetected] = useState(false);
@@ -709,7 +710,7 @@ const ChatPage = () => {
     reader.readAsDataURL(file);
 
     // Analyze
-    setIsAnalyzing(true);
+    setIsAnalyzingScreenshot(true);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -758,7 +759,7 @@ const ChatPage = () => {
         }
       ]);
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzingScreenshot(false);
       setUploadedImage(null);
     }
   };
