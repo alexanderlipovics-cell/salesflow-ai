@@ -380,6 +380,8 @@ async def get_current_user_profile(
     return UserProfile(
         id=user["id"],
         email=user["email"],
+        name=user.get("name"),
+        full_name=user.get("full_name"),
         first_name=user.get("first_name"),
         last_name=user.get("last_name"),
         role=user.get("role", "user"),
@@ -438,6 +440,8 @@ async def update_current_user_profile(
     return UserProfile(
         id=user["id"],
         email=user["email"],
+        name=user.get("name"),
+        full_name=user.get("full_name"),
         first_name=user.get("first_name"),
         last_name=user.get("last_name"),
         role=user.get("role", "user"),

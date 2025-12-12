@@ -62,7 +62,12 @@ class LeadCreate(BaseModel):
 
 
 @router.get("")
-async def get_leads(filter: Optional[str] = None, current_user: User = Depends(get_current_active_user)):
+async def get_leads(
+    filter: Optional[str] = None,
+    status: Optional[str] = None,
+    period: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+):
     try:
         user_id = _extract_user_id(current_user)
         if not user_id:
@@ -70,6 +75,15 @@ async def get_leads(filter: Optional[str] = None, current_user: User = Depends(g
 
         db = get_supabase()
         query = db.table("leads").select("*").eq("user_id", user_id)
+
+        # Status-Filter (z.B. status=won)
+        if status:
+            query = query.eq("status", status)
+
+        # Perioden-Filter (z.B. period=this_month)
+        if period == "this_month":
+            start_of_month = date.today().replace(day=1).isoformat()
+            query = query.gte("created_at", start_of_month)
 
         if filter:
             today = date.today().isoformat()
