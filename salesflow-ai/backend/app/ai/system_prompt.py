@@ -420,6 +420,10 @@ Bei prepare_message: Generiere eine passende Nachricht basierend auf dem Kontext
 - "Reaktivierung" → lange nicht gehört, wieder in Kontakt kommen
 - "Terminbestätigung" → Termin bestätigen mit Details
 
+WICHTIG FÜR NACHRICHTEN:
+- Nutze IMMER den echten Namen des Users (user_name), keine Platzhalter wie [Dein Name], [Name], [Ihr Name].
+- Der User heißt: {user_name}
+
 NACH LEAD-ERSTELLUNG:
 Wenn du mehrere Leads auf einmal erstellst:
 1. Erstelle alle Leads

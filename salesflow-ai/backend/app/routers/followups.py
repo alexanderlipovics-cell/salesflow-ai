@@ -145,6 +145,43 @@ async def mark_no_response(
     return {"success": True}
 
 
+@router.post("/lead/{lead_id}/start-sequence")
+async def start_sequence(
+    lead_id: str,
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Startet eine Follow-up Sequenz für einen Lead."""
+    user_id = current_user.get("sub") or current_user.get("id")
+
+    sequence = [
+        {"days": 1, "type": "follow_up", "action": "Erster Follow-up Kontakt"},
+        {"days": 3, "type": "follow_up", "action": "Zweiter Follow-up - Nachfassen"},
+        {"days": 7, "type": "follow_up", "action": "Dritter Follow-up - Finaler Check"},
+    ]
+
+    created = 0
+    for step in sequence:
+        due_date = (datetime.now() + timedelta(days=step["days"])).isoformat()
+        db.table("followup_suggestions").insert(
+            {
+                "user_id": user_id,
+                "lead_id": lead_id,
+                "due_at": due_date,
+                "type": step["type"],
+                "status": "pending",
+                "suggested_action": step["action"],
+            }
+        ).execute()
+        created += 1
+
+    return {
+        "success": True,
+        "message": f"Sequenz mit {created} Follow-ups gestartet",
+        "created": created,
+    }
+
+
 # ─────────────────────────────────
 # Request/Response Models
 # ─────────────────────────────────
