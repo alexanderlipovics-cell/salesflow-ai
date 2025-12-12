@@ -49,12 +49,31 @@ const DashboardPage: React.FC = () => {
           .eq("id", authUser.id)
           .single();
 
-        const nameFromProfile =
+        let resolvedName =
           profile?.name ||
+          profile?.full_name ||
           authUser.user_metadata?.full_name ||
           authUser.user_metadata?.name ||
           (authUser.email ? authUser.email.split("@")[0] : undefined);
-        setUserName(nameFromProfile || "Verkäufer");
+
+        // Zusätzlicher Lookup: user_knowledge (company_description kann Name enthalten, z.B. "Alex Lipovics - Gründer ...")
+        try {
+          const { data: knowledge } = await supabaseClient
+            .from("user_knowledge")
+            .select("company_description")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+          if (knowledge?.company_description) {
+            const parsed = knowledge.company_description.split(" - ")[0]?.trim();
+            if (parsed) {
+              resolvedName = parsed;
+            }
+          }
+        } catch (knowledgeErr) {
+          console.warn("Dashboard: could not load user_knowledge", knowledgeErr);
+        }
+
+        setUserName(resolvedName || "User");
 
         if (!profile || profile.onboarding_complete === false) {
           console.warn("Dashboard: onboarding incomplete -> redirect /onboarding", { profile });
@@ -67,7 +86,7 @@ const DashboardPage: React.FC = () => {
           user?.firstName ||
           (user?.name ? user.name.split(" ")[0] : undefined) ||
           (user?.email ? user.email.split("@")[0] : undefined) ||
-          "Verkäufer";
+          "User";
         setUserName(fallback);
       } finally {
         setCheckingOnboarding(false);
@@ -83,7 +102,7 @@ const DashboardPage: React.FC = () => {
     user?.firstName ||
     (user?.name ? user.name.split(" ")[0] : undefined) ||
     (user?.email ? user.email.split("@")[0] : undefined) ||
-    "Verkäufer";
+    "User";
 
   const kpiCards = useMemo(
     () => [
