@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CONTACT_CUSTOMERS } from "../features/contacts/contactData";
 import { FollowUpPanelDialog } from "../features/followups/FollowUpPanelDialog";
+import { API_CONFIG } from "../services/apiConfig";
 
 const CURRENCY_FORMATTER = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -45,6 +46,9 @@ const summaryCards = [
 const LeadsCustomersPage = () => {
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [followUpConfig, setFollowUpConfig] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const handleOpenFollowUp = (customer) => {
     setFollowUpConfig(buildCustomerFollowUpConfig(customer));
@@ -56,6 +60,55 @@ const LeadsCustomersPage = () => {
     setFollowUpConfig(null);
   };
 
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem("access_token");
+        const res = await fetch(`${API_CONFIG.baseUrl}/leads?customers=true`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        const normalized = list.map((c) => ({
+          id: c.id,
+          name: c.name || "Unbekannt",
+          company: c.company || "–",
+          customer_since: c.customer_since,
+          customer_value: c.customer_value ?? 0,
+          orders_count: c.orders_count ?? 0,
+          last_order_at: c.last_order_at,
+          customer_type: c.customer_type || "kunde",
+        }));
+        setCustomers(normalized);
+      } catch (err) {
+        console.error("Kunden laden fehlgeschlagen", err);
+        setError("Kunden konnten nicht geladen werden – zeige Demo-Daten.");
+        setCustomers(
+          CONTACT_CUSTOMERS.map((c) => ({
+            id: c.id,
+            name: c.name,
+            company: c.segment,
+            customer_since: c.renewalAt,
+            customer_value: c.arr,
+            orders_count: 0,
+            last_order_at: c.renewalAt,
+            customer_type: "kunde",
+          }))
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const data = useMemo(() => customers, [customers]);
+
   return (
     <div className="space-y-8 text-white">
       <header className="space-y-3">
@@ -66,8 +119,8 @@ const LeadsCustomersPage = () => {
           <div>
             <h1 className="text-4xl font-semibold">Kunden</h1>
             <p className="mt-3 text-base text-gray-400">
-              Health Scores, Renewals und Upsell-Plays – alles als Mock-Daten
-              für die Demo.
+              Bestandskunden-Übersicht (status = won). Health/ARR bleiben Demo,
+              falls keine Live-Daten verfügbar sind.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -104,52 +157,60 @@ const LeadsCustomersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {CONTACT_CUSTOMERS.map((customer) => (
+              {data.map((customer) => (
                 <tr
                   key={customer.id}
                   className="border-t border-white/5 transition hover:bg-white/5"
                 >
                   <td className="px-4 py-4">
                     <p className="font-semibold text-white">{customer.name}</p>
-                    <p className="text-xs text-gray-400">{customer.segment}</p>
+                    <p className="text-xs text-gray-400">{customer.company}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="text-sm font-semibold text-emerald-200">
+                      {customer.customer_type === "teampartner" ? "Teampartner" : "Kunde"}
+                    </p>
                     <p className="text-xs text-gray-500">
-                      {customer.lastTouchpoint}
+                      {customer.customer_since
+                        ? `seit ${new Date(customer.customer_since).toLocaleDateString("de-DE")}`
+                        : "seit unbekannt"}
                     </p>
                   </td>
                   <td className="px-4 py-4">
-                    <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${HEALTH_STYLES[customer.health]}`}
-                    >
-                      {formatHealth(customer.health)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <p>{DATE_FORMATTER.format(Date.parse(customer.renewalAt))}</p>
+                    <p className="text-sm text-gray-100">
+                      {customer.last_order_at
+                        ? DATE_FORMATTER.format(Date.parse(customer.last_order_at))
+                        : "—"}
+                    </p>
                     <p className="text-xs text-gray-500">
-                      in {daysUntil(customer.renewalAt)} Tagen
+                      Bestellungen: {customer.orders_count ?? 0}
                     </p>
                   </td>
                   <td className="px-4 py-4">
-                    <p>{customer.expansionPlay}</p>
-                    <p className="text-xs text-gray-500">{customer.adoption}</p>
+                    <p>{CURRENCY_FORMATTER.format(customer.customer_value || 0)}</p>
                   </td>
                   <td className="px-4 py-4">
-                    {CURRENCY_FORMATTER.format(customer.arr)}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="text-sm font-semibold text-white">
-                      {customer.successOwner}
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenFollowUp(customer)}
+                        className="rounded-full border border-emerald-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300 transition hover:bg-emerald-500 hover:text-black"
+                      >
+                        Follow-up
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full border border-slate-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200 transition hover:bg-slate-700"
+                      >
+                        Kontaktieren
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full border border-amber-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-200 transition hover:bg-amber-500 hover:text-black"
+                      >
+                        Upsell
+                      </button>
                     </div>
-                    <p className="text-xs text-gray-500">Customer Success</p>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenFollowUp(customer)}
-                      className="rounded-full border border-emerald-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300 transition hover:bg-emerald-500 hover:text-black"
-                    >
-                      Follow-up
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -171,20 +232,6 @@ const LeadsCustomersPage = () => {
     </div>
   );
 };
-
-function formatHealth(value) {
-  if (value === "healthy") return "Healthy";
-  if (value === "watch") return "Watch";
-  return "Risk";
-}
-
-function daysUntil(value) {
-  const target = Date.parse(value);
-  if (Number.isNaN(target)) {
-    return 0;
-  }
-  return Math.max(0, Math.round((target - Date.now()) / 86_400_000));
-}
 
 function buildCustomerFollowUpConfig(customer) {
   const branchSource = customer.segment || customer.expansionPlay;

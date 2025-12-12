@@ -277,10 +277,7 @@ const App = () => {
                         path="leads/prospects"
                         element={<Navigate to="/leads?view=prospects" replace />}
                       />
-                      <Route
-                        path="leads/customers"
-                        element={<Navigate to="/leads?view=customers" replace />}
-                      />
+                      <Route path="leads/customers" element={<LeadsCustomersPage />} />
                       <Route path="import" element={<ImportPage />} />
                       <Route path="lead-hunter" element={<Navigate to="/leads?view=hunter" replace />} />
                       <Route path="delay-master" element={<DelayMasterPage />} />
