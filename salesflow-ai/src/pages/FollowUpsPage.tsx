@@ -313,7 +313,7 @@ export default function FollowUpsPage() {
     }
 
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`/api/sequences/lead/${leadId}/responded`, {
+    const response = await fetch(`/api/follow-ups/lead/${leadId}/responded`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -333,7 +333,7 @@ export default function FollowUpsPage() {
     }
 
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`/api/sequences/lead/${leadId}/no-response`, {
+    const response = await fetch(`/api/follow-ups/lead/${leadId}/no-response`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -353,7 +353,7 @@ export default function FollowUpsPage() {
     }
 
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`/api/sequences/lead/${leadId}/won`, {
+    const response = await fetch(`/api/follow-ups/lead/${leadId}/completed`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -373,7 +373,7 @@ export default function FollowUpsPage() {
     }
 
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`/api/sequences/lead/${leadId}/lost`, {
+    const response = await fetch(`/api/follow-ups/lead/${leadId}/completed`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
