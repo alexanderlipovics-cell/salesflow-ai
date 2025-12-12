@@ -52,6 +52,7 @@ class ToolExecutor:
             "research_company": self._research_company,
             "schedule_meeting": self._schedule_meeting,
             "prepare_message": self._prepare_message,
+            "save_user_knowledge": self._save_user_knowledge,
         }
 
         if tool_name not in executor_map:
@@ -698,6 +699,78 @@ class ToolExecutor:
             "ai_response": f"[AI generiert spezifische Antwort auf: {objection}]",
             "note": "Implementiere OpenAI Call für personalisierte Einwandbehandlung",
         }
+
+    async def _save_user_knowledge(self, category: str, content: str) -> dict:
+        """Speichert persistente User-Infos in user_knowledge."""
+        now = datetime.utcnow().isoformat()
+        entry = {
+            "id": str(uuid.uuid4()),
+            "user_id": self.user_id,
+            "category": category,
+            "content": content,
+            "created_at": now,
+        }
+
+        try:
+            self.db.table("user_knowledge").insert(entry).execute()
+            return {
+                "success": True,
+                "message": f"✅ Dauerhaft gespeichert: {content}",
+                "category": category,
+            }
+        except Exception as insert_error:  # noqa: BLE001
+            logger.warning("user_knowledge insert failed, trying fallback upsert: %s", insert_error)
+
+        # Fallback: Versuch als Upsert (z.B. wenn user_id unique ist oder preferences-Array genutzt wird)
+        try:
+            existing = (
+                self.db.table("user_knowledge")
+                .select("*")
+                .eq("user_id", self.user_id)
+                .maybe_single()
+                .execute()
+            )
+
+            data = existing.data if existing else None
+            if data and isinstance(data, dict):
+                preferences = data.get("preferences") or []
+                if not isinstance(preferences, list):
+                    preferences = []
+
+                preferences.append(
+                    {
+                        "id": entry["id"],
+                        "category": category,
+                        "content": content,
+                        "created_at": now,
+                    }
+                )
+
+                self.db.table("user_knowledge").update({"preferences": preferences}).eq(
+                    "user_id", self.user_id
+                ).execute()
+
+                return {
+                    "success": True,
+                    "message": f"✅ Dauerhaft gespeichert: {content}",
+                    "category": category,
+                    "stored_in": "preferences",
+                }
+
+            # Wenn kein Datensatz existiert: Upsert anlegen
+            self.db.table("user_knowledge").upsert(entry, on_conflict="user_id").execute()
+            return {
+                "success": True,
+                "message": f"✅ Dauerhaft gespeichert: {content}",
+                "category": category,
+            }
+        except Exception as e:  # noqa: BLE001
+            logger.error("save_user_knowledge failed: %s", e, exc_info=True)
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "❌ Konnte nicht speichern",
+            }
 
     # ─────────────────────────────────────────────────────────
     # ACTIONS

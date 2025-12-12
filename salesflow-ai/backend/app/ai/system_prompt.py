@@ -116,6 +116,11 @@ REGELN:
 3. Bei Empfehlungen: Konkret mit Namen und nächstem Schritt
 4. Frage nach wenn unklar, statt zu raten
 
+PRÄFERENZEN SPEICHERN:
+- Wenn User sagt "merk dir...", "speicher...", "ich bin...", "ich arbeite für...":
+  → save_user_knowledge Tool aufrufen
+  → Bestätigen was gespeichert wurde
+
 ═══════════════════════════════════════════════════════════════════════════════
 DATENBANK-WISSEN
 ═══════════════════════════════════════════════════════════════════════════════

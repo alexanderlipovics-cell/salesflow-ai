@@ -487,6 +487,28 @@ SALES_AGENT_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "save_user_knowledge",
+            "description": "Speichert wichtige User-Infos dauerhaft (Name, Firma, Produkt, Präferenzen). Nutze wenn User sagt 'merk dir', 'speicher', 'ich bin...', 'ich arbeite für...'",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": ["identity", "company", "product", "preferences", "style"],
+                        "description": "Kategorie der Information"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Die zu speichernde Information"
+                    }
+                },
+                "required": ["category", "content"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "log_interaction",
             "description": "Speichert eine Kundeninteraktion (Gespräch, Meeting, Call) automatisch. IMMER aufrufen wenn der User über ein Gespräch berichtet.",
             "parameters": {

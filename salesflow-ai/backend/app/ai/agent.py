@@ -293,50 +293,85 @@ async def run_sales_agent(
             db.table("user_knowledge")
             .select("*")
             .eq("user_id", user_id)
-            .maybe_single()
+            .order("created_at", desc=True)
             .execute()
         )
 
-        if knowledge_result and knowledge_result.data:
-            data = knowledge_result.data
-            context_parts = []
+        records = knowledge_result.data if knowledge_result else []
+        if records:
+            if isinstance(records, dict):
+                records = [records]
 
-            if data.get("company_name"):
-                context_parts.append(f"## Firma: {data['company_name']}")
-                if data.get("company_description"):
-                    context_parts.append(data["company_description"])
+            context_parts: list[str] = []
 
-            if data.get("products"):
-                context_parts.append("\n## Produkte:")
-                for p in data["products"]:
-                    context_parts.append(f"\n### {p.get('name')}")
-                    if p.get("description"):
-                        context_parts.append(p["description"])
-                    if p.get("price"):
-                        context_parts.append(f"Preis: {p['price']}")
-                    if p.get("benefits"):
-                        context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
-                    if p.get("objections"):
-                        for obj in p["objections"]:
-                            context_parts.append(
-                                f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
-                            )
-
-            if data.get("custom_objections"):
-                context_parts.append("\n## Einwandbehandlung:")
-                for obj in data["custom_objections"]:
-                    context_parts.append(
-                        f"- '{obj.get('objection', '')}' → {obj.get('response', '')}"
+            # Legacy Struktur (eine Zeile mit company/products/objections/documents)
+            legacy = next(
+                (
+                    r
+                    for r in records
+                    if isinstance(r, dict)
+                    and any(
+                        key in r
+                        for key in ["company_name", "company_description", "products", "custom_objections", "documents"]
                     )
+                ),
+                None,
+            )
 
-            if data.get("documents"):
-                context_parts.append("\n## Dokumente:")
-                for doc in data["documents"]:
-                    context_parts.append(f"\n### {doc.get('filename')}")
-                    content = (doc.get("content") or "")[:2000]
-                    context_parts.append(content)
+            if legacy:
+                if legacy.get("company_name"):
+                    context_parts.append(f"## Firma: {legacy['company_name']}")
+                    if legacy.get("company_description"):
+                        context_parts.append(legacy["company_description"])
 
-            user_context["user_knowledge"] = "\n".join(context_parts)
+                if legacy.get("products"):
+                    context_parts.append("\n## Produkte:")
+                    for p in legacy["products"]:
+                        context_parts.append(f"\n### {p.get('name')}")
+                        if p.get("description"):
+                            context_parts.append(p["description"])
+                        if p.get("price"):
+                            context_parts.append(f"Preis: {p['price']}")
+                        if p.get("benefits"):
+                            context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
+                        if p.get("objections"):
+                            for obj in p["objections"]:
+                                context_parts.append(
+                                    f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
+                                )
+
+                if legacy.get("custom_objections"):
+                    context_parts.append("\n## Einwandbehandlung:")
+                    for obj in legacy["custom_objections"]:
+                        context_parts.append(
+                            f"- '{obj.get('objection', '')}' → {obj.get('response', '')}"
+                        )
+
+                if legacy.get("documents"):
+                    context_parts.append("\n## Dokumente:")
+                    for doc in legacy["documents"]:
+                        context_parts.append(f"\n### {doc.get('filename')}")
+                        content = (doc.get("content") or "")[:2000]
+                        context_parts.append(content)
+
+            # Neue, einfache Knowledge-Einträge (category + content)
+            simple_entries = [
+                r for r in records if isinstance(r, dict) and r.get("category") and r.get("content")
+            ]
+            if simple_entries:
+                context_parts.append("\n## Persönliche Präferenzen & Notizen:")
+                for item in simple_entries:
+                    date_str = None
+                    created = item.get("created_at") or item.get("updated_at")
+                    if isinstance(created, str):
+                        date_str = created.split("T")[0]
+                    line = f"- [{item.get('category')}] {item.get('content')}"
+                    if date_str:
+                        line += f" ({date_str})"
+                    context_parts.append(line)
+
+            if context_parts:
+                user_context["user_knowledge"] = "\n".join(context_parts)
     except Exception as e:  # pragma: no cover - defensive
         logger.warning(f"Could not load user knowledge: {e}")
 
