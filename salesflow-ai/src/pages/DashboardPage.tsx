@@ -29,7 +29,7 @@ const DashboardPage: React.FC = () => {
   const { kpis, todaysTasks, pipeline, activities, chartData, insights, isLoading } = useDashboardData();
   const hasTasksToday = (todaysTasks ?? []).length > 0;
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -95,6 +95,52 @@ const DashboardPage: React.FC = () => {
 
     checkOnboarding();
   }, [navigate, user]);
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      if (!user?.id) return;
+      try {
+        // Erst user_knowledge lesen (company_description enthält evtl. "Alex Lipovics - ...")
+        const { data: knowledge } = await supabaseClient
+          .from("user_knowledge")
+          .select("company_description")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (knowledge?.company_description) {
+          const name = knowledge.company_description.split(" - ")[0]?.trim();
+          if (name) {
+            setUserName(name.split(" ")[0] || name);
+            return;
+          }
+        }
+
+        // Fallback: users Tabelle
+        const { data: userData } = await supabaseClient
+          .from("users")
+          .select("name, full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (userData?.name || userData?.full_name) {
+          const fullName = (userData.name || userData.full_name || "").trim();
+          if (fullName) {
+            setUserName(fullName.split(" ")[0] || fullName);
+            return;
+          }
+        }
+
+        // Letzter Fallback: Email-Prefix
+        if (user.email) {
+          setUserName(user.email.split("@")[0]);
+        }
+      } catch (err) {
+        console.warn("Dashboard: loadUserName failed", err);
+      }
+    };
+
+    loadUserName();
+  }, [user]);
 
   const firstName =
     userName ||
