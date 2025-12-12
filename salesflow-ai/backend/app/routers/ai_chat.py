@@ -204,13 +204,14 @@ async def chat(
                 logger.error(f"Vision request failed: {exc}", exc_info=True)
                 raise HTTPException(status_code=500, detail=f"Vision request failed: {exc}")
         else:
-            result = await run_sales_agent(
-                message=message,
-                user_id=user_id,
-                db=db,
-                session_id=session_id,
-                message_history=message_history,
-            )
+        logger.info(f"AI Chat: calling run_sales_agent with user_id={user_id}")
+        result = await run_sales_agent(
+            message=message,
+            user_id=user_id,
+            db=db,
+            session_id=session_id,
+            message_history=message_history,
+        )
 
         return ChatResponse(
             message=result["message"],

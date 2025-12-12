@@ -24,14 +24,12 @@ const formatCurrency = (value: number) =>
   Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value || 0);
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { kpis, todaysTasks, pipeline, activities, chartData, insights, isLoading } = useDashboardData();
   const hasTasksToday = (todaysTasks ?? []).length > 0;
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [userName, setUserName] = useState<string | undefined>(undefined);
-
-  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     const checkOnboarding = async () => {
