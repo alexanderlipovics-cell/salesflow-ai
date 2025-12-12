@@ -63,7 +63,10 @@ async def connect_gmail(current_user=Depends(get_current_user)):
     """Generiert Gmail OAuth URL."""
     user_id = _extract_user_id(current_user)
     client_id = os.getenv("GOOGLE_CLIENT_ID")
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    redirect_uri = os.getenv(
+        "GOOGLE_REDIRECT_URI",
+        "https://salesflow-ai.onrender.com/api/auth/google/callback",
+    )
 
     if not client_id or not redirect_uri:
         raise HTTPException(status_code=500, detail="Gmail OAuth nicht konfiguriert")
@@ -108,7 +111,10 @@ async def gmail_callback(code: str, state: str):
     user_id = state
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    redirect_uri = os.getenv(
+        "GOOGLE_REDIRECT_URI",
+        "https://salesflow-ai.onrender.com/api/auth/google/callback",
+    )
 
     async with httpx.AsyncClient() as client:
         token_response = await client.post(
@@ -148,7 +154,7 @@ async def gmail_callback(code: str, state: str):
         }
     ).execute()
 
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    frontend_url = os.getenv("FRONTEND_URL", "https://salesflow-system.com")
     return RedirectResponse(f"{frontend_url}/settings/email?connected=gmail")
 
 

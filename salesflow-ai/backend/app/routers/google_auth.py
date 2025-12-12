@@ -37,7 +37,7 @@ async def google_callback(
     state: str = Query(default=""),
 ):
     """Handle Google OAuth callback."""
-    frontend_url = "https://salesflowai.vercel.app"
+    frontend_url = "https://salesflow-system.com"
 
     try:
         parts = state.split(":", 1)

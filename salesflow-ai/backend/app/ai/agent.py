@@ -329,6 +329,84 @@ async def extract_and_save_learnings(user_id: str, messages: list, response_text
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning(f"extract_and_save_learnings failed: {exc}")
 
+async def load_user_context_parallel(user_id: str, db):
+    """Lädt User-Kontext parallel (Knowledge, Learning Profile, Revenue, Activities, Insights)."""
+
+    async def fetch_knowledge():
+        try:
+            return await asyncio.to_thread(
+                lambda: db.table("user_knowledge")
+                .select("*")
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .execute()
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(f"Could not load user knowledge: {exc}")
+            return exc
+
+    async def fetch_learning_profile():
+        try:
+            return await asyncio.to_thread(
+                lambda: db.table("user_learning_profile")
+                .select("*")
+                .eq("user_id", user_id)
+                .maybe_single()
+                .execute()
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(f"Could not load learning profile: {exc}")
+            return exc
+
+    async def fetch_revenue():
+        try:
+            start_of_month = datetime.now().replace(day=1)
+            return await asyncio.to_thread(
+                lambda: db.table("deals")
+                .select("value")
+                .eq("user_id", user_id)
+                .eq("status", "won")
+                .gte("closed_at", start_of_month.isoformat())
+                .execute()
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(f"Could not load revenue: {exc}")
+            return exc
+
+    async def fetch_recent_activities():
+        try:
+            activity_logger = ActivityLogger(db, user_id)
+            return await activity_logger.get_recent(limit=10)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(f"Could not load recent activities: {exc}")
+            return exc
+
+    async def fetch_learning_insights():
+        try:
+            learning_service = UserLearningService(db)
+            return await learning_service.analyze_conversions(user_id, days_back=30)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(f"Could not load learning insights: {exc}")
+            return exc
+
+    knowledge_result, learning_profile, revenue_result, recent_activities, learning_insights = await asyncio.gather(
+        fetch_knowledge(),
+        fetch_learning_profile(),
+        fetch_revenue(),
+        fetch_recent_activities(),
+        fetch_learning_insights(),
+        return_exceptions=True,
+    )
+
+    return {
+        "knowledge_result": None if isinstance(knowledge_result, Exception) else knowledge_result,
+        "learning_profile": None if isinstance(learning_profile, Exception) else learning_profile,
+        "revenue_result": None if isinstance(revenue_result, Exception) else revenue_result,
+        "recent_activities": [] if isinstance(recent_activities, Exception) else (recent_activities or []),
+        "learning_insights": [] if isinstance(learning_insights, Exception) else (learning_insights or []),
+    }
+
+
 async def run_sales_agent(
     message: str,
     user_id: str,
@@ -338,8 +416,8 @@ async def run_sales_agent(
 ) -> dict:
     """Run the sales agent with function calling."""
 
-    profile_result = (
-        db.table("profiles")
+    profile_result = await asyncio.to_thread(
+        lambda: db.table("profiles")
         .select("name, full_name, vertical, company_id, monthly_revenue_goal")
         .eq("id", user_id)
         .execute()
@@ -357,154 +435,117 @@ async def run_sales_agent(
     )
 
     if user_context.get("company_id"):
-        company = (
-            db.table("companies")
+        company = await asyncio.to_thread(
+            lambda: db.table("companies")
             .select("name, knowledge_base")
             .eq("id", user_context["company_id"])
             .single()
             .execute()
         )
 
-        if company.data:
+        if company and company.data:
             user_context["company_name"] = company.data.get("name")
             user_context["company_knowledge"] = company.data.get("knowledge_base", "")
 
+    context_data = await load_user_context_parallel(user_id, db)
+
     # User-uploaded knowledge base (products, docs, objections, scripts)
-    try:
-        knowledge_result = (
-            db.table("user_knowledge")
-            .select("*")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .execute()
+    knowledge_result = context_data.get("knowledge_result")
+    records = knowledge_result.data if knowledge_result else []
+    if records:
+        if isinstance(records, dict):
+            records = [records]
+
+        context_parts: list[str] = []
+
+        # Legacy Struktur (eine Zeile mit company/products/objections/documents)
+        legacy = next(
+            (
+                r
+                for r in records
+                if isinstance(r, dict)
+                and any(
+                    key in r
+                    for key in ["company_name", "company_description", "products", "custom_objections", "documents"]
+                )
+            ),
+            None,
         )
 
-        records = knowledge_result.data if knowledge_result else []
-        if records:
-            if isinstance(records, dict):
-                records = [records]
+        if legacy:
+            if legacy.get("company_name"):
+                context_parts.append(f"## Firma: {legacy['company_name']}")
+                if legacy.get("company_description"):
+                    context_parts.append(legacy["company_description"])
 
-            context_parts: list[str] = []
+            if legacy.get("products"):
+                context_parts.append("\n## Produkte:")
+                for p in legacy["products"]:
+                    context_parts.append(f"\n### {p.get('name')}")
+                    if p.get("description"):
+                        context_parts.append(p["description"])
+                    if p.get("price"):
+                        context_parts.append(f"Preis: {p['price']}")
+                    if p.get("benefits"):
+                        context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
+                    if p.get("objections"):
+                        for obj in p["objections"]:
+                            context_parts.append(
+                                f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
+                            )
 
-            # Legacy Struktur (eine Zeile mit company/products/objections/documents)
-            legacy = next(
-                (
-                    r
-                    for r in records
-                    if isinstance(r, dict)
-                    and any(
-                        key in r
-                        for key in ["company_name", "company_description", "products", "custom_objections", "documents"]
+            if legacy.get("custom_objections"):
+                context_parts.append("\n## Einwandbehandlung:")
+                for obj in legacy["custom_objections"]:
+                    context_parts.append(
+                        f"- '{obj.get('objection', '')}' → {obj.get('response', '')}"
                     )
-                ),
-                None,
-            )
 
-            if legacy:
-                if legacy.get("company_name"):
-                    context_parts.append(f"## Firma: {legacy['company_name']}")
-                    if legacy.get("company_description"):
-                        context_parts.append(legacy["company_description"])
+            if legacy.get("documents"):
+                context_parts.append("\n## Dokumente:")
+                for doc in legacy["documents"]:
+                    context_parts.append(f"\n### {doc.get('filename')}")
+                    content = (doc.get("content") or "")[:2000]
+                    context_parts.append(content)
 
-                if legacy.get("products"):
-                    context_parts.append("\n## Produkte:")
-                    for p in legacy["products"]:
-                        context_parts.append(f"\n### {p.get('name')}")
-                        if p.get("description"):
-                            context_parts.append(p["description"])
-                        if p.get("price"):
-                            context_parts.append(f"Preis: {p['price']}")
-                        if p.get("benefits"):
-                            context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
-                        if p.get("objections"):
-                            for obj in p["objections"]:
-                                context_parts.append(
-                                    f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
-                                )
+        # Neue, einfache Knowledge-Einträge (category + content)
+        simple_entries = [
+            r for r in records if isinstance(r, dict) and r.get("category") and r.get("content")
+        ]
+        if simple_entries:
+            context_parts.append("\n## Persönliche Präferenzen & Notizen:")
+            for item in simple_entries:
+                date_str = None
+                created = item.get("created_at") or item.get("updated_at")
+                if isinstance(created, str):
+                    date_str = created.split("T")[0]
+                line = f"- [{item.get('category')}] {item.get('content')}"
+                if date_str:
+                    line += f" ({date_str})"
+                context_parts.append(line)
 
-                if legacy.get("custom_objections"):
-                    context_parts.append("\n## Einwandbehandlung:")
-                    for obj in legacy["custom_objections"]:
-                        context_parts.append(
-                            f"- '{obj.get('objection', '')}' → {obj.get('response', '')}"
-                        )
-
-                if legacy.get("documents"):
-                    context_parts.append("\n## Dokumente:")
-                    for doc in legacy["documents"]:
-                        context_parts.append(f"\n### {doc.get('filename')}")
-                        content = (doc.get("content") or "")[:2000]
-                        context_parts.append(content)
-
-            # Neue, einfache Knowledge-Einträge (category + content)
-            simple_entries = [
-                r for r in records if isinstance(r, dict) and r.get("category") and r.get("content")
-            ]
-            if simple_entries:
-                context_parts.append("\n## Persönliche Präferenzen & Notizen:")
-                for item in simple_entries:
-                    date_str = None
-                    created = item.get("created_at") or item.get("updated_at")
-                    if isinstance(created, str):
-                        date_str = created.split("T")[0]
-                    line = f"- [{item.get('category')}] {item.get('content')}"
-                    if date_str:
-                        line += f" ({date_str})"
-                    context_parts.append(line)
-
-            if context_parts:
-                user_context["user_knowledge"] = "\n".join(context_parts)
-    except Exception as e:  # pragma: no cover - defensive
-        logger.warning(f"Could not load user knowledge: {e}")
+        if context_parts:
+            user_context["user_knowledge"] = "\n".join(context_parts)
 
     # User learning profile (Präferenzen)
-    try:
-        learning_profile = (
-            db.table("user_learning_profile")
-            .select("*")
-            .eq("user_id", user_id)
-            .maybe_single()
-            .execute()
+    learning_profile = context_data.get("learning_profile")
+    lp = learning_profile.data if learning_profile else None
+    if lp:
+        user_context["learning_profile"] = (
+            f"Kommunikationsstil: {lp.get('preferred_tone') or lp.get('tone') or 'professionell'}\n"
+            f"Bevorzugte Nachrichtenlänge: {lp.get('avg_message_length', 'mittel')}\n"
+            f"Emoji-Nutzung: {lp.get('emoji_usage_level', 'wenig')}\n"
+            f"Sales-Stil: {lp.get('sales_style', 'beratend')}"
         )
-        lp = learning_profile.data if learning_profile else None
-        if lp:
-            user_context["learning_profile"] = (
-                f"Kommunikationsstil: {lp.get('preferred_tone') or lp.get('tone') or 'professionell'}\n"
-                f"Bevorzugte Nachrichtenlänge: {lp.get('avg_message_length', 'mittel')}\n"
-                f"Emoji-Nutzung: {lp.get('emoji_usage_level', 'wenig')}\n"
-                f"Sales-Stil: {lp.get('sales_style', 'beratend')}"
-            )
-    except Exception as e:
-        logger.warning(f"Could not load learning profile: {e}")
 
-    start_of_month = datetime.now().replace(day=1)
-    revenue = (
-        db.table("deals")
-        .select("value")
-        .eq("user_id", user_id)
-        .eq("status", "won")
-        .gte("closed_at", start_of_month.isoformat())
-        .execute()
-    )
-
+    revenue = context_data.get("revenue_result")
     revenue_data = revenue.data if revenue else []
     user_context["current_revenue"] = sum([d.get("value") or 0 for d in revenue_data])
 
     # Activity & Learning Context
     learning_context = ""
-    try:
-        activity_logger = ActivityLogger(db, user_id)
-        recent_activities = await activity_logger.get_recent(limit=10)
-    except Exception as e:
-        recent_activities = []
-        logger.warning(f"Could not load recent activities: {e}")
-
-    try:
-        learning_service = UserLearningService(db)
-        learning_insights = await learning_service.analyze_conversions(user_id, days_back=30)
-    except Exception as e:
-        learning_insights = []
-        logger.warning(f"Could not load learning insights: {e}")
+    recent_activities = context_data.get("recent_activities") or []
+    learning_insights = context_data.get("learning_insights") or []
 
     # Smart Routing: Lead vs Web vs Knowledge
     search_type = determine_search_type(message, user_id, db)

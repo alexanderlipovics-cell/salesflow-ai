@@ -24,7 +24,11 @@ class GoogleAuthService:
     def __init__(self) -> None:
         self.client_id = os.getenv("GOOGLE_CLIENT_ID")
         self.client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-        self.redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+        # Fallback auf produktiven Callback, falls ENV nicht gesetzt oder falsch
+        self.redirect_uri = os.getenv(
+            "GOOGLE_REDIRECT_URI",
+            "https://salesflow-ai.onrender.com/api/auth/google/callback",
+        )
 
         if not all([self.client_id, self.client_secret, self.redirect_uri]):
             raise ValueError("Missing Google OAuth environment variables")
