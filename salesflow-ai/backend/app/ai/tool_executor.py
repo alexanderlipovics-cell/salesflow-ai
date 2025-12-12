@@ -54,6 +54,7 @@ class ToolExecutor:
             "prepare_message": self._prepare_message,
             "save_user_knowledge": self._save_user_knowledge,
             "convert_to_customer": self._convert_to_customer,
+            "generate_sequence_messages": self._generate_sequence_messages,
         }
 
         if tool_name not in executor_map:
@@ -1487,6 +1488,77 @@ class ToolExecutor:
             "customer_type": update_data.get("customer_type"),
             "customer_value": update_data.get("customer_value"),
         }
+
+    async def _generate_sequence_messages(
+        self,
+        lead_id: str = None,
+        lead_name: str = None,
+    ) -> str:
+        """Generiert personalisierte Nachrichten für Follow-up Sequenzen."""
+
+        resolved_lead_id = lead_id
+        lead = None
+
+        if resolved_lead_id:
+            lead = (
+                self.db.table("leads")
+                .select("*")
+                .eq("id", resolved_lead_id)
+                .eq("user_id", self.user_id)
+                .single()
+                .execute()
+            )
+        elif lead_name:
+            lead = (
+                self.db.table("leads")
+                .select("*")
+                .ilike("name", f"%{lead_name}%")
+                .eq("user_id", self.user_id)
+                .limit(1)
+                .execute()
+            )
+            if lead and lead.data:
+                resolved_lead_id = lead.data[0]["id"] if isinstance(lead.data, list) else lead.data.get("id")
+
+        if not lead or not lead.data or not resolved_lead_id:
+            return "Lead nicht gefunden"
+
+        lead_data = lead.data[0] if isinstance(lead.data, list) else lead.data
+
+        followups = (
+            self.db.table("followup_suggestions")
+            .select("*")
+            .eq("lead_id", resolved_lead_id)
+            .eq("status", "pending")
+            .order("due_at")
+            .execute()
+        )
+
+        if not followups or not followups.data:
+            return "Keine offenen Follow-ups für diesen Lead"
+
+        messages_generated: List[str] = []
+        for i, fu in enumerate(followups.data, 1):
+            if i == 1:
+                message = (
+                    f"Hey {lead_data.get('name', 'du')}, ich wollte nochmal kurz nachhaken – "
+                    "hast du dir das Thema schon ansehen können? 🙂"
+                )
+            elif i == 2:
+                message = (
+                    f"Hi {lead_data.get('name', 'du')}, kurze Frage: Ist das Thema noch relevant für dich? "
+                    "Hatte gerade ein gutes Gespräch mit jemandem in ähnlicher Situation."
+                )
+            else:
+                message = (
+                    f"Hey {lead_data.get('name', 'du')}, ich räume gerade meine Liste auf – "
+                    "soll ich das Thema bei dir noch offen halten oder können wir die Akte erstmal schließen?"
+                )
+
+            self.db.table("followup_suggestions").update({"message": message}).eq("id", fu["id"]).execute()
+            messages_generated.append(f"Follow-up #{i}: {message[:50]}...")
+
+        return f"✅ {len(messages_generated)} Nachrichten generiert:\n" + "\n".join(messages_generated)
 
     async def _start_power_hour(
         self,

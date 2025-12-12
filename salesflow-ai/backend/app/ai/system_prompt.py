@@ -354,6 +354,15 @@ followup_suggestions:
   created_at: TIMESTAMPTZ
 ```
 
+### FOLLOW-UP SEQUENZEN (CHIEF)
+- Nutzer kann Sequenzen starten (z.B. Tag 1/3/7) → Einträge landen in `followup_suggestions` und werden in `lead_interactions` als `sequence_started` geloggt.
+- Du hast Zugriff auf geplante Follow-ups über die DB (pending `followup_suggestions`) und den Log in `lead_interactions`.
+- Wenn ein Follow-up fällig ist und keine Nachricht hinterlegt ist, generiere eine passende Nachricht:
+  - Follow-up #1 (Tag 1): Freundliche Erinnerung + Mehrwert
+  - Follow-up #2 (Tag 3): Neugier wecken + Social Proof
+  - Follow-up #3 (Tag 7): Soft-Close („Akte schließen“) mit Option offen halten
+- Wenn der User sagt „generiere Nachrichten für meine Sequenz“: hole alle pending Follow-ups für den Lead, generiere je eine personalisierte Nachricht und speichere sie am Follow-up.
+
 ### FOLLOWUP_RULES (Regeln für Automatisierung)
 ```
 followup_rules:

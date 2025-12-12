@@ -32,11 +32,11 @@ from app.core.security import get_current_active_user
 from app.core.deps import get_supabase
 from app.core.security.main import get_current_user
 from app.core.deps import get_supabase as get_db
-from datetime import datetime, timedelta
 from app.services.activity_logger import ActivityLogger
 import uuid
 import time
 import logging
+from fastapi import HTTPException
 
 router = APIRouter(prefix="/follow-ups", tags=["Follow-Ups"])
 logger = logging.getLogger(__name__)
@@ -71,6 +71,19 @@ def get_engine() -> FollowUpEngine:
             tz_service=tz_service,
         )
     return _engine_singleton
+
+
+def _extract_user_id(current_user) -> str:
+    """Extrahiert die User-ID aus dem aktuellen User-Objekt oder Dict."""
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="User nicht authentifiziert")
+    if isinstance(current_user, dict):
+        user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub") or current_user.get("team_member_id")
+    else:
+        user_id = getattr(current_user, "id", None) or getattr(current_user, "user_id", None)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User nicht authentifiziert")
+    return str(user_id)
 
 
 # ============================================================================
@@ -179,6 +192,65 @@ async def start_sequence(
         "success": True,
         "message": f"Sequenz mit {created} Follow-ups gestartet",
         "created": created,
+    }
+
+
+@router.post("/{lead_id}/start-sequence")
+async def start_sequence_v2(
+    lead_id: str,
+    current_user=Depends(get_current_active_user),
+    db=Depends(get_db),
+):
+    """Startet eine Follow-up Sequenz für einen Lead (Tag 1, 3, 7)."""
+    user_id = _extract_user_id(current_user)
+
+    lead = (
+        db.table("leads")
+        .select("*")
+        .eq("id", lead_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+
+    if not lead or not lead.data:
+        raise HTTPException(status_code=404, detail="Lead nicht gefunden")
+
+    now = datetime.utcnow()
+    followups = []
+    for i, days in enumerate([1, 3, 7], 1):
+        due_date = now + timedelta(days=days)
+        followups.append(
+            {
+                "user_id": user_id,
+                "lead_id": lead_id,
+                "title": f"Follow-up #{i} - {lead.data.get('name', 'Lead')}",
+                "message": "",
+                "due_at": due_date.isoformat(),
+                "status": "pending",
+                "priority": "medium",
+                "channel": "WHATSAPP",
+                "source": "USER_SEQUENCE",
+            }
+        )
+
+    result = db.table("followup_suggestions").insert(followups).execute()
+
+    db.table("lead_interactions").insert(
+        {
+            "user_id": user_id,
+            "lead_id": lead_id,
+            "interaction_type": "sequence_started",
+            "raw_notes": f"Follow-up Sequenz gestartet: {len(followups)} Follow-ups geplant für Tag 1, 3, 7",
+            "created_at": now.isoformat(),
+        }
+    ).execute()
+
+    created_count = len(result.data) if result and result.data else 0
+    return {
+        "success": True,
+        "created": created_count,
+        "message": f"Sequenz mit {created_count} Follow-ups erstellt",
     }
 
 

@@ -863,5 +863,20 @@ SALES_AGENT_TOOLS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_sequence_messages",
+            "description": "Generiert personalisierte Nachrichten für eine Follow-up Sequenz. Nutze wenn User Sequenz-Nachrichten braucht.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_id": {"type": "string", "description": "ID des Leads"},
+                    "lead_name": {"type": "string", "description": "Name des Leads falls ID unbekannt"}
+                },
+                "required": []
+            }
+        }
+    },
 ]
 
