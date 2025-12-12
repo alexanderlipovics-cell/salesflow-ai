@@ -90,6 +90,8 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
     try {
       const response = await authService.login(credentials);
+      authFailedRef.current = false; // reset vorherige Fehler-Flags
+      isFetchingRef.current = false;
       setUser(response.user);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login fehlgeschlagen';

@@ -27,6 +27,8 @@ const LoginPage: React.FC = () => {
     try {
       console.log('LoginPage: Calling login function...');
       await login({ email, password });
+      // kleine Wartezeit, bis Tokens sicher gespeichert sind
+      await new Promise((resolve) => setTimeout(resolve, 100));
       // Onboarding Check
       const { data: userData } = await supabaseClient.auth.getUser();
       const userId = userData?.user?.id;

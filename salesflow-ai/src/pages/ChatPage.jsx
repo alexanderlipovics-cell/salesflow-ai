@@ -1084,7 +1084,7 @@ const ChatPage = () => {
 
   return (
     <main className="flex-1 bg-slate-950">
-      <div className="mx-auto flex h-full max-w-7xl flex-col gap-6 px-6 py-8 lg:flex-row">
+      <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-6 py-8">
         {/* HAUPTBEREICH - Chat */}
         <section className="flex flex-1 flex-col gap-4">
           {/* Header */}
@@ -1244,6 +1244,17 @@ const ChatPage = () => {
                   <div className="whitespace-pre-wrap break-words">
                     {renderMessageWithLinks(cleanMessageContent(message.content, message.deep_link))}
                   </div>
+                  {message.role === "assistant" && (
+                    <button
+                      type="button"
+                      onClick={() => speak(message.content)}
+                      className="mt-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                      title="Vorlesen"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                      Vorlesen
+                    </button>
+                  )}
                   {message.role === "assistant" && (
                     <WhatsAppMessageActions
                       message={message.content}
@@ -1512,7 +1523,8 @@ const ChatPage = () => {
           </form>
         </section>
 
-        {/* SIDEBAR - Kontext */}
+        {/* SIDEBAR - Kontext (hidden) */}
+        {false && (
         <aside className="w-full lg:w-96 space-y-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -1800,6 +1812,7 @@ const ChatPage = () => {
             </p>
           </div>
         </aside>
+        )}
       </div>
 
       <SendMessageModal
