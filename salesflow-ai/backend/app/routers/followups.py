@@ -107,6 +107,7 @@ async def mark_responded(
         .eq("status", "pending")
         .execute()
     )
+    db.table("leads").update({"status": "contacted"}).eq("id", lead_id).eq("user_id", user_id).execute()
     updated = len(result.data) if result and result.data else 0
     return {"success": True, "updated": updated}
 
@@ -127,6 +128,7 @@ async def mark_completed(
         .eq("status", "pending")
         .execute()
     )
+    db.table("leads").update({"status": "won"}).eq("id", lead_id).eq("user_id", user_id).execute()
     updated = len(result.data) if result and result.data else 0
     return {"success": True, "updated": updated}
 
@@ -134,7 +136,7 @@ async def mark_completed(
 @router.post("/lead/{lead_id}/no-response")
 async def mark_no_response(
     lead_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_active_user),
     db=Depends(get_db),
 ):
     """Markiert als keine Antwort erhalten und plant neuen Follow-up."""
@@ -142,6 +144,7 @@ async def mark_no_response(
 
     # Aktuellen pending Follow-up auf no_response setzen
     db.table("followup_suggestions").update({"status": "no_response"}).eq("lead_id", lead_id).eq("user_id", user_id).eq("status", "pending").execute()
+    db.table("leads").update({"last_outreach_at": datetime.now().isoformat()}).eq("id", lead_id).eq("user_id", user_id).execute()
 
     # Neues Follow-up in 3 Tagen erstellen
     db.table("followup_suggestions").insert(
