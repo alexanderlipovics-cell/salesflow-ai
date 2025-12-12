@@ -31,14 +31,17 @@ const DashboardPage: React.FC = () => {
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [userName, setUserName] = useState<string | undefined>(undefined);
 
+  const { user, loading: authLoading } = useAuth();
+
   useEffect(() => {
     const checkOnboarding = async () => {
       try {
+        if (!user) {
+          return;
+        }
         const { data: userData } = await supabaseClient.auth.getUser();
         const authUser = userData?.user;
         if (!authUser) {
-          console.warn("Dashboard: no auth user -> redirect /login");
-          navigate("/login", { replace: true });
           return;
         }
 
@@ -61,7 +64,6 @@ const DashboardPage: React.FC = () => {
           return;
         }
       } catch {
-        // Falls etwas schiefgeht, weiter zum Dashboard aber mit Fallback-Namen
         const fallback =
           user?.first_name ||
           user?.firstName ||
@@ -145,7 +147,7 @@ const DashboardPage: React.FC = () => {
       </div>
     );
 
-  if (isLoading || checkingOnboarding) {
+  if (authLoading || isLoading || checkingOnboarding) {
     return <DashboardSkeleton />;
   }
 
