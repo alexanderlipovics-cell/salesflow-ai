@@ -100,7 +100,9 @@ class ToolExecutor:
         )
 
         if status:
-            query = query.eq("status", status)
+            skip_filter_keywords = ["all", "alle", "any", "meine", "show", "zeig", ""]
+            if status.lower() not in skip_filter_keywords:
+                query = query.eq("status", status)
 
         if company:
             query = query.ilike("company", f"%{company}%")
