@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CONTACT_CUSTOMERS } from "../features/contacts/contactData";
 import { FollowUpPanelDialog } from "../features/followups/FollowUpPanelDialog";
 import { API_CONFIG } from "../services/apiConfig";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 
 const CURRENCY_FORMATTER = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -19,6 +20,12 @@ const HEALTH_STYLES = {
   healthy: "bg-emerald-500/10 text-emerald-200 border-emerald-500/40",
   watch: "bg-yellow-500/10 text-yellow-200 border-yellow-500/40",
   risk: "bg-red-500/10 text-red-200 border-red-500/40",
+};
+
+const daysUntil = (dateLike) => {
+  if (!dateLike) return Number.POSITIVE_INFINITY;
+  const dt = typeof dateLike === "string" ? parseISO(dateLike) : new Date(dateLike);
+  return differenceInCalendarDays(dt, new Date());
 };
 
 const summaryCards = [

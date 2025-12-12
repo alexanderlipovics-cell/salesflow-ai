@@ -132,16 +132,14 @@ export const useFollowUpTasks = () => {
         return taskToUpdate ? prev.filter((task) => task.id !== taskId) : prev;
       });
 
-      if (!taskToUpdate) {
-        const message = "Aufgabe konnte nicht gefunden werden.";
-        setError(message);
-        throw new Error(message);
-      }
-
       try {
         // Update status via backend suggestion action
         const action = nextStatus === "done" ? "send" : "skip";
         await markFollowupSuggestion(taskId, action);
+        // Falls Task nicht lokal gefunden wurde, nach erfolgreichem Call neu laden
+        if (!taskToUpdate) {
+          await refetch();
+        }
       } catch (err) {
         // Rollback on failure
         setTasks(previousTasks);

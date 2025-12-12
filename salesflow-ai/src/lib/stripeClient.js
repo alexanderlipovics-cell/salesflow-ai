@@ -19,9 +19,13 @@ export const getStripe = () => {
 
 const callStripeFunction = async (payload = {}) => {
   try {
+    const token = (typeof localStorage !== "undefined" && localStorage.getItem("access_token")) || null;
     const response = await fetch(STRIPE_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(payload),
     });
 
