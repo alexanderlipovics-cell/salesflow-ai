@@ -10,7 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
+from app.core.security import get_current_active_user
 from app.supabase_client import get_supabase_client
 
 
@@ -59,7 +59,7 @@ def _parse_email_address(raw: Optional[str]) -> str:
 
 # --- OAuth Flow ---
 @router.get("/connect/gmail")
-async def connect_gmail(current_user=Depends(get_current_user)):
+async def connect_gmail(current_user=Depends(get_current_active_user)):
     """Generiert Gmail OAuth URL."""
     user_id = _extract_user_id(current_user)
     client_id = os.getenv("GOOGLE_CLIENT_ID")
@@ -85,7 +85,7 @@ async def connect_gmail(current_user=Depends(get_current_user)):
 
 
 @router.get("/connect/outlook")
-async def connect_outlook(current_user=Depends(get_current_user)):
+async def connect_outlook(current_user=Depends(get_current_active_user)):
     """Generiert Outlook OAuth URL."""
     user_id = _extract_user_id(current_user)
     client_id = os.getenv("MICROSOFT_CLIENT_ID")
@@ -210,7 +210,7 @@ async def outlook_callback(code: str, state: str):
 
 # --- Email Accounts ---
 @router.get("/accounts")
-async def list_email_accounts(current_user=Depends(get_current_user)):
+async def list_email_accounts(current_user=Depends(get_current_active_user)):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
@@ -224,7 +224,7 @@ async def list_email_accounts(current_user=Depends(get_current_user)):
 
 
 @router.delete("/accounts/{account_id}")
-async def disconnect_email_account(account_id: str, current_user=Depends(get_current_user)):
+async def disconnect_email_account(account_id: str, current_user=Depends(get_current_active_user)):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
@@ -234,7 +234,7 @@ async def disconnect_email_account(account_id: str, current_user=Depends(get_cur
 
 # --- Email Sync ---
 @router.post("/sync")
-async def sync_emails(background_tasks: BackgroundTasks, current_user=Depends(get_current_user)):
+async def sync_emails(background_tasks: BackgroundTasks, current_user=Depends(get_current_active_user)):
     user_id = _extract_user_id(current_user)
     background_tasks.add_task(sync_user_emails, user_id)
     return {"message": "Sync gestartet"}
@@ -383,7 +383,7 @@ async def list_emails(
     lead_id: Optional[str] = Query(default=None, alias="lead_id"),
     limit: int = 50,
     offset: int = 0,
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_active_user),
 ):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
@@ -403,7 +403,7 @@ async def list_emails(
 
 
 @router.get("/{email_id}")
-async def get_email(email_id: str, current_user=Depends(get_current_user)):
+async def get_email(email_id: str, current_user=Depends(get_current_active_user)):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
@@ -433,7 +433,7 @@ class SendEmailRequest(BaseModel):
 
 
 @router.post("/send")
-async def send_email(request: SendEmailRequest, current_user=Depends(get_current_user)):
+async def send_email(request: SendEmailRequest, current_user=Depends(get_current_active_user)):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
@@ -569,7 +569,7 @@ async def track_email_open(tracking_id: str):
 
 # --- Templates ---
 @router.get("/templates")
-async def list_templates(current_user=Depends(get_current_user)):
+async def list_templates(current_user=Depends(get_current_active_user)):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
@@ -591,7 +591,7 @@ class CreateTemplateRequest(BaseModel):
 
 
 @router.post("/templates")
-async def create_template(request: CreateTemplateRequest, current_user=Depends(get_current_user)):
+async def create_template(request: CreateTemplateRequest, current_user=Depends(get_current_active_user)):
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
