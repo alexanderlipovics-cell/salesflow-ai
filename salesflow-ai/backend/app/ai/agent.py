@@ -481,18 +481,24 @@ async def run_sales_agent(
             if legacy.get("products"):
                 context_parts.append("\n## Produkte:")
                 for p in legacy["products"]:
-                    context_parts.append(f"\n### {p.get('name')}")
-                    if p.get("description"):
-                        context_parts.append(p["description"])
-                    if p.get("price"):
-                        context_parts.append(f"Preis: {p['price']}")
-                    if p.get("benefits"):
-                        context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
-                    if p.get("objections"):
-                        for obj in p["objections"]:
-                            context_parts.append(
-                                f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
-                            )
+                    if isinstance(p, dict):
+                        context_parts.append(f"\n### {p.get('name', 'Produkt')}")
+                        if p.get("description"):
+                            context_parts.append(p["description"])
+                        if p.get("price"):
+                            context_parts.append(f"Preis: {p['price']}")
+                        if p.get("benefits"):
+                            context_parts.append(f"Vorteile: {', '.join(p['benefits'])}")
+                        if p.get("objections"):
+                            for obj in p["objections"]:
+                                if isinstance(obj, dict):
+                                    context_parts.append(
+                                        f"- Einwand '{obj.get('objection', '')}': {obj.get('response', '')}"
+                                    )
+                                elif isinstance(obj, str):
+                                    context_parts.append(f"- Einwand: {obj}")
+                    elif isinstance(p, str):
+                        context_parts.append(f"\n### {p}")
 
             if legacy.get("custom_objections"):
                 context_parts.append("\n## Einwandbehandlung:")
