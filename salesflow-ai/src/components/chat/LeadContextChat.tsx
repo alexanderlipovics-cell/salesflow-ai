@@ -193,9 +193,37 @@ export function LeadContextChat({
     }
   }, [loading]);
 
+  // Paste-Handler für Bilder (Strg+V)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (!file) continue;
+          e.preventDefault();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setUploadedImage(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    };
+
+    el.addEventListener('paste', handlePaste as EventListener);
+    return () => el.removeEventListener('paste', handlePaste as EventListener);
+  }, []);
+
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed && !uploadedImage) return;
+    if (sending) return;
 
     setInput('');
     await sendMessage(trimmed, uploadedImage || undefined);
