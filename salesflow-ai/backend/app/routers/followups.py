@@ -94,7 +94,7 @@ def _extract_user_id(current_user) -> str:
 @router.post("/lead/{lead_id}/responded")
 async def mark_responded(
     lead_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_active_user),
     db=Depends(get_db),
 ):
     """Markiert Follow-up als beantwortet."""
@@ -114,7 +114,7 @@ async def mark_responded(
 @router.post("/lead/{lead_id}/completed")
 async def mark_completed(
     lead_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_active_user),
     db=Depends(get_db),
 ):
     """Markiert Follow-up als erledigt."""

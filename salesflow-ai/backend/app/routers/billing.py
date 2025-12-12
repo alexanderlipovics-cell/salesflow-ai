@@ -29,8 +29,15 @@ from app.services.stripe_service import (
     BillingInterval,
 )
 from app.core.security import get_current_user
+from app.core.config import get_settings
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+stripe_router = APIRouter(tags=["stripe"])
+
+
+def _get_frontend_url():
+    settings = get_settings()
+    return getattr(settings, "frontend_url", None) or "https://salesflow-system.com"
 
 
 # ==================== REQUEST/RESPONSE MODELS ====================
@@ -345,6 +352,70 @@ async def create_checkout_session(
         return CheckoutResponse(checkout_url=checkout_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@stripe_router.post("/stripe")
+async def stripe_proxy(
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    stripe_service: StripeService = Depends(get_stripe_service),
+):
+    """
+    Kompatibler Stripe-Proxy für das Frontend (/api/stripe).
+    Unterstützte actions:
+    - create-checkout: erwartet plan (starter/pro/enterprise) und interval (monthly/yearly)
+    - create-portal: öffnet Billing-Portal
+    - get-subscription: liefert aktive Subscription (falls vorhanden)
+    """
+    action = (payload or {}).get("action")
+    frontend_url = _get_frontend_url()
+
+    if action == "create-checkout":
+        plan_raw = (payload.get("plan") or payload.get("priceId") or "pro").lower()
+        interval_raw = (payload.get("interval") or "monthly").lower()
+        try:
+            plan = PlanTier(plan_raw)
+        except Exception:
+            plan = PlanTier.PRO
+        try:
+            interval = BillingInterval(interval_raw)
+        except Exception:
+            interval = BillingInterval.MONTHLY
+
+        success_url = payload.get("successUrl") or f"{frontend_url}/billing/success"
+        cancel_url = payload.get("cancelUrl") or f"{frontend_url}/billing/cancel"
+
+        checkout_url = await stripe_service.create_checkout_session(
+            user_id=str(current_user["id"]),
+            email=current_user.get("email"),
+            plan=plan,
+            interval=interval,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        return {"checkoutUrl": checkout_url}
+
+    if action == "create-portal":
+        customer = await stripe_service.get_or_create_customer(
+            user_id=str(current_user["id"]),
+            email=current_user.get("email"),
+        )
+        return_url = payload.get("returnUrl") or f"{frontend_url}/billing"
+        portal_url = await stripe_service.create_billing_portal_session(
+            customer.id,
+            return_url,
+        )
+        return {"portalUrl": portal_url}
+
+    if action == "get-subscription":
+        customer = await stripe_service.get_or_create_customer(
+            user_id=str(current_user["id"]),
+            email=current_user.get("email"),
+        )
+        subs = await stripe_service.get_customer_subscriptions(customer.id, status="active")
+        return subs[0] if subs else {}
+
+    raise HTTPException(status_code=400, detail="Unsupported action")
 
 
 @router.post("/billing-portal", response_model=BillingPortalResponse)

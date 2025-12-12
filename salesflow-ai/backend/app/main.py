@@ -378,6 +378,7 @@ from .routers.proposals import router as proposals_router  # 📄 Angebots-PDFs
 from .routers.email_sync import router as email_sync_router  # 📧 Email Sync & Tracking
 from .routers.interactions import router as interactions_router  # 📊 User Interactions Tracking
 from .routers.dashboard import router as dashboard_router  # 📊 Dashboard Data
+from .routers.billing import router as billing_router, stripe_router  # 💳 Billing & Stripe
 from .api.zapier import router as zapier_router  # 🔌 Zapier Integration
 from .routers.ai_usage import router as ai_usage_router  # 🧾 AI Usage Limits
 from .routers.stubs import router as stubs_router  # Temporary stub endpoints
@@ -454,6 +455,8 @@ app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
 app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracking
 app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking
 app.include_router(dashboard_router, prefix="/api")  # 📊 Dashboard Data
+app.include_router(billing_router, prefix="/api")  # 💳 Billing management
+app.include_router(stripe_router, prefix="/api")  # 💳 Stripe proxy (/api/stripe)
 app.include_router(zapier_router)  # 🔌 Zapier Integration (Router bringt eigenes Prefix mit)
 app.include_router(ai_usage_router)  # 🧾 AI Usage Status
 app.include_router(stubs_router)  # Temporary stub endpoints
