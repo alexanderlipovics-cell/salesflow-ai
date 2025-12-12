@@ -20,6 +20,7 @@ class ToolExecutor:
 
         executor_map = {
             "query_leads": self._query_leads,
+            "get_leads": self._query_leads,  # alias for legacy prompt wording
             "get_lead_details": self._get_lead_details,
             "query_follow_ups": self._query_follow_ups,
             "get_followup_suggestions": self._get_followup_suggestions,
@@ -56,7 +57,7 @@ class ToolExecutor:
             return {"error": f"Unknown tool: {tool_name}"}
 
         try:
-            logger.info(f"Executing tool: {tool_name} with args: {arguments}")
+            logger.info(f"Executing tool: {tool_name} with args: {arguments}, user_id={self.user_id}")
             result = await executor_map[tool_name](**arguments)
             logger.info(f"Tool {tool_name} result: {result}")
             return result
@@ -79,9 +80,24 @@ class ToolExecutor:
     ) -> dict:
         """Query leads with filters."""
 
-        query = self.db.table("leads").select(
-            "id, name, email, phone, company, status, temperature, created_at, tags"
-        ).eq("user_id", self.user_id)
+        logger.info(
+            "query_leads start",
+            extra={
+                "user_id": self.user_id,
+                "status": status,
+                "company": company,
+                "tag": tag,
+                "hot_only": hot_only,
+                "limit": limit,
+                "order_by": order_by,
+            },
+        )
+
+        query = (
+            self.db.table("leads")
+            .select("id, name, email, phone, company, status, temperature, created_at, tags")
+            .eq("user_id", self.user_id)
+        )
 
         if status:
             query = query.eq("status", status)
@@ -102,11 +118,15 @@ class ToolExecutor:
         query = query.limit(limit)
 
         result = query.execute()
+        leads_data = result.data if result else []
+        count = len(leads_data) if leads_data else 0
 
-        return {
-            "count": len(result.data) if result and result.data else 0,
-            "leads": result.data if result else [],
-        }
+        logger.info(
+            "query_leads done",
+            extra={"user_id": self.user_id, "count": count},
+        )
+
+        return {"count": count, "leads": leads_data or []}
 
     async def _get_lead_details(
         self,
