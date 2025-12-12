@@ -207,6 +207,61 @@ async def chat(
                 else []
             )
 
+        # User-Kontext für Prompt (mit Gründer-Spezialfall)
+        user_email = ""
+        company_name = ""
+        vertical = ""
+        user_context_msg = None
+        try:
+            user_result = db.table("users").select("*").eq("id", user_id).maybe_single().execute()
+            logger.info(f"AI Chat user lookup for {user_id}: {user_result.data}")
+            if user_result and user_result.data:
+                user_data = user_result.data
+                user_email = user_data.get("email") or ""
+                company_name = user_data.get("company_name") or user_data.get("company") or ""
+                vertical = user_data.get("vertical") or ""
+                user_name = (
+                    user_data.get("full_name")
+                    or user_data.get("name")
+                    or user_data.get("display_name")
+                    or user_name
+                )
+        except Exception as e:
+            logger.warning(f"AI Chat could not load user name for {user_id}: {e}")
+
+        is_founder = user_email.lower() == "alexander.lipovics@gmail.com"
+        if is_founder:
+            user_context_msg = {
+                "role": "system",
+                "content": (
+                    "ÜBER DEN NUTZER (GRÜNDER):\n"
+                    "- Name: Alex Lipovics\n"
+                    "- Rolle: Gründer von Sales Flow AI\n"
+                    "- Produkt: Sales Flow AI (KI-CRM für Sales-Profis)\n"
+                    "- Ziel: Sales Flow AI verkaufen/demonstrieren\n\n"
+                    "WICHTIG FÜR NACHRICHTEN:\n"
+                    "- Absender immer: \"Alex Lipovics\" oder \"Alex\"\n"
+                    "- Produkt: Sales Flow AI\n"
+                    "- Wenn User nichts anderes sagt, geht es um Sales Flow AI\n"
+                ),
+            }
+        else:
+            user_context_msg = {
+                "role": "system",
+                "content": (
+                    "ÜBER DEN NUTZER:\n"
+                    f"- Name: {user_name}\n"
+                    f"- Unternehmen: {company_name or 'n/a'}\n"
+                    f"- Branche: {vertical or 'n/a'}\n\n"
+                    "WICHTIG FÜR NACHRICHTEN:\n"
+                    f"- Absender immer: \"{user_name}\"\n"
+                    "- NIEMALS Platzhalter wie [Dein Name], [Name], [Ihr Name], 'der Nutzer'\n"
+                ),
+            }
+
+        if user_context_msg:
+            message_history = [user_context_msg] + message_history
+
         # Vision branch: wenn Bild vorhanden, direkte OpenAI Vision Anfrage + optional Lead-Erstellung
         if image_base64:
             try:
@@ -229,8 +284,23 @@ async def chat(
                 message_history=message_history,
             )
 
+        def replace_placeholders(text: str, real_name: str) -> str:
+            replacements = {
+                "[Dein Name]": real_name,
+                "[Name]": real_name,
+                "[Ihr Name]": real_name,
+                "[Nutzer]": real_name,
+                "der Nutzer": real_name,
+                "[DEIN NAME]": real_name,
+            }
+            for k, v in replacements.items():
+                text = text.replace(k, v)
+            return text
+
+        clean_message = replace_placeholders(result["message"], user_name)
+
         return ChatResponse(
-            message=result["message"],
+            message=clean_message,
             tools_used=result["tools_used"],
             session_id=session_id,
         )
