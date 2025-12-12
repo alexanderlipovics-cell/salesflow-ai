@@ -32,21 +32,34 @@ const LoginPage: React.FC = () => {
       // Onboarding Check
       const { data: userData } = await supabaseClient.auth.getUser();
       const userId = userData?.user?.id;
-      if (userId) {
-        const { data: profile } = await supabaseClient
-          .from('users')
-          .select('onboarding_complete, vertical, name, email')
-          .eq('id', userId)
-          .single();
+      let onboardingComplete: boolean | null = null;
 
-        if (!profile?.onboarding_complete) {
-          navigate('/onboarding', { replace: true });
-          return;
+      if (userId) {
+        try {
+          const { data: profile } = await supabaseClient
+            .from('users')
+            .select('onboarding_complete, vertical, name, email')
+            .eq('id', userId)
+            .single();
+          onboardingComplete = profile?.onboarding_complete ?? null;
+        } catch (e) {
+          console.warn('LoginPage: could not fetch profile for onboarding check', e);
         }
       }
 
-      console.log('LoginPage: Login successful, navigating to:', from);
-      navigate(from ?? '/dashboard', { replace: true });
+      const destination =
+        onboardingComplete === false ? '/onboarding' : (from ?? '/dashboard');
+
+      console.log('LoginPage: Login successful, navigating to:', destination);
+      // Kurze Pause, damit Tokens sicher im Storage sind
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      navigate(destination, { replace: true });
+      // Fallback Hard-Redirect, falls navigate vom Guard abgefangen wird
+      setTimeout(() => {
+        if (window.location.pathname === '/login') {
+          window.location.assign(destination);
+        }
+      }, 200);
     } catch (err) {
       // Error is handled by useAuth hook
       console.error('LoginPage: Login failed:', err);

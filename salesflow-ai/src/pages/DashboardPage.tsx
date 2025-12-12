@@ -37,6 +37,7 @@ const DashboardPage: React.FC = () => {
         const { data: userData } = await supabaseClient.auth.getUser();
         const authUser = userData?.user;
         if (!authUser) {
+          console.warn("Dashboard: no auth user -> redirect /login");
           navigate("/login", { replace: true });
           return;
         }
@@ -55,6 +56,7 @@ const DashboardPage: React.FC = () => {
         setUserName(nameFromProfile || "Verkäufer");
 
         if (!profile || profile.onboarding_complete === false) {
+          console.warn("Dashboard: onboarding incomplete -> redirect /onboarding", { profile });
           navigate("/onboarding", { replace: true });
           return;
         }
