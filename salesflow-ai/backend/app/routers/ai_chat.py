@@ -23,47 +23,40 @@ class ChatRequest(BaseModel):
     lead_id: Optional[str] = None
     lead_context: Optional[Dict[str, Any]] = None
     include_context: Optional[bool] = None
+    image: Optional[str] = None  # base64 (data URL) optional
 
 
 class ChatResponse(BaseModel):
     message: str
+    reply: Optional[str] = None  # legacy field for frontend compatibility
     tools_used: List[dict]
     session_id: str
 
 
 async def process_vision_request(image_base64: str, message: str, user_id: str, db):
-    """Analysiert ein Bild und erstellt optional Leads aus erkannten Kontakten."""
+    """Analysiert ein Bild und führt kontextabhängige Aktionen aus (Leads, Doku, Beschreibung)."""
 
-    lead_keywords = ["lead", "kontakt", "speicher", "erstell", "extrahier", "namen", "liste"]
-    wants_leads = any(kw in (message or "").lower() for kw in lead_keywords)
+    system_prompt = """
+Du bist CHIEF (GPT-4o Vision). Analysiere das Bild und klassifiziere es:
+- social_profile | social_list (Instagram/LinkedIn/WhatsApp/FB etc. Profil oder Liste)
+- document (PDF/Doc/Screenshot mit Text, Folien, Tabellen)
+- generic_image (alles andere)
 
-    system_prompt = """Du bist CHIEF, ein Sales-Assistent der Screenshots analysiert.
-
-DEINE AUFGABEN:
-1. Analysiere das Bild (Instagram, Facebook, WhatsApp, LinkedIn Screenshots)
-2. Erkenne alle sichtbaren Namen/Kontakte in Nachrichtenlisten, Follower-Listen, etc.
-3. Wenn der User Leads erstellen will, extrahiere die Namen
-
-ANTWORT-FORMAT:
-- Wenn User nur Analyse will: Beschreibe was du siehst
-- Wenn User Leads erstellen will, antworte EXAKT in diesem JSON-Format:
-```json
+ANTWORT-REGELN (liefere IMMER strukturiertes JSON):
 {
-    "action": "create_leads",
-    "leads": [
-        {"name": "Max Mustermann"},
-        {"name": "Anna Schmidt"},
-        {"name": "Thomas Müller"}
-    ],
-    "source": "instagram",
-    "count": 3
+  "action": "create_leads" | "document_summary" | "describe_only",
+  "platform": "instagram|linkedin|whatsapp|facebook|business_card|other|unknown",
+  "leads": [{"name": "..." , "source": "detected_platform", "confidence": 0-1}],
+  "summary": "kurze Zusammenfassung bei document",
+  "notes": "kurze Zusatzinfos (max 2 Sätze)",
+  "detected_type": "social_profile|social_list|document|generic_image"
 }
-```
 
-WICHTIG: 
-- Erkenne die Plattform (Instagram, Facebook, WhatsApp, LinkedIn)
-- Extrahiere NUR echte Namen, keine Timestamps oder UI-Elemente
-- Bei Unsicherheit frage nach
+Regeln:
+- Bei Social Media Profil/Liste: extrahiere echte Namen; keine Duplikate; max 50.
+- Bei Dokument: fasse prägnant zusammen, nenne erkannte Titel/Tags/Use-Cases.
+- Bei generischem Bild: beschreibe knapp (notes).
+- Liefere trotzdem description in notes, aber halte sie sehr kurz.
 """
 
     response = openai.chat.completions.create(
@@ -81,54 +74,72 @@ WICHTIG:
         max_tokens=2000,
     )
 
-    result = response.choices[0].message.content
+    result = response.choices[0].message.content or ""
 
-    # Versuche JSON zu extrahieren und Leads zu erstellen
-    try:
-        if "create_leads" in result or '"action"' in result:
-            json_start = result.find("{")
-            json_end = result.rfind("}") + 1
-
+    # Versuche JSON zu extrahieren und Aktionen auszuführen
+    def try_parse_json(text: str) -> Optional[Dict[str, Any]]:
+        try:
+            json_start = text.find("{")
+            json_end = text.rfind("}") + 1
             if json_start != -1 and json_end > json_start:
-                json_str = result[json_start:json_end]
-                data = json.loads(json_str)
+                return json.loads(text[json_start:json_end])
+        except Exception as exc:  # noqa: BLE001
+            logger.error(f"JSON parsing error: {exc}")
+        return None
 
-                if data.get("action") == "create_leads" and data.get("leads"):
-                    created_leads = []
-                    source = data.get("source", "screen_to_lead")
+    data = try_parse_json(result)
 
-                    for lead_data in data["leads"]:
-                        name = (lead_data.get("name") or "").strip()
-                        if name and len(name) > 1:
-                            try:
-                                new_lead = {
-                                    "name": name,
-                                    "user_id": user_id,
-                                    "status": "new",
-                                    "source": f"screen_to_lead_{source}",
-                                    "temperature": 50,
-                                    "notes": f"Importiert via Screen-to-Lead aus {source}",
-                                }
-                                db.table("leads").insert(new_lead).execute()
-                                created_leads.append(name)
-                            except Exception as e:
-                                logger.error(f"Error creating lead {name}: {e}")
+    if data and data.get("action") == "create_leads" and data.get("leads"):
+        created_leads = []
+        source = data.get("platform") or data.get("source") or "screen_to_lead"
+        leads = data.get("leads") or []
+        for lead_data in leads[:50]:
+            name = (lead_data.get("name") or "").strip()
+            if not name or len(name) < 2:
+                continue
+            try:
+                new_lead = {
+                    "name": name,
+                    "user_id": user_id,
+                    "status": "new",
+                    "source": f"screen_to_lead_{source}",
+                    "temperature": 50,
+                    "notes": f"Importiert via Screen-to-Lead aus {source}",
+                }
+                db.table("leads").insert(new_lead).execute()
+                created_leads.append(name)
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Error creating lead {name}: {e}", exc_info=True)
 
-                    if created_leads:
-                        return {
-                            "message": f"✅ **{len(created_leads)} Leads erfolgreich erstellt!**\n\n"
-                            + "\n".join([f"• {name}" for name in created_leads])
-                            + f"\n\nQuelle: {source.title()}\n\nDu findest sie jetzt in deiner Lead-Liste.",
-                            "tools_used": ["vision", "create_lead"],
-                            "leads_created": len(created_leads),
-                        }
-    except (json.JSONDecodeError, KeyError) as e:
-        logger.error(f"JSON parsing error: {e}")
+        if created_leads:
+            msg = (
+                f"✅ **{len(created_leads)} Leads erstellt** aus {source}:\n"
+                + "\n".join([f"• {n}" for n in created_leads])
+                + "\n\nIch kann jetzt Follow-ups vorbereiten oder Tags setzen."
+            )
+            return {
+                "message": msg,
+                "tools_used": [{"name": "vision"}, {"name": "create_lead"}],
+                "leads_created": len(created_leads),
+            }
 
-    # Normale Vision-Antwort
+    if data and data.get("action") == "document_summary":
+        summary = data.get("summary") or data.get("notes") or result
+        platform = data.get("platform") or data.get("detected_type") or "document"
+        msg = (
+            f"📄 Dokument erkannt ({platform}):\n"
+            f"{summary}\n\n"
+            "Soll ich das im Knowledge speichern oder Tags hinzufügen?"
+        )
+        return {
+            "message": msg,
+            "tools_used": [{"name": "vision"}],
+        }
+
+    # Fallback: generische Beschreibung
     return {
         "message": result,
-        "tools_used": ["vision"],
+        "tools_used": [{"name": "vision"}],
     }
 
 
@@ -266,9 +277,15 @@ async def chat(
         if image_base64:
             try:
                 vision_result = await process_vision_request(image_base64, message, user_id, db)
+                tools_used = vision_result.get("tools_used", [])
+                # tools_used kann bereits dicts enthalten
+                normalized_tools = [
+                    t if isinstance(t, dict) else {"name": t} for t in tools_used
+                ]
                 return ChatResponse(
                     message=vision_result.get("message", ""),
-                    tools_used=[{"name": t} for t in vision_result.get("tools_used", [])],
+                    reply=vision_result.get("message", ""),
+                    tools_used=normalized_tools,
                     session_id=session_id,
                 )
             except Exception as exc:
@@ -301,6 +318,7 @@ async def chat(
 
         return ChatResponse(
             message=clean_message,
+            reply=clean_message,
             tools_used=result["tools_used"],
             session_id=session_id,
         )
