@@ -30,6 +30,9 @@ from app.services.timezone_service import DefaultTimezoneService
 from app.services.ai_router_dummy import DummyAIRouter
 from app.core.security import get_current_active_user
 from app.core.deps import get_supabase
+from app.core.security.main import get_current_user
+from app.core.deps import get_supabase as get_db
+from datetime import datetime, timedelta
 from app.services.activity_logger import ActivityLogger
 import uuid
 import time
@@ -68,6 +71,78 @@ def get_engine() -> FollowUpEngine:
             tz_service=tz_service,
         )
     return _engine_singleton
+
+
+# ============================================================================
+# Lead-bezogene Follow-up Aktionen (Mapping für Frontend Buttons)
+# ============================================================================
+
+
+@router.post("/lead/{lead_id}/responded")
+async def mark_responded(
+    lead_id: str,
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Markiert Follow-up als beantwortet."""
+    user_id = current_user.get("sub") or current_user.get("id")
+    result = (
+        db.table("followup_suggestions")
+        .update({"status": "sent", "completed_at": datetime.now().isoformat()})
+        .eq("lead_id", lead_id)
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .execute()
+    )
+    updated = len(result.data) if result and result.data else 0
+    return {"success": True, "updated": updated}
+
+
+@router.post("/lead/{lead_id}/completed")
+async def mark_completed(
+    lead_id: str,
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Markiert Follow-up als erledigt."""
+    user_id = current_user.get("sub") or current_user.get("id")
+    result = (
+        db.table("followup_suggestions")
+        .update({"status": "completed", "completed_at": datetime.now().isoformat()})
+        .eq("lead_id", lead_id)
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .execute()
+    )
+    updated = len(result.data) if result and result.data else 0
+    return {"success": True, "updated": updated}
+
+
+@router.post("/lead/{lead_id}/no-response")
+async def mark_no_response(
+    lead_id: str,
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Markiert als keine Antwort erhalten und plant neuen Follow-up."""
+    user_id = current_user.get("sub") or current_user.get("id")
+
+    # Aktuellen pending Follow-up auf no_response setzen
+    db.table("followup_suggestions").update({"status": "no_response"}).eq("lead_id", lead_id).eq("user_id", user_id).eq("status", "pending").execute()
+
+    # Neues Follow-up in 3 Tagen erstellen
+    db.table("followup_suggestions").insert(
+        {
+            "user_id": user_id,
+            "lead_id": lead_id,
+            "due_at": (datetime.now() + timedelta(days=3)).isoformat(),
+            "type": "follow_up",
+            "status": "pending",
+            "suggested_action": "Erneut nachfassen (keine Antwort)",
+        }
+    ).execute()
+
+    return {"success": True}
 
 
 # ─────────────────────────────────

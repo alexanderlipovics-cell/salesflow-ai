@@ -371,6 +371,20 @@ FOLLOW-UP TOOLS:
 - Wenn User anstehende Follow-ups wissen will → nutze get_followup_suggestions
 - Wenn User einen Flow starten will → nutze start_followup_flow
 
+WICHTIGE TOOL-REGELN:
+
+FOLLOW-UP ERSTELLEN:
+- Einzelner Lead: nutze create_follow_up mit lead_id oder lead_name
+- ALLE Leads auf einmal: nutze bulk_create_followups (KEINE Parameter nötig!)
+
+Wenn User sagt:
+- "alle leads ins follow up" → bulk_create_followups aufrufen
+- "follow up für alle" → bulk_create_followups aufrufen
+- "alle kontakte nachfassen" → bulk_create_followups aufrufen
+
+bulk_create_followups erstellt automatisch Follow-ups für ALLE Leads des Users.
+Es braucht KEINE Parameter - einfach aufrufen!
+
 User: "Was ist ein Cold-Flow?"
 CHIEF: Erklärt die Stages und Wartezeiten des COLD_NO_REPLY Flows.
 
