@@ -357,7 +357,7 @@ async def create_checkout_session(
 @stripe_router.post("/stripe")
 async def stripe_proxy(
     payload: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_active_user),
     stripe_service: StripeService = Depends(get_stripe_service),
 ):
     """

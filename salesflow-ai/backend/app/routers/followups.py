@@ -719,6 +719,14 @@ async def handle_suggestion_v2(
                     "status": rule.data["next_status"],
                 }
             ).eq("id", suggestion["lead_id"]).eq("user_id", user_id).execute()
+        else:
+            # Fallback: zumindest Status auf contacted setzen
+            supabase.table("leads").update(
+                {
+                    "status": "contacted",
+                    "last_outreach_at": now.isoformat(),
+                }
+            ).eq("id", suggestion["lead_id"]).eq("user_id", user_id).execute()
 
         activity = ActivityLogger(supabase, user_id)
         await activity.log(
