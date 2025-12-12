@@ -110,8 +110,14 @@ export const useDashboardData = () => {
       const pipelineData: any = safe(pipelineRes, { groups: [] });
       const activitiesData: any = safe(activitiesRes, { activities: [] });
       const chartsData: any = safe(chartsRes, { chartData: [] });
+      // Debug-Logging für Lead-Anzahl
+      console.log("[Dashboard] /api/leads?count=true raw", leadsData);
       const kpis: KPIData = {
-        leadsTotal: leadsData.count ?? leadsData.total ?? 0,
+        leadsTotal:
+          leadsData.count ??
+          leadsData.total ??
+          (Array.isArray(leadsData?.items) ? leadsData.items.length : undefined) ??
+          (Array.isArray(leadsData) ? leadsData.length : 0),
         followUpsToday: Array.isArray(followUpsData.items)
           ? followUpsData.items.length
           : followUpsData.count ?? 0,
