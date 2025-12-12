@@ -148,6 +148,8 @@ export const useDashboardData = () => {
         pipelineValue,
       };
 
+      console.log("[Dashboard] FINAL leadsTotal:", leadsTotal);
+
       const todaysTasks: TaskItem[] = Array.isArray(followUpsData.items)
         ? followUpsData.items.slice(0, 5).map((item: any) => ({
             id: item.id ?? item.followup_id ?? `${item.lead_id ?? item.id ?? Math.random()}`,
@@ -186,18 +188,13 @@ export const useDashboardData = () => {
           }))
         : [];
 
-      let insights: InsightItem[] = Array.isArray(insightsData.insights)
-        ? insightsData.insights.map((i: any, idx: number) => ({
-            title: i.title ?? `Insight ${idx + 1}`,
-            description: i.description ?? i.text ?? '',
-          }))
-        : [];
+      let insights: InsightItem[] = [];
 
       if (insights.length === 0 && (kpis.leadsTotal ?? 0) === 0) {
         insights = [
-          { title: 'Tipp: Erstelle deinen ersten Lead mit dem + Button', description: '', action: 'leads' },
-          { title: 'Tipp: Importiere Kontakte per CSV', description: '', action: 'import' },
-          { title: 'Tipp: Frag den AI Copilot für Hilfe', description: '', action: 'ai-copilot' },
+          { title: 'Tipp: Erstelle deinen ersten Lead mit dem + Button', description: '' },
+          { title: 'Tipp: Importiere Kontakte per CSV', description: '' },
+          { title: 'Tipp: Frag den AI Copilot für Hilfe', description: '' },
         ];
       }
 

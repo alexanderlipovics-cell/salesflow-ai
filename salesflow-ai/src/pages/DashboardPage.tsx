@@ -153,8 +153,9 @@ const DashboardPage: React.FC = () => {
         });
         if (!resp.ok) return;
         const data = await resp.json();
+        console.log("[Dashboard] auth/me full response:", data);
         if (data?.name || data?.full_name) {
-          const full = (data.name || data.full_name || "").trim();
+          const full = (data.name || data.full_name || data?.user?.name || data?.user?.full_name || "").trim();
           if (full) {
             setUserName((prev) => prev || full.split(" ")[0] || full);
           }
@@ -247,6 +248,14 @@ const DashboardPage: React.FC = () => {
   if (authLoading || isLoading || checkingOnboarding) {
     return <DashboardSkeleton />;
   }
+
+  console.log("[Dashboard] received from hook:", {
+    kpis,
+    todaysTasks,
+    pipelineCount: pipeline?.length,
+    activitiesCount: activities?.length,
+    chartDataCount: chartData?.length,
+  });
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
