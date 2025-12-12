@@ -28,7 +28,7 @@ from app.services.stripe_service import (
     PlanTier,
     BillingInterval,
 )
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_active_user
 from app.core.config import get_settings
 
 router = APIRouter(prefix="/billing", tags=["billing"])
