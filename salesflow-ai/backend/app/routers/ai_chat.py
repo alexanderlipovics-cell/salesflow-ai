@@ -1,13 +1,14 @@
 import uuid
 import logging
 import json
+import asyncio
 from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 import openai
 
-from app.ai.agent import run_sales_agent
+from app.ai.agent import run_sales_agent, extract_and_save_learnings
 from app.core.security.main import get_current_user
 from app.core.deps import get_supabase
 
@@ -328,4 +329,21 @@ async def chat(
     except Exception as e:
         logger.error(f"AI Chat error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+    # Hintergrund-Lernen triggern (nicht blockierend)
+    try:
+        convo_messages = (conversation_history or []) + [
+            {"role": "user", "content": message},
+            {"role": "assistant", "content": clean_message},
+        ]
+        asyncio.create_task(
+            extract_and_save_learnings(
+                user_id=user_id,
+                messages=convo_messages,
+                response_text=clean_message,
+                db=db,
+            )
+        )
+    except Exception as exc:
+        logger.warning(f"Could not schedule learning extraction: {exc}")
 

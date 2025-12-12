@@ -18,6 +18,7 @@ from ..services.ai_usage_service import AIUsageService
 from ..services.collective_intelligence_engine import CollectiveIntelligenceEngine
 from app.services.user_learning_service import UserLearningService
 from ..services.activity_logger import ActivityLogger
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +248,87 @@ def get_client():
         client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     return client
 
+
+async def extract_and_save_learnings(user_id: str, messages: list, response_text: str, db):
+    """
+    Extrahiert wichtige Fakten aus der Konversation und speichert sie in user_knowledge.
+    Läuft bewusst defensiv und darf bei Fehlern nicht crashen.
+    """
+    try:
+        convo_texts = []
+        for m in messages or []:
+            if not m:
+                continue
+            role = m.get("role") or ""
+            content = m.get("content") or ""
+            if content:
+                convo_texts.append(f"{role}: {content}")
+        if response_text:
+            convo_texts.append(f"assistant: {response_text}")
+
+        if not convo_texts:
+            return
+
+        prompt = (
+            "Extrahiere nur dann Fakten über den User, wenn sie spezifisch und neu sind.\n"
+            "Kategorien: personal (Name, Firma, Rolle, persönliche Details), "
+            "preferences (Kommunikationsstil, Sprache, Formatierung), "
+            "business (Produkte, Ziele, Herausforderungen, Strategien), "
+            "contacts (erwähnte Leads/Partner/Kunden).\n"
+            "Antwort-Format JSON: [{\"category\": \"personal|preferences|business|contacts\", \"content\": \"...\"}]\n"
+            "Speichere keine allgemeinen Fragen, nichts Dupliziertes, keine trivialen Einmal-Infos."
+        )
+
+        client = get_client()
+        completion = await client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "\n\n".join(convo_texts)},
+            ],
+            max_tokens=300,
+            temperature=0.2,
+        )
+        content = completion.choices[0].message.content or ""
+        try:
+            data = json.loads(content)
+            if not isinstance(data, list):
+                return
+        except Exception:
+            logger.info("Learning extraction returned non-JSON, skipping")
+            return
+
+        allowed = {"personal", "preferences", "business", "contacts"}
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            category = (item.get("category") or "").strip().lower()
+            text = (item.get("content") or "").strip()
+            if category not in allowed or len(text) < 4:
+                continue
+            # Duplikate vermeiden
+            exists = (
+                db.table("user_knowledge")
+                .select("id")
+                .eq("user_id", user_id)
+                .eq("category", category)
+                .eq("content", text)
+                .limit(1)
+                .execute()
+            )
+            if exists.data:
+                continue
+            db.table("user_knowledge").insert(
+                {
+                    "user_id": user_id,
+                    "category": category,
+                    "content": text,
+                }
+            ).execute()
+        logger.info("Learning extraction stored entries")
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning(f"extract_and_save_learnings failed: {exc}")
+
 async def run_sales_agent(
     message: str,
     user_id: str,
@@ -374,6 +456,26 @@ async def run_sales_agent(
                 user_context["user_knowledge"] = "\n".join(context_parts)
     except Exception as e:  # pragma: no cover - defensive
         logger.warning(f"Could not load user knowledge: {e}")
+
+    # User learning profile (Präferenzen)
+    try:
+        learning_profile = (
+            db.table("user_learning_profile")
+            .select("*")
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        lp = learning_profile.data if learning_profile else None
+        if lp:
+            user_context["learning_profile"] = (
+                f"Kommunikationsstil: {lp.get('preferred_tone') or lp.get('tone') or 'professionell'}\n"
+                f"Bevorzugte Nachrichtenlänge: {lp.get('avg_message_length', 'mittel')}\n"
+                f"Emoji-Nutzung: {lp.get('emoji_usage_level', 'wenig')}\n"
+                f"Sales-Stil: {lp.get('sales_style', 'beratend')}"
+            )
+    except Exception as e:
+        logger.warning(f"Could not load learning profile: {e}")
 
     start_of_month = datetime.now().replace(day=1)
     revenue = (
