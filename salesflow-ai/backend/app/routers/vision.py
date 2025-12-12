@@ -5,14 +5,14 @@ Uses Anthropic's Claude Vision API to analyze screenshots and extract contact in
 Supports Instagram, WhatsApp, LinkedIn, business cards, and other social media.
 """
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Request, HTTPException, status
 from anthropic import Anthropic
 import base64
 import json
 from typing import Optional, List
 from pydantic import BaseModel
-from app.core.deps import get_current_user
-from app.core.security import get_current_active_user
+from app.core.security import get_user_id_from_token
+from app.core.deps import get_current_user as get_current_user_headers
 from app.routers.smart_import import BULK_LIST_PROMPT, is_bulk_list as detect_bulk_list
 from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
@@ -165,12 +165,38 @@ def normalize_contacts(contacts: list, platform_hint: Optional[str]) -> List[Bul
 @router.post("/analyze-screenshot", response_model=VisionResponse)
 async def analyze_screenshot(
     file: UploadFile = File(...),
-    current_user=Depends(get_current_active_user),
+    request: Request = None,
 ):
     """
     Analyze screenshot using Claude Vision to extract contact information.
     Supports: Instagram profiles, WhatsApp chats, LinkedIn profiles, business cards
     """
+    # Auth: akzeptiere Bearer Token oder X-User-Id Header (legacy)
+    user_id = None
+    auth_header = request.headers.get("Authorization") if request else None
+    if auth_header and auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1]
+        try:
+            user_id = get_user_id_from_token(token)
+        except Exception:
+            user_id = None
+
+    if not user_id and request:
+        # Legacy Header-basierte Auth
+        legacy_user = get_current_user_headers(
+            x_org_id=request.headers.get("X-Org-Id"),
+            x_user_id=request.headers.get("X-User-Id"),
+            x_user_role=request.headers.get("X-User-Role"),
+            x_user_name=request.headers.get("X-User-Name"),
+        )
+        user_id = legacy_user.get("user_id") if isinstance(legacy_user, dict) else None
+
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: missing or invalid token",
+        )
+
     try:
         contents = await file.read()
         base64_image = base64.standard_b64encode(contents).decode("utf-8")
