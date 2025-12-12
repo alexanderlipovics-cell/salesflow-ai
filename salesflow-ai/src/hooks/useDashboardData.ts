@@ -112,17 +112,30 @@ export const useDashboardData = () => {
       const chartsData: any = safe(chartsRes, { chartData: [] });
       // Debug-Logging für Lead-Anzahl
       console.log("[Dashboard] /api/leads?count=true raw", leadsData);
+      const leadsTotal =
+        (Array.isArray(leadsData?.items) ? leadsData.items.length : undefined) ??
+        (Array.isArray(leadsData) ? leadsData.length : undefined) ??
+        leadsData.count ??
+        leadsData.total ??
+        0;
+
+      const followUpsToday = Array.isArray(followUpsData?.items)
+        ? followUpsData.items.length
+        : Array.isArray(followUpsData)
+          ? followUpsData.length
+          : followUpsData.count ?? 0;
+
+      const dealsThisMonth = Array.isArray(dealsData)
+        ? dealsData.length
+        : dealsData.count ?? 0;
+
+      const pipelineValue = pipelineData.total_value ?? dealsData.total_value ?? 0;
+
       const kpis: KPIData = {
-        leadsTotal:
-          leadsData.count ??
-          leadsData.total ??
-          (Array.isArray(leadsData?.items) ? leadsData.items.length : undefined) ??
-          (Array.isArray(leadsData) ? leadsData.length : 0),
-        followUpsToday: Array.isArray(followUpsData.items)
-          ? followUpsData.items.length
-          : followUpsData.count ?? 0,
-        dealsThisMonth: dealsData.count ?? 0,
-        pipelineValue: pipelineData.total_value ?? dealsData.total_value ?? 0,
+        leadsTotal,
+        followUpsToday,
+        dealsThisMonth,
+        pipelineValue,
       };
 
       const todaysTasks: TaskItem[] = Array.isArray(followUpsData.items)
