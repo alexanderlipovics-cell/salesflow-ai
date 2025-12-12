@@ -26,6 +26,7 @@ class ToolExecutor:
             "get_followup_suggestions": self._get_followup_suggestions,
             "start_followup_flow": self._start_followup_flow,
             "get_followup_stats": self._get_followup_stats,
+            "bulk_create_followups": self._bulk_create_followups,
             "get_performance_stats": self._get_performance_stats,
             "get_commission_status": self._get_commission_status,
             "get_churn_risks": self._get_churn_risks,
@@ -129,6 +130,65 @@ class ToolExecutor:
         )
 
         return {"count": count, "leads": leads_data or []}
+
+    async def _bulk_create_followups(self, args: dict) -> dict:
+        """Erstellt Follow-ups für alle/gefilterte Leads."""
+        from datetime import datetime, timedelta
+
+        status_filter = args.get("status_filter", "") or ""
+        days = args.get("days_until_due", 1) or 1
+        priority = args.get("priority", "medium") or "medium"
+
+        query = self.db.table("leads").select("id, name, status").eq("user_id", self.user_id)
+        if status_filter:
+            query = query.eq("status", status_filter)
+
+        leads_result = query.execute()
+        leads = leads_result.data if leads_result and leads_result.data else []
+
+        if not leads:
+            return {"success": False, "message": "Keine Leads gefunden", "created": 0}
+
+        due_date = (datetime.now() + timedelta(days=days)).isoformat()
+        created = 0
+        skipped = 0
+
+        for lead in leads:
+            existing = (
+                self.db.table("followup_suggestions")
+                .select("id")
+                .eq("lead_id", lead["id"])
+                .eq("status", "pending")
+                .execute()
+            )
+
+            if existing and existing.data:
+                skipped += 1
+                continue
+
+            try:
+                self.db.table("followup_suggestions").insert(
+                    {
+                        "user_id": self.user_id,
+                        "lead_id": lead["id"],
+                        "due_at": due_date,
+                        "priority": priority,
+                        "type": "follow_up",
+                        "status": "pending",
+                        "suggested_action": f"Follow-up mit {lead.get('name') or 'Lead'}",
+                    }
+                ).execute()
+                created += 1
+            except Exception as e:
+                logger.error(f"Error creating followup for {lead.get('name')}: {e}", exc_info=True)
+
+        return {
+            "success": True,
+            "created": created,
+            "skipped": skipped,
+            "total_leads": len(leads),
+            "message": f"✅ {created} Follow-ups erstellt! ({skipped} bereits vorhanden)",
+        }
 
     async def _get_lead_details(
         self,

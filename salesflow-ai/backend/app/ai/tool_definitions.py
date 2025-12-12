@@ -153,6 +153,34 @@ SALES_AGENT_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "bulk_create_followups",
+            "description": "Erstellt Follow-ups für alle oder gefilterte Leads auf einmal. Nutze dies wenn der User 'alle Leads ins Follow-up' sagt.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status_filter": {
+                        "type": "string",
+                        "description": "Optional: Nur Leads mit diesem Status (z.B. 'NEW', 'Warmer Lead'). Leer = alle.",
+                        "default": ""
+                    },
+                    "days_until_due": {
+                        "type": "integer",
+                        "description": "In wie vielen Tagen ist das Follow-up fällig",
+                        "default": 1
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["high", "medium", "low"],
+                        "default": "medium"
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_performance_stats",
             "description": "Hole Performance-Statistiken des Users. Nutze für: Wie lief mein Tag/Woche/Monat, Conversion Rates, Aktivitäten.",
             "parameters": {
