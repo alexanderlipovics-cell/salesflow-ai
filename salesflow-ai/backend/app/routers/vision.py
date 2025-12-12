@@ -12,6 +12,7 @@ import json
 from typing import Optional, List
 from pydantic import BaseModel
 from app.core.deps import get_current_user
+from app.core.security import get_current_active_user
 from app.routers.smart_import import BULK_LIST_PROMPT, is_bulk_list as detect_bulk_list
 from ..core.ai_router import get_model_for_task, get_max_tokens_for_task
 
@@ -164,7 +165,7 @@ def normalize_contacts(contacts: list, platform_hint: Optional[str]) -> List[Bul
 @router.post("/analyze-screenshot", response_model=VisionResponse)
 async def analyze_screenshot(
     file: UploadFile = File(...),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_active_user),
 ):
     """
     Analyze screenshot using Claude Vision to extract contact information.
