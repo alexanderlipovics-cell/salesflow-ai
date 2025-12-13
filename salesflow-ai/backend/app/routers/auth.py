@@ -12,7 +12,7 @@ import resend
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from supabase import Client
+from supabase import Client, create_client
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,24 @@ from ..schemas.auth import (
     UserProfileUpdate,
 )
 
+
+def get_auth_client() -> Client:
+    """
+    Erstellt einen Supabase Client für Auth-Operationen.
+    Verwendet ANON_KEY für normale Auth-Operationen.
+    """
+    url = os.getenv("SUPABASE_URL")
+    # Für Auth-Operationen verwenden wir ANON_KEY (nicht Service Role Key)
+    key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
+    
+    if not url or not key:
+        raise HTTPException(
+            status_code=500,
+            detail="SUPABASE_URL and SUPABASE_ANON_KEY must be set for authentication"
+        )
+    
+    return create_client(url, key)
+
 router = APIRouter(prefix="/auth", tags=["authentication"])
 resend.api_key = os.getenv("RESEND_API_KEY")
 
@@ -44,104 +62,123 @@ async def signup(
     supabase: Client = Depends(get_supabase),
 ) -> SignupResponse:
     """
-    Create a new user account.
+    Create a new user account using Supabase Auth.
 
-    - Validates email uniqueness
-    - Hashes password
-    - Creates user in database
+    - Creates user in Supabase Auth
+    - Creates user profile in users table
     - Returns JWT tokens
     """
-    # Check if user already exists
+    # Erstelle Auth-Client für Supabase Auth
+    auth_client = get_auth_client()
+    
     try:
-        existing_result = supabase.table("users").select("id, email").eq("email", user_data.email).maybe_single().execute()
+        # Erstelle User über Supabase Auth
+        auth_response = auth_client.auth.sign_up({
+            "email": user_data.email,
+            "password": user_data.password,
+            "options": {
+                "data": {
+                    "first_name": user_data.first_name,
+                    "last_name": user_data.last_name,
+                    "company": user_data.company or "",
+                }
+            }
+        })
         
-        # Prüfe auf None oder fehlende data-Attribute
-        if existing_result is not None and existing_result.data:
+        if not auth_response.user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create user account",
+            )
+        
+        user_id = auth_response.user.id
+        user_email = auth_response.user.email or user_data.email
+        
+        # Erstelle/Update User-Daten in users Tabelle (für Zusatzdaten)
+        try:
+            user_data_dict = {
+                "id": user_id,
+                "email": user_email,
+                "first_name": user_data.first_name,
+                "last_name": user_data.last_name,
+                "is_active": True,
+                "is_verified": auth_response.user.email_confirmed_at is not None,
+                "role": "user",
+            }
+            
+            if user_data.company:
+                user_data_dict["company"] = user_data.company
+            
+            # Upsert statt Insert (falls User bereits existiert)
+            result = supabase.table("users").upsert(user_data_dict).execute()
+            
+            if result and result.data:
+                user = result.data[0]
+            else:
+                # Fallback: Verwende Auth-User Daten
+                user = user_data_dict
+        except Exception as e:
+            logger.warning(f"Could not create user profile for {user_id}: {e}")
+            # Verwende Auth-User Daten als Fallback
+            user = {
+                "id": user_id,
+                "email": user_email,
+                "first_name": user_data.first_name,
+                "last_name": user_data.last_name,
+                "role": "user",
+                "is_verified": auth_response.user.email_confirmed_at is not None,
+            }
+
+        # Create profile entry in profiles table
+        try:
+            full_name = f"{user_data.first_name} {user_data.last_name}".strip()
+            profile_data = {
+                "id": user_id,
+                "first_name": user_data.first_name,
+                "last_name": user_data.last_name,
+                "full_name": full_name,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            
+            supabase.table("profiles").upsert(profile_data).execute()
+            logger.info(f"Profile created/updated for user {user_id}")
+        except Exception as e:
+            logger.warning(f"Could not create profile for user {user_id}: {e}")
+
+        # Create tokens
+        tokens = create_token_pair(user_id, user_email)
+        
+        logger.debug(f"Signup: Token pair created. Type: {type(tokens)}")
+
+        return SignupResponse(
+            access_token=tokens["access_token"],
+            refresh_token=tokens["refresh_token"],
+            token_type="bearer",
+            expires_in=1800,  # 30 minutes
+            user=UserProfile(
+                id=user["id"],
+                email=user.get("email", user_email),
+                first_name=user.get("first_name"),
+                last_name=user.get("last_name"),
+                role=user.get("role", "user"),
+                is_verified=user.get("is_verified", False),
+            ),
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Signup failed for email {user_data.email}: {str(e)}")
+        # Prüfe ob Email bereits existiert
+        if "already registered" in str(e).lower() or "email" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered",
             )
-    except HTTPException:
-        # Email bereits registriert - weiterwerfen
-        raise
-    except Exception as e:
-        # Logge Fehler, aber fahre fort - User-Check fehlgeschlagen, aber wir können trotzdem versuchen zu erstellen
-        logger.warning(f"Could not check existing user for email {user_data.email}: {e}")
-        # Bei 406 Not Acceptable (Tabelle existiert nicht) oder anderen Fehlern:
-        # Versuche trotzdem, den User zu erstellen - die Datenbank wird den Fehler werfen, falls nötig
-
-    # Hash password
-    hashed_password = hash_password(user_data.password)
-
-    # Create user in Supabase
-    # Don't include "id" - let Supabase generate UUID automatically
-    user_data_dict = {
-        "email": user_data.email,
-        "first_name": user_data.first_name,
-        "last_name": user_data.last_name,
-        "password_hash": hashed_password,
-        "is_active": True,
-        "is_verified": False,
-        "role": "user",
-    }
-    
-    if user_data.company:
-        user_data_dict["company"] = user_data.company
-
-    result = supabase.table("users").insert(user_data_dict).execute()
-    
-    # Prüfe auf None oder fehlende data-Attribute
-    if not result or not result.data or len(result.data) == 0:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to create user account: {str(e)}",
         )
-    
-    user = result.data[0]
-    
-    # Get the auto-generated UUID from Supabase
-    user_id = user["id"]
-
-    # Create profile entry in profiles table
-    # This ensures that after registration, user exists in both users and profiles tables
-    try:
-        full_name = f"{user_data.first_name} {user_data.last_name}".strip()
-        profile_data = {
-            "id": user_id,  # profiles.id should match users.id
-            "first_name": user_data.first_name,
-            "last_name": user_data.last_name,
-            "full_name": full_name,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
-        
-        # Try to insert profile, but handle case where it might already exist
-        profile_result = supabase.table("profiles").upsert(profile_data).execute()
-        logger.info(f"Profile created/updated for user {user_id}")
-    except Exception as e:
-        # Log warning but don't fail registration - profile can be created later
-        logger.warning(f"Could not create profile for user {user_id}: {e}")
-        # Continue with registration - profile creation is not critical for signup
-
-    # Create tokens
-    tokens = create_token_pair(user_id, user["email"])
-    
-    # Debug: Log token creation
-    logger.debug(f"Signup: Token pair created. Type: {type(tokens)}")
-
-    return SignupResponse(
-        access_token=tokens["access_token"],  # create_token_pair from main.py returns Dict[str, str]
-        refresh_token=tokens["refresh_token"],  # create_token_pair from main.py returns Dict[str, str]
-        token_type="bearer",
-        expires_in=1800,  # 30 minutes
-        user=UserProfile(
-            id=user["id"],
-            email=user["email"],
-            first_name=user.get("first_name"),
-            last_name=user.get("last_name"),
-            role=user.get("role", "user"),
-            is_verified=user.get("is_verified", False),
-        ),
-    )
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -159,8 +196,9 @@ async def login(
     password = form_data.password
     
     # Supabase Auth API für Login nutzen
+    auth_client = get_auth_client()
     try:
-        auth_response = supabase.auth.sign_in_with_password({
+        auth_response = auth_client.auth.sign_in_with_password({
             "email": email_lower,
             "password": password
         })
@@ -353,41 +391,68 @@ async def request_password_reset(
 
 @router.post("/reset-password")
 async def reset_password(data: dict, supabase: Client = Depends(get_supabase)) -> Dict[str, str]:
-    """Reset password using token."""
+    """
+    Reset password using token via Supabase Auth.
+    
+    Validiert custom token und ändert Passwort über Supabase Auth Admin API.
+    """
     token = data.get("token")
     new_password = data.get("password")
 
     if not token or not new_password:
         raise HTTPException(status_code=400, detail="Token und Passwort erforderlich")
-
-    token_result = (
-        supabase.table("password_reset_tokens").select("*").eq("token", token).maybe_single().execute()
-    )
-
-    if not token_result or not token_result.data:
-        raise HTTPException(status_code=400, detail="Ungültiger oder abgelaufener Token")
-
-    token_row = token_result.data
-    created_at = token_row.get("created_at")
-
+    
     try:
-        token_time = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
-    except Exception:
-        token_time = datetime.utcnow()
+        # Validiere custom token
+        token_result = (
+            supabase.table("password_reset_tokens").select("*").eq("token", token).maybe_single().execute()
+        )
 
-    if datetime.now(timezone.utc) - token_time > timedelta(hours=24):
-        raise HTTPException(status_code=400, detail="Token abgelaufen. Bitte fordere einen neuen an.")
+        if not token_result or not token_result.data:
+            raise HTTPException(status_code=400, detail="Ungültiger oder abgelaufener Token")
 
-    user_id = token_row.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Token ungültig (kein User).")
+        token_row = token_result.data
+        created_at = token_row.get("created_at")
 
-    hashed = hash_password(new_password)
+        try:
+            token_time = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+        except Exception:
+            token_time = datetime.utcnow()
 
-    supabase.table("users").update({"password_hash": hashed}).eq("id", user_id).execute()
-    supabase.table("password_reset_tokens").delete().eq("token", token).execute()
+        if datetime.now(timezone.utc) - token_time > timedelta(hours=24):
+            raise HTTPException(status_code=400, detail="Token abgelaufen. Bitte fordere einen neuen an.")
 
-    return {"message": "Passwort erfolgreich geändert"}
+        user_id = token_row.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Token ungültig (kein User).")
+
+        # Ändere Passwort über Supabase Auth Admin API (Service Role Key)
+        # Der supabase Client hat bereits Service Role Key
+        try:
+            supabase.auth.admin.update_user_by_id(
+                user_id,
+                {"password": new_password}
+            )
+        except Exception as e:
+            logger.error(f"Failed to update password via Supabase Auth: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Fehler beim Zurücksetzen des Passworts. Bitte versuche es erneut oder kontaktiere den Support."
+            )
+
+        # Lösche Token
+        supabase.table("password_reset_tokens").delete().eq("token", token).execute()
+
+        return {"message": "Passwort erfolgreich geändert"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Password reset failed: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Fehler beim Zurücksetzen des Passworts: {str(e)}"
+        )
 
 
 @router.get("/me", response_model=UserProfile)
