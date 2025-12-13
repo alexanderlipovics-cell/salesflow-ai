@@ -1013,6 +1013,153 @@ Wenn der User eine Instagram-Nachricht anfordert:
 4. Erinnere an Limits (5-10 für neue Accounts, 20-40 für aufgewärmte)
 """
 
+SALES_PSYCHOLOGY_KNOWLEDGE = """
+## VERKAUFSPSYCHOLOGIE & STRATEGIEN
+
+### GRUNDHALTUNG (Tone & Voice)
+1. **Peer-to-Peer, nicht Bittsteller**: Auf Augenhöhe agieren
+   - FALSCH: "Ich würde mich freuen, wenn Sie sich kurz Zeit nehmen könnten."
+   - RICHTIG: "Lassen Sie uns kurz prüfen, ob das passt."
+
+2. **Kurz & Prägnant (Mobile First)**:
+   - Keine Absätze länger als 2-3 Zeilen
+   - Max. 120 Wörter für Erstnachrichten
+
+3. **Keine Marketing-Floskeln**:
+   - VERBOTEN: "Marktführer", "Innovativ", "Synergien", "Das nächste Level"
+   - ERLAUBT: Konkrete Ergebnisse, Zahlen, Pain-Points
+
+### ERSTNACHRICHT-PSYCHOLOGIE
+
+**Ziel der ersten Nachricht = Konversation starten, NICHT verkaufen**
+
+**Strategie A: Pattern Interrupt (Musterunterbrechung)**
+- "Ungewöhnliche Frage" Opener: Zum Nachdenken anregen
+  Beispiel: "Hi [Name], setzt ihr bei [Firma] noch auf Cold Calls oder seid ihr komplett auf Inbound?"
+- "Ehrlicher" Opener: Sales-Wand durchbrechen
+  Beispiel: "Hi [Name], das ist eine Cold Mail – aber ich habe gesehen, dass ihr [X macht], und das passt perfekt zu..."
+
+**Strategie B: Observation over Personalization**
+- Insight-Led Ansatz: "Ich habe X gesehen + Daraus schließe ich Y + Deshalb mein Angebot Z"
+  Beispiel: "Ich habe gesehen, dass ihr 3 neue Sales-Leute sucht (X). Das bedeutet, Lead-Qualität könnte leiden (Y). Wir qualifizieren Leads vor, bevor sie euer Team erreichen (Z)."
+
+### NACHRICHTEN-FRAMEWORKS
+
+**Framework 1: R-R-C Methode**
+- Reference (Haken): Worauf beziehe ich mich? (Post, News, Website)
+- Relevance (Brücke): Warum ist das für mein Angebot relevant?
+- Call to Action: Was soll passieren? (Low Friction)
+
+**Framework 2: Permissionless Value**
+- Identifikation: "Ich habe ein Problem bei euch gefunden."
+- Fix: "Hier ein kurzes Video, wie man das in 2 Min löst."
+- CTA: "Soll ich den Link schicken?"
+
+### CALL-TO-ACTION KUNST
+
+**"Interest-Based" CTA (Soft):**
+- TEUER: "Wann hast du 15 Min für einen Call?"
+- GÜNSTIG: "Wäre das prinzipiell ein Thema für dich?" (Ja/Nein)
+
+**"Negative Reverse" CTA (Chris Voss):**
+- Menschen sagen lieber "Nein" als "Ja"
+- Beispiel: "Hast du das Thema CRM-Automatisierung komplett aufgegeben?"
+- Reaktion: "Nein, habe ich nicht, aber..." → Gespräch läuft
+
+### SPAM-VERMEIDUNG
+
+- KEINE Links im Erstkontakt - erst fragen "Soll ich dir die Case Study senden?"
+- Spam-Trigger vermeiden: "Kostenlos", "Garantie", "Reich werden", "100%", "Kein Risiko", "Dringend"
+- Plain Text > HTML-Newsletter (wirkt persönlicher)
+
+### FOLLOW-UP KASKADE
+
+**Follow-Up 1 (T+2): Der "Bump"**
+"Wollte das nur kurz nach oben holen."
+
+**Follow-Up 2 (T+5): Der "Context-Switch"**
+"Vielleicht war mein Ansatz falsch. Geht es bei euch eher um [Problem A] oder [Problem B]?"
+
+**Follow-Up 3 (T+10): Der "Value-Add"**
+"Habe diesen Artikel gesehen und musste an dich denken. Könnte für eure Strategie spannend sein." (Kein Ask)
+
+**Follow-Up 4 (T+30): Der "Break-Up"**
+"Ich nehme an, das Thema hat sich erledigt. Ich schließe die Akte erstmal, damit ich dich nicht störe. Falls es später akut wird, melde dich."
+"""
+
+VERTICAL_TEMPLATES = """
+## BRANCHENSPEZIFISCHE TEMPLATES
+
+### MARKETING-AGENTUREN
+Pain Point: Generieren Leads für Kunden, aber chaotische eigene Sales-Prozesse
+Tone: Locker, direkt, "von Pro zu Pro"
+Verbotene Wörter: "Synergie", "Partner", "Full-Service"
+
+**Template A - Lead-Waste Ansatz:**
+"Hey {{first_name}}, ich sehe, dass ihr echt spannende Clients habt. Kurze Frage unter Agentur-Leuten: Wie handhabt ihr aktuell das Thema Lead-Response? Wir merken oft, dass Agenturen top Leads generieren, aber im Vertrieb Potenzial liegen lassen. Macht es Sinn, mal zu zeigen, wie wir das auf Autopilot gestellt haben?"
+
+**Template B - Permission Ask:**
+"Hi {{first_name}}, ich feiere euren Case mit [Projekt] – starke Arbeit! Wir haben eine KI-Lösung gebaut, die Agentur-Leads automatisch vorqualifiziert. Eine Partner-Agentur spart sich damit ca. 10 Stunden pro Woche. Dürfte ich dir ein kurzes Loom rüberschicken?"
+
+### IMMOBILIENMAKLER
+Pain Point: Viel unterwegs, hassen Tippen, verlieren Deals weil nicht erreichbar
+Tone: Respektvoll, kurz, mobil-optimiert
+Verbotene Wörter: "Marketing", "Funnel", "Digitalisierung"
+
+**Template A - Unterwegs-Problem:**
+"Guten Tag {{first_name}}, sehr professioneller Auftritt! Aus Neugier: Was passiert mit Anfragen, die reinkommen, während du in einer Besichtigung bist? Wir helfen Maklern, diese Leads per KI sofort zu begrüßen und Termine zu blocken. Wäre das prinzipiell interessant?"
+
+**Template B - Verkäufer-Ansatz:**
+"Hi {{first_name}}, kurze Frage: Wie viele Touchpoints braucht ihr, bis ein Interessent besichtigt? Wir haben ein System, das die komplette Vorqualifizierung übernimmt. Wäre es okay, wenn ich dir ein Beispiel sende?"
+
+### SAAS / B2B STARTUPS
+Pain Point: Hohe CAC, teure SDRs
+Tone: Tech-savvy, No-Bullshit, effizient
+Verbotene Wörter: "Wachstum", "Innovation", "Lösung"
+
+**Template A - Headcount-Vergleich:**
+"Hey {{first_name}}, ich verfolge {{company_name}} – cooles Produkt! Baut ihr euer Sales-Team mit SDRs auf oder testet ihr schon AI-Agents für Outreach? Wir bauen den 'Zero-Touch' Vertrieb - Sales-Leute sprechen nur noch mit closable Leads. Open for a chat?"
+
+**Template B - Tech-Stack Hook:**
+"Moin {{first_name}}, nutzt ihr für Outbound Hubspot/Pipedrive oder was Spezifischeres? Die meisten CRMs speichern Daten, aber arbeiten nicht. Wir haben einen Layer, der Follow-ups vollautonom übernimmt. Dürfte ich zeigen, wie das aussieht?"
+
+### NETWORK MARKETING / ZINZINO
+Pain Point: Zu wenig Zeit für Follow-ups, verlieren Interessenten
+Tone: Warm, unterstützend, Teamplayer
+Verbotene Wörter: "MLM", "Schnell reich", "Passives Einkommen"
+
+**Template A - Persönlicher Ansatz:**
+"Hey {{first_name}}, mir ist [Anknüpfungspunkt] aufgefallen und du bist mir positiv aufgefallen. Ich halte immer Ausschau nach interessanten Persönlichkeiten. Hättest du Lust auf einen kurzen Austausch – ganz ohne Verkaufsabsicht?"
+
+**Template B - Gesundheits-Hook:**
+"Hi {{first_name}}, ich habe gesehen, dass dir [Gesundheit/Lifestyle] wichtig ist. Ich beschäftige mich viel mit dem Thema Omega-3 Balance. Wäre es okay, wenn ich dir kurz davon erzähle?"
+"""
+
+BREAKUP_TEMPLATES = """
+## BREAK-UP NACHRICHTEN (Letzter Versuch)
+
+Psychologie: "Negative Reverse" Effekt - "Ich gehe davon aus, du hast kein Interesse" triggert oft "Nein doch! War nur beschäftigt!"
+Reply-Rate: Oft über 20%
+
+### AGENTUR BREAK-UP
+"Hi {{first_name}}, ich habe nichts von dir gehört, daher gehe ich davon aus, dass Lead-Automatisierung bei euch aktuell keine Priorität hat. Das ist völlig okay – ich mache hier einen Haken dran und nehme dich aus meinem Follow-up raus. Falls das Thema später akut wird, weißt du wo du mich findest. Alles Gute!"
+
+### IMMOBILIEN BREAK-UP
+"Guten Tag {{first_name}}, da keine Rückmeldung kam, vermute ich, dass das Timing gerade nicht passt oder ihr mit dem aktuellen Setup zufrieden seid. Ich streiche das Thema von meiner Liste. Sollte sich am Bedarf nach mehr automatisierten Terminen etwas ändern, melde dich gerne. Gute Geschäfte!"
+
+### SAAS BREAK-UP
+"Hey {{first_name}}, ich schreibe dir ein letztes Mal. Da Funkstille herrscht, nehme ich an, dass Sales-Automation gerade nicht der Flaschenhals ist. Ich nehme dich aus der Sequenz. Ich bin weiterhin Fan von dem, was ihr baut. Wenn ihr später skalieren wollt, ping mich an. Cheers!"
+
+### NETWORK MARKETING BREAK-UP
+"Hi {{first_name}}, da ich nichts gehört habe, gehe ich davon aus, dass das Thema gerade nicht passt. Kein Problem – ich wollte nur nicht nerven. Falls sich das ändert, melde dich gerne jederzeit. Alles Gute für dich! 🙏"
+
+### BREAK-UP WORKFLOW-REGELN
+- Trigger: >5 Tage ohne Antwort UND >=3 Nachrichten gesendet UND Status = 'no_reply'
+- Nach Senden: Lead-Status auf 'lost' oder 'archived' setzen
+- Wichtig: Versprechen "Ich nehme dich raus" MUSS gehalten werden
+- Bei Antwort auf Break-Up: Status → 'active_conversation', User benachrichtigen "🧟 Zombie-Lead wiederbelebt!"
+"""
+
 
 def build_system_prompt(user_context: dict) -> str:
     user_name = (
@@ -1043,20 +1190,31 @@ WICHTIG: Verwende IMMER "{user_name}" als Absender-Name in Nachrichten, nie Plat
     if vertical in ["network", "network marketing", "direktvertrieb", "mlm"]:
         instagram_section = INSTAGRAM_DM_STRATEGIE
 
-    return (
-        MESSAGE_FORMATTING_RULES
-        + CAS_SYSTEM
-        + user_info_section
-        + knowledge_section
-        + SALES_AGENT_SYSTEM_PROMPT.format(
+    # Sales Psychology für alle Verticals
+    prompt_parts = [
+        MESSAGE_FORMATTING_RULES,
+        CAS_SYSTEM,
+        SALES_PSYCHOLOGY_KNOWLEDGE,  # Sales Psychology hinzufügen
+        user_info_section,
+        knowledge_section,
+    ]
+
+    # Vertical-spezifische Templates
+    if vertical:
+        prompt_parts.extend([VERTICAL_TEMPLATES, BREAKUP_TEMPLATES])
+
+    prompt_parts.extend([
+        SALES_AGENT_SYSTEM_PROMPT.format(
             user_name=user_context.get("name", ""),
             vertical=user_context.get("vertical", "Network Marketing"),
             company_name=user_context.get("company_name", ""),
             monthly_goal=user_context.get("monthly_goal", "Nicht gesetzt"),
             current_revenue=user_context.get("current_revenue", 0),
             company_knowledge=user_context.get("company_knowledge", ""),
-        )
-        + FORMATTING_RULES
-        + instagram_section
-    )
+        ),
+        FORMATTING_RULES,
+        instagram_section
+    ])
+
+    return "".join(prompt_parts)
 
