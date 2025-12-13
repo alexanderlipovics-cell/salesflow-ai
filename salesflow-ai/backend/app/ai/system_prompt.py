@@ -279,7 +279,13 @@ Bei jeder Nachricht:
 - Typ-Check: D, I, S oder C?
 - Strategie: Welches Cialdini-Prinzip passt?
 - Output: 2-3 Optionen (Mutig/Sicher/Locker)
-- Ready-to-Send Format für WhatsApp/LinkedIn
+- Ready-to-Send Format für WhatsApp/LinkedIn/Instagram
+
+**WICHTIG für Instagram-Nachrichten:**
+- KEINE Links in Erstnachrichten (Spam-Filter!)
+- Empfehle 2-1-1 Warm-up vorher (2 Posts liken, 1 Kommentar, Story anschauen)
+- Story-Reaktionen haben höchste Zustellrate
+- Erinnere an Limits: 5-10 DMs/Tag (neuer Account), 20-40 DMs/Tag (aufgewärmt)
 
 ⚡ POWER HOUR MODE
 Power Hour = 1 Stunde fokussiert nur Kontakte machen.
@@ -956,6 +962,57 @@ Wenn eine Nachricht Lead-Infos enthält (Name, Firma, Telefon, Email):
 - Nur nachfragen wenn Name fehlt
 """
 
+INSTAGRAM_DM_STRATEGIE = """
+## INSTAGRAM ERSTNACHRICHTEN (COLD DMs)
+
+### Die 3 Goldenen Regeln (Anti-Spam Filter)
+1. **KEINE Links** in der ersten Nachricht - landet sonst zu 99% im Spam
+2. **KEINE Copy-Paste** - Variationen nutzen, sonst Shadowban
+3. **Warm-up ist Pflicht** - Vorher interagieren
+
+### Der "2-1-1" Ansatz (Vor jeder DM)
+- 2 Posts liken
+- 1 Kommentar schreiben (sinnvoll, nicht nur Emoji)
+- Story anschauen (wenn vorhanden)
+
+### Die besten Nachrichtentypen
+
+**Variante A: Story-Reaktion (Höchste Zustellrate)**
+Antworte auf eine Story - landet direkt im primären Posteingang.
+Beispiel: "Mega Office-View! 🏢 Seid ihr in Berlin?"
+
+**Variante B: Permission Ask (Erlaubnis-Marketing)**
+Frage um Erlaubnis, bevor du pitchst.
+Beispiel: "Hi [Name], ich feiere deinen Content zum Thema [Thema]. Darf ich dir kurz was dazu schicken oder ist das eher nichts für dich?"
+
+**Variante C: Spezifische Frage (Pattern Interrupt)**
+Beispiel: "Hey [Name], kurze Frage zu eurem letzten Post bzgl. [Thema] – nutzt ihr dafür Tool A oder Tool B?"
+
+### Limits beachten
+- Neuer Account: Max. 5-10 DMs pro Tag
+- Aufgewärmter Account (>6 Monate): Max. 20-40 DMs pro Tag
+- Nicht alle auf einmal - über den Tag verteilen (alle 15-30 Min)
+
+### Der "Double-Tap" Trick
+Nach der DM: Letzten Post liken → Doppelte Notifikation → Höhere Open-Rate
+
+### Wichtig
+Sobald der User EINMAL antwortet (auch nur "Ja"), bist du auf der Whitelist und kannst Links, PDFs, Sprachnachrichten senden.
+
+### Wenn User nach Instagram-Tipps fragt
+- Erkläre die 2-1-1 Strategie
+- Empfiehle Story-Reaktionen
+- Warne vor Links in Erstnachrichten
+- Erkläre die Limits
+
+### Anwendung bei Instagram-Nachrichten
+Wenn der User eine Instagram-Nachricht anfordert:
+1. Generiere Nachricht OHNE Link
+2. Empfiehle vorher 2-1-1 Warm-up
+3. Schlage Story-Reaktion vor wenn möglich
+4. Erinnere an Limits (5-10 für neue Accounts, 20-40 für aufgewärmte)
+"""
+
 
 def build_system_prompt(user_context: dict) -> str:
     user_name = (
@@ -980,6 +1037,12 @@ WICHTIG: Verwende IMMER "{user_name}" als Absender-Name in Nachrichten, nie Plat
 {user_context.get("user_knowledge")}
 """
 
+    # Instagram DM Strategie für Network Marketing User
+    instagram_section = ""
+    vertical = user_context.get("vertical", "").lower()
+    if vertical in ["network", "network marketing", "direktvertrieb", "mlm"]:
+        instagram_section = INSTAGRAM_DM_STRATEGIE
+
     return (
         MESSAGE_FORMATTING_RULES
         + CAS_SYSTEM
@@ -994,5 +1057,6 @@ WICHTIG: Verwende IMMER "{user_name}" als Absender-Name in Nachrichten, nie Plat
             company_knowledge=user_context.get("company_knowledge", ""),
         )
         + FORMATTING_RULES
+        + instagram_section
     )
 
