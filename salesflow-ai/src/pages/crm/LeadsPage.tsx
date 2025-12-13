@@ -203,6 +203,33 @@ const LeadsPage = () => {
     setSelectedLead((prev) => (prev && prev.id === editingLead.id ? { ...prev, ...data } : prev));
   };
 
+  const handleMarkAsLost = async (leadId: string, reason: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          status: "lost",
+          lost_reason: reason,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Lead als verloren markiert");
+        fetchLeads(); // Refresh the list
+      } else {
+        toast.error("Fehler beim Markieren als verloren");
+      }
+    } catch (error) {
+      console.error("Error marking lead as lost:", error);
+      toast.error("Fehler beim Markieren als verloren");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-white">
       <div className="mx-auto max-w-7xl">
@@ -506,267 +533,7 @@ const LeadsPage = () => {
       )}
     </div>
   );
-
-  const handleMarkAsLost = async (leadId: string, reason: string) => {
-    try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch(`/api/leads/${leadId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          status: "lost",
-          lost_reason: reason,
-        }),
-      });
-
-      if (res.ok) {
-        toast.success("Lead als verloren markiert");
-        fetchLeads(); // Refresh the list
-      } else {
-        toast.error("Fehler beim Markieren als verloren");
-      }
-    } catch (error) {
-      console.error("Error marking lead as lost:", error);
-      toast.error("Fehler beim Markieren als verloren");
-    }
-  };
+};
 
 export default LeadsPage;
-
-// === Sub-Views ===
-const LeadHunterView = ({ onAddLead }: { onAddLead: (lead: any) => void }) => {
-  const [huntSource, setHuntSource] = useState('instagram');
-  const [hashtag, setHashtag] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [isHunting, setIsHunting] = useState(false);
-
-  const handleHunt = async () => {
-    setIsHunting(true);
-    try {
-      const res = await fetch('/api/leads/hunt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({ source: huntSource, query: hashtag }),
-      });
-      const data = await res.json();
-      setResults(Array.isArray(data) ? data : []);
-    } finally {
-      setIsHunting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <Crosshair className="w-5 h-5 text-purple-500" />
-          Lead Hunter
-        </h3>
-        <div className="flex gap-4">
-          <select value={huntSource} onChange={(e) => setHuntSource(e.target.value)} className="px-4 py-2 border rounded-lg">
-            <option value="instagram">Instagram</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="facebook">Facebook Groups</option>
-          </select>
-          <input
-            type="text"
-            placeholder={huntSource === 'instagram' ? '#hashtag eingeben' : 'Suchbegriff'}
-            value={hashtag}
-            onChange={(e) => setHashtag(e.target.value)}
-            className="flex-1 px-4 py-2 border rounded-lg"
-          />
-          <Button onClick={handleHunt} disabled={isHunting}>
-            {isHunting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Suche...
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4 mr-2" /> Jagen
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {results.length > 0 && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {results.map((result) => (
-            <HuntResultCard key={result.id} result={result} onAdd={() => onAddLead(result)} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const LeadDiscoveryView = () => {
-  const [isDiscovering, setIsDiscovering] = useState(false);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-
-  const handleDiscover = async () => {
-    setIsDiscovering(true);
-    try {
-      const res = await fetch('/api/leads/discover', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      const data = await res.json();
-      setSuggestions(Array.isArray(data) ? data : []);
-    } finally {
-      setIsDiscovering(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6">
-        <h3 className="font-semibold mb-2 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-blue-500" />
-          AI Lead Discovery
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">AI analysiert deine besten Kunden und findet ähnliche Leads</p>
-        <Button onClick={handleDiscover} disabled={isDiscovering}>
-          {isDiscovering ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analysiere...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" /> Leads entdecken
-            </>
-          )}
-        </Button>
-      </div>
-
-      {suggestions.length > 0 && (
-        <div className="space-y-4">
-          <h4 className="font-medium">AI Vorschläge</h4>
-          {suggestions.map((suggestion) => (
-            <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const LeadQualifierView = ({ leads, onQualify }: { leads: Lead[]; onQualify: (id: string, status: string) => void }) => (
-  <div className="space-y-4">
-    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 mb-6">
-      <p className="text-sm">
-        <strong>{leads.length} Leads</strong> warten auf Qualifizierung
-      </p>
-    </div>
-
-    {leads.map((lead) => (
-      <div key={lead.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <h4 className="font-medium">
-              {lead.first_name} {lead.last_name}
-            </h4>
-            <p className="text-sm text-gray-500">{lead.company}</p>
-          </div>
-          <span className="text-xs px-2 py-1 bg-gray-100 rounded">Score: {lead.score ?? '?'}</span>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => onQualify(lead.id, 'hot')}>
-            🔥 Hot
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => onQualify(lead.id, 'warm')}>
-            🌡️ Warm
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => onQualify(lead.id, 'cold')}>
-            ❄️ Cold
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => onQualify(lead.id, 'disqualified')}>
-            ❌ Nicht relevant
-          </Button>
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
-// Helper Components
-const LeadRow = ({ lead, onClick }: { lead: Lead; onClick: () => void }) => (
-  <tr
-    onClick={onClick}
-    className="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-  >
-    <td className="p-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-          {(lead.first_name?.[0] || '')}
-          {(lead.last_name?.[0] || '')}
-        </div>
-        <div>
-          <div className="font-medium">
-            {lead.first_name} {lead.last_name}
-          </div>
-          <div className="text-sm text-gray-500">{lead.email}</div>
-        </div>
-      </div>
-    </td>
-    <td className="p-4 text-gray-600">{lead.company || '-'}</td>
-    <td className="p-4">
-      <StatusBadge status={lead.status} />
-    </td>
-    <td className="p-4">
-      <ScoreBadge score={lead.score} />
-    </td>
-    <td className="p-4 text-sm text-gray-500">
-      {lead.last_contact ? new Date(lead.last_contact).toLocaleDateString('de-DE') : '-'}
-    </td>
-    <td className="p-4">
-      <Button size="sm" variant="ghost">
-        <MoreHorizontal className="w-4 h-4" />
-      </Button>
-    </td>
-  </tr>
-);
-
-const StatusBadge = ({ status }: { status?: string | null }) => {
-  if (!status) return <span className="text-xs text-gray-400">-</span>;
-  const color =
-    status === 'customer'
-      ? 'bg-green-100 text-green-700'
-      : status === 'prospect'
-        ? 'bg-blue-100 text-blue-700'
-        : 'bg-gray-100 text-gray-600';
-  return <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>{status}</span>;
-};
-
-const ScoreBadge = ({ score }: { score?: number | null }) => {
-  if (score === null || score === undefined) return <span className="text-xs text-gray-400">-</span>;
-  const color = score > 80 ? 'text-green-600' : score > 50 ? 'text-yellow-600' : 'text-gray-600';
-  return <span className={`text-sm font-semibold ${color}`}>{score}</span>;
-};
-
-const HuntResultCard = ({ result, onAdd }: { result: any; onAdd: () => void }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-    <div className="font-medium">{result.name || result.title}</div>
-    <p className="text-sm text-gray-500">{result.description || result.source}</p>
-    <Button size="sm" variant="outline" className="mt-3" onClick={onAdd}>
-      Hinzufügen
-    </Button>
-  </div>
-);
-
-const SuggestionCard = ({ suggestion }: { suggestion: any }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-    <div className="font-medium">{suggestion.name || suggestion.company}</div>
-    <p className="text-sm text-gray-500">{suggestion.reason || suggestion.title}</p>
-  </div>
-);
 
