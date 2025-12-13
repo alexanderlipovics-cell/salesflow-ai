@@ -10,7 +10,7 @@ for var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
 os.environ["NO_PROXY"] = "*"
 
 # Jetzt können andere Imports erfolgen
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -191,48 +191,87 @@ async def health():
 async def root():
     return {"status": "ok", "app": "SalesFlow AI", "version": "2.0.0"}
 
-# ============= DIRECT EMAIL ROUTES (TEST) =============
-# Direkte Routes umgehen Router-Probleme und zeigen ob Routing das Problem ist
+# ============= DIRECT EMAIL ROUTES =============
+# Direkte Routes mit echter Funktionalität (umgehen Router-Probleme)
+from app.core.security import get_current_active_user
+from app.core.deps import get_supabase
+
 @app.get("/api/emails/test-direct")
 async def test_email_direct():
-    """Direkte Route ohne Router - Test ob Routing das Problem ist"""
+    """Test-Route ohne Router - zum Debuggen"""
     return {"status": "ok", "message": "Direct route works", "source": "main.py"}
 
 @app.get("/api/emails/")
-async def get_emails_direct(request: Request):
-    """Direkte Route ohne Auth - Test ob Middleware blockiert"""
-    auth_header = request.headers.get("Authorization")
-    return {
-        "status": "ok",
-        "auth_present": bool(auth_header),
-        "path": "/api/emails/",
-        "source": "main.py direct route",
-        "auth_header_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else auth_header
-    }
+async def get_emails_direct(
+    request: Request,
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase)
+):
+    """Lade Emails für den aktuellen User"""
+    user_id = current_user.get("sub") or current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found")
+    
+    result = db.table("emails") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .order("received_at", desc=True) \
+        .limit(50) \
+        .execute()
+    
+    return result.data or []
 
 @app.get("/api/emails/accounts")
-async def get_email_accounts_direct(request: Request):
-    """Direkte Route für /accounts - Test ob Auth-Header ankommt"""
-    auth_header = request.headers.get("Authorization")
-    return {
-        "status": "ok", 
-        "auth_present": bool(auth_header),
-        "token_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else None,
-        "source": "main.py direct",
-        "path": "/api/emails/accounts"
-    }
+async def get_email_accounts_direct(
+    request: Request,
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase)
+):
+    """Lade Email-Accounts für den aktuellen User"""
+    user_id = current_user.get("sub") or current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found")
+    
+    result = db.table("email_accounts") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .eq("is_active", "true") \
+        .execute()
+    
+    return result.data or []
 
 @app.post("/api/emails/sync")
-async def sync_emails_direct(request: Request):
-    """Direkte Route für /sync - Test ob Auth-Header ankommt"""
-    auth_header = request.headers.get("Authorization")
+async def sync_emails_direct(
+    request: Request,
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase)
+):
+    """Starte Gmail Sync für den aktuellen User"""
+    user_id = current_user.get("sub") or current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found")
+    
+    # Get Gmail account
+    account_result = db.table("email_accounts") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .eq("provider", "google") \
+        .eq("is_active", "true") \
+        .limit(1) \
+        .execute()
+    
+    if not account_result.data:
+        raise HTTPException(status_code=400, detail="No Gmail account connected")
+    
+    account = account_result.data[0]
+    
+    # TODO: Implement actual Gmail API sync
+    # For now, return success with account info
     return {
-        "status": "ok",
-        "auth_present": bool(auth_header),
-        "token_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else None,
-        "source": "main.py direct",
-        "path": "/api/emails/sync",
-        "method": request.method
+        "status": "success",
+        "message": "Sync initiated",
+        "account": account.get("email"),
+        "synced_count": 0  # Placeholder
     }
 
 # ============= Exception Handlers =============
