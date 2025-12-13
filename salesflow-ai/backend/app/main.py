@@ -316,7 +316,7 @@ from .routers.copilot import router as copilot_router
 from .routers.chat import router as chat_router
 from .routers.ai_chat import router as ai_chat_router
 from .routers import google_auth, emails
-# from .routers.autopilot import router as autopilot_router  # Temporär deaktiviert, Autopilot unvollständig
+from .routers.autopilot import router as autopilot_router  # 🤖 Autopilot Settings & Stats
 from .routers.analytics import router as analytics_router
 from .routers.analytics_extended import router as analytics_extended_router
 from .routers.zero_input_crm import router as zero_input_crm_router
@@ -376,7 +376,7 @@ from .routers.meeting_prep import router as meeting_prep_router  # 🧠 Meeting 
 from .routers.voice import router as voice_router  # 🗣️ Voice Transcription
 from .routers.exports import router as exports_router  # ⬇️ File Exports (PDF/Excel/CSV)
 from .routers.proposals import router as proposals_router  # 📄 Angebots-PDFs
-from .routers.email_sync import router as email_sync_router  # 📧 Email Sync & Tracking
+from .routers.email_sync import router as email_sync_router, email_accounts_router  # 📧 Email Sync & Tracking
 from .routers.interactions import router as interactions_router  # 📊 User Interactions Tracking
 from .routers.dashboard import router as dashboard_router  # 📊 Dashboard Data
 from .routers.billing import router as billing_router, stripe_router  # 💳 Billing & Stripe
@@ -393,7 +393,7 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(ai_chat_router)
 app.include_router(google_auth.router)
 app.include_router(emails.router)
-# app.include_router(autopilot_router, prefix="/api")  # deaktiviert bis Autopilot stabil ist
+app.include_router(autopilot_router, prefix="/api")  # 🤖 Autopilot Settings & Stats
 app.include_router(analytics_router, prefix="/api")
 app.include_router(analytics_extended_router, prefix="/api")  # Extended Analytics & Monitoring
 app.include_router(zero_input_crm_router, prefix="/api")
@@ -455,6 +455,7 @@ app.include_router(voice_router, prefix="/api/voice")  # 🗣️ Voice Transcrip
 app.include_router(exports_router)  # ⬇️ File Exports
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
 app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracking
+app.include_router(email_accounts_router, prefix="/api")  # 📧 Email Accounts (frontend compatibility)
 app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking
 app.include_router(dashboard_router, prefix="/api")  # 📊 Dashboard Data
 app.include_router(billing_router, prefix="/api")  # 💳 Billing management

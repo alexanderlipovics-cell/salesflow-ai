@@ -195,6 +195,7 @@ async def get_autopilot_settings(
 
 
 @router.post("/settings", response_model=AutopilotSettingsResponse)
+@router.put("/settings", response_model=AutopilotSettingsResponse)
 async def upsert_autopilot_settings(
     data: AutopilotSettingsUpdate,
     user: Dict[str, Any] = Depends(get_current_user_dict),
@@ -312,6 +313,81 @@ async def upsert_autopilot_settings(
         
         logger.exception(f"Error upserting autopilot settings: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stats")
+async def get_autopilot_stats(
+    user: Dict[str, Any] = Depends(get_current_user_dict),
+):
+    """
+    Get autopilot statistics for current user.
+    
+    Returns:
+    - `auto_sent_today`: Anzahl automatisch gesendeter Follow-ups heute
+    - `pending_review`: Anzahl Follow-ups die zur Prüfung anstehen (confidence >= 70)
+    """
+    user_id = user.get("user_id", "unknown")
+    
+    try:
+        db = get_supabase_client()
+        
+        # Count auto-sent today
+        today = datetime.utcnow().date().isoformat()
+        
+        try:
+            # Count auto-sent follow-ups today
+            sent_result = (
+                db.table("followup_suggestions")
+                .select("id", count="exact")
+                .eq("user_id", user_id)
+                .eq("status", "sent")
+                .eq("auto_sent", True)
+                .gte("updated_at", today)
+                .execute()
+            )
+            
+            # Count pending follow-ups with high confidence (>= 70)
+            pending_result = (
+                db.table("followup_suggestions")
+                .select("id", count="exact")
+                .eq("user_id", user_id)
+                .eq("status", "pending")
+                .gte("confidence_score", 70)
+                .execute()
+            )
+            
+            return {
+                "auto_sent_today": sent_result.count if hasattr(sent_result, 'count') else (len(sent_result.data) if sent_result.data else 0),
+                "pending_review": pending_result.count if hasattr(pending_result, 'count') else (len(pending_result.data) if pending_result.data else 0)
+            }
+        except Exception as e:
+            logger.warning(f"Error counting stats: {e}")
+            return {
+                "auto_sent_today": 0,
+                "pending_review": 0
+            }
+            
+    except SupabaseNotConfiguredError:
+        logger.warning("Supabase not configured - returning zero stats")
+        return {
+            "auto_sent_today": 0,
+            "pending_review": 0
+        }
+    except Exception as e:
+        error_str = str(e).lower()
+        # Tabelle existiert nicht
+        if "42p01" in error_str or "does not exist" in error_str:
+            logger.warning("followup_suggestions table not found - returning zero stats")
+            return {
+                "auto_sent_today": 0,
+                "pending_review": 0
+            }
+        
+        logger.exception(f"Error getting autopilot stats: {e}")
+        return {
+            "auto_sent_today": 0,
+            "pending_review": 0
+        }
 
 
 # ============================================================================

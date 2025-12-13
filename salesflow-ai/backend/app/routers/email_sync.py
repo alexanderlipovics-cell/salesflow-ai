@@ -16,6 +16,9 @@ from app.supabase_client import get_supabase_client
 
 router = APIRouter(prefix="/emails", tags=["emails"])
 
+# Separate router for /email-accounts endpoint (frontend compatibility)
+email_accounts_router = APIRouter(prefix="/email-accounts", tags=["emails"])
+
 # OAuth URLs
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -211,6 +214,7 @@ async def outlook_callback(code: str, state: str):
 # --- Email Accounts ---
 @router.get("/accounts")
 async def list_email_accounts(current_user=Depends(get_current_active_user)):
+    """List email accounts for current user."""
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
 
@@ -221,6 +225,14 @@ async def list_email_accounts(current_user=Depends(get_current_active_user)):
         .execute()
     )
     return {"accounts": result.data or []}
+
+
+@email_accounts_router.get("")
+async def list_email_accounts_alias(current_user=Depends(get_current_active_user)):
+    """Alias endpoint for /email-accounts (frontend compatibility)."""
+    return await list_email_accounts(current_user)
+
+
 
 
 @router.delete("/accounts/{account_id}")
