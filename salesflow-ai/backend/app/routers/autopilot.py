@@ -45,6 +45,17 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
+def _extract_user_id(user: Dict[str, Any]) -> str:
+    """
+    Extrahiert User-ID aus current_user Dict.
+    Prüft 'sub' (JWT standard) oder 'id', wirft Exception wenn nicht gefunden.
+    """
+    user_id = user.get("sub") or user.get("id") or user.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found in token")
+    return str(user_id)
+
+
 def _build_default_settings(user_id: str, contact_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Erstellt Default-Settings im RAM (ohne DB-Insert).
@@ -105,7 +116,7 @@ async def get_autopilot_settings(
     - `settings`: Die aktuellen Autopilot-Einstellungen
     - `success`: true wenn erfolgreich
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     
     # Helper: Default Settings zurückgeben
     def _return_defaults():
@@ -218,7 +229,7 @@ async def upsert_autopilot_settings(
     - `settings`: Die gespeicherten Einstellungen
     - `success`: true wenn erfolgreich
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     contact_id = data.contact_id
     
     try:
@@ -326,7 +337,7 @@ async def get_autopilot_stats(
     - `auto_sent_today`: Anzahl automatisch gesendeter Follow-ups heute
     - `pending_review`: Anzahl Follow-ups die zur Prüfung anstehen (confidence >= 70)
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     
     try:
         db = get_supabase_client()
@@ -417,7 +428,7 @@ async def create_message_event_endpoint(
     - `event`: Das erstellte Message Event
     - `success`: true wenn erfolgreich
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     
     try:
         db = get_supabase_client()
@@ -518,7 +529,7 @@ async def list_message_events_endpoint(
     - `count`: Anzahl der Events
     - `success`: true wenn erfolgreich
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     
     try:
         db = get_supabase_client()
@@ -593,7 +604,7 @@ async def run_autopilot_once(
     - `summary`: Verarbeitungsergebnis mit Countern
     - `success`: true wenn erfolgreich
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     import time
     import uuid
     
@@ -679,7 +690,7 @@ async def update_message_event_status_endpoint(
     - `event`: Aktualisiertes Message Event
     - `success`: true wenn erfolgreich
     """
-    user_id = user.get("user_id", "unknown")
+    user_id = _extract_user_id(user)
     
     # Status validieren
     valid_statuses = ["pending", "suggested", "approved", "sent", "skipped"]
