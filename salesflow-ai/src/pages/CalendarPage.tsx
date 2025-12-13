@@ -35,15 +35,43 @@ export default function CalendarPage() {
   const loadFollowups = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/api/followups/all');
-      setFollowups(response.data || []);
-    } catch (error) {
+      // 1. Follow-ups laden (OHNE doppeltes /api)
+      let followupsData: FollowUp[] = [];
       try {
-        const fallback = await api.get('/api/followups/pending');
-        setFollowups(fallback.data || []);
+        const response = await api.get('/followups/all');
+        // API gibt { suggestions: [...], count: ... } zurück
+        followupsData = (response as any).suggestions || response.data || [];
       } catch (e) {
-        console.error('Failed to load followups:', e);
+        try {
+          const fallback = await api.get('/followups/pending');
+          // API gibt { suggestions: [...], count: ... } zurück
+          followupsData = (fallback as any).suggestions || fallback.data || [];
+        } catch (e2) {
+          console.error('Failed to load followups:', e2);
+        }
       }
+
+      // 2. Calendar Events laden (Meetings von CHIEF)
+      let eventsData: FollowUp[] = [];
+      try {
+        const eventsResponse = await api.get('/calendar/events');
+        const events = eventsResponse.data || [];
+        // Events in Follow-up Format konvertieren
+        eventsData = events.map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          due_at: event.start_time || event.scheduled_at,
+          channel: 'meeting',
+          status: event.status || 'pending',
+          lead_id: event.lead_id,
+          leads: event.leads || { name: event.title?.replace('Meeting mit ', '') || 'Meeting' }
+        }));
+      } catch (e) {
+        console.error('Failed to load calendar events:', e);
+      }
+
+      // 3. Beide zusammenführen
+      setFollowups([...followupsData, ...eventsData]);
     } finally {
       setLoading(false);
     }
@@ -82,6 +110,7 @@ export default function CalendarPage() {
       case 'email': return 'bg-blue-500';
       case 'phone': return 'bg-purple-500';
       case 'instagram': return 'bg-pink-500';
+      case 'meeting': return 'bg-yellow-500';
       default: return 'bg-teal-500';
     }
   };
@@ -296,7 +325,7 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
 
   const loadLeads = async () => {
     try {
-      const response = await api.get('/api/leads');
+      const response = await api.get('/leads');
       setLeads(response.data || []);
     } catch (e) {
       console.error('Failed to load leads:', e);
@@ -311,7 +340,7 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
 
     setSaving(true);
     try {
-      await api.post('/api/followups', {
+      await api.post('/followups', {
         lead_id: selectedLead,
         due_at: new Date(dueDate).toISOString(),
         suggested_message: message,
