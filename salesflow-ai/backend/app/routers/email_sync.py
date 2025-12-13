@@ -6,12 +6,15 @@ from email.mime.text import MIMEText
 from typing import List, Optional
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+import logging
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 
 from app.core.security import get_current_active_user
 from app.supabase_client import get_supabase_client
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/emails", tags=["emails"])
@@ -34,18 +37,22 @@ MICROSOFT_SCOPES = "Mail.ReadWrite Mail.Send offline_access"
 
 
 def _extract_user_id(current_user) -> str:
-    """Extrahiere User-ID unabhängig von Struktur."""
+    """
+    Extrahiere User-ID unabhängig von Struktur.
+    Prüft 'sub' (JWT standard) zuerst, dann 'id', dann 'user_id'.
+    """
     if current_user is None:
         raise HTTPException(status_code=401, detail="Kein Benutzerkontext")
     if isinstance(current_user, dict):
+        # JWT Standard: 'sub' zuerst prüfen
         user_id = (
-            current_user.get("user_id")
+            current_user.get("sub")
             or current_user.get("id")
-            or current_user.get("sub")
+            or current_user.get("user_id")
             or current_user.get("team_member_id")
         )
     else:
-        user_id = getattr(current_user, "user_id", None) or getattr(current_user, "id", None)
+        user_id = getattr(current_user, "id", None) or getattr(current_user, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="Keine Benutzer-ID gefunden")
     return str(user_id)
@@ -213,10 +220,16 @@ async def outlook_callback(code: str, state: str):
 
 # --- Email Accounts ---
 @router.get("/accounts")
-async def list_email_accounts(current_user=Depends(get_current_active_user)):
+async def list_email_accounts(request: Request, current_user=Depends(get_current_active_user)):
     """List email accounts for current user."""
+    # Debug-Logging
+    auth_header = request.headers.get("Authorization")
+    logger.info(f"[EMAIL DEBUG] GET /accounts - Auth header present: {bool(auth_header)}")
+    logger.info(f"[EMAIL DEBUG] GET /accounts - Current user: {current_user}")
+    
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
+    logger.info(f"[EMAIL DEBUG] GET /accounts - Extracted user_id: {user_id}")
 
     result = (
         supabase.table("email_accounts")
@@ -228,9 +241,14 @@ async def list_email_accounts(current_user=Depends(get_current_active_user)):
 
 
 @email_accounts_router.get("")
-async def list_email_accounts_alias(current_user=Depends(get_current_active_user)):
+async def list_email_accounts_alias(request: Request, current_user=Depends(get_current_active_user)):
     """Alias endpoint for /email-accounts (frontend compatibility)."""
-    return await list_email_accounts(current_user)
+    # Debug-Logging
+    auth_header = request.headers.get("Authorization")
+    logger.info(f"[EMAIL DEBUG] GET /email-accounts - Auth header present: {bool(auth_header)}")
+    logger.info(f"[EMAIL DEBUG] GET /email-accounts - Current user: {current_user}")
+    
+    return await list_email_accounts(request, current_user)
 
 
 
@@ -389,16 +407,32 @@ async def sync_outlook_emails(account: dict, user_id: str):
             ).execute()
 
 
+# --- Test Endpoint (No Auth) ---
+@router.get("/test-no-auth")
+async def test_no_auth():
+    """Test endpoint ohne Auth - zum Debuggen"""
+    return {"status": "ok", "message": "No auth required", "endpoint": "/api/emails/test-no-auth"}
+
+
 # --- Get Emails ---
 @router.get("/")
 async def list_emails(
+    request: Request,
     lead_id: Optional[str] = Query(default=None, alias="lead_id"),
     limit: int = 50,
     offset: int = 0,
     current_user=Depends(get_current_active_user),
 ):
+    # Debug-Logging
+    auth_header = request.headers.get("Authorization")
+    logger.info(f"[EMAIL DEBUG] GET / - Auth header present: {bool(auth_header)}")
+    logger.info(f"[EMAIL DEBUG] GET / - Auth header (first 50 chars): {auth_header[:50] if auth_header else 'None'}...")
+    logger.info(f"[EMAIL DEBUG] GET / - Current user type: {type(current_user)}")
+    logger.info(f"[EMAIL DEBUG] GET / - Current user: {current_user}")
+    
     supabase = get_supabase_client()
     user_id = _extract_user_id(current_user)
+    logger.info(f"[EMAIL DEBUG] GET / - Extracted user_id: {user_id}")
 
     query = (
         supabase.table("emails")
