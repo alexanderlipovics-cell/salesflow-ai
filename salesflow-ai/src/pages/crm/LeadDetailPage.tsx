@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import EmailComposer from "@/components/EmailComposer";
 import LeadEmails from "@/components/leads/LeadEmails";
+import { LeadHistory } from "@/components/leads/LeadHistory";
 
 const LeadDetailPage = () => {
   const { leadId } = useParams<{ leadId: string }>();
@@ -603,6 +604,12 @@ const LeadDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Lead History */}
+      <div className="mt-8">
+        <LeadHistory leadId={leadId || ""} />
+      </div>
+
       <EmailComposer
         isOpen={showEmailComposer}
         onClose={() => setShowEmailComposer(false)}

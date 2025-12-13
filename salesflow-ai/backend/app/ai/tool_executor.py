@@ -329,6 +329,24 @@ class ToolExecutor:
 
     async def _start_followup_flow(self, lead_id: str, flow: str) -> Any:
         """Startet Follow-up Flow und setzt nächste Stage."""
+
+        # Name → ID Auflösung
+        actual_lead_id = lead_id
+        try:
+            uuid.UUID(lead_id)  # Test ob gültige UUID
+        except ValueError:
+            # lead_id ist ein Name, Lead suchen
+            result = self.db.from_("leads") \
+                .select("id") \
+                .eq("user_id", self.user_id) \
+                .ilike("name", f"%{lead_id}%") \
+                .limit(1) \
+                .execute()
+
+            if not result.data:
+                return {"success": False, "error": f"Lead '{lead_id}' nicht gefunden"}
+            actual_lead_id = result.data[0]["id"]
+
         rule = (
             self.db.table("followup_rules")
             .select("*")
@@ -350,7 +368,7 @@ class ToolExecutor:
                 "next_follow_up_at": next_followup.isoformat(),
                 "last_outreach_at": datetime.utcnow().isoformat(),
             }
-        ).eq("id", lead_id).eq("user_id", self.user_id).execute()
+        ).eq("id", actual_lead_id).eq("user_id", self.user_id).execute()
 
         return {
             "success": True,
@@ -921,43 +939,70 @@ class ToolExecutor:
             return {"success": False, "error": str(e)}
 
     def _parse_due_datetime(self, due_date: str | None) -> datetime:
-        """Parst relative Angaben wie 'tomorrow', 'next_week' oder ISO-Strings."""
+        """Parst relative Angaben wie 'tomorrow', 'next_week' oder ISO-Strings. KEINE VERGANGENHEIT!"""
+        import re
+        from datetime import date as date_type
+
         now = datetime.now(timezone.utc)
+        today = now.date()
         due_date_str = (due_date or "").lower()
 
-        def _next_weekday(target_weekday: int, now_dt: datetime) -> datetime:
-            """Get next occurrence of weekday (0=Mon)."""
-            days_ahead = (target_weekday - now_dt.weekday() + 7) % 7
-            days_ahead = 7 if days_ahead == 0 else days_ahead
-            return now_dt + timedelta(days=days_ahead)
+        def parse_and_validate_date(due_date_str: str) -> date_type:
+            """Parst Datum und stellt sicher dass es NICHT in der Vergangenheit liegt"""
+            parsed_date = None
 
-        if "tomorrow" in due_date_str or "morgen" in due_date_str:
-            return now + timedelta(days=1)
-        if "3 day" in due_date_str or "3 tag" in due_date_str or "3 tage" in due_date_str or "in 3 tagen" in due_date_str:
-            return now + timedelta(days=3)
-        if "week" in due_date_str or "woche" in due_date_str or "nächste" in due_date_str or "next week" in due_date_str:
-            return now + timedelta(days=7)
-        weekday_map = {
-            "montag": 0,
-            "dienstag": 1,
-            "mittwoch": 2,
-            "donnerstag": 3,
-            "freitag": 4,
-            "samstag": 5,
-            "sonntag": 6,
-        }
-        for key, value in weekday_map.items():
-            if key in due_date_str:
-                return _next_weekday(value, now)
+            if not due_date_str:
+                return today + timedelta(days=3)  # Default
 
-        if due_date_str in {"next_week"}:
-            return now + timedelta(days=7)
-        if due_date_str:
-            try:
-                return datetime.fromisoformat(due_date_str)
-            except Exception:
-                return now + timedelta(days=1)
-        return now + timedelta(days=1)
+            due_lower = due_date_str.lower().strip()
+
+            # Relative Daten
+            if due_lower in ['heute', 'today']:
+                parsed_date = today
+            elif due_lower in ['morgen', 'tomorrow']:
+                parsed_date = today + timedelta(days=1)
+            elif due_lower in ['übermorgen']:
+                parsed_date = today + timedelta(days=2)
+            elif 'in' in due_lower:
+                # "in 3 days", "in 3 Tagen"
+                match = re.search(r'in\s+(\d+)\s+(?:day|tag)', due_lower)
+                if match:
+                    parsed_date = today + timedelta(days=int(match.group(1)))
+                # "in einer Woche", "in 1 week"
+                match = re.search(r'in\s+(?:einer?|1)\s+(?:woche|week)', due_lower)
+                if match:
+                    parsed_date = today + timedelta(weeks=1)
+                # "in 2 Wochen"
+                match = re.search(r'in\s+(\d+)\s+(?:wochen|weeks)', due_lower)
+                if match:
+                    parsed_date = today + timedelta(weeks=int(match.group(1)))
+
+            # Absolute Daten parsen
+            if not parsed_date:
+                for fmt in ["%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y", "%d.%m.%y"]:
+                    try:
+                        parsed_date = datetime.strptime(due_date_str.strip(), fmt).date()
+                        break
+                    except:
+                        pass
+
+            # KRITISCH: Vergangenheit verhindern!
+            if parsed_date and parsed_date < today:
+                # Wenn Jahr nicht angegeben war, könnte es nächstes Jahr meinen
+                if parsed_date.year == today.year:
+                    # Versuche nächstes Jahr
+                    next_year_date = parsed_date.replace(year=today.year + 1)
+                    if next_year_date >= today:
+                        return next_year_date
+                # Sonst: Default auf morgen
+                return today + timedelta(days=1)
+
+            # Fallback
+            return parsed_date or (today + timedelta(days=3))
+
+        # Verwende die Validierung und konvertiere zu datetime
+        validated_date = parse_and_validate_date(due_date_str)
+        return datetime.combine(validated_date, datetime.min.time(), tzinfo=timezone.utc)
 
     async def _find_lead_by_name_or_id(self, name_or_id: str) -> Optional[dict]:
         """Findet Lead by UUID oder fuzzy Name (case-insensitive)."""

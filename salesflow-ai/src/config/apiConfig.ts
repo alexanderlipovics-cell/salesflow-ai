@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     DEBUG_INFO: '/api/follow-ups/debug/info',
     DEBUG_LEADS: '/api/follow-ups/debug/leads',
     PENDING: '/api/followups/pending',
+    ALL: '/api/followups/all',
     SUGGESTION_ACTION: (id: string) => `/api/followups/suggestions/${id}/action`,
     STATS: '/api/followups/stats',
   },

@@ -615,8 +615,8 @@ async def get_pending_suggestions_v2(
     """Hole alle fälligen Follow-up Vorschläge (nächste 7 Tage) mit Confidence Scores."""
     user_id = _get_user_id(user)
     
-    # Nächste 7 Tage laden statt nur heute
-    end_of_range = (datetime.utcnow() + timedelta(days=7)).isoformat()
+    # Nächste 90 Tage laden (erweitert von 7 Tagen)
+    end_of_range = (datetime.utcnow() + timedelta(days=90)).isoformat()
 
     result = (
         supabase.table("followup_suggestions")
@@ -645,6 +645,43 @@ async def get_pending_suggestions_v2(
         else:
             sug["confidence_display"] = "⚪ N/A"
     
+    return {"suggestions": suggestions, "count": len(suggestions)}
+
+
+@router_v2.get("/all")
+async def get_all_followups(
+    limit: int = 100,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Hole ALLE pending Follow-ups (auch weit in der Zukunft)."""
+    user_id = _get_user_id(user)
+
+    result = (
+        supabase.table("followup_suggestions")
+        .select("*, leads(id, name, email, phone, company, status, whatsapp, instagram, linkedin)")
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .order("due_at")
+        .limit(limit)
+        .execute()
+    )
+
+    suggestions = result.data or []
+
+    # Enrichiere mit Confidence-Anzeige
+    for sug in suggestions:
+        confidence = sug.get("confidence_score")
+        if confidence is not None:
+            if confidence >= 90:
+                sug["confidence_display"] = f"🟢 {int(confidence)}%"
+            elif confidence >= 70:
+                sug["confidence_display"] = f"🟡 {int(confidence)}%"
+            else:
+                sug["confidence_display"] = f"🔴 {int(confidence)}%"
+        else:
+            sug["confidence_display"] = "⚪ N/A"
+
     return {"suggestions": suggestions, "count": len(suggestions)}
 
 

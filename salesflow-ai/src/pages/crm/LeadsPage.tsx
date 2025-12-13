@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle, Upload, Pencil } from "lucide-react";
+import { Search, Plus, List, LayoutGrid, MoreHorizontal, Flame, Phone, Mail, MessageCircle, Upload, Pencil, UserMinus } from "lucide-react";
+import toast from "react-hot-toast";
 import LeadsKanban from "@/components/leads/LeadsKanban";
 import { Button } from "@/components/ui/button";
 import { LeadForm } from "@/components/forms/LeadForm";
 import ImportLeadsDialog from "@/components/leads/ImportLeadsDialog";
 import LeadActionModal from "@/components/leads/LeadActionModal";
 import LeadEditModal from "@/components/leads/LeadEditModal";
+import { LostLeadsSection } from "@/components/leads/LostLeadsSection";
 
 type Lead = {
   id: string;
@@ -28,6 +30,8 @@ type Lead = {
   tags?: string[] | null;
   lastActivity?: string | null;
   nextAction?: string | null;
+  lost_reason?: string | null;
+  updated_at?: string | null;
 };
 
 const statusTabs = [
@@ -36,6 +40,7 @@ const statusTabs = [
   { id: "contacted", label: "Im Gespräch" },
   { id: "qualified", label: "Qualifiziert" },
   { id: "customer", label: "Kunden" },
+  { id: "lost", label: "Verloren", icon: UserMinus },
 ];
 
 const statusColors: Record<string, string> = {
@@ -43,6 +48,7 @@ const statusColors: Record<string, string> = {
   contacted: "bg-yellow-500/20 text-yellow-300",
   qualified: "bg-green-500/20 text-green-300",
   customer: "bg-emerald-600 text-white",
+  lost: "bg-red-500/20 text-red-300",
   default: "bg-slate-700 text-slate-200",
 };
 
@@ -104,6 +110,8 @@ const LeadsPage = () => {
         tags: l.tags || null,
         lastActivity: l.last_activity || l.last_contact,
         nextAction: l.next_action || "Nächster Schritt offen",
+        lost_reason: l.lost_reason || null,
+        updated_at: l.updated_at || null,
       }));
       setLeads(normalized);
     } catch (err) {
@@ -122,7 +130,20 @@ const LeadsPage = () => {
         lead.name.toLowerCase().includes(term) ||
         (lead.email || "").toLowerCase().includes(term) ||
         (lead.company || "").toLowerCase().includes(term);
-      const matchesStatus = status === "all" || lead.status === status;
+
+      // Special logic for status filtering
+      let matchesStatus = false;
+      if (status === "all") {
+        // "All" tab excludes lost leads
+        matchesStatus = lead.status !== "lost";
+      } else if (status === "lost") {
+        // "Lost" tab shows only lost leads
+        matchesStatus = lead.status === "lost";
+      } else {
+        // Other tabs match exactly
+        matchesStatus = lead.status === status;
+      }
+
       return matchesSearch && matchesStatus;
     });
   }, [leads, search, status]);
@@ -262,7 +283,15 @@ const LeadsPage = () => {
         </div>
 
         {/* Main content */}
-        {viewMode === "table" ? (
+        {status === "lost" ? (
+          <LostLeadsSection
+            leads={filteredLeads}
+            onReactivate={(leadId) => {
+              // Refresh leads after reactivation
+              fetchLeads();
+            }}
+          />
+        ) : viewMode === "table" ? (
           <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
             <table className="w-full">
               <thead className="bg-slate-900">
@@ -329,8 +358,17 @@ const LeadsPage = () => {
                           >
                             <Pencil className="h-3 w-3" /> Bearbeiten
                           </button>
-                          <button className="rounded p-2 hover:bg-slate-800">
-                            <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const reason = window.prompt('Grund für Verlust (optional):');
+                              if (reason !== null) { // null = cancelled
+                                handleMarkAsLost(lead.id, reason || 'Keine Antwort');
+                              }
+                            }}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs bg-red-900/50 hover:bg-red-800 text-red-300"
+                          >
+                            <UserMinus className="h-3 w-3" /> Verloren
                           </button>
                         </div>
                       </td>
@@ -468,7 +506,33 @@ const LeadsPage = () => {
       )}
     </div>
   );
-};
+
+  const handleMarkAsLost = async (leadId: string, reason: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          status: "lost",
+          lost_reason: reason,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Lead als verloren markiert");
+        fetchLeads(); // Refresh the list
+      } else {
+        toast.error("Fehler beim Markieren als verloren");
+      }
+    } catch (error) {
+      console.error("Error marking lead as lost:", error);
+      toast.error("Fehler beim Markieren als verloren");
+    }
+  };
 
 export default LeadsPage;
 

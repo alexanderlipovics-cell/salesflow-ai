@@ -50,6 +50,7 @@ const DailyCommandPage = lazy(() =>
 );
 const LeadsProspectsPage = lazy(() => import("./pages/LeadsProspectsPage"));
 const LeadsCustomersPage = lazy(() => import("./pages/LeadsCustomersPage"));
+const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 const LeadHunterPage = lazy(() => import("./pages/LeadHunterPage"));
 const HunterPage = lazy(() => import("./pages/HunterPage"));
 const DelayMasterPage = lazy(() => import("./pages/DelayMasterPage"));
@@ -278,6 +279,7 @@ const App = () => {
                         element={<Navigate to="/leads?view=prospects" replace />}
                       />
                       <Route path="leads/customers" element={<LeadsCustomersPage />} />
+                      <Route path="calendar" element={<CalendarPage />} />
                       <Route path="import" element={<ImportPage />} />
                       <Route path="lead-hunter" element={<Navigate to="/leads?view=hunter" replace />} />
                       <Route path="delay-master" element={<DelayMasterPage />} />

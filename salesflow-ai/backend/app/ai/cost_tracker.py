@@ -80,7 +80,7 @@ class CostTracker:
                 "created_at": now.isoformat()
             }
 
-            result = await self.supabase.table("ai_usage").upsert(
+            result = self.supabase.table("ai_usage").upsert(
                 usage_data,
                 on_conflict="user_id,usage_date"
             ).execute()
@@ -110,7 +110,7 @@ class CostTracker:
             start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             start_date = start_date.replace(day=start_date.day - days)
 
-            result = await self.supabase.table("ai_usage").select(
+            result = self.supabase.table("ai_usage").select(
                 "model, input_tokens, output_tokens, cost_usd, intent, created_at"
             ).eq("user_id", user_id).gte("created_at", start_date.isoformat()).execute()
 
@@ -169,7 +169,7 @@ class CostTracker:
             start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             start_date = start_date.replace(day=start_date.day - days)
 
-            result = await self.supabase.table("ai_usage").select(
+            result = self.supabase.table("ai_usage").select(
                 "model, input_tokens, output_tokens, cost_usd, user_id, created_at"
             ).eq("org_id", org_id).gte("created_at", start_date.isoformat()).execute()
 

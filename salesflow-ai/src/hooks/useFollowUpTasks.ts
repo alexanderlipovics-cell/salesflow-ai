@@ -42,8 +42,8 @@ const sortByDueDate = (a: LeadTaskWithLead, b: LeadTaskWithLead): number => {
  * Fetches follow-up suggestions from backend API and maps them
  * to the existing LeadTaskWithLead shape used in the UI.
  */
-const fetchOpenFollowUpTasks = async (): Promise<LeadTaskWithLead[]> => {
-  const suggestions = await getFollowupSuggestions();
+const fetchOpenFollowUpTasks = async (timeFilter: 'week' | 'month' | 'all' = 'week'): Promise<LeadTaskWithLead[]> => {
+  const suggestions = await getFollowupSuggestions(timeFilter);
 
   return (suggestions || [])
     .map((sug) => {
@@ -82,7 +82,7 @@ const fetchOpenFollowUpTasks = async (): Promise<LeadTaskWithLead[]> => {
  * - refetch: Function to reload tasks
  * - markAs: Function to update task status to 'done' or 'skipped'
  */
-export const useFollowUpTasks = () => {
+export const useFollowUpTasks = (timeFilter: 'week' | 'month' | 'all' = 'week') => {
   const [tasks, setTasks] = useState<LeadTaskWithLead[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export const useFollowUpTasks = () => {
     setError(null);
 
     try {
-      const nextTasks = await fetchOpenFollowUpTasks();
+      const nextTasks = await fetchOpenFollowUpTasks(timeFilter);
       setTasks(nextTasks);
     } catch (err) {
       const message =
@@ -105,7 +105,7 @@ export const useFollowUpTasks = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timeFilter]);
 
   // Initial fetch on mount
   useEffect(() => {

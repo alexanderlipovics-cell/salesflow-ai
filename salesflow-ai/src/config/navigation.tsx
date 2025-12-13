@@ -17,6 +17,7 @@ import {
   Settings,
   Building2,
   Mail,
+  Calendar,
 } from 'lucide-react';
 
 
@@ -28,6 +29,7 @@ export const navigationItems = [
   { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
+  { name: 'Kalender', href: '/calendar', icon: Calendar },
   { name: 'Emails', href: '/emails', icon: Mail },
   { name: 'Approval Inbox', href: '/inbox', icon: MessageSquare },
   { name: 'Kunden', href: '/leads/customers', icon: Handshake },

@@ -424,7 +424,7 @@ async def run_sales_agent(
             lambda: db.table("power_hour_sessions")
             .select("*")
             .eq("user_id", user_id)
-            .is_("is_active", True)
+            .eq("is_active", "true")
             .maybe_single()
             .execute()
         )

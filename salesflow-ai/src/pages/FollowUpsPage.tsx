@@ -279,7 +279,7 @@ const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
 // ─────────────────────────────────────────────────────────────────
 
 export default function FollowUpsPage() {
-  const { tasks, loading, error, markAs, refetch } = useFollowUpTasks();
+  const { tasks, loading, error, markAs, refetch } = useFollowUpTasks(timeFilter);
   
   // Template Overrides aus DB laden
   const {
@@ -305,6 +305,7 @@ export default function FollowUpsPage() {
   const [magicSendError, setMagicSendError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates'>('due');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'all'>('week');
 
   const markAsResponded = async (leadId: string) => {
     if (!leadId) {
@@ -710,6 +711,35 @@ export default function FollowUpsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Zeitfilter */}
+          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-1">
+            <Button
+              size="sm"
+              variant={timeFilter === 'week' ? 'default' : 'ghost'}
+              className="flex items-center gap-1"
+              onClick={() => setTimeFilter('week')}
+            >
+              Diese Woche
+            </Button>
+            <Button
+              size="sm"
+              variant={timeFilter === 'month' ? 'default' : 'ghost'}
+              className="flex items-center gap-1"
+              onClick={() => setTimeFilter('month')}
+            >
+              Dieser Monat
+            </Button>
+            <Button
+              size="sm"
+              variant={timeFilter === 'all' ? 'default' : 'ghost'}
+              className="flex items-center gap-1"
+              onClick={() => setTimeFilter('all')}
+            >
+              Alle
+            </Button>
+          </div>
+
+          {/* View Mode */}
           <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-1">
             <Button
               size="sm"

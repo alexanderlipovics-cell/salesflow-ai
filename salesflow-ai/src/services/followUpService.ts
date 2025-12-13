@@ -220,9 +220,13 @@ export async function scheduleNextLoopCheckinTask(task: {
 // V2 Suggestions (Backend API)
 // ============================================
 
-export async function getFollowupSuggestions(): Promise<FollowupSuggestionV2[]> {
+export async function getFollowupSuggestions(timeFilter: 'week' | 'month' | 'all' = 'week'): Promise<FollowupSuggestionV2[]> {
+  const endpoint = timeFilter === 'all'
+    ? API_ENDPOINTS.FOLLOWUPS.ALL
+    : API_ENDPOINTS.FOLLOWUPS.PENDING;
+
   const response = await apiClient.get<{ suggestions: FollowupSuggestionV2[] }>(
-    API_ENDPOINTS.FOLLOWUPS.PENDING,
+    endpoint,
     { skipCache: true }
   );
   return response.data.suggestions ?? [];
