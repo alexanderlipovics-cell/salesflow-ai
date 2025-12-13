@@ -55,6 +55,7 @@ class ToolExecutor:
             "save_user_knowledge": self._save_user_knowledge,
             "convert_to_customer": self._convert_to_customer,
             "generate_sequence_messages": self._generate_sequence_messages,
+            "update_lead_stage": self._update_lead_stage,
         }
 
         if tool_name not in executor_map:
@@ -1559,6 +1560,61 @@ class ToolExecutor:
             messages_generated.append(f"Follow-up #{i}: {message[:50]}...")
 
         return f"✅ {len(messages_generated)} Nachrichten generiert:\n" + "\n".join(messages_generated)
+
+    async def _update_lead_stage(
+        self,
+        lead_name: str,
+        new_stage: int,
+        sentiment: str = None,
+        objection: str = None,
+    ) -> dict:
+        """Aktualisiert Sales-Stage + Sentiment/Objection für einen Lead."""
+        if not lead_name:
+            return {"error": "lead_name erforderlich"}
+        try:
+            match = (
+                self.db.table("leads")
+                .select("id, name, sales_stage")
+                .ilike("name", f"%{lead_name}%")
+                .eq("user_id", self.user_id)
+                .limit(1)
+                .execute()
+            )
+            if not match or not match.data:
+                return {"error": f"Lead '{lead_name}' nicht gefunden"}
+            lead = match.data[0] if isinstance(match.data, list) else match.data
+            update_data = {"sales_stage": new_stage}
+            if sentiment:
+                update_data["sentiment"] = sentiment
+            if objection:
+                update_data["last_objection"] = objection
+            if new_stage == 0:
+                update_data["disqualified"] = True
+                update_data["disqualify_reason"] = objection or "disqualified via CAS"
+            self.db.table("leads").update(update_data).eq("id", lead["id"]).execute()
+
+            # Optionale Interaktions-Log
+            try:
+                self.db.table("lead_interactions").insert(
+                    {
+                        "user_id": self.user_id,
+                        "lead_id": lead["id"],
+                        "interaction_type": "cas_stage_update",
+                        "raw_notes": f"Stage -> {new_stage}; sentiment={sentiment or 'n/a'}; objection={objection or ''}",
+                    }
+                ).execute()
+            except Exception:
+                pass
+
+            return {
+                "success": True,
+                "lead_id": lead["id"],
+                "sales_stage": new_stage,
+                "sentiment": sentiment,
+                "objection": objection,
+            }
+        except Exception as e:
+            return {"error": str(e)}
 
     async def _start_power_hour(
         self,

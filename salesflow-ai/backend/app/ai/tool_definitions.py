@@ -878,5 +878,31 @@ SALES_AGENT_TOOLS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_lead_stage",
+            "description": "Update den Sales-Stage eines Leads im C.A.S. System",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_name": {"type": "string"},
+                    "new_stage": {
+                        "type": "integer",
+                        "description": "1-8 oder 0 für disqualified"
+                    },
+                    "sentiment": {
+                        "type": "string",
+                        "enum": ["positive", "neutral", "skeptical", "negative"]
+                    },
+                    "objection": {
+                        "type": "string",
+                        "description": "Letzter Einwand falls vorhanden"
+                    }
+                },
+                "required": ["lead_name", "new_stage"]
+            }
+        }
+    },
 ]
 
