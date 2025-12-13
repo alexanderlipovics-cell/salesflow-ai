@@ -154,8 +154,9 @@ async def login(
 
     Returns JWT access and refresh tokens.
     """
-    # Find user by email
-    result = supabase.table("users").select("*").eq("email", form_data.username).maybe_single().execute()
+    # Find user by email (case-insensitive)
+    email_lower = form_data.username.lower()
+    result = supabase.table("users").select("*").eq("email", email_lower).maybe_single().execute()
     
     # Prüfe auf None oder fehlende data-Attribute
     if not result or not result.data:
