@@ -509,6 +509,32 @@ SALES_AGENT_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "save_user_preference",
+            "description": "Speichert eine User-Präferenz die CHIEF sich merken soll (z.B. Signatur, Nachrichtenstil, Firmennamen erwähnen etc.). Nutze SOFORT wenn User eine Präferenz äußert wie 'immer mit Signatur', 'ohne Firmennamen', 'duze mich', 'kurze Nachrichten'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": ["signature", "message_style", "greeting", "language", "other"],
+                        "description": "Kategorie der Präferenz"
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Name der Präferenz (z.B. 'default_signature', 'include_company_name', 'use_du_form')"
+                    },
+                    "value": {
+                        "type": "string", 
+                        "description": "Wert der Präferenz (z.B. 'Liebe Grüße, Tamara', 'false', 'true')"
+                    }
+                },
+                "required": ["category", "key", "value"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "log_interaction",
             "description": "Protokolliert ein Gespräch/Interaktion mit einem Lead. NUTZE DIESES TOOL AUTOMATISCH wenn der User ein Gespräch beschreibt.",
             "parameters": {

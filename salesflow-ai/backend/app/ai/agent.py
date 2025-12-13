@@ -581,9 +581,25 @@ async def run_sales_agent(
         simple_entries = [
             r for r in records if isinstance(r, dict) and r.get("category") and r.get("content")
         ]
-        if simple_entries:
-            context_parts.append("\n## Persönliche Präferenzen & Notizen:")
-            for item in simple_entries:
+        
+        # Trenne Präferenzen von anderen Knowledge-Einträgen
+        preferences_entries = [e for e in simple_entries if e.get("category") == "preferences"]
+        other_entries = [e for e in simple_entries if e.get("category") != "preferences"]
+        
+        if preferences_entries:
+            context_parts.append("\n## USER-PRÄFERENZEN (IMMER BEACHTEN):")
+            for item in preferences_entries:
+                content = item.get("content", "")
+                # Parse "key: value" Format
+                if ":" in content:
+                    key, value = content.split(":", 1)
+                    context_parts.append(f"- {key.strip()}: {value.strip()}")
+                else:
+                    context_parts.append(f"- {content}")
+        
+        if other_entries:
+            context_parts.append("\n## Persönliche Notizen & Wissen:")
+            for item in other_entries:
                 date_str = None
                 created = item.get("created_at") or item.get("updated_at")
                 if isinstance(created, str):

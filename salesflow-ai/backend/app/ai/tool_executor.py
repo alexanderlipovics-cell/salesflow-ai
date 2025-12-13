@@ -53,6 +53,7 @@ class ToolExecutor:
             "schedule_meeting": self._schedule_meeting,
             "prepare_message": self._prepare_message,
             "save_user_knowledge": self._save_user_knowledge,
+            "save_user_preference": self._save_user_preference,
             "convert_to_customer": self._convert_to_customer,
             "generate_sequence_messages": self._generate_sequence_messages,
             "update_lead_stage": self._update_lead_stage,
@@ -794,6 +795,65 @@ class ToolExecutor:
                 "success": False,
                 "error": str(e),
                 "message": "❌ Konnte nicht speichern",
+            }
+
+    async def _save_user_preference(self, category: str, key: str, value: str) -> dict:
+        """Speichert eine User-Präferenz in user_knowledge."""
+        from datetime import datetime
+        
+        now = datetime.utcnow().isoformat()
+        # Speichere als category='preferences' mit content als "key: value" Format
+        content = f"{key}: {value}"
+        
+        entry = {
+            "id": str(uuid.uuid4()),
+            "user_id": self.user_id,
+            "category": "preferences",
+            "content": content,
+            "created_at": now,
+        }
+
+        try:
+            # Prüfe ob bereits eine Präferenz mit diesem key existiert
+            existing = (
+                self.db.table("user_knowledge")
+                .select("*")
+                .eq("user_id", self.user_id)
+                .eq("category", "preferences")
+                .ilike("content", f"{key}:%")
+                .maybe_single()
+                .execute()
+            )
+
+            if existing and existing.data:
+                # Update bestehende Präferenz
+                self.db.table("user_knowledge").update({
+                    "content": content,
+                    "created_at": now,
+                }).eq("id", existing.data["id"]).execute()
+                return {
+                    "success": True,
+                    "message": f"✅ Präferenz '{key}' aktualisiert: {value}",
+                    "category": category,
+                    "key": key,
+                    "value": value,
+                }
+            else:
+                # Neue Präferenz erstellen
+                self.db.table("user_knowledge").insert(entry).execute()
+                return {
+                    "success": True,
+                    "message": f"✅ Präferenz '{key}' gespeichert: {value}",
+                    "category": category,
+                    "key": key,
+                    "value": value,
+                }
+        except Exception as e:  # noqa: BLE001
+            logger.error("save_user_preference failed: %s", e, exc_info=True)
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "❌ Konnte Präferenz nicht speichern",
             }
 
     # ─────────────────────────────────────────────────────────

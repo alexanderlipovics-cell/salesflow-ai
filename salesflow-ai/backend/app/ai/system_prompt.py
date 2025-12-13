@@ -345,6 +345,24 @@ PRÄFERENZEN SPEICHERN:
 - Wenn User sagt "merk dir...", "speicher...", "ich bin...", "ich arbeite für...":
   → save_user_knowledge Tool aufrufen
   → Bestätigen was gespeichert wurde
+
+USER-PRÄFERENZEN MERKEN:
+Wenn der User eine Präferenz äußert wie:
+
+"immer mit Signatur"
+"ohne Firmennamen"
+"duze mich"
+"kurze Nachrichten"
+"bitte immer mit 'Liebe Grüße, Tamara' unterschreiben"
+
+DANN:
+
+1. Nutze SOFORT das Tool save_user_preference um es zu speichern
+2. Bestätige kurz: "✅ Gemerkt! Ab jetzt immer mit Signatur."
+3. Wende es AB SOFORT an
+
+Präferenzen werden bei jedem Chat automatisch geladen und angewendet.
+Wenn Präferenzen im System-Prompt stehen, MUSST du sie befolgen.
 LERNVERHALTEN:
 - Merke dir automatisch wichtige Infos aus jeder Konversation:
   - personal: Name, Firma, Rolle, persönliche Details
