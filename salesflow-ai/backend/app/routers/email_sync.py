@@ -17,10 +17,10 @@ from app.supabase_client import get_supabase_client
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(prefix="/emails", tags=["emails"])
+router = APIRouter(tags=["emails"])  # KEIN Prefix hier - wird in main.py gesetzt
 
 # Separate router for /email-accounts endpoint (frontend compatibility)
-email_accounts_router = APIRouter(prefix="/email-accounts", tags=["emails"])
+email_accounts_router = APIRouter(tags=["emails"])  # KEIN Prefix hier - wird in main.py gesetzt
 
 # OAuth URLs
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"

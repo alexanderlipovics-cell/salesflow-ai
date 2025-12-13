@@ -191,6 +191,25 @@ async def health():
 async def root():
     return {"status": "ok", "app": "SalesFlow AI", "version": "2.0.0"}
 
+# ============= DIRECT EMAIL ROUTES (TEST) =============
+# Direkte Routes umgehen Router-Probleme und zeigen ob Routing das Problem ist
+@app.get("/api/emails/test-direct")
+async def test_email_direct():
+    """Direkte Route ohne Router - Test ob Routing das Problem ist"""
+    return {"status": "ok", "message": "Direct route works", "source": "main.py"}
+
+@app.get("/api/emails/")
+async def get_emails_direct(request: Request):
+    """Direkte Route ohne Auth - Test ob Middleware blockiert"""
+    auth_header = request.headers.get("Authorization")
+    return {
+        "status": "ok",
+        "auth_present": bool(auth_header),
+        "path": "/api/emails/",
+        "source": "main.py direct route",
+        "auth_header_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else auth_header
+    }
+
 # ============= Exception Handlers =============
 from .core.exceptions import SalesFlowException, exception_to_dict, get_status_code
 
@@ -456,8 +475,8 @@ app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mappin
 app.include_router(voice_router, prefix="/api/voice")  # 🗣️ Voice Transcription
 app.include_router(exports_router)  # ⬇️ File Exports
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
-app.include_router(email_sync_router, prefix="/api")  # 📧 Email Sync & Tracking
-app.include_router(email_accounts_router, prefix="/api")  # 📧 Email Accounts (frontend compatibility)
+app.include_router(email_sync_router, prefix="/api/emails", tags=["emails"])  # 📧 Email Sync & Tracking (VOLLER PREFIX)
+app.include_router(email_accounts_router, prefix="/api/email-accounts", tags=["emails"])  # 📧 Email Accounts (VOLLER PREFIX)
 # emails.router DEAKTIVIERT - email_sync_router wird stattdessen verwendet
 # app.include_router(emails.router)  # ALT - blockiert email_sync_router
 app.include_router(interactions_router, prefix="/api")  # 📊 User Interactions Tracking
