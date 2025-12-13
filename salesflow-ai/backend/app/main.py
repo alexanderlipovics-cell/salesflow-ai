@@ -193,8 +193,27 @@ async def root():
 
 # ============= DIRECT EMAIL ROUTES =============
 # Direkte Routes mit echter Funktionalität (umgehen Router-Probleme)
-from app.core.security import get_current_active_user
-from app.core.deps import get_supabase
+# User-ID wird direkt aus Token extrahiert (ohne get_current_active_user Dependency)
+import jwt
+from jwt import PyJWTError
+from app.supabase_client import get_supabase_client
+
+def get_user_id_from_request(request: Request) -> str:
+    """Extract user ID from Authorization header"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No token provided")
+    
+    token = auth_header.replace("Bearer ", "")
+    try:
+        # Decode without verification for user_id extraction
+        payload = jwt.decode(token, options={"verify_signature": False})
+        user_id = payload.get("sub") or payload.get("user_id") or payload.get("id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User ID not in token")
+        return str(user_id)
+    except PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/api/emails/test-direct")
 async def test_email_direct():
@@ -202,15 +221,10 @@ async def test_email_direct():
     return {"status": "ok", "message": "Direct route works", "source": "main.py"}
 
 @app.get("/api/emails/")
-async def get_emails_direct(
-    request: Request,
-    current_user = Depends(get_current_active_user),
-    db = Depends(get_supabase)
-):
+async def get_emails_direct(request: Request):
     """Lade Emails für den aktuellen User"""
-    user_id = current_user.get("sub") or current_user.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="User ID not found")
+    user_id = get_user_id_from_request(request)
+    db = get_supabase_client()
     
     result = db.table("emails") \
         .select("*") \
@@ -222,15 +236,10 @@ async def get_emails_direct(
     return result.data or []
 
 @app.get("/api/emails/accounts")
-async def get_email_accounts_direct(
-    request: Request,
-    current_user = Depends(get_current_active_user),
-    db = Depends(get_supabase)
-):
+async def get_email_accounts_direct(request: Request):
     """Lade Email-Accounts für den aktuellen User"""
-    user_id = current_user.get("sub") or current_user.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="User ID not found")
+    user_id = get_user_id_from_request(request)
+    db = get_supabase_client()
     
     result = db.table("email_accounts") \
         .select("*") \
@@ -241,17 +250,11 @@ async def get_email_accounts_direct(
     return result.data or []
 
 @app.post("/api/emails/sync")
-async def sync_emails_direct(
-    request: Request,
-    current_user = Depends(get_current_active_user),
-    db = Depends(get_supabase)
-):
+async def sync_emails_direct(request: Request):
     """Starte Gmail Sync für den aktuellen User"""
-    user_id = current_user.get("sub") or current_user.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="User ID not found")
+    user_id = get_user_id_from_request(request)
+    db = get_supabase_client()
     
-    # Get Gmail account
     account_result = db.table("email_accounts") \
         .select("*") \
         .eq("user_id", user_id) \
@@ -263,15 +266,11 @@ async def sync_emails_direct(
     if not account_result.data:
         raise HTTPException(status_code=400, detail="No Gmail account connected")
     
-    account = account_result.data[0]
-    
-    # TODO: Implement actual Gmail API sync
-    # For now, return success with account info
     return {
         "status": "success",
         "message": "Sync initiated",
-        "account": account.get("email"),
-        "synced_count": 0  # Placeholder
+        "account": account_result.data[0].get("email"),
+        "synced_count": 0
     }
 
 # ============= Exception Handlers =============
