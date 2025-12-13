@@ -311,6 +311,14 @@ class ToolExecutor:
             if lead.get("company"):
                 response += f" ({lead['company']})"
             response += f"\n   📝 {s.get('reason', 'Follow-up')}\n"
+            
+            # Zeige previous_message wenn vorhanden (für Kontext)
+            previous_msg = s.get("previous_message")
+            previous_type = s.get("previous_message_type")
+            if previous_msg:
+                msg_preview = previous_msg[:80] + "..." if len(previous_msg) > 80 else previous_msg
+                response += f"   📨 Letzte Nachricht ({previous_type or 'generic'}): _{msg_preview}_\n"
+            
             snippet = (s.get("suggested_message") or "").strip()
             if len(snippet) > 60:
                 snippet = snippet[:60] + "..."
@@ -1145,6 +1153,53 @@ class ToolExecutor:
             logger.error(f"Create follow-up FAILED: {type(e).__name__}: {e}", exc_info=True)
             return {"success": False, "error": str(e)}
 
+    async def _get_last_message_for_lead(self, lead_id: str) -> tuple[str | None, str]:
+        """Holt die letzte gesendete Nachricht für einen Lead.
+        
+        Returns:
+            tuple: (message_content, message_type)
+            message_type: 'first_contact', 'product_info', 'follow_up', 'objection_handling', 'generic'
+        """
+        try:
+            # Suche in lead_interactions nach der letzten gesendeten Nachricht
+            interactions = (
+                self.db.table("lead_interactions")
+                .select("raw_notes, notes, interaction_type, channel")
+                .eq("lead_id", lead_id)
+                .eq("user_id", self.user_id)
+                .in_("interaction_type", ["message_prepared", "message_sent", "whatsapp_sent", "email_sent"])
+                .order("interaction_at", desc=True)
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            
+            if interactions.data and len(interactions.data) > 0:
+                last_interaction = interactions.data[0]
+                message_content = last_interaction.get("raw_notes") or last_interaction.get("notes") or ""
+                
+                # Bestimme message_type basierend auf interaction_type und Inhalt
+                interaction_type = last_interaction.get("interaction_type", "").lower()
+                content_lower = message_content.lower()
+                
+                if "first_contact" in interaction_type or "erstkontakt" in content_lower or "erstmalig" in content_lower:
+                    message_type = "first_contact"
+                elif "product" in content_lower or "produkt" in content_lower or "angebot" in content_lower:
+                    message_type = "product_info"
+                elif "einwand" in content_lower or "objection" in content_lower:
+                    message_type = "objection_handling"
+                elif "follow" in interaction_type or "nachfass" in content_lower:
+                    message_type = "follow_up"
+                else:
+                    message_type = "generic"
+                
+                return (message_content[:500] if message_content else None, message_type)
+            
+            return (None, "first_contact")
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Could not load last message for lead {lead_id}: {e}")
+            return (None, "first_contact")
+
     async def _insert_followup_suggestion(
         self,
         *,
@@ -1167,6 +1222,9 @@ class ToolExecutor:
         channel_value = (channel or "WHATSAPP").upper()
         template = template_key or "CHIEF_GENERATED"
 
+        # Hole letzte Nachricht für diesen Lead
+        previous_message, previous_message_type = await self._get_last_message_for_lead(lead_id)
+
         data = {
             "id": str(uuid.uuid4()),
             "user_id": self.user_id,
@@ -1185,6 +1243,8 @@ class ToolExecutor:
             "source": source,
             "created_at": datetime.utcnow().isoformat(),
             "created_by": self.user_id,
+            "previous_message": previous_message,
+            "previous_message_type": previous_message_type,
         }
 
         result = self.db.table("followup_suggestions").insert(data).execute()

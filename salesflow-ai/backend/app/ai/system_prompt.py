@@ -453,7 +453,19 @@ followup_suggestions:
   sent_at: TIMESTAMPTZ
   snoozed_until: TIMESTAMPTZ
   created_at: TIMESTAMPTZ
+  previous_message: TEXT (Die letzte gesendete Nachricht an diesen Lead)
+  previous_message_type: TEXT (Typ: first_contact, product_info, follow_up, objection_handling, generic)
 ```
+
+**WICHTIG: KONTEXTBEZOGENE FOLLOW-UPS**
+Wenn du eine Follow-up Nachricht generierst:
+- Prüfe IMMER ob `previous_message` vorhanden ist
+- Nimm Bezug auf die letzte Nachricht:
+  - `first_contact`: "Hey, hast du meine Nachricht gesehen?"
+  - `product_info`: "Hattest du Zeit dir das anzuschauen?"
+  - `follow_up`: "Ich wollte nochmal nachfragen..."
+  - `objection_handling`: "Hast du noch Fragen zu..."
+- Mache die Follow-up Nachricht KONKRET und KONTEXTBEZOGEN, nicht generisch!
 
 ### FOLLOW-UP SEQUENZEN (CHIEF)
 - Nutzer kann Sequenzen starten (z.B. Tag 1/3/7) → Einträge landen in `followup_suggestions` und werden in `lead_interactions` als `sequence_started` geloggt.
