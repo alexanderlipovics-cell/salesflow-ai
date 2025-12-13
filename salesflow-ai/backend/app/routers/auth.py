@@ -150,57 +150,89 @@ async def login(
     supabase: Client = Depends(get_supabase),
 ) -> LoginResponse:
     """
-    Authenticate user with email and password.
+    Authenticate user with email and password using Supabase Auth API.
 
     Returns JWT access and refresh tokens.
     """
-    # Find user by email (case-insensitive)
+    # Case-insensitive email
     email_lower = form_data.username.lower()
-    result = supabase.table("users").select("*").eq("email", email_lower).maybe_single().execute()
+    password = form_data.password
     
-    # Prüfe auf None oder fehlende data-Attribute
-    if not result or not result.data:
+    # Supabase Auth API für Login nutzen
+    try:
+        auth_response = supabase.auth.sign_in_with_password({
+            "email": email_lower,
+            "password": password
+        })
+        
+        if not auth_response.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        user_id = auth_response.user.id
+        
+        # User-Daten aus users Tabelle holen (falls vorhanden)
+        user_result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+        
+        # Falls User in auth.users existiert aber nicht in users Tabelle
+        # Verwende auth.users Daten als Fallback
+        if not user_result or not user_result.data:
+            # User existiert in auth.users aber nicht in users - verwende auth.users Daten
+            auth_user = auth_response.user
+            user_email = auth_user.email or email_lower
+            user_data = {
+                "id": user_id,
+                "email": user_email,
+                "first_name": auth_user.user_metadata.get("first_name") if auth_user.user_metadata else None,
+                "last_name": auth_user.user_metadata.get("last_name") if auth_user.user_metadata else None,
+                "role": "user",
+                "is_verified": auth_user.email_confirmed_at is not None,
+            }
+        else:
+            user_data = user_result.data
+            
+            # Prüfe ob Account aktiv ist
+            if not user_data.get("is_active", True):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Account is deactivated",
+                )
+
+        # Create tokens mit unseren JWT Claims
+        tokens = create_token_pair(user_id, user_data.get("email", email_lower))
+        
+        # Debug: Log token creation
+        logger.debug(f"Login: Token pair created. Type: {type(tokens)}")
+
+        return LoginResponse(
+            access_token=tokens["access_token"],  # create_token_pair from main.py returns Dict[str, str]
+            refresh_token=tokens["refresh_token"],  # create_token_pair from main.py returns Dict[str, str]
+            token_type="bearer",
+            expires_in=1800,  # 30 minutes
+            user=UserProfile(
+                id=user_data["id"],
+                email=user_data.get("email", email_lower),
+                first_name=user_data.get("first_name"),
+                last_name=user_data.get("last_name"),
+                role=user_data.get("role", "user"),
+                is_verified=user_data.get("is_verified", False),
+            ),
+        )
+        
+    except HTTPException:
+        # HTTPExceptions weiterwerfen
+        raise
+    except Exception as e:
+        # Alle anderen Fehler als Invalid credentials behandeln
+        logger.warning(f"Login failed for email {email_lower}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    user = result.data
-
-    if not verify_password(form_data.password, user.get("password_hash", "")):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.get("is_active", True):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Account is deactivated",
-        )
-
-    # Create tokens
-    tokens = create_token_pair(user["id"], user["email"])
-    
-    # Debug: Log token creation
-    logger.debug(f"Login: Token pair created. Type: {type(tokens)}")
-
-    return LoginResponse(
-        access_token=tokens["access_token"],  # create_token_pair from main.py returns Dict[str, str]
-        refresh_token=tokens["refresh_token"],  # create_token_pair from main.py returns Dict[str, str]
-        token_type="bearer",
-        expires_in=1800,  # 30 minutes
-        user=UserProfile(
-            id=user["id"],
-            email=user["email"],
-            first_name=user.get("first_name"),
-            last_name=user.get("last_name"),
-            role=user.get("role", "user"),
-            is_verified=user.get("is_verified", False),
-        ),
-    )
 
 
 @router.post("/refresh", response_model=LoginResponse)
