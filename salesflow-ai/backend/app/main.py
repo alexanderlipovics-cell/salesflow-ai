@@ -210,6 +210,31 @@ async def get_emails_direct(request: Request):
         "auth_header_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else auth_header
     }
 
+@app.get("/api/emails/accounts")
+async def get_email_accounts_direct(request: Request):
+    """Direkte Route für /accounts - Test ob Auth-Header ankommt"""
+    auth_header = request.headers.get("Authorization")
+    return {
+        "status": "ok", 
+        "auth_present": bool(auth_header),
+        "token_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else None,
+        "source": "main.py direct",
+        "path": "/api/emails/accounts"
+    }
+
+@app.post("/api/emails/sync")
+async def sync_emails_direct(request: Request):
+    """Direkte Route für /sync - Test ob Auth-Header ankommt"""
+    auth_header = request.headers.get("Authorization")
+    return {
+        "status": "ok",
+        "auth_present": bool(auth_header),
+        "token_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else None,
+        "source": "main.py direct",
+        "path": "/api/emails/sync",
+        "method": request.method
+    }
+
 # ============= Exception Handlers =============
 from .core.exceptions import SalesFlowException, exception_to_dict, get_status_code
 
