@@ -125,9 +125,6 @@ Ich hoffe, es geht dir gut!`;
     }
   };
 
-  const appendSignature = (text: string) =>
-    `${(text || "").trim()}\n\nHerzliche Grüße,\n${userFirstName}`;
-
   const generateMessage = async () => {
     if (!lead || !action) return;
     setLoading(true);
@@ -152,10 +149,12 @@ Ich hoffe, es geht dir gut!`;
 
       const data = await response.json();
       const rawMessage = data.response || data.message || getMessageByStatus(lead);
-      setMessage(appendSignature(rawMessage));
+      // AI generiert bereits Signatur aus user_knowledge Präferenzen - keine doppelte Signatur hinzufügen
+      setMessage((rawMessage || "").trim());
     } catch (error) {
       console.error("Failed to generate message:", error);
-      setMessage(getFallbackMessage(lead));
+      // Fallback: Verwende Status-basierte Nachricht (ohne Signatur, da AI sie später hinzufügt)
+      setMessage(getMessageByStatus(lead));
     } finally {
       setLoading(false);
     }
