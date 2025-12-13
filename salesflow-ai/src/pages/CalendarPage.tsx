@@ -326,9 +326,16 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
   const loadLeads = async () => {
     try {
       const response = await api.get('/leads');
-      setLeads(response.data || []);
+      console.log('Leads response:', response);  // Debug
+      
+      // Prüfe verschiedene Response-Strukturen
+      const leadsData = (response as any).data?.leads || (response as any).data || response || [];
+      console.log('Leads data:', leadsData);  // Debug
+      
+      setLeads(Array.isArray(leadsData) ? leadsData : []);
     } catch (e) {
       console.error('Failed to load leads:', e);
+      setLeads([]);
     }
   };
 
