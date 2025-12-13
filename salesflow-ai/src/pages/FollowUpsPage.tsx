@@ -279,6 +279,9 @@ const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
 // ─────────────────────────────────────────────────────────────────
 
 export default function FollowUpsPage() {
+  // State für Zeitfilter (MUSS vor useFollowUpTasks sein!)
+  const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'all'>('week');
+  
   const { tasks, loading, error, markAs, refetch } = useFollowUpTasks(timeFilter);
   
   // Template Overrides aus DB laden
@@ -305,7 +308,6 @@ export default function FollowUpsPage() {
   const [magicSendError, setMagicSendError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates'>('due');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'all'>('week');
 
   const markAsResponded = async (leadId: string) => {
     if (!leadId) {

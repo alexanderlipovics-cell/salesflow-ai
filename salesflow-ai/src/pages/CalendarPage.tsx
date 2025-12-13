@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, ChevronLeft, ChevronRight, Plus, Phone, Mail, MessageCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Phone, Mail, MessageCircle } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, addWeeks, subWeeks, isToday, parseISO, isBefore } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { api } from '@/lib/api';
@@ -17,14 +17,12 @@ interface FollowUp {
     id: string;
     name: string;
     company?: string;
-    phone?: string;
-    email?: string;
   };
 }
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [followups, setFollowups] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -32,7 +30,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     loadFollowups();
-  }, [currentDate, viewMode]);
+  }, []);
 
   const loadFollowups = async () => {
     setLoading(true);
@@ -40,13 +38,11 @@ export default function CalendarPage() {
       const response = await api.get('/api/followups/all');
       setFollowups(response.data || []);
     } catch (error) {
-      console.error('Failed to load followups:', error);
-      // Fallback auf pending
       try {
         const fallback = await api.get('/api/followups/pending');
         setFollowups(fallback.data || []);
       } catch (e) {
-        console.error('Fallback failed:', e);
+        console.error('Failed to load followups:', e);
       }
     } finally {
       setLoading(false);
@@ -60,10 +56,12 @@ export default function CalendarPage() {
         end: endOfWeek(currentDate, { weekStartsOn: 1 })
       });
     }
-    return eachDayOfInterval({
-      start: startOfMonth(currentDate),
-      end: endOfMonth(currentDate)
-    });
+    // Für Monatsansicht: Immer komplette Wochen zeigen
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const start = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const end = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    return eachDayOfInterval({ start, end });
   };
 
   const navigate = (direction: 'prev' | 'next') => {
@@ -84,7 +82,7 @@ export default function CalendarPage() {
       case 'email': return 'bg-blue-500';
       case 'phone': return 'bg-purple-500';
       case 'instagram': return 'bg-pink-500';
-      default: return 'bg-gray-500';
+      default: return 'bg-teal-500';
     }
   };
 
@@ -95,33 +93,36 @@ export default function CalendarPage() {
 
   const overdueCount = followups.filter(fu => fu.due_at && isBefore(parseISO(fu.due_at), new Date()) && !isToday(parseISO(fu.due_at))).length;
   const todayCount = followups.filter(fu => fu.due_at && isToday(parseISO(fu.due_at))).length;
-
   const days = getDays();
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
+            <Calendar className="h-6 w-6 text-teal-400" />
             Kalender
           </h1>
 
           {/* View Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
             <button
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'week' ? 'bg-white shadow text-blue-600' : 'text-gray-600'
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === 'week'
+                  ? 'bg-teal-500 text-white'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Woche
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'month' ? 'bg-white shadow text-blue-600' : 'text-gray-600'
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === 'month'
+                  ? 'bg-teal-500 text-white'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Monat
@@ -131,24 +132,30 @@ export default function CalendarPage() {
 
         <div className="flex items-center gap-3">
           {/* Navigation */}
-          <div className="flex items-center bg-white border rounded-lg">
-            <button onClick={() => navigate('prev')} className="p-2 hover:bg-gray-50">
+          <div className="flex items-center bg-slate-800 border border-slate-700 rounded-lg">
+            <button
+              onClick={() => navigate('prev')}
+              className="p-2 hover:bg-slate-700 rounded-l-lg text-slate-400 hover:text-white"
+            >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <span className="px-4 font-medium min-w-[180px] text-center">
+            <span className="px-4 font-medium min-w-[200px] text-center text-white">
               {viewMode === 'week'
                 ? `${format(days[0], 'd. MMM', { locale: de })} - ${format(days[days.length-1], 'd. MMM yyyy', { locale: de })}`
                 : format(currentDate, 'MMMM yyyy', { locale: de })
               }
             </span>
-            <button onClick={() => navigate('next')} className="p-2 hover:bg-gray-50">
+            <button
+              onClick={() => navigate('next')}
+              className="p-2 hover:bg-slate-700 rounded-r-lg text-slate-400 hover:text-white"
+            >
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
 
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-medium text-white"
           >
             Heute
           </button>
@@ -156,7 +163,7 @@ export default function CalendarPage() {
           {/* Create Button */}
           <button
             onClick={() => { setSelectedDate(new Date()); setShowCreateModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Termin
@@ -166,37 +173,46 @@ export default function CalendarPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-xl text-white">
-          <p className="text-3xl font-bold">{todayCount}</p>
-          <p className="text-blue-100">Heute</p>
+        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl">
+          <p className="text-3xl font-bold text-teal-400">{todayCount}</p>
+          <p className="text-slate-400 text-sm">Heute</p>
+          <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-full bg-teal-500 rounded-full" style={{ width: '40%' }}></div>
+          </div>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-xl text-white">
-          <p className="text-3xl font-bold">{followups.length}</p>
-          <p className="text-green-100">Gesamt offen</p>
+        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl">
+          <p className="text-3xl font-bold text-green-400">{followups.length}</p>
+          <p className="text-slate-400 text-sm">Gesamt offen</p>
+          <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-full bg-green-500 rounded-full" style={{ width: '60%' }}></div>
+          </div>
         </div>
-        <div className={`p-4 rounded-xl text-white ${overdueCount > 0 ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`}>
-          <p className="text-3xl font-bold">{overdueCount}</p>
-          <p className={overdueCount > 0 ? 'text-red-100' : 'text-gray-200'}>Überfällig</p>
+        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl">
+          <p className={`text-3xl font-bold ${overdueCount > 0 ? 'text-red-400' : 'text-slate-500'}`}>{overdueCount}</p>
+          <p className="text-slate-400 text-sm">Überfällig</p>
+          <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full ${overdueCount > 0 ? 'bg-red-500' : 'bg-slate-600'}`} style={{ width: overdueCount > 0 ? '30%' : '0%' }}></div>
+          </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
       {loading ? (
-        <div className="text-center py-12">Laden...</div>
+        <div className="text-center py-12 text-slate-400">Laden...</div>
       ) : (
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
           {/* Day Headers */}
-          <div className={`grid ${viewMode === 'week' ? 'grid-cols-7' : 'grid-cols-7'} bg-gray-50 border-b`}>
+          <div className="grid grid-cols-7 bg-slate-800 border-b border-slate-700">
             {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(day => (
-              <div key={day} className="p-3 text-center text-sm font-semibold text-gray-600">
+              <div key={day} className="p-3 text-center text-sm font-semibold text-slate-400">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Days Grid */}
-          <div className={`grid ${viewMode === 'week' ? 'grid-cols-7' : 'grid-cols-7'}`}>
-            {days.map((day, idx) => {
+          <div className="grid grid-cols-7">
+            {days.map((day) => {
               const dayFollowups = getFollowupsForDay(day);
               const isCurrentDay = isToday(day);
               const isPast = isBefore(day, new Date()) && !isCurrentDay;
@@ -206,24 +222,22 @@ export default function CalendarPage() {
                 <div
                   key={day.toISOString()}
                   onClick={() => handleDayClick(day)}
-                  className={`min-h-[120px] p-2 border-b border-r cursor-pointer transition-colors ${
+                  className={`min-h-[100px] p-2 border-b border-r border-slate-700 cursor-pointer transition-colors ${
                     isCurrentDay
-                      ? 'bg-blue-50'
+                      ? 'bg-teal-500/10'
                       : isPast
-                        ? 'bg-gray-50'
-                        : 'bg-white hover:bg-gray-50'
-                  } ${!isCurrentMonth ? 'opacity-40' : ''}`}
+                        ? 'bg-slate-800/30'
+                        : 'bg-slate-800/50 hover:bg-slate-700/50'
+                  } ${!isCurrentMonth ? 'opacity-30' : ''}`}
                 >
                   {/* Day Number */}
-                  <div className={`text-right mb-1 ${
-                    isCurrentDay
-                      ? 'text-blue-600 font-bold'
-                      : isPast
-                        ? 'text-gray-400'
-                        : 'text-gray-700'
-                  }`}>
-                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
-                      isCurrentDay ? 'bg-blue-600 text-white' : ''
+                  <div className="text-right mb-1">
+                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${
+                      isCurrentDay
+                        ? 'bg-teal-500 text-white font-bold'
+                        : isPast
+                          ? 'text-slate-500'
+                          : 'text-slate-300'
                     }`}>
                       {format(day, 'd')}
                     </span>
@@ -231,18 +245,18 @@ export default function CalendarPage() {
 
                   {/* Follow-ups */}
                   <div className="space-y-1">
-                    {dayFollowups.slice(0, 3).map((fu) => (
+                    {dayFollowups.slice(0, 2).map((fu) => (
                       <div
                         key={fu.id}
-                        className={`text-xs p-1.5 rounded truncate text-white ${getChannelColor(fu.channel)}`}
+                        className={`text-xs p-1 rounded truncate text-white ${getChannelColor(fu.channel)}`}
                         title={fu.leads?.name}
                       >
                         {fu.leads?.name || 'Follow-up'}
                       </div>
                     ))}
-                    {dayFollowups.length > 3 && (
-                      <div className="text-xs text-gray-500 text-center">
-                        +{dayFollowups.length - 3} mehr
+                    {dayFollowups.length > 2 && (
+                      <div className="text-xs text-slate-500 text-center">
+                        +{dayFollowups.length - 2} mehr
                       </div>
                     )}
                   </div>
@@ -268,7 +282,6 @@ export default function CalendarPage() {
   );
 }
 
-// Modal für Termin erstellen
 function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, onClose: () => void, onCreated: () => void }) {
   const [leads, setLeads] = useState<any[]>([]);
   const [selectedLead, setSelectedLead] = useState('');
@@ -315,21 +328,21 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Plus className="h-5 w-5" />
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-white">
+          <Plus className="h-5 w-5 text-teal-400" />
           Neuer Termin
         </h2>
 
         <div className="space-y-4">
           {/* Lead Selection */}
           <div>
-            <label className="block text-sm font-medium mb-1">Lead</label>
+            <label className="block text-sm font-medium mb-1 text-slate-300">Lead</label>
             <select
               value={selectedLead}
               onChange={(e) => setSelectedLead(e.target.value)}
-              className="w-full p-2 border rounded-lg"
+              className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
             >
               <option value="">-- Lead auswählen --</option>
               {leads.map(lead => (
@@ -342,18 +355,18 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium mb-1">Datum</label>
+            <label className="block text-sm font-medium mb-1 text-slate-300">Datum</label>
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full p-2 border rounded-lg"
+              className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
             />
           </div>
 
           {/* Channel */}
           <div>
-            <label className="block text-sm font-medium mb-1">Kanal</label>
+            <label className="block text-sm font-medium mb-1 text-slate-300">Kanal</label>
             <div className="flex gap-2">
               {[
                 { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: 'bg-green-500' },
@@ -363,8 +376,10 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
                 <button
                   key={ch.id}
                   onClick={() => setChannel(ch.id)}
-                  className={`flex-1 p-2 rounded-lg border flex items-center justify-center gap-1 text-sm ${
-                    channel === ch.id ? `${ch.color} text-white` : 'bg-gray-50'
+                  className={`flex-1 p-2.5 rounded-lg border flex items-center justify-center gap-1.5 text-sm transition-colors ${
+                    channel === ch.id
+                      ? `${ch.color} text-white border-transparent`
+                      : 'bg-slate-900 border-slate-600 text-slate-300 hover:border-slate-500'
                   }`}
                 >
                   <ch.icon className="h-4 w-4" />
@@ -376,28 +391,28 @@ function CreateTerminModal({ date, onClose, onCreated }: { date: Date | null, on
 
           {/* Message */}
           <div>
-            <label className="block text-sm font-medium mb-1">Nachricht (optional)</label>
+            <label className="block text-sm font-medium mb-1 text-slate-300">Nachricht (optional)</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Nachricht für Follow-up..."
-              className="w-full p-2 border rounded-lg"
+              className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
               rows={3}
             />
           </div>
         </div>
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+            className="flex-1 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors"
           >
             Abbrechen
           </button>
           <button
             onClick={handleCreate}
             disabled={saving || !selectedLead}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Speichern...' : 'Erstellen'}
           </button>
