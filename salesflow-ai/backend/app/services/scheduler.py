@@ -28,6 +28,7 @@ def setup_scheduler():
         power_hour_reminder
     )
     from .jobs import generate_all_suggestions  # optional background Follow-up Generator
+    from .followup_autopilot import run_autopilot_for_all_users
 
     # FollowUp Checker - every 4 hours
     scheduler.add_job(
@@ -97,6 +98,15 @@ def setup_scheduler():
         IntervalTrigger(minutes=15),
         id="generate_all_suggestions",
         name="Generate Follow-up Suggestions",
+        replace_existing=True
+    )
+
+    # Autopilot Follow-up Processor - every 15 minutes
+    scheduler.add_job(
+        run_autopilot_for_all_users,
+        IntervalTrigger(minutes=15),
+        id="run_autopilot_followups",
+        name="Process Autopilot Follow-ups",
         replace_existing=True
     )
 

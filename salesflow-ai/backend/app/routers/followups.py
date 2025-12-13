@@ -612,7 +612,7 @@ async def get_pending_suggestions_v2(
     user=Depends(get_current_active_user),
     supabase=Depends(get_supabase),
 ):
-    """Hole alle fälligen Follow-up Vorschläge (nächste 7 Tage)."""
+    """Hole alle fälligen Follow-up Vorschläge (nächste 7 Tage) mit Confidence Scores."""
     user_id = _get_user_id(user)
     
     # Nächste 7 Tage laden statt nur heute
@@ -624,12 +624,27 @@ async def get_pending_suggestions_v2(
         .eq("user_id", user_id)
         .eq("status", "pending")
         .lte("due_at", end_of_range)
+        .order("confidence_score", desc=True)  # High confidence zuerst
         .order("due_at")
         .limit(limit)
         .execute()
     )
 
     suggestions = result.data or []
+    
+    # Enrichiere mit Confidence-Anzeige
+    for sug in suggestions:
+        confidence = sug.get("confidence_score")
+        if confidence is not None:
+            if confidence >= 90:
+                sug["confidence_display"] = f"🟢 {int(confidence)}%"
+            elif confidence >= 70:
+                sug["confidence_display"] = f"🟡 {int(confidence)}%"
+            else:
+                sug["confidence_display"] = f"🔴 {int(confidence)}%"
+        else:
+            sug["confidence_display"] = "⚪ N/A"
+    
     return {"suggestions": suggestions, "count": len(suggestions)}
 
 
@@ -647,7 +662,7 @@ async def get_todays_followups_v2(
     user=Depends(get_current_active_user),
     supabase=Depends(get_supabase),
 ):
-    """Alle Follow-ups für heute (für Dashboard Widget)."""
+    """Alle Follow-ups für heute (für Dashboard Widget) mit Confidence Scores."""
     user_id = _get_user_id(user)
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     today_end = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
@@ -659,10 +674,26 @@ async def get_todays_followups_v2(
         .eq("status", "pending")
         .gte("due_at", today_start)
         .lte("due_at", today_end)
+        .order("confidence_score", desc=True)  # High confidence zuerst
+        .order("due_at")
         .execute()
     )
 
     suggestions = result.data or []
+    
+    # Enrichiere mit Confidence-Anzeige
+    for sug in suggestions:
+        confidence = sug.get("confidence_score")
+        if confidence is not None:
+            if confidence >= 90:
+                sug["confidence_display"] = f"🟢 {int(confidence)}%"
+            elif confidence >= 70:
+                sug["confidence_display"] = f"🟡 {int(confidence)}%"
+            else:
+                sug["confidence_display"] = f"🔴 {int(confidence)}%"
+        else:
+            sug["confidence_display"] = "⚪ N/A"
+    
     return {"today": suggestions, "count": len(suggestions)}
 
 
@@ -833,12 +864,13 @@ async def generate_suggestions_v2(
 ):
     """Generiert Follow-up Vorschläge für fällige Leads (manueller Trigger)."""
     user_id = _get_user_id(user)
-    background_tasks.add_task(generate_suggestions_for_user, user_id, supabase)
+    import asyncio
+    background_tasks.add_task(lambda: asyncio.run(generate_suggestions_for_user(user_id, supabase)))
     return {"success": True, "message": "Vorschläge werden generiert..."}
 
 
-def generate_suggestions_for_user(user_id: str, supabase):
-    """Background Task: Generiert Vorschläge."""
+async def generate_suggestions_for_user(user_id: str, supabase):
+    """Background Task: Generiert Vorschläge mit Confidence Score."""
     now = datetime.utcnow()
 
     leads_result = (
@@ -853,6 +885,23 @@ def generate_suggestions_for_user(user_id: str, supabase):
 
     if not leads_result.data:
         return
+
+    # Import für Confidence-Generierung
+    from app.services.followup_autopilot import generate_followup_with_confidence
+    
+    # Hole letzte Nachricht für Kontext
+    def get_previous_message(lead_id: str):
+        interactions = (
+            supabase.table("lead_interactions")
+            .select("raw_notes, notes")
+            .eq("lead_id", lead_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if interactions.data:
+            return interactions.data[0].get("raw_notes") or interactions.data[0].get("notes")
+        return None
 
     for lead in leads_result.data:
         existing = (
@@ -884,8 +933,35 @@ def generate_suggestions_for_user(user_id: str, supabase):
             ).eq("id", lead["id"]).execute()
             continue
 
-        template_body = rule.data.get("message_templates", {}).get("body", "")
-        message = template_body.replace("{name}", lead.get("name", ""))
+        # Generiere Nachricht mit Confidence Score
+        previous_msg = get_previous_message(lead["id"])
+        
+        context = {
+            "lead_name": lead.get("name"),
+            "lead_status": lead.get("status"),
+            "flow": lead.get("flow"),
+            "stage": lead.get("follow_up_stage")
+        }
+        
+        try:
+            confidence_result = await generate_followup_with_confidence(
+                lead_id=lead["id"],
+                user_id=user_id,
+                context=context,
+                previous_message=previous_msg
+            )
+            message = confidence_result.get("message", "")
+            confidence_score = confidence_result.get("confidence_score", 70.0)
+            confidence_reason = confidence_result.get("confidence_reason", "Standard Follow-up")
+            execution_mode = confidence_result.get("execution_mode", "prepared")
+        except Exception as e:
+            logger.warning(f"Error generating confidence for lead {lead['id']}: {e}")
+            # Fallback zu Template
+            template_body = rule.data.get("message_templates", {}).get("body", "")
+            message = template_body.replace("{name}", lead.get("name", ""))
+            confidence_score = 70.0
+            confidence_reason = "Template-basiert"
+            execution_mode = "prepared"
 
         supabase.table("followup_suggestions").insert(
             {
@@ -899,6 +975,9 @@ def generate_suggestions_for_user(user_id: str, supabase):
                 "reason": rule.data.get("description", f"Stage {lead.get('follow_up_stage')}"),
                 "due_at": now.isoformat(),
                 "status": "pending",
+                "confidence_score": confidence_score,
+                "confidence_reason": confidence_reason,
+                "execution_mode": execution_mode,
             }
         ).execute()
 
@@ -939,6 +1018,90 @@ async def get_followup_stats_v2(
     )
 
     return {"pending_count": pending.count or 0, "sent_this_week": sent_this_week.count or 0}
+
+
+# ============================================================================
+# AUTOPILOT SETTINGS ENDPOINTS (für Follow-ups)
+# ============================================================================
+
+@router_v2.get("/autopilot/settings")
+async def get_followup_autopilot_settings(
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Holt Autopilot-Settings für Follow-ups."""
+    user_id = _get_user_id(user)
+    
+    result = (
+        supabase.table("autopilot_settings")
+        .select("*")
+        .eq("user_id", user_id)
+        .is_("contact_id", "null")
+        .single()
+        .execute()
+    )
+    
+    if result.data:
+        return result.data
+    else:
+        # Default Settings
+        return {
+            "enabled": False,
+            "is_active": False,
+            "min_confidence": 90.0,
+            "auto_channels": ["email"],
+            "daily_limit": 50,
+            "mode": "off"
+        }
+
+
+@router_v2.put("/autopilot/settings")
+async def update_followup_autopilot_settings(
+    settings: dict,
+    user=Depends(get_current_active_user),
+    supabase=Depends(get_supabase),
+):
+    """Aktualisiert Autopilot-Settings für Follow-ups."""
+    user_id = _get_user_id(user)
+    
+    # Upsert Settings
+    settings_data = {
+        "user_id": user_id,
+        "contact_id": None,
+        "is_active": settings.get("enabled", False) or settings.get("is_active", False),
+        "mode": settings.get("mode", "off"),
+        "channels": settings.get("auto_channels", ["email"]),
+        "max_auto_replies_per_day": settings.get("daily_limit", 50),
+        "min_confidence": settings.get("min_confidence", 90.0),
+        "updated_at": datetime.utcnow().isoformat()
+    }
+    
+    # Prüfe ob Settings existieren
+    existing = (
+        supabase.table("autopilot_settings")
+        .select("id")
+        .eq("user_id", user_id)
+        .is_("contact_id", "null")
+        .single()
+        .execute()
+    )
+    
+    if existing.data:
+        result = (
+            supabase.table("autopilot_settings")
+            .update(settings_data)
+            .eq("id", existing.data["id"])
+            .execute()
+        )
+    else:
+        settings_data["created_at"] = datetime.utcnow().isoformat()
+        result = (
+            supabase.table("autopilot_settings")
+            .insert(settings_data)
+            .execute()
+        )
+    
+    return {"success": True, "settings": result.data[0] if result.data else settings_data}
 
 
 __all__ = ["router", "router_v2"]

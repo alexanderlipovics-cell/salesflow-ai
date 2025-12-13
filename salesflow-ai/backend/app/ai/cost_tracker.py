@@ -64,6 +64,7 @@ class CostTracker:
         try:
             cost_usd = self.calculate_cost(model, input_tokens, output_tokens)
 
+            now = datetime.now()
             usage_data = {
                 "user_id": user_id,
                 "org_id": org_id,
@@ -75,10 +76,14 @@ class CostTracker:
                 "intent": intent,
                 "session_id": session_id,
                 "tool_calls_count": len(tool_calls) if tool_calls else 0,
-                "created_at": datetime.now().isoformat()
+                "usage_date": now.date().isoformat(),
+                "created_at": now.isoformat()
             }
 
-            result = await self.supabase.table("ai_usage").insert(usage_data).execute()
+            result = await self.supabase.table("ai_usage").upsert(
+                usage_data,
+                on_conflict="user_id,usage_date"
+            ).execute()
 
             logger.info(
                 f"Logged AI usage: {model} | {input_tokens}i + {output_tokens}o tokens | "

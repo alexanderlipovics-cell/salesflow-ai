@@ -828,7 +828,7 @@ class ToolExecutor:
                 .select("*")
                 .eq("user_id", self.user_id)
                 .eq("category", "preferences")
-                .ilike("content", f"{key}:%")
+                .like("content", f"{key}:%")
                 .maybe_single()
                 .execute()
             )

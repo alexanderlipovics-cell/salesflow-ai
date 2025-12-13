@@ -59,6 +59,7 @@ def _build_default_settings(user_id: str, contact_id: Optional[str] = None) -> D
         "channels": ["email"],
         "max_auto_replies_per_day": 10,
         "is_active": True,
+        "min_confidence": 90.0,
         "created_at": now,
         "updated_at": now,
     }
@@ -74,6 +75,7 @@ def _row_to_settings(row: Dict[str, Any]) -> AutopilotSettings:
         channels=row["channels"] if isinstance(row["channels"], list) else ["email"],
         max_auto_replies_per_day=row["max_auto_replies_per_day"],
         is_active=row["is_active"],
+        min_confidence=row.get("min_confidence", 90.0),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -90,7 +92,7 @@ async def get_autopilot_settings(
         default=None,
         description="Contact-UUID für spezifische Settings (optional)"
     ),
-    user: Dict[str, Any] = Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user_dict),
 ):
     """
     Holt Autopilot-Settings für den aktuellen User.
@@ -120,6 +122,7 @@ async def get_autopilot_settings(
                 channels=default["channels"],
                 max_auto_replies_per_day=default["max_auto_replies_per_day"],
                 is_active=default["is_active"],
+                min_confidence=default.get("min_confidence", 90.0),
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
             )
@@ -194,7 +197,7 @@ async def get_autopilot_settings(
 @router.post("/settings", response_model=AutopilotSettingsResponse)
 async def upsert_autopilot_settings(
     data: AutopilotSettingsUpdate,
-    user: Dict[str, Any] = Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user_dict),
 ):
     """
     Erstellt oder aktualisiert Autopilot-Settings für den aktuellen User.
@@ -247,6 +250,7 @@ async def upsert_autopilot_settings(
             "channels": data.channels,
             "max_auto_replies_per_day": data.max_auto_replies_per_day,
             "is_active": data.is_active,
+            "min_confidence": getattr(data, "min_confidence", 90.0),
             "updated_at": datetime.utcnow().isoformat(),
         }
         
@@ -318,7 +322,7 @@ async def upsert_autopilot_settings(
 @router.post("/message-event", response_model=MessageEventResponse)
 async def create_message_event_endpoint(
     data: MessageEventCreate,
-    user: Dict[str, Any] = Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user_dict),
 ):
     """
     Erstellt ein neues Message Event für Autopilot-Verarbeitung.
@@ -421,7 +425,7 @@ async def list_message_events_endpoint(
         le=200,
         description="Max. Anzahl Events"
     ),
-    user: Dict[str, Any] = Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user_dict),
 ):
     """
     Listet Message Events für den aktuellen User.
@@ -497,7 +501,7 @@ async def run_autopilot_once(
         le=100,
         description="Max. Anzahl zu verarbeitender Events"
     ),
-    user: Dict[str, Any] = Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user_dict),
 ):
     """
     Führt die Autopilot-Engine einmal aus.
@@ -574,7 +578,7 @@ async def run_autopilot_once(
 async def update_message_event_status_endpoint(
     event_id: str,
     data: MessageEventStatusUpdate,
-    user: Dict[str, Any] = Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user_dict),
 ):
     """
     Aktualisiert den Status eines Message Events.

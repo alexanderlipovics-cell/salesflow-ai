@@ -62,6 +62,12 @@ class AutopilotSettingsBase(BaseModel):
         default=True,
         description="Ob Autopilot für diesen User/Contact aktiv ist"
     )
+    min_confidence: float = Field(
+        default=90.0,
+        ge=0.0,
+        le=100.0,
+        description="Minimaler Confidence Score für Auto-Send (0-100)"
+    )
 
 
 # ============================================================================
