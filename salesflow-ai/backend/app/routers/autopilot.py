@@ -30,7 +30,7 @@ from ..db.repositories.message_events import (
     update_message_event_status,
 )
 from ..schemas.message_events import MessageEventStatusUpdate
-from ..services.autopilot_engine import process_pending_autopilot_events_for_user
+# from ..services.autopilot_engine import process_pending_autopilot_events_for_user  # TODO: Funktion existiert noch nicht
 
 router = APIRouter(
     prefix="/autopilot",
@@ -604,11 +604,15 @@ async def run_autopilot_once(
         
         logger.info(f"POST run-once: user_id={user_id}, limit={limit}")
         
-        summary = await process_pending_autopilot_events_for_user(
-            db=db,
-            user_id=user_id,
-            max_events=limit,
-        )
+        # TODO: process_pending_autopilot_events_for_user Funktion implementieren
+        # Temporär: Stub-Implementierung
+        logger.warning("Autopilot engine not yet implemented - returning empty summary")
+        summary = {
+            "processed": 0,
+            "suggested": 0,
+            "skipped": 0,
+            "errors": 0
+        }
         
         # Event publishen: autopilot.action_executed
         latency_ms = int((time.time() - start_time) * 1000)
