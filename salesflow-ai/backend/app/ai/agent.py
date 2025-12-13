@@ -416,6 +416,69 @@ async def run_sales_agent(
 ) -> dict:
     """Run the sales agent with function calling."""
 
+    # ⚡ POWER HOUR SESSION-AWARENESS
+    # Prüfe ob eine aktive Power Hour Session existiert
+    power_hour_session = None
+    try:
+        power_hour_result = await asyncio.to_thread(
+            lambda: db.table("power_hour_sessions")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("is_active", True)
+            .maybe_single()
+            .execute()
+        )
+        if power_hour_result and power_hour_result.data:
+            power_hour_session = power_hour_result.data
+    except Exception as e:
+        logger.warning(f"Could not check for active Power Hour session: {e}")
+
+    # Prüfe auf /stop oder /ende Commands zum Beenden der Power Hour
+    message_lower = message.strip().lower()
+    if power_hour_session and message_lower in ["/stop", "/ende", "stop", "ende", "fertig", "/fertig"]:
+        try:
+            # Power Hour Session beenden
+            await asyncio.to_thread(
+                lambda: db.table("power_hour_sessions")
+                .update({"is_active": False, "ended_at": datetime.now().isoformat()})
+                .eq("id", power_hour_session["id"])
+                .execute()
+            )
+            
+            # Berechne Dauer
+            started = datetime.fromisoformat(power_hour_session["started_at"].replace("Z", "+00:00"))
+            ended = datetime.now()
+            actual_duration = (ended - started).total_seconds() // 60
+            
+            # Update duration
+            await asyncio.to_thread(
+                lambda: db.table("power_hour_sessions")
+                .update({"actual_duration_minutes": int(actual_duration)})
+                .eq("id", power_hour_session["id"])
+                .execute()
+            )
+            
+            contacts_made = power_hour_session.get("contacts_made", 0)
+            messages_sent = power_hour_session.get("messages_sent", 0)
+            
+            summary = (
+                f"🏁 POWER HOUR BEENDET!\n\n"
+                f"⏱️ Zeit: {int(actual_duration)} Minuten\n"
+                f"👥 {contacts_made} Kontakte erstellt\n"
+                f"📝 {messages_sent} Nachrichten vorbereitet\n\n"
+                f"🔥 Super Arbeit! Geh zu Leads und versende die Nachrichten!"
+            )
+            
+            return {
+                "message": summary,
+                "tools_used": [],
+                "session_id": session_id,
+                "power_hour_ended": True,
+            }
+        except Exception as e:
+            logger.error(f"Failed to end Power Hour session: {e}")
+            # Continue with normal processing if ending fails
+
     profile_result = await asyncio.to_thread(
         lambda: db.table("profiles")
         .select("name, full_name, vertical, company_id, monthly_revenue_goal")
@@ -586,6 +649,44 @@ async def run_sales_agent(
             learning_context += f"- {insight.pattern_type}: {insight.successful_value} (Confidence: {confidence_pct})\n"
 
     system_prompt = build_system_prompt(user_context) + learning_context + lead_context_block
+
+    # ⚡ POWER HOUR MODUS - Wenn aktiv, füge spezielle Anweisungen hinzu
+    if power_hour_session:
+        power_hour_instructions = """
+
+═══════════════════════════════════════════════════════════════════════════════
+⚡⚡⚡ POWER HOUR MODUS AKTIV ⚡⚡⚡
+═══════════════════════════════════════════════════════════════════════════════
+
+WICHTIG: Der User befindet sich in einer aktiven Power Hour Session!
+
+REGELN IM POWER HOUR MODUS:
+1. JEDE Eingabe des Users ist ein neuer Lead-Input
+2. KEIN Smalltalk - nur Lead-Verarbeitung
+3. Automatisch für jeden Input:
+   - Lead erstellen (create_lead)
+   - Personalisierte Erstnachricht generieren (prepare_message)
+   - Follow-up erstellen (create_follow_up)
+4. Kurze, prägnante Bestätigungen:
+   "✅ [Name] erstellt | Nachricht vorbereitet | Follow-up in 3 Tagen"
+
+INPUT-FORMATE ERKENNEN:
+- Bild/Profil: Vision nutzen, Name/Username/Bio/Plattform extrahieren
+- Text: Namen + Infos parsen (z.B. "Max Mustermann, Unternehmer aus Wien")
+- Link: Plattform erkennen, Username extrahieren
+- Sprachnachricht: Transkription (falls verfügbar) wie Text behandeln
+
+BEISPIEL-ANTWORT:
+✅ Max Mustermann (@max.mustermann) | Instagram
+📝 'Hallo Max! Dein Profil über [Thema] hat mich angesprochen...'
+📅 Follow-up: Montag, 20.01.2025
+⏱️ 3 Leads | 12 Minuten
+
+NICHT fragen, ob es ein Lead ist - BEHANDLE ES SOFORT ALS LEAD!
+
+═══════════════════════════════════════════════════════════════════════════════
+"""
+        system_prompt = power_hour_instructions + system_prompt
 
     # Find similar successful messages for context
     similar_successes = []
