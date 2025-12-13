@@ -648,6 +648,28 @@ async def get_pending_suggestions_v2(
     return {"suggestions": suggestions, "count": len(suggestions)}
 
 
+@router_v2.post("")
+async def create_followup(
+    data: dict,
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase)
+):
+    """Erstellt einen neuen Follow-up/Termin"""
+    user_id = current_user.get("sub") or current_user.get("id")
+
+    result = db.from_("followup_suggestions").insert({
+        "user_id": user_id,
+        "lead_id": data.get("lead_id"),
+        "due_at": data.get("due_at"),
+        "suggested_message": data.get("suggested_message", ""),
+        "channel": data.get("channel", "whatsapp"),
+        "status": "pending",
+        "created_at": datetime.utcnow().isoformat()
+    }).execute()
+
+    return result.data[0] if result.data else {"success": True}
+
+
 @router_v2.get("/all")
 async def get_all_followups(
     limit: int = 100,

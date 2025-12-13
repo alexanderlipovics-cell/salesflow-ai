@@ -115,7 +115,7 @@ async def create_subscription(
     """
     try:
         subscription = await stripe_service.create_subscription(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"],
             data=data,
             name=current_user.get("name")
@@ -136,7 +136,7 @@ async def list_subscriptions(
     """List user's subscriptions."""
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         return await stripe_service.get_customer_subscriptions(customer.id, status)
@@ -152,7 +152,7 @@ async def get_current_subscription(
     """Get user's active subscription."""
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         subscriptions = await stripe_service.get_customer_subscriptions(
@@ -244,7 +244,7 @@ async def list_payment_methods(
     """List user's payment methods."""
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         return await stripe_service.list_payment_methods(customer.id)
@@ -266,7 +266,7 @@ async def add_payment_method(
     """
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         return await stripe_service.attach_payment_method(
@@ -303,7 +303,7 @@ async def list_invoices(
     """List user's invoices."""
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         return await stripe_service.list_invoices(customer.id, limit)
@@ -319,7 +319,7 @@ async def get_upcoming_invoice(
     """Get upcoming invoice preview."""
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         return await stripe_service.get_upcoming_invoice(customer.id)
@@ -342,7 +342,7 @@ async def create_checkout_session(
     """
     try:
         checkout_url = await stripe_service.create_checkout_session(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"],
             plan=data.plan,
             interval=data.interval,
@@ -386,7 +386,7 @@ async def stripe_proxy(
         cancel_url = payload.get("cancelUrl") or f"{frontend_url}/billing/cancel"
 
         checkout_url = await stripe_service.create_checkout_session(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user.get("email"),
             plan=plan,
             interval=interval,
@@ -397,7 +397,7 @@ async def stripe_proxy(
 
     if action == "create-portal":
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user.get("email"),
         )
         return_url = payload.get("returnUrl") or f"{frontend_url}/billing"
@@ -409,7 +409,7 @@ async def stripe_proxy(
 
     if action == "get-subscription":
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user.get("email"),
         )
         subs = await stripe_service.get_customer_subscriptions(customer.id, status="active")
@@ -431,7 +431,7 @@ async def create_billing_portal_session(
     """
     try:
         customer = await stripe_service.get_or_create_customer(
-            user_id=str(current_user["id"]),
+            user_id=str(current_user.get("sub") or current_user.get("id")),
             email=current_user["email"]
         )
         portal_url = await stripe_service.create_billing_portal_session(
