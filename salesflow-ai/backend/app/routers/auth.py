@@ -102,6 +102,26 @@ async def signup(
     # Get the auto-generated UUID from Supabase
     user_id = user["id"]
 
+    # Create profile entry in profiles table
+    # This ensures that after registration, user exists in both users and profiles tables
+    try:
+        full_name = f"{user_data.first_name} {user_data.last_name}".strip()
+        profile_data = {
+            "id": user_id,  # profiles.id should match users.id
+            "first_name": user_data.first_name,
+            "last_name": user_data.last_name,
+            "full_name": full_name,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        
+        # Try to insert profile, but handle case where it might already exist
+        profile_result = supabase.table("profiles").upsert(profile_data).execute()
+        logger.info(f"Profile created/updated for user {user_id}")
+    except Exception as e:
+        # Log warning but don't fail registration - profile can be created later
+        logger.warning(f"Could not create profile for user {user_id}: {e}")
+        # Continue with registration - profile creation is not critical for signup
+
     # Create tokens
     tokens = create_token_pair(user_id, user["email"])
     
