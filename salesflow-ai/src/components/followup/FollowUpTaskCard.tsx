@@ -141,6 +141,35 @@ function VerticalTemplateBadge({ vertical, isActive }: { vertical: string; isAct
   );
 }
 
+function ConfidenceBadge({ score, reason }: { score: number; reason?: string }) {
+  const getColor = () => {
+    if (score >= 90) return 'bg-green-500/10 text-green-400 border-green-500/30';
+    if (score >= 70) return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+    if (score >= 50) return 'bg-orange-500/10 text-orange-400 border-orange-500/30';
+    return 'bg-red-500/10 text-red-400 border-red-500/30';
+  };
+
+  const getLabel = () => {
+    if (score >= 90) return 'Auto-Send bereit';
+    if (score >= 70) return 'Prüfen empfohlen';
+    if (score >= 50) return 'Überprüfen';
+    return 'Manuelle Prüfung';
+  };
+
+  return (
+    <div className="group relative">
+      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${getColor()}`}>
+        {score}% - {getLabel()}
+      </span>
+      {reason && (
+        <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-slate-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10 border border-slate-700">
+          {reason}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ChannelButton({
   channel,
   isPreferred,
@@ -328,6 +357,12 @@ export function FollowUpTaskCard({
               <PhaseBadge phase={task.phase} />
               <UrgencyBadge urgency={task.urgency} daysOverdue={task.days_overdue} />
               <VerticalTemplateBadge vertical={usedVertical} isActive={isVerticalSpecific} />
+              {(task as any).confidence_score !== undefined && (
+                <ConfidenceBadge 
+                  score={(task as any).confidence_score} 
+                  reason={(task as any).confidence_reason} 
+                />
+              )}
             </div>
 
             {/* Company & Meta */}

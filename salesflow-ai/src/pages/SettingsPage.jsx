@@ -8,6 +8,7 @@ import {
   MessageSquare,
   User,
   Bell,
+  Zap,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import SettingsEmailPage from './SettingsEmailPage';
 import SalesAiSettingsPage from './SalesAiSettingsPage';
 import CompanyKnowledgeSettingsPage from './CompanyKnowledgeSettingsPage';
 import AIPromptsPage from './AIPromptsPage';
+import { AutopilotSettings } from '@/components/autopilot/AutopilotSettings';
 import { resetTour } from '@/components/onboarding/ProductTour';
 import { useAuth } from '@/context/AuthContext';
 
@@ -92,6 +94,10 @@ export default function SettingsPage() {
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
             Benachrichtigungen
+          </TabsTrigger>
+          <TabsTrigger value="autopilot" className="flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            Autopilot
           </TabsTrigger>
         </TabsList>
 
@@ -193,6 +199,12 @@ export default function SettingsPage() {
             <Button onClick={handleSaveNotifications} className="mt-4">
               Speichern
             </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="autopilot">
+          <div className="space-y-6">
+            <AutopilotSettings />
           </div>
         </TabsContent>
       </Tabs>
