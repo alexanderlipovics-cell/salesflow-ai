@@ -538,7 +538,10 @@ app.include_router(stakeholder_router, prefix="/api")  # 🧭 Stakeholder Mappin
 app.include_router(voice_router, prefix="/api/voice")  # 🗣️ Voice Transcription
 app.include_router(exports_router)  # ⬇️ File Exports
 app.include_router(proposals_router, prefix="/api")  # 📄 Angebots-PDFs
-app.include_router(email_sync_router, prefix="/api/emails", tags=["emails"])  # 📧 Email Sync & Tracking (VOLLER PREFIX)
+# email_sync_router DEAKTIVIERT - direkte Routes in main.py werden verwendet
+# app.include_router(email_sync_router, prefix="/api/emails", tags=["emails"])  # 📧 Email Sync & Tracking (VOLLER PREFIX)
+# Alternative: Router mit anderem Prefix aktivieren:
+# app.include_router(email_sync_router, prefix="/api/email-sync", tags=["emails"])  # Dann bleiben direkte /api/emails/ Routes aktiv
 app.include_router(email_accounts_router, prefix="/api/email-accounts", tags=["emails"])  # 📧 Email Accounts (VOLLER PREFIX)
 # emails.router DEAKTIVIERT - email_sync_router wird stattdessen verwendet
 # app.include_router(emails.router)  # ALT - blockiert email_sync_router
