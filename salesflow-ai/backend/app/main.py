@@ -220,6 +220,27 @@ async def test_email_direct():
     """Test-Route ohne Router - zum Debuggen"""
     return {"status": "ok", "message": "Direct route works", "source": "main.py"}
 
+@app.get("/api/emails/debug-auth")
+async def debug_email_auth(request: Request):
+    """Debug: Zeige alle Header"""
+    auth_header = request.headers.get("Authorization")
+    all_headers = dict(request.headers)
+    
+    # Sensible Daten maskieren
+    if auth_header:
+        masked = auth_header[:20] + "..." if len(auth_header) > 20 else auth_header
+    else:
+        masked = None
+    
+    return {
+        "auth_header_present": bool(auth_header),
+        "auth_header_preview": masked,
+        "all_header_keys": list(all_headers.keys()),
+        "content_type": request.headers.get("Content-Type"),
+        "origin": request.headers.get("Origin"),
+        "user_agent": request.headers.get("User-Agent", "")[:50] if request.headers.get("User-Agent") else None,
+    }
+
 @app.get("/api/emails/")
 async def get_emails_direct(request: Request):
     """Lade Emails für den aktuellen User"""
