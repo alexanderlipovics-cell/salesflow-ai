@@ -47,10 +47,10 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showChiefEdit, setShowChiefEdit] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState(item.action.message || '');
+  const [currentMessage, setCurrentMessage] = useState(item?.action?.message || '');
 
   // Contact Link generieren
-  const contactLink = generateContactLink(item.lead);
+  const contactLink = item?.lead ? generateContactLink(item.lead) : null;
 
   // Icon mapping
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -64,7 +64,7 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
 
   // Copy Funktion
   const handleCopy = async () => {
-    const messageToCopy = currentMessage || item.action.message || '';
+    const messageToCopy = currentMessage || item?.action?.message || '';
     if (!messageToCopy) {
       toast.error('Keine Nachricht zum Kopieren');
       return;
@@ -92,11 +92,11 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
   };
 
   const getTypeBadge = () => {
-    switch (item.type) {
+    switch (item?.type) {
       case 'new_lead':
         return { label: 'Neu', color: 'bg-blue-500/20 text-blue-400' };
       case 'follow_up':
-        return { label: `Follow-up #${item.metadata.followUpNumber || ''}`, color: 'bg-amber-500/20 text-amber-400' };
+        return { label: `Follow-up #${item?.metadata?.followUpNumber || ''}`, color: 'bg-amber-500/20 text-amber-400' };
       case 'ai_approval':
         return { label: 'AI', color: 'bg-purple-500/20 text-purple-400' };
       case 'reminder':
@@ -107,7 +107,7 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
   };
 
   const getPriorityColor = () => {
-    switch (item.priority) {
+    switch (item?.priority) {
       case 'hot':
         return 'border-l-red-500';
       case 'today':
@@ -120,12 +120,12 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
   };
 
   const typeBadge = getTypeBadge();
-  const messagePreview = item.action.message
+  const messagePreview = item?.action?.message
     ? item.action.message.substring(0, 80) + (item.action.message.length > 80 ? '...' : '')
-    : item.type === 'new_lead' ? 'Neuer Kontakt' : 'Keine Nachricht';
+    : item?.type === 'new_lead' ? 'Neuer Kontakt' : 'Keine Nachricht';
   
   // Status-Info für Auto-Send
-  const autoSendStatus = item.autoSendStatus;
+  const autoSendStatus = item?.autoSendStatus;
   const getStatusBadge = () => {
     if (!autoSendStatus) return null;
     
@@ -165,7 +165,7 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
       transition={{ duration: 0.2 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      data-item-id={item.id}
+      data-item-id={item?.id || ''}
       className={`
         group relative flex items-center gap-4 rounded-lg border border-slate-800 bg-slate-900/50 p-4
         transition-all duration-200 hover:border-slate-700 hover:bg-slate-900 border-l-4 ${getPriorityColor()}
@@ -175,30 +175,30 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
       {/* Avatar + Name + Source */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="relative flex-shrink-0">
-          {item.lead.avatar ? (
+          {item?.lead?.avatar ? (
             <img
               src={item.lead.avatar}
-              alt={item.lead.name}
+              alt={item?.lead?.name || 'Kontakt'}
               className="h-10 w-10 rounded-full object-cover"
             />
           ) : (
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
-              {item.lead.name.charAt(0).toUpperCase()}
+              {(item?.lead?.name?.charAt(0) || '?').toUpperCase()}
             </div>
           )}
-          {item.priority === 'hot' && (
+          {item?.priority === 'hot' && (
             <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-slate-900" />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-semibold text-white truncate">{item.lead.name}</span>
+            <span className="font-semibold text-white truncate">{item?.lead?.name || 'Unbekannt'}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full ${typeBadge.color}`}>
               {typeBadge.label}
             </span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
-              {item.lead.source}
+              {item?.lead?.source || 'Import'}
             </span>
             {statusBadge && (
               <span className={`text-xs px-2 py-0.5 rounded-full ${statusBadge.color}`} title={statusBadge.label}>
@@ -213,20 +213,20 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
       {/* Quick Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* Für Items mit Nachricht: Bearbeiten, Kopieren, Als Gesendet markieren */}
-        {currentMessage || item.action.message ? (
+        {currentMessage || item?.action?.message ? (
           <div className="flex gap-2">
             {/* Bearbeiten - öffnet CHIEF Popup */}
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => {
-                console.log('Edit clicked for:', item.id, item.type);
-                if (item.type === 'new_lead') {
+                console.log('Edit clicked for:', item?.id, item?.type);
+                if (item?.type === 'new_lead') {
                   setShowChiefEdit(true);
                 } else if (onEdit) {
                   onEdit();
                 } else {
-                  console.warn('onEdit not available for item:', item.id);
+                  console.warn('onEdit not available for item:', item?.id);
                 }
               }}
               className="text-slate-400 hover:text-white"
@@ -274,7 +274,7 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
               Gesendet
             </Button>
           </div>
-        ) : item.type === 'new_lead' ? (
+        ) : item?.type === 'new_lead' ? (
           // Keine Nachricht: "Kontaktieren" Button
           <Button
             onClick={onComposeMessage}
@@ -292,11 +292,11 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => {
-                console.log('Edit clicked for:', item.id, item.type);
+                console.log('Edit clicked for:', item?.id, item?.type);
                 if (onEdit) {
                   onEdit();
                 } else {
-                  console.warn('onEdit not available for item:', item.id);
+                  console.warn('onEdit not available for item:', item?.id);
                 }
               }}
               className="text-slate-400 hover:text-white"
@@ -352,9 +352,9 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
           onClose={() => setShowChiefEdit(false)}
           originalMessage={currentMessage}
           leadContext={{
-            name: item.lead.name,
-            source: item.lead.source,
-            notes: item.lead.company || '',
+            name: item?.lead?.name || 'Unbekannt',
+            source: item?.lead?.source || 'Import',
+            notes: item?.lead?.company || '',
           }}
           onMessageUpdated={(newMessage) => {
             setCurrentMessage(newMessage);

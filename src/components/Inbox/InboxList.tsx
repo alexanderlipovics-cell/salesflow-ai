@@ -5,7 +5,6 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { InboxItemComponent } from './InboxItem';
 import type { InboxItem, GroupedInboxItems } from '@/types/inbox';
 
@@ -51,7 +50,8 @@ export const InboxList: React.FC<InboxListProps> = ({
   }, [focusedItemId, autoAdvance]);
 
   const renderGroup = (title: string, items: InboxItem[], badgeColor: string) => {
-    if (items.length === 0) return null;
+    // Sicherheitscheck: items muss ein Array sein
+    if (!items || !Array.isArray(items) || items.length === 0) return null;
 
     return (
       <div key={title} className="mb-8">
@@ -65,33 +65,42 @@ export const InboxList: React.FC<InboxListProps> = ({
 
         {/* Items */}
         <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              ref={(el) => {
-                if (el) itemRefs.current.set(item.id, el);
-              }}
-            >
-              <InboxItemComponent
-                item={item}
-                onSend={() => onSend(item.id)}
-                onEdit={() => onEdit(item.id)}
-                onSnooze={() => onSnooze(item.id)}
-                onArchive={() => onArchive(item.id)}
-                onComposeMessage={onComposeMessage ? () => onComposeMessage(item.id) : undefined}
-                onMessageUpdated={onMessageUpdated ? (newMessage) => onMessageUpdated(item.id, newMessage) : undefined}
-                onMarkAsSent={onMarkAsSent ? () => onMarkAsSent(item.id) : undefined}
-                isProcessing={processingId === item.id}
-                isSent={sentItemIds.has(item.id)}
-              />
-            </div>
-          ))}
+          {items
+            .filter((item) => item && item.id) // Filtere ungültige Items
+            .map((item) => (
+              <div
+                key={item.id}
+                ref={(el) => {
+                  if (el && item?.id) itemRefs.current.set(item.id, el);
+                }}
+              >
+                <InboxItemComponent
+                  item={item}
+                  onSend={() => onSend(item.id)}
+                  onEdit={() => onEdit(item.id)}
+                  onSnooze={() => onSnooze(item.id)}
+                  onArchive={() => onArchive(item.id)}
+                  onComposeMessage={onComposeMessage ? () => onComposeMessage(item.id) : undefined}
+                  onMessageUpdated={onMessageUpdated ? (newMessage) => onMessageUpdated(item.id, newMessage) : undefined}
+                  onMarkAsSent={onMarkAsSent ? () => onMarkAsSent(item.id) : undefined}
+                  isProcessing={processingId === item.id}
+                  isSent={sentItemIds.has(item.id)}
+                />
+              </div>
+            ))}
         </div>
       </div>
     );
   };
 
-  const totalItems = grouped.hot.length + grouped.today.length + grouped.upcoming.length;
+  // Sicherheitscheck: grouped muss existieren und Arrays enthalten
+  const hotItems = grouped?.hot || [];
+  const todayItems = grouped?.today || [];
+  const upcomingItems = grouped?.upcoming || [];
+  
+  const totalItems = (Array.isArray(hotItems) ? hotItems.length : 0) + 
+                     (Array.isArray(todayItems) ? todayItems.length : 0) + 
+                     (Array.isArray(upcomingItems) ? upcomingItems.length : 0);
 
   if (totalItems === 0) {
     return (
@@ -109,9 +118,9 @@ export const InboxList: React.FC<InboxListProps> = ({
 
   return (
     <div className="space-y-8">
-      {renderGroup('🔥 Hot', grouped.hot, 'bg-red-500/20 text-red-400')}
-      {renderGroup('📅 Heute', grouped.today, 'bg-amber-500/20 text-amber-400')}
-      {renderGroup('⏰ Demnächst', grouped.upcoming, 'bg-slate-500/20 text-slate-400')}
+      {renderGroup('🔥 Hot', hotItems, 'bg-red-500/20 text-red-400')}
+      {renderGroup('📅 Heute', todayItems, 'bg-amber-500/20 text-amber-400')}
+      {renderGroup('⏰ Demnächst', upcomingItems, 'bg-slate-500/20 text-slate-400')}
     </div>
   );
 };
