@@ -51,6 +51,8 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [saving, setSaving] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [stateChangeLoading, setStateChangeLoading] = useState(false);
+  const [stateChangeError, setStateChangeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (lead) {
@@ -114,6 +116,49 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
     }));
   };
 
+  const handleStateChange = async (newStatus: string) => {
+    const oldStatus = formData.status || 'new';
+    
+    // Update local state immediately for UI feedback
+    handleChange('status', newStatus);
+    
+    // Call the state machine API
+    setStateChangeLoading(true);
+    setStateChangeError(null);
+    
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/engine/change-state`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          lead_id: lead.id,
+          new_state: newStatus,
+          vertical: 'mlm'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Revert on error
+        handleChange('status', oldStatus);
+        setStateChangeError(data.detail || 'Status-Wechsel fehlgeschlagen');
+      } else if (data.next_followup) {
+        // Show success with next follow-up info
+        console.log('Next follow-up scheduled:', data.next_followup);
+      }
+    } catch (err) {
+      handleChange('status', oldStatus);
+      setStateChangeError('Netzwerkfehler beim Status-Wechsel');
+    } finally {
+      setStateChangeLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -153,15 +198,13 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
   };
 
   const statusOptions = [
-    { value: 'new', label: 'Neu' },
-    { value: 'contacted', label: 'Kontaktiert' },
-    { value: 'interested', label: 'Interessiert' },
-    { value: 'meeting', label: 'Meeting' },
-    { value: 'negotiation', label: 'Verhandlung' },
-    { value: 'won', label: 'Gewonnen' },
-    { value: 'lost', label: 'Verloren' },
-    { value: 'nicht_interessiert', label: 'Nicht interessiert' },
-    { value: 'paused', label: 'Pausiert' },
+    { value: 'new', label: '🆕 Neu', color: 'bg-blue-100 text-blue-800' },
+    { value: 'engaged', label: '💬 Engaged', color: 'bg-cyan-100 text-cyan-800' },
+    { value: 'opportunity', label: '🎯 Opportunity', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'won', label: '✅ Gewonnen', color: 'bg-green-100 text-green-800' },
+    { value: 'lost', label: '❌ Verloren', color: 'bg-red-100 text-red-800' },
+    { value: 'churned', label: '📉 Churned', color: 'bg-orange-100 text-orange-800' },
+    { value: 'dormant', label: '💤 Dormant', color: 'bg-gray-100 text-gray-800' },
   ];
 
   return (
@@ -195,7 +238,8 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
                 <label className="block text-sm text-gray-600 mb-1">Status</label>
                 <select
                   value={formData.status || 'new'}
-                  onChange={(e) => handleChange('status', e.target.value)}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  disabled={stateChangeLoading}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   {statusOptions.map((opt) => (
@@ -204,6 +248,12 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
                     </option>
                   ))}
                 </select>
+                {stateChangeLoading && (
+                  <p className="text-xs text-blue-600 mt-1">⏳ Follow-up Cycle wird aktualisiert...</p>
+                )}
+                {stateChangeError && (
+                  <p className="text-xs text-red-600 mt-1">⚠️ {stateChangeError}</p>
+                )}
               </div>
             </div>
 
