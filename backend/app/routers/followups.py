@@ -1143,6 +1143,22 @@ async def get_followup_stats_v2(
     return {"pending_count": pending.count or 0, "sent_this_week": sent_this_week.count or 0}
 
 
+@router_v2.get("/sent")
+async def get_sent_followups(
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_supabase)
+):
+    """Get sent followup suggestions for the current user"""
+    user_id = current_user.get("sub")
+    
+    result = db.table("followup_suggestions").select(
+        "id, lead_id, suggested_message, channel, sent_at, template_key, leads(id, name, email, phone, company)"
+    ).eq("user_id", user_id).eq("status", "sent").order("sent_at", desc=True).limit(limit).execute()
+    
+    return {"items": result.data or []}
+
+
 # ============================================================================
 # AUTOPILOT SETTINGS ENDPOINTS (für Follow-ups)
 # ============================================================================

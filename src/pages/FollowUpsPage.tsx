@@ -436,63 +436,32 @@ export default function FollowUpsPage() {
   useEffect(() => {
     const fetchSentMessages = async () => {
       if (activeTab !== 'sent') return;
-      
       setSentMessagesLoading(true);
       setSentMessagesError(null);
-      
       try {
-        // Get user from JWT token
         const token = localStorage.getItem('access_token');
         if (!token) {
           setSentMessagesError('Nicht eingeloggt');
           setSentMessagesLoading(false);
           return;
         }
-
-        // Decode JWT to get user_id
-        let userId: string;
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.sub;
-          if (!userId) throw new Error('No user ID in token');
-        } catch (e) {
-          setSentMessagesError('Token ungültig');
-          setSentMessagesLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabaseClient
-          .from('followup_suggestions')
-          .select(`
-            id,
-            lead_id,
-            suggested_message,
-            channel,
-            sent_at,
-            template_key,
-            leads (
-              id,
-              name,
-              email,
-              phone,
-              company
-            )
-          `)
-          .eq('user_id', userId)
-          .eq('status', 'sent')
-          .order('sent_at', { ascending: false })
-          .limit(50);
         
-        if (error) {
-          console.error('Fehler beim Laden der gesendeten Nachrichten:', error);
-          setSentMessagesError('Gesendete Nachrichten konnten nicht geladen werden.');
-          return;
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/followups/sent`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch sent messages');
         }
         
-        setSentMessages(data || []);
+        const data = await response.json();
+        setSentMessages(data.items || []);
       } catch (err) {
-        console.error('Fehler beim Laden der gesendeten Nachrichten:', err);
-        setSentMessagesError('Fehler beim Laden der gesendeten Nachrichten.');
+        console.error('Error fetching sent messages:', err);
+        setSentMessagesError('Fehler beim Laden');
       } finally {
         setSentMessagesLoading(false);
       }
