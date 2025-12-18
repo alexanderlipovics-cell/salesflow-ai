@@ -441,6 +441,14 @@ export default function FollowUpsPage() {
       setSentMessagesError(null);
       
       try {
+        // Get current user first
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          setSentMessagesError('Nicht eingeloggt');
+          setSentMessagesLoading(false);
+          return;
+        }
+
         const { data, error } = await supabaseClient
           .from('followup_suggestions')
           .select(`
@@ -458,6 +466,7 @@ export default function FollowUpsPage() {
               company
             )
           `)
+          .eq('user_id', user.id)
           .eq('status', 'sent')
           .order('sent_at', { ascending: false })
           .limit(50);
