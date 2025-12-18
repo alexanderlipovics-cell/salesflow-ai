@@ -43,6 +43,14 @@ class GenerateFirstMessageResponse(BaseModel):
     message: str
 
 
+class GenerateQueueMessageRequest(BaseModel):
+    queue_id: str
+
+
+class GenerateQueueMessageResponse(BaseModel):
+    message: str
+
+
 @router.post("/generate-first-message", response_model=GenerateFirstMessageResponse)
 async def generate_first_message(
     request: GenerateFirstMessageRequest,
@@ -205,6 +213,64 @@ Bearbeitete Nachricht:"""
         )
 
 
+class GenerateQueueMessageRequest(BaseModel):
+    queue_id: str
+
+
+class GenerateQueueMessageResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    queue_id: Optional[str] = None
+    template_key: Optional[str] = None
+    state: Optional[str] = None
+    lead_name: Optional[str] = None
+    error: Optional[str] = None
+
+
+@router.post("/generate-queue-message", response_model=GenerateQueueMessageResponse)
+async def generate_queue_message_endpoint(
+    request: GenerateQueueMessageRequest,
+    current_user=Depends(get_current_active_user),
+    db=Depends(get_supabase),
+) -> GenerateQueueMessageResponse:
+    """
+    Generiert eine AI-Nachricht für ein Queue Item.
+    Nutzt State Psychology und Template-spezifische Prompts.
+    Speichert generierte Nachricht in der DB.
+    """
+    user_id = _extract_user_id(current_user)
+
+    if not settings.openai_api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="OpenAI API Key nicht konfiguriert"
+        )
+
+    try:
+        from app.services.queue_message_generator import generate_queue_message
+        
+        ai_client = AIClient(
+            api_key=settings.openai_api_key,
+            model="gpt-4o-mini",
+        )
+        
+        result = await generate_queue_message(
+            db=db,
+            queue_id=request.queue_id,
+            user_id=user_id,
+            ai_client=ai_client,
+        )
+        
+        return GenerateQueueMessageResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Error in generate_queue_message endpoint: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fehler beim Generieren: {str(e)}"
+        )
+
+
 async def _save_edit_pattern(
     db,
     user_id: str,
@@ -254,6 +320,163 @@ async def _save_edit_pattern(
     except Exception as e:
         # Tabelle existiert möglicherweise nicht - das ist OK
         logger.debug(f"Could not save edit pattern (table might not exist): {e}")
+
+
+@router.post("/generate-queue-message", response_model=GenerateQueueMessageResponse)
+async def generate_queue_message(
+    request: GenerateQueueMessageRequest,
+    current_user=Depends(get_current_active_user),
+    db=Depends(get_supabase),
+) -> GenerateQueueMessageResponse:
+    """
+    Generiert Nachricht für ein Queue-Item (Follow-up Cycle).
+    Wird aufgerufen, wenn ein Queue-Item ohne ai_generated_content angeklickt wird.
+    """
+    user_id = _extract_user_id(current_user)
+    
+    if not settings.openai_api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="OpenAI API Key nicht konfiguriert"
+        )
+    
+    try:
+        # Queue-Item mit Cycle und Lead-Daten laden
+        result = (
+            db.table("contact_follow_up_queue")
+            .select("*, follow_up_cycles(*), leads(id, name, email, phone, instagram, whatsapp, company)")
+            .eq("id", request.queue_id)
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+        
+        if not result.data:
+            raise HTTPException(
+                status_code=404,
+                detail="Queue-Item nicht gefunden"
+            )
+        
+        queue_item = result.data
+        cycle = queue_item.get("follow_up_cycles") or {}
+        lead = queue_item.get("leads") or {}
+        
+        # Lead-Name extrahieren
+        lead_name = (
+            lead.get("name") or 
+            lead.get("first_name", "") + " " + lead.get("last_name", "")
+        ).strip() or "dort"
+        
+        # Cycle-Informationen
+        message_type = cycle.get("message_type", "followup")
+        template_key = cycle.get("template_key", "")
+        state = cycle.get("state", "")
+        sequence_order = cycle.get("sequence_order", 0)
+        
+        # Prüfe gelernte Patterns (Shadow Analysis)
+        learned_patterns = []
+        try:
+            pattern_result = (
+                db.table("chief_learned_patterns")
+                .select("*")
+                .eq("user_id", user_id)
+                .eq("pattern_type", "auto_apply")
+                .execute()
+            )
+            learned_patterns = pattern_result.data or []
+        except Exception:
+            pass  # Tabelle existiert möglicherweise nicht
+        
+        # Baue Prompt mit gelernten Patterns
+        pattern_hints = ""
+        if learned_patterns:
+            pattern_hints = "\n\nGelernte Präferenzen des Users:\n"
+            for pattern in learned_patterns:
+                pattern_hints += f"- {pattern.get('instruction', '')}\n"
+        
+        # Prompt basierend auf Message-Type
+        if message_type.lower() == "followup":
+            prompt = f"""Du bist CHIEF, ein intelligenter Sales-Assistent.
+
+Generiere eine Follow-up Nachricht für einen Kontakt.
+
+Kontakt-Informationen:
+- Name: {lead_name}
+- Quelle: {lead.get('instagram') or lead.get('whatsapp') or 'Unbekannt')}
+{f'- Firma: {lead.get("company")}' if lead.get('company') else ''}
+
+Follow-up Kontext:
+- State: {state}
+- Sequenz-Nummer: {sequence_order}
+- Template: {template_key}
+{pattern_hints}
+
+AUFGABE:
+Generiere eine kurze, persönliche Follow-up Nachricht:
+- Maximal 3-4 Sätze
+- Persönlich und authentisch (kein Bot-Gefühl)
+- Passende Emojis (aber dezent)
+- KEIN Sales-Pitch, sondern Wertversprechen oder Frage
+- Verwende den Kontakt-Namen
+- Antworte NUR mit der Nachricht, keine Erklärungen
+
+Nachricht:"""
+        else:
+            # Generischer Prompt für andere Message-Types
+            prompt = f"""Du bist CHIEF, ein intelligenter Sales-Assistent.
+
+Generiere eine {message_type} Nachricht für einen Kontakt.
+
+Kontakt-Informationen:
+- Name: {lead_name}
+- Quelle: {lead.get('instagram') or lead.get('whatsapp') or 'Unbekannt')}
+{f'- Firma: {lead.get("company")}' if lead.get('company') else ''}
+
+Kontext:
+- Type: {message_type}
+- Template: {template_key}
+{pattern_hints}
+
+AUFGABE:
+Generiere eine kurze, persönliche Nachricht:
+- Maximal 3-4 Sätze
+- Persönlich und authentisch (kein Bot-Gefühl)
+- Passende Emojis (aber dezent)
+- Verwende den Kontakt-Namen
+- Antworte NUR mit der Nachricht, keine Erklärungen
+
+Nachricht:"""
+        
+        # AI Call - Verwende gpt-4o-mini für Inbox-Nachrichten (25x günstiger als gpt-4o)
+        ai_client = AIClient(
+            api_key=settings.openai_api_key,
+            model="gpt-4o-mini",  # Explizit gpt-4o-mini für Inbox-Nachrichten
+        )
+        
+        message = await ai_client.generate_async(
+            system_prompt="Du bist CHIEF, ein intelligenter Sales-Assistent der Follow-up Nachrichten generiert.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        
+        # Optional: Speichere die generierte Nachricht im Queue-Item
+        try:
+            db.table("contact_follow_up_queue").update({
+                "ai_generated_content": message.strip(),
+                "updated_at": datetime.utcnow().isoformat(),
+            }).eq("id", request.queue_id).execute()
+        except Exception as e:
+            logger.warning(f"Could not update queue item with generated message: {e}")
+        
+        return GenerateQueueMessageResponse(message=message.strip())
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating queue message: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fehler beim Generieren der Nachricht: {str(e)}"
+        )
 
 
 def _extract_user_id(current_user: Any) -> str:
