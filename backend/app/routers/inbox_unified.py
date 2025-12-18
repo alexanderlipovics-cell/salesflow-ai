@@ -209,7 +209,6 @@ async def _send_followup_suggestion(
                 "template_key": "fu_auto_generated",
                 "channel": suggestion.get("channel", "whatsapp"),
                 "suggested_message": None,  # AI wird generieren wenn fällig
-                "note": None,
                 "created_at": datetime.utcnow().isoformat(),
             }
             db.table("followup_suggestions").insert(new_followup).execute()
@@ -494,7 +493,6 @@ async def send_inbox_item(
                 "template_key": "fu_auto_generated",
                 "channel": "whatsapp",  # Default für neue Leads
                 "suggested_message": None,  # AI wird generieren wenn fällig
-                "note": None,
                 "created_at": datetime.utcnow().isoformat(),
             }
             db.table("followup_suggestions").insert(new_followup).execute()
