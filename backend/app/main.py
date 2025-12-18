@@ -560,6 +560,7 @@ from .routers.stubs import router as stubs_router  # Temporary stub endpoints
 from .routers.inbox import router as inbox_router  # 📨 Approval Inbox
 from .routers.inbox_unified import router as inbox_unified_router  # 📨 Unified Inbox
 from .routers.chief import router as chief_router  # 🤖 CHIEF AI Assistant
+from .routers.followup_engine import router as followup_engine_router  # 🔄 Follow-up State Machine Engine
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -651,6 +652,7 @@ app.include_router(stubs_router)  # Temporary stub endpoints
 app.include_router(inbox_router)  # 📨 Approval Inbox (hat eigenes /api/inbox Prefix)
 app.include_router(inbox_unified_router)  # 📨 Unified Inbox (hat eigenes /api/inbox Prefix)
 app.include_router(chief_router)  # 🤖 CHIEF AI Assistant (hat eigenes /api/chief Prefix)
+app.include_router(followup_engine_router)  # 🔄 Follow-up State Machine Engine (hat eigenes /api/engine Prefix)
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert
