@@ -188,7 +188,22 @@ export const InboxPage: React.FC = () => {
   // Lokaler State für bearbeitete Nachrichten (überschreibt Items aus useInbox)
   const [editedMessages, setEditedMessages] = useState<Map<string, string>>(new Map());
 
-  const handleEdit = useCallback((itemId: string) => {
+  const handleMessageUpdated = useCallback(
+    (itemId: string, newMessage: string) => {
+      console.log('Message updated for item:', itemId, 'new message:', newMessage);
+      
+      // Speichere die bearbeitete Nachricht im lokalen State
+      // Diese überschreibt die Nachricht im Item beim Rendern
+      setEditedMessages((prev) => {
+        const next = new Map(prev);
+        next.set(itemId, newMessage);
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleEdit = useCallback(async (itemId: string) => {
     // Sicherheitscheck: items muss ein Array sein
     if (!items || !Array.isArray(items)) {
       console.warn('handleEdit: items is not an array');
@@ -198,9 +213,14 @@ export const InboxPage: React.FC = () => {
     // Suche Item in items oder in bearbeiteten Items
     let item = items.find((i) => i?.id === itemId);
     
+    if (!item) {
+      console.warn('Item nicht gefunden:', itemId);
+      return;
+    }
+    
     // Wenn Item eine bearbeitete Nachricht hat, verwende diese
     const editedMessage = editedMessages.get(itemId);
-    if (item && editedMessage) {
+    if (editedMessage) {
       item = {
         ...item,
         action: {
@@ -210,13 +230,80 @@ export const InboxPage: React.FC = () => {
       };
     }
     
-    if (item && item.action?.message) {
+    // Prüfe ob Nachricht generiert werden muss
+    if (item.action?.needsGeneration && item.action?.queueId) {
+      try {
+        setProcessingId(itemId);
+        
+        // API Base URL
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+          ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
+          : (import.meta.env.PROD ? 'https://salesflow-ai.onrender.com' : 'http://localhost:8000');
+
+        // Token holen
+        const { authService } = await import('@/services/authService');
+        let token = authService.getAccessToken();
+        if (!token) {
+          token = localStorage.getItem('access_token');
+        }
+        if (!token) {
+          const { supabaseClient } = await import('@/lib/supabaseClient');
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          token = session?.access_token || null;
+        }
+
+        if (!token) {
+          throw new Error('Nicht authentifiziert');
+        }
+
+        // Generiere Nachricht via API
+        const response = await fetch(`${API_BASE_URL}/api/chief/generate-queue-message`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ queue_id: item.action.queueId }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+          throw new Error(errorData.detail || errorData.error || 'Fehler beim Generieren');
+        }
+        
+        const data = await response.json();
+        
+        // Update item mit generierter Nachricht
+        const updatedItem = {
+          ...item,
+          action: {
+            ...item.action,
+            message: data.message,
+            needsGeneration: false,
+          },
+        };
+        
+        // Speichere die generierte Nachricht im lokalen State
+        handleMessageUpdated(itemId, data.message);
+        
+        // Öffne Edit-Popup mit generierter Nachricht
+        setEditingItem(updatedItem);
+        setShowChiefEdit(true);
+        
+      } catch (err) {
+        console.error('Fehler beim Generieren der Nachricht:', err);
+        alert('Fehler beim Generieren der Nachricht. Bitte versuche es erneut.');
+      } finally {
+        setProcessingId(null);
+      }
+    } else if (item.action?.message) {
+      // Item hat bereits eine Nachricht - öffne Edit-Popup
       setEditingItem(item);
       setShowChiefEdit(true);
     } else {
       console.log('Edit item:', itemId, 'keine Nachricht vorhanden');
     }
-  }, [items, editedMessages]);
+  }, [items, editedMessages, handleMessageUpdated]);
 
   const handleSnooze = useCallback(
     async (itemId: string, hours: number = 24) => {
@@ -247,21 +334,6 @@ export const InboxPage: React.FC = () => {
       navigate(`/chat?leadId=${leadId}`);
     },
     [items, navigate]
-  );
-
-  const handleMessageUpdated = useCallback(
-    (itemId: string, newMessage: string) => {
-      console.log('Message updated for item:', itemId, 'new message:', newMessage);
-      
-      // Speichere die bearbeitete Nachricht im lokalen State
-      // Diese überschreibt die Nachricht im Item beim Rendern
-      setEditedMessages((prev) => {
-        const next = new Map(prev);
-        next.set(itemId, newMessage);
-        return next;
-      });
-    },
-    []
   );
 
   // Mark as Sent Handler

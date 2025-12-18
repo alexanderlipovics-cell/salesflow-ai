@@ -402,7 +402,7 @@ Generiere eine Follow-up Nachricht für einen Kontakt.
 
 Kontakt-Informationen:
 - Name: {lead_name}
-- Quelle: {lead.get('instagram') or lead.get('whatsapp') or 'Unbekannt')}
+- Quelle: {lead.get('instagram') or lead.get('whatsapp') or 'Unbekannt'}
 {f'- Firma: {lead.get("company")}' if lead.get('company') else ''}
 
 Follow-up Kontext:
@@ -429,7 +429,7 @@ Generiere eine {message_type} Nachricht für einen Kontakt.
 
 Kontakt-Informationen:
 - Name: {lead_name}
-- Quelle: {lead.get('instagram') or lead.get('whatsapp') or 'Unbekannt')}
+- Quelle: {lead.get('instagram') or lead.get('whatsapp') or 'Unbekannt'}
 {f'- Firma: {lead.get("company")}' if lead.get('company') else ''}
 
 Kontext:

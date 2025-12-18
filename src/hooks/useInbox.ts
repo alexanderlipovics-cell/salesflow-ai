@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
-import type { InboxItem, GroupedInboxItems } from '@/types/inbox';
+import type { InboxItem, GroupedInboxItems, InboxActionType } from '@/types/inbox';
 import { getFollowupSuggestions } from '@/services/followUpService';
 import { authService } from '@/services/authService';
 
@@ -199,8 +199,12 @@ const queueItemToInboxItem = (item: any): InboxItem | null => {
       instagram_username: lead.instagram || undefined,
     },
     action: {
-      type: 'send_message',
-      message: item.ai_generated_content || undefined,
+      type: (cycle.message_type || 'followup') as InboxActionType,
+      template: cycle.template_key,
+      message: item.ai_generated_content || null,  // null triggers generation
+      cta: `${cycle.message_type || 'Follow-up'} senden`,
+      needsGeneration: !item.ai_generated_content,  // Flag for frontend
+      queueId: item.id,  // Store queue ID for API call
     },
     metadata: {
       dueDate: dueDate,

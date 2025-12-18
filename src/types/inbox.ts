@@ -33,8 +33,12 @@ export interface InboxItem {
   };
   action: {
     type: InboxActionType;
-    message?: string; // KI-generierter Text
+    message?: string | null; // KI-generierter Text (null triggers generation)
     confidence?: number; // 0-100, für Auto-Approve
+    template?: string; // Template-Key für Queue-Items
+    cta?: string; // Call-to-Action Text
+    needsGeneration?: boolean; // Flag: Nachricht muss generiert werden
+    queueId?: string; // Queue-ID für API-Call
   };
   metadata: {
     followUpNumber?: number; // Follow-up #1, #2, etc.
