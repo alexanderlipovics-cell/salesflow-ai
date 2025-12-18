@@ -441,10 +441,22 @@ export default function FollowUpsPage() {
       setSentMessagesError(null);
       
       try {
-        // Get current user first
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
+        // Get user from JWT token
+        const token = localStorage.getItem('access_token');
+        if (!token) {
           setSentMessagesError('Nicht eingeloggt');
+          setSentMessagesLoading(false);
+          return;
+        }
+
+        // Decode JWT to get user_id
+        let userId: string;
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.sub;
+          if (!userId) throw new Error('No user ID in token');
+        } catch (e) {
+          setSentMessagesError('Token ungültig');
           setSentMessagesLoading(false);
           return;
         }
@@ -466,7 +478,7 @@ export default function FollowUpsPage() {
               company
             )
           `)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('status', 'sent')
           .order('sent_at', { ascending: false })
           .limit(50);
