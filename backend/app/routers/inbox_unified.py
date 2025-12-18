@@ -207,6 +207,7 @@ async def _send_followup_suggestion(
                 "status": "pending",
                 "due_at": next_due_date,
                 "template_key": "fu_auto_generated",
+                "flow": "ERSTKONTAKT",
                 "channel": suggestion.get("channel", "whatsapp"),
                 "suggested_message": None,  # AI wird generieren wenn fällig
                 "created_at": datetime.utcnow().isoformat(),
@@ -491,6 +492,7 @@ async def send_inbox_item(
                 "status": "pending",
                 "due_at": next_due_date,
                 "template_key": "fu_auto_generated",
+                "flow": "ERSTKONTAKT",
                 "channel": "whatsapp",  # Default für neue Leads
                 "suggested_message": None,  # AI wird generieren wenn fällig
                 "created_at": datetime.utcnow().isoformat(),
