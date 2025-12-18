@@ -1,0 +1,585 @@
+/**
+ * InboxPage Component
+ * 
+ * Hauptseite für die Unified Inbox
+ */
+
+import React, { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Inbox, Loader2, RefreshCw, Keyboard, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { InboxList } from './InboxList';
+import { MagicSendAll } from './MagicSendAll';
+import { ReviewMode } from './ReviewMode';
+import { MagicSendModal } from './MagicSendModal';
+import { ChiefEditPopup } from './ChiefEditPopup';
+import { useInbox } from '@/hooks/useInbox';
+import type { MagicSendAllResult, InboxItem, GroupedInboxItems } from '@/types/inbox';
+
+// Helper: Gruppiert Items nach Priorität
+// Sicherheitscheck: Verhindert Crash wenn items undefined/null ist
+const groupByPriority = (items: InboxItem[]): GroupedInboxItems => {
+  // Sicherheitscheck: items muss ein Array sein
+  if (!items || !Array.isArray(items)) {
+    return { hot: [], today: [], upcoming: [] };
+  }
+  
+  return {
+    hot: items.filter((item) => item?.priority === 'hot'),
+    today: items.filter((item) => item?.priority === 'today'),
+    upcoming: items.filter((item) => item?.priority === 'upcoming'),
+  };
+};
+
+export const InboxPage: React.FC = () => {
+  const navigate = useNavigate();
+  const {
+    items,
+    grouped,
+    loading,
+    error,
+    refetch,
+    sendItem,
+    skipItem,
+    archiveItem,
+    snoozeItem,
+  } = useInbox();
+
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+  const [sentItemIds, setSentItemIds] = useState<Set<string>>(new Set());
+  const [showMagicSendModal, setShowMagicSendModal] = useState(false);
+
+  // Magic Send All Handler
+  const handleMagicSendAll = useCallback(
+    async (itemIds: string[]): Promise<MagicSendAllResult> => {
+      // API Base URL - OHNE /api, da Endpunkt bereits /api/inbox-unified hat
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+        ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
+        : (import.meta.env.PROD ? 'https://salesflow-ai.onrender.com' : 'http://localhost:8000');
+
+      // Token holen - mehrere Quellen prüfen
+      const { authService } = await import('@/services/authService');
+      let token = authService.getAccessToken();
+      if (!token) {
+        token = localStorage.getItem('access_token');
+      }
+      if (!token) {
+        const { supabaseClient } = await import('@/lib/supabaseClient');
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        token = session?.access_token || null;
+      }
+
+      if (!token) {
+        throw new Error('Nicht authentifiziert. Bitte melde dich erneut an.');
+      }
+
+      try {
+        const url = `${API_BASE_URL}/api/inbox-unified/bulk-send`;
+        
+        console.log('InboxPage.handleMagicSendAll: Sending POST to:', url);
+        console.log('InboxPage.handleMagicSendAll: Token exists:', !!token);
+        console.log('InboxPage.handleMagicSendAll: Item IDs:', itemIds);
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            item_ids: itemIds,
+          }),
+        });
+
+        console.log('InboxPage.handleMagicSendAll: Response status:', response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+          console.error('InboxPage.handleMagicSendAll: Error response:', errorData);
+          throw new Error(errorData.detail || errorData.error || `HTTP ${response.status}: Bulk-Send fehlgeschlagen`);
+        }
+
+        const result = await response.json();
+        await refetch();
+        return result;
+      } catch (err) {
+        console.error('Fehler beim Bulk-Send:', err);
+        throw err;
+      }
+    },
+    [refetch]
+  );
+
+  // Item Actions mit Auto-Advance
+  const handleSend = useCallback(
+    async (itemId: string) => {
+      setProcessingId(itemId);
+      try {
+        await sendItem(itemId);
+        
+        // Erfolgs-Animation
+        setSentItemIds((prev) => new Set(prev).add(itemId));
+        
+        // Item nach kurzer Verzögerung entfernen (nach Animation)
+        setTimeout(() => {
+          setSentItemIds((prev) => {
+            const next = new Set(prev);
+            next.delete(itemId);
+            return next;
+          });
+        }, 2000);
+        
+        // Auto-Advance zum nächsten Item
+        if (items && Array.isArray(items)) {
+          const currentIndex = items.findIndex((item) => item?.id === itemId);
+          if (currentIndex >= 0 && currentIndex < items.length - 1) {
+            const nextItem = items[currentIndex + 1];
+            if (nextItem?.id) {
+              setFocusedItemId(nextItem.id);
+              // Scroll nach kurzer Verzögerung
+              setTimeout(() => {
+                const element = document.querySelector(`[data-item-id="${nextItem.id}"]`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }, 300);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Fehler beim Senden:', err);
+        alert('Fehler beim Senden. Bitte versuche es erneut.');
+      } finally {
+        setProcessingId(null);
+      }
+    },
+    [sendItem, items]
+  );
+
+  const handleSkip = useCallback(
+    async (itemId: string) => {
+      setProcessingId(itemId);
+      try {
+        await skipItem(itemId);
+        // Auto-Advance
+        if (items && Array.isArray(items)) {
+          const currentIndex = items.findIndex((item) => item?.id === itemId);
+          if (currentIndex >= 0 && currentIndex < items.length - 1) {
+            const nextItem = items[currentIndex + 1];
+            if (nextItem?.id) {
+              setFocusedItemId(nextItem.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Fehler beim Überspringen:', err);
+      } finally {
+        setProcessingId(null);
+      }
+    },
+    [skipItem, items]
+  );
+
+  const [editingItem, setEditingItem] = useState<InboxItem | null>(null);
+  const [showChiefEdit, setShowChiefEdit] = useState(false);
+  // Lokaler State für bearbeitete Nachrichten (überschreibt Items aus useInbox)
+  const [editedMessages, setEditedMessages] = useState<Map<string, string>>(new Map());
+
+  const handleEdit = useCallback((itemId: string) => {
+    // Sicherheitscheck: items muss ein Array sein
+    if (!items || !Array.isArray(items)) {
+      console.warn('handleEdit: items is not an array');
+      return;
+    }
+    
+    // Suche Item in items oder in bearbeiteten Items
+    let item = items.find((i) => i?.id === itemId);
+    
+    // Wenn Item eine bearbeitete Nachricht hat, verwende diese
+    const editedMessage = editedMessages.get(itemId);
+    if (item && editedMessage) {
+      item = {
+        ...item,
+        action: {
+          ...(item.action || {}),
+          message: editedMessage,
+        },
+      };
+    }
+    
+    if (item && item.action?.message) {
+      setEditingItem(item);
+      setShowChiefEdit(true);
+    } else {
+      console.log('Edit item:', itemId, 'keine Nachricht vorhanden');
+    }
+  }, [items, editedMessages]);
+
+  const handleSnooze = useCallback(
+    async (itemId: string, hours: number = 24) => {
+      await snoozeItem(itemId, hours);
+    },
+    [snoozeItem]
+  );
+
+  const handleArchive = useCallback(
+    async (itemId: string) => {
+      await archiveItem(itemId);
+    },
+    [archiveItem]
+  );
+
+  const handleComposeMessage = useCallback(
+    (itemId: string) => {
+      if (!items || !Array.isArray(items)) {
+        console.warn('handleComposeMessage: items is not an array');
+        return;
+      }
+      
+      const item = items.find((i) => i?.id === itemId);
+      if (!item || !item.lead?.id) return;
+
+      // Für neue Leads: Navigiere zur Chat-Seite mit Lead-ID
+      const leadId = item.lead.id;
+      navigate(`/chat?leadId=${leadId}`);
+    },
+    [items, navigate]
+  );
+
+  const handleMessageUpdated = useCallback(
+    (itemId: string, newMessage: string) => {
+      console.log('Message updated for item:', itemId, 'new message:', newMessage);
+      
+      // Speichere die bearbeitete Nachricht im lokalen State
+      // Diese überschreibt die Nachricht im Item beim Rendern
+      setEditedMessages((prev) => {
+        const next = new Map(prev);
+        next.set(itemId, newMessage);
+        return next;
+      });
+    },
+    []
+  );
+
+  // Mark as Sent Handler
+  const handleMarkAsSent = useCallback(
+    async (itemId: string) => {
+      setProcessingId(itemId);
+      try {
+        // API Base URL
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+          ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
+          : (import.meta.env.PROD ? 'https://salesflow-ai.onrender.com' : 'http://localhost:8000');
+
+        // Token holen
+        const { authService } = await import('@/services/authService');
+        let token = authService.getAccessToken();
+        if (!token) {
+          token = localStorage.getItem('access_token');
+        }
+        if (!token) {
+          throw new Error('Nicht authentifiziert');
+        }
+
+        // API Call
+        const response = await fetch(`${API_BASE_URL}/api/inbox-unified/${itemId}/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+          throw new Error(errorData.detail || errorData.error || 'Fehler beim Markieren');
+        }
+
+        // Item aus Liste entfernen
+        await refetch();
+      } catch (err) {
+        console.error('Fehler beim Markieren als gesendet:', err);
+        throw err;
+      } finally {
+        setProcessingId(null);
+      }
+    },
+    [refetch]
+  );
+
+  // Alle Items die eine Nachricht haben
+  const sendableItems = useMemo(() => {
+    if (!items || !Array.isArray(items)) return [];
+    return items.filter(item => item?.action?.message);
+  }, [items]);
+
+  // Mark All Sent Handler für Modal
+  const handleMarkAllSent = useCallback(
+    (itemIds: string[]) => {
+      // Items aus Liste entfernen (wird durch refetch aktualisiert)
+      refetch();
+    },
+    [refetch]
+  );
+
+  // Review Mode Handlers
+  const handleReviewApprove = useCallback(
+    async (itemId: string) => {
+      setProcessingId(itemId);
+      try {
+        await sendItem(itemId);
+        // Nächstes Item
+        const itemsLength = items && Array.isArray(items) ? items.length : 0;
+        if (reviewIndex < itemsLength - 1) {
+          setReviewIndex(reviewIndex + 1);
+        } else {
+          setReviewMode(false);
+        }
+      } catch (err) {
+        console.error('Fehler beim Approve:', err);
+      } finally {
+        setProcessingId(null);
+      }
+    },
+    [sendItem, items, reviewIndex]
+  );
+
+  const handleReviewSkip = useCallback(
+    async (itemId: string) => {
+      setProcessingId(itemId);
+      try {
+        await skipItem(itemId);
+        // Nächstes Item
+        const itemsLength = items && Array.isArray(items) ? items.length : 0;
+        if (reviewIndex < itemsLength - 1) {
+          setReviewIndex(reviewIndex + 1);
+        } else {
+          setReviewMode(false);
+        }
+      } catch (err) {
+        console.error('Fehler beim Skip:', err);
+      } finally {
+        setProcessingId(null);
+      }
+    },
+    [skipItem, items, reviewIndex]
+  );
+
+  const handleReviewPrevious = useCallback(() => {
+    if (reviewIndex > 0) {
+      setReviewIndex(reviewIndex - 1);
+    }
+  }, [reviewIndex]);
+
+  const handleReviewNext = useCallback(() => {
+    const itemsLength = items && Array.isArray(items) ? items.length : 0;
+    if (reviewIndex < itemsLength - 1) {
+      setReviewIndex(reviewIndex + 1);
+    }
+  }, [reviewIndex, items]);
+
+  // Keyboard Shortcut für Review Mode
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'r' || e.key === 'R') {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const itemsLength = items && Array.isArray(items) ? items.length : 0;
+          if (!reviewMode && itemsLength > 0) {
+            setReviewMode(true);
+            setReviewIndex(0);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [reviewMode, items]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+        <span className="ml-3 text-slate-400">Lade Inbox...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">{error}</p>
+          <Button onClick={refetch}>Erneut versuchen</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Review Mode Overlay
+  if (reviewMode) {
+    return (
+      <ReviewMode
+        items={items && Array.isArray(items) ? items : []}
+        currentIndex={reviewIndex}
+        onClose={() => setReviewMode(false)}
+        onApprove={handleReviewApprove}
+        onSkip={handleReviewSkip}
+        onEdit={handleEdit}
+        onPrevious={handleReviewPrevious}
+        onNext={handleReviewNext}
+        isProcessing={processingId !== null}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-50 p-4 lg:p-8">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-500">
+            <Inbox className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Inbox</h1>
+            <p className="text-sm text-slate-400">
+              Alle Action-Items an einem Ort
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <MagicSendAll items={items && Array.isArray(items) ? items : []} onSendAll={handleMagicSendAll} />
+
+          <Button
+            onClick={() => setShowMagicSendModal(true)}
+            disabled={!sendableItems || sendableItems.length === 0}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Alle vorbereiten ({sendableItems?.length || 0})
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              setReviewMode(true);
+              setReviewIndex(0);
+            }}
+            disabled={!items || !Array.isArray(items) || items.length === 0}
+          >
+            <Keyboard className="h-4 w-4 mr-2" />
+            Review Mode
+          </Button>
+
+          <Button variant="outline" onClick={refetch} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Aktualisieren
+          </Button>
+        </div>
+      </div>
+
+      {/* Inbox List - mit bearbeiteten Nachrichten */}
+      <InboxList
+        grouped={useMemo(() => {
+          try {
+            // Sicherheitscheck: items muss ein Array sein
+            if (!items || !Array.isArray(items)) {
+              return { hot: [], today: [], upcoming: [] };
+            }
+            
+            // Sicherheitscheck: editedMessages muss ein Map sein
+            if (!editedMessages || !(editedMessages instanceof Map)) {
+              // Wenn editedMessages nicht verfügbar ist, verwende items direkt
+              return groupByPriority(items);
+            }
+            
+            // Merge bearbeitete Nachrichten in die Items
+            const itemsWithEdits = items.map((item) => {
+              if (!item || !item.id) return null;
+              
+              try {
+                const editedMessage = editedMessages.get(item.id);
+                if (editedMessage) {
+                  // Sicherheitscheck: item.action muss existieren
+                  return {
+                    ...item,
+                    action: {
+                      ...(item.action || {}),
+                      message: editedMessage,
+                    },
+                  };
+                }
+                return item;
+              } catch (itemError) {
+                // Wenn ein einzelnes Item einen Fehler verursacht, überspringe es
+                console.warn('Error processing item in useMemo:', itemError);
+                return item;
+              }
+            }).filter((item): item is InboxItem => item !== null && item !== undefined);
+            
+            return groupByPriority(itemsWithEdits);
+          } catch (error) {
+            // Fallback: Bei jedem Fehler gebe leeres GroupedInboxItems zurück
+            console.error('Error in grouped useMemo, using fallback:', error);
+            return { hot: [], today: [], upcoming: [] };
+          }
+        }, [items, editedMessages])}
+        onSend={handleSend}
+        onEdit={handleEdit}
+        onSnooze={(id) => handleSnooze(id, 24)}
+        onArchive={handleArchive}
+        onComposeMessage={handleComposeMessage}
+        onMessageUpdated={handleMessageUpdated}
+        onMarkAsSent={handleMarkAsSent}
+        processingId={processingId}
+        sentItemIds={sentItemIds}
+        autoAdvance={true}
+        focusedItemId={focusedItemId}
+      />
+
+      {/* Magic Send Modal */}
+      <MagicSendModal
+        isOpen={showMagicSendModal}
+        onClose={() => setShowMagicSendModal(false)}
+        items={sendableItems || []}
+        onMarkAllSent={handleMarkAllSent}
+      />
+
+      {/* CHIEF Edit Popup */}
+      {editingItem && editingItem.action?.message && (
+        <ChiefEditPopup
+          isOpen={showChiefEdit}
+          onClose={() => {
+            setShowChiefEdit(false);
+            setEditingItem(null);
+          }}
+          originalMessage={editingItem.action?.message || ''}
+          leadContext={{
+            name: editingItem.lead?.name || 'Unbekannt',
+            source: editingItem.lead?.source || 'Import',
+            notes: editingItem.lead?.company || '',
+          }}
+          onMessageUpdated={(newMessage) => {
+            // Update die Nachricht im Item
+            console.log('ChiefEditPopup: onMessageUpdated called with:', newMessage);
+            if (editingItem) {
+              handleMessageUpdated(editingItem.id, newMessage);
+            }
+            setShowChiefEdit(false);
+            setEditingItem(null);
+            // Kein Refetch nötig - State wird direkt aktualisiert
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default InboxPage;
+

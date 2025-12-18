@@ -1,0 +1,31 @@
+-- Referenz-SQL für die Tabelle `followup_tasks`.
+-- Diese Migration wird ausschließlich manuell in Supabase ausgeführt
+-- und dient hier nur als Dokumentation der Struktur.
+--
+-- Bitte in Supabase (z. B. SQL Editor) ausführen:
+--
+-- CREATE TABLE public.followup_tasks (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   lead_id uuid NULL,
+--   lead_name text NOT NULL,
+--   branch text NOT NULL,
+--   stage text NOT NULL CHECK (stage IN ('first_contact','followup1','followup2','reactivation')),
+--   channel text NOT NULL CHECK (channel IN ('whatsapp','email','dm')),
+--   tone text NOT NULL CHECK (tone IN ('du','sie')),
+--   context text NULL,
+--   due_at timestamptz NOT NULL,
+--   status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','done')),
+--   last_result text NULL,
+--   created_at timestamptz NOT NULL DEFAULT now(),
+--   updated_at timestamptz NOT NULL DEFAULT now()
+-- );
+--
+-- CREATE INDEX IF NOT EXISTS followup_tasks_due_at_idx ON public.followup_tasks (date(due_at));
+-- CREATE INDEX IF NOT EXISTS followup_tasks_status_idx ON public.followup_tasks (status);
+--
+-- Zusätzliche Hinweise:
+-- - `branch` Werte: frei wählbar (z. B. "network_marketing", "coaching", "finance")
+-- - `stage` Werte: first_contact, followup1, followup2, reactivation
+-- - `channel` Werte: whatsapp, email, dm
+-- - `tone` Werte: du, sie
+

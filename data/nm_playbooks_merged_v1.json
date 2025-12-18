@@ -1,0 +1,349 @@
+{
+  "playbooks": [
+    {
+      "id": "nm_go_pro_recruiting_flow",
+      "name": "Go Pro Recruiting Flow (Eric Worre Standard)",
+      "description": "Klassischer Rekrutierungsprozess nach Eric Worre - Bist du offen?",
+      "scenario": "Business Opportunity Präsentation",
+      "target_audience": "business_opportunity",
+      "timeframe_days": 21,
+      "steps": [
+        {
+          "day_range": "1-3",
+          "step_order": 1,
+          "objective": "Interesse wecken ohne Pitch",
+          "type": "message",
+          "channel": "whatsapp_or_dm",
+          "content": "Bist du offen?",
+          "script": "Hey {{name}}, kurze Frage: Bist du eigentlich offen für neue geschäftliche Projekte neben dem, was du aktuell machst, oder bist du komplett ausgelastet?",
+          "recommended_templates": ["msg_open_question", "nm_first_contact_cold_whatsapp_v1"],
+          "core_kpis": ["response_rate", "opt_in_rate"],
+          "goal": "Commitment für Video/Präsentation holen"
+        },
+        {
+          "day_range": "4-7",
+          "step_order": 2,
+          "objective": "Tool senden (Video/Präsentation)",
+          "type": "tool",
+          "content": "Sende Video/Präsentation",
+          "condition": "Wenn Antwort JA",
+          "script": "Wenn ich dir ein kurzes Video sende, würdest du es dir ansehen? (If I, would you?)",
+          "core_kpis": ["video_watch_rate"],
+          "note": "KRITISCH: Ohne Video-View kein nächster Schritt!"
+        },
+        {
+          "day_range": "8-10",
+          "step_order": 3,
+          "objective": "Follow-up nach Video",
+          "type": "follow_up",
+          "timing": "24h_after_video",
+          "content": "Was hat dir am besten gefallen?",
+          "script": "Hey {{name}}, hast du dir das Video angeschaut? Was hat dir am besten gefallen?",
+          "note": "NIEMALS fragen: 'Wie fandest du es?' - Immer assumptive!",
+          "recommended_templates": ["nm_followup_post_demo_whatsapp_v1"],
+          "core_kpis": ["engagement_rate", "interest_level"]
+        },
+        {
+          "day_range": "11-14",
+          "step_order": 4,
+          "objective": "Interesse messen (Scale 1-10)",
+          "type": "qualification",
+          "content": "Interesse-Skala abfragen",
+          "script": "Auf einer Skala von 1-10, wie groß ist dein Interesse?",
+          "condition": "Nur wenn 7+ → 3-Way Call anbieten",
+          "core_kpis": ["interest_score"]
+        },
+        {
+          "day_range": "15-21",
+          "step_order": 5,
+          "objective": "3-Way Call / Closing",
+          "type": "call",
+          "content": "3-Way Call mit Upline/Experten",
+          "goal": "Termin mit Upline/Experten oder direkter Abschluss",
+          "script": "Lass uns einen kurzen Call mit meinem Mentor machen - der erklärt dir das besser als ich.",
+          "recommended_templates": ["nm_closing_whatsapp_v1"],
+          "core_kpis": ["three_way_call_rate", "close_rate"]
+        }
+      ],
+      "success_metrics": {
+        "target_response_rate": 0.3,
+        "target_video_watch_rate": 0.6,
+        "target_three_way_call_rate": 0.4,
+        "target_close_rate": 0.15
+      }
+    },
+    {
+      "id": "nm_product_testimonials_health_flow",
+      "name": "Produkt-Testimonials Flow (Health & Wellness)",
+      "description": "Fokus auf Produktergebnisse (Vorher/Nachher) - Inbound Leads generieren",
+      "scenario": "Produktverkauf über Social Proof",
+      "target_audience": "product_customer",
+      "timeframe_days": 14,
+      "steps": [
+        {
+          "day_range": "1-3",
+          "step_order": 1,
+          "objective": "Inbound Leads generieren",
+          "type": "social_post",
+          "content": "Story Posting mit Ergebnis",
+          "script": "Vorher/Nachher Story auf Instagram/Facebook posten",
+          "goal": "Menschen melden sich von selbst",
+          "core_kpis": ["story_views", "dm_inquiries"]
+        },
+        {
+          "day_range": "4-7",
+          "step_order": 2,
+          "objective": "Qualifizierung des Leads",
+          "type": "message",
+          "channel": "dm",
+          "content": "Gesundheitsziel abfragen",
+          "script": "Hey {{name}}, cool dass du dich meldest! Was ist dein primäres Ziel? Mehr Energie oder Abnehmen?",
+          "recommended_templates": ["msg_product_approach_indirect"],
+          "core_kpis": ["qualification_rate"],
+          "goal": "Pain Point identifizieren"
+        },
+        {
+          "day_range": "8-10",
+          "step_order": 3,
+          "objective": "Social Proof zeigen",
+          "type": "tool",
+          "content": "Kundengruppe hinzufügen",
+          "goal": "Social Proof zeigen (Facebook Gruppe/Telegram)",
+          "script": "Ich habe eine Gruppe mit 200+ Leuten die das gleiche Ziel haben - willst du dazu?"
+        },
+        {
+          "day_range": "11-14",
+          "step_order": 4,
+          "objective": "Starter-Set verkaufen",
+          "type": "offer",
+          "content": "Starter-Set Angebot",
+          "script": "Die meisten starten mit dem 30-Tage-Testpaket für {{price}}€. Das beinhaltet {{benefits}}.",
+          "recommended_templates": ["nm_closing_whatsapp_v1"],
+          "core_kpis": ["conversion_rate", "avg_order_value"]
+        }
+      ],
+      "success_metrics": {
+        "target_dm_inquiry_rate": 0.05,
+        "target_qualification_rate": 0.7,
+        "target_conversion_rate": 0.25
+      }
+    },
+    {
+      "id": "nm_event_invitation_webinar_flow",
+      "name": "Event Einladung Flow (Webinar/Zoom)",
+      "description": "Halle füllen für Zoom Calls - Persönliche Einladung + Reminder",
+      "scenario": "Event-basierte Lead Generierung",
+      "target_audience": "mixed",
+      "timeframe_days": 7,
+      "steps": [
+        {
+          "day_range": "1-5",
+          "step_order": 1,
+          "objective": "Persönliche Einladung",
+          "type": "call",
+          "content": "Persönlicher Anruf oder Voice Message",
+          "script": "Hey {{name}}, ich mache am {{date}} um {{time}} ein kurzes Online-Event zu {{topic}}. Es dauert nur 30 Min - bist du dabei?",
+          "goal": "Commitment holen",
+          "recommended_templates": ["nm_invite_product_presentation_whatsapp_v1"],
+          "core_kpis": ["invitation_sent", "commitment_rate"]
+        },
+        {
+          "day_range": "6",
+          "step_order": 2,
+          "objective": "Reminder senden",
+          "type": "message",
+          "timing": "1h_before_event",
+          "content": "Reminder + Link",
+          "script": "Hey {{name}}, in 1 Stunde geht's los! Hier ist der Link: {{zoom_link}}",
+          "recommended_templates": ["msg_event_reminder"],
+          "core_kpis": ["reminder_sent"]
+        },
+        {
+          "day_range": "7",
+          "step_order": 3,
+          "objective": "Live Check während Event",
+          "type": "message",
+          "timing": "10min_after_start",
+          "content": "Live-Check Message",
+          "script": "Hey {{name}}, bist du drin? Ich sehe dich nicht in der Teilnehmerliste.",
+          "goal": "Sicherstellen der Teilnahme",
+          "core_kpis": ["show_up_rate"]
+        },
+        {
+          "day_range": "7",
+          "step_order": 4,
+          "objective": "Post-Event Follow-up",
+          "type": "follow_up",
+          "timing": "2h_after_event",
+          "content": "Was hat dir am besten gefallen?",
+          "script": "Hey {{name}}, cool dass du dabei warst! Was hat dir am besten gefallen? Das Produktkonzept oder die Business-Möglichkeit?",
+          "recommended_templates": ["msg_post_webinar", "nm_followup_post_demo_whatsapp_v1"],
+          "core_kpis": ["post_event_response_rate", "interest_type"]
+        }
+      ],
+      "success_metrics": {
+        "target_commitment_rate": 0.6,
+        "target_show_up_rate": 0.5,
+        "target_post_event_interest": 0.3
+      }
+    },
+    {
+      "id": "nm_cold_to_close_30d",
+      "name": "Cold to Close – 30 Tage Standard",
+      "description": "Kaltkontakt bis erste Bestellung/Einstieg - Basis-Flow",
+      "scenario": "Kaltkontakt bis erste Bestellung / Einstieg",
+      "target_audience": "cold_market",
+      "timeframe_days": 30,
+      "steps": [
+        {
+          "day_range": "1-3",
+          "objective": "Erstkontakt & Erlaubnis für Infos",
+          "recommended_templates": ["nm_first_contact_cold_whatsapp_v1", "nm_followup_no_response_whatsapp_v1"],
+          "core_kpis": ["response_rate", "opt_in_rate"]
+        },
+        {
+          "day_range": "4-10",
+          "objective": "Bedarf klären & Produktkonzept erklären",
+          "recommended_templates": ["nm_invite_product_presentation_whatsapp_v1", "nm_testimonial_share_whatsapp_v1"],
+          "core_kpis": ["appointment_rate", "show_up_rate"]
+        },
+        {
+          "day_range": "11-20",
+          "objective": "Fragen klären, Vertrauen stärken",
+          "recommended_templates": ["nm_followup_post_demo_whatsapp_v1"],
+          "core_kpis": ["question_rate", "engagement_rate"]
+        },
+        {
+          "day_range": "21-30",
+          "objective": "Sauber zum Abschluss führen oder bewusst parken",
+          "recommended_templates": ["nm_closing_whatsapp_v1"],
+          "core_kpis": ["close_rate", "clear_no_rate"]
+        }
+      ],
+      "success_metrics": {
+        "target_response_rate": 0.25,
+        "target_close_rate": 0.08
+      }
+    },
+    {
+      "id": "nm_warm_market_activation_21d",
+      "name": "Warmmarkt-Aktivierung – 21 Tage",
+      "description": "Bestehende Kontakte ansprechen (Freunde/Bekannte)",
+      "scenario": "Warmmarkt (Freunde/Familie/Bekannte) aktivieren",
+      "target_audience": "warm_market",
+      "timeframe_days": 21,
+      "steps": [
+        {
+          "day_range": "1-7",
+          "objective": "Kontakt reaktivieren, Beziehung stärken",
+          "recommended_templates": ["nm_first_contact_warm_whatsapp_v1"],
+          "core_kpis": ["response_rate"]
+        },
+        {
+          "day_range": "8-14",
+          "objective": "Interesse am Thema abklopfen",
+          "recommended_templates": ["nm_invite_product_presentation_whatsapp_v1"],
+          "core_kpis": ["opt_in_rate", "appointment_rate"]
+        },
+        {
+          "day_range": "15-21",
+          "objective": "Entscheidung klären ohne Druck",
+          "recommended_templates": ["nm_closing_whatsapp_v1"],
+          "core_kpis": ["decision_rate", "referral_rate"]
+        }
+      ],
+      "success_metrics": {
+        "target_opt_in_rate": 0.35,
+        "target_close_rate": 0.12
+      }
+    },
+    {
+      "id": "nm_customer_care_and_upsell_60d",
+      "name": "Customer Care & Upsell – 60 Tage",
+      "description": "Bestandskunden halten & sinnvoll erweitern",
+      "scenario": "Bestandskunden betreuen und Upsell",
+      "target_audience": "existing_customer",
+      "timeframe_days": 60,
+      "steps": [
+        {
+          "day_range": "7-10",
+          "objective": "Erster Check-in nach Lieferung",
+          "recommended_templates": ["nm_customer_checkin_whatsapp_v1"],
+          "core_kpis": ["first_checkin_rate", "satisfaction_score"]
+        },
+        {
+          "day_range": "25-35",
+          "objective": "Erfahrungen abfragen & evtl. Ergänzung empfehlen",
+          "recommended_templates": ["nm_customer_checkin_whatsapp_v1", "nm_testimonial_share_whatsapp_v1"],
+          "core_kpis": ["repeat_order_rate", "upsell_rate"]
+        },
+        {
+          "day_range": "50-60",
+          "objective": "Langfristige Betreuung sichern & Empfehlungen abfragen",
+          "recommended_templates": ["nm_customer_checkin_whatsapp_v1", "nm_referral_request_whatsapp_v1"],
+          "core_kpis": ["churn_rate", "referral_rate"]
+        }
+      ],
+      "success_metrics": {
+        "target_repeat_order_rate": 0.5,
+        "target_referral_rate": 0.2
+      }
+    },
+    {
+      "id": "nm_reactivation_30d",
+      "name": "Stille Kontakte reaktivieren – 30 Tage",
+      "description": "Leads die 3+ Monate nicht geantwortet haben",
+      "scenario": "Ghosted Leads wiederbeleben",
+      "target_audience": "no_response",
+      "timeframe_days": 30,
+      "steps": [
+        {
+          "day_range": "1-7",
+          "objective": "Empathischer Re-Check ohne Druck",
+          "recommended_templates": ["nm_followup_no_response_whatsapp_v1", "msg_ghosting_revival"],
+          "core_kpis": ["reactivation_response_rate"]
+        },
+        {
+          "day_range": "8-21",
+          "objective": "Neuen Einstiegspunkt anbieten (z.B. Info-Abend, Test-Paket)",
+          "recommended_templates": ["nm_invite_product_presentation_whatsapp_v1"],
+          "core_kpis": ["new_appointment_rate"]
+        },
+        {
+          "day_range": "22-30",
+          "objective": "Kontakt sauber abschließen, wenn keine Reaktion",
+          "recommended_templates": [],
+          "core_kpis": ["clear_no_rate"]
+        }
+      ],
+      "success_metrics": {
+        "target_reactivation_rate": 0.1
+      }
+    },
+    {
+      "id": "nm_referral_sprint_14d",
+      "name": "Empfehlungs-Sprint – 14 Tage",
+      "description": "Empfehlungen aus glücklichen Kunden generieren",
+      "scenario": "Systematische Empfehlungs-Generierung",
+      "target_audience": "satisfied_customer",
+      "timeframe_days": 14,
+      "steps": [
+        {
+          "day_range": "1-5",
+          "objective": "Zufriedenheit messen & Stories sammeln",
+          "recommended_templates": ["nm_customer_checkin_whatsapp_v1"],
+          "core_kpis": ["satisfaction_score", "testimonial_count"]
+        },
+        {
+          "day_range": "6-14",
+          "objective": "Spezifisch um 1–2 Empfehlungen bitten",
+          "recommended_templates": ["nm_referral_request_whatsapp_v1", "msg_referral_ask"],
+          "core_kpis": ["referral_rate", "new_leads_from_referrals"]
+        }
+      ],
+      "success_metrics": {
+        "target_referral_rate": 0.3
+      }
+    }
+  ]
+}
