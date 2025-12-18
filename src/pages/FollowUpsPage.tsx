@@ -306,8 +306,13 @@ export default function FollowUpsPage() {
   const [magicSendPreview, setMagicSendPreview] = useState<MagicSendPreview | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [magicSendError, setMagicSendError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates'>('due');
+  const [activeTab, setActiveTab] = useState<'due' | 'week' | 'templates' | 'sent'>('due');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  
+  // State für Sent Log
+  const [sentMessages, setSentMessages] = useState<any[]>([]);
+  const [sentMessagesLoading, setSentMessagesLoading] = useState(false);
+  const [sentMessagesError, setSentMessagesError] = useState<string | null>(null);
 
   const markAsResponded = async (leadId: string) => {
     if (!leadId) {
@@ -426,6 +431,54 @@ export default function FollowUpsPage() {
     
     fetchLeads();
   }, []);
+
+  // Gesendete Nachrichten laden
+  useEffect(() => {
+    const fetchSentMessages = async () => {
+      if (activeTab !== 'sent') return;
+      
+      setSentMessagesLoading(true);
+      setSentMessagesError(null);
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('followup_suggestions')
+          .select(`
+            id,
+            lead_id,
+            suggested_message,
+            channel,
+            sent_at,
+            template_key,
+            leads (
+              id,
+              name,
+              email,
+              phone,
+              company
+            )
+          `)
+          .eq('status', 'sent')
+          .order('sent_at', { ascending: false })
+          .limit(50);
+        
+        if (error) {
+          console.error('Fehler beim Laden der gesendeten Nachrichten:', error);
+          setSentMessagesError('Gesendete Nachrichten konnten nicht geladen werden.');
+          return;
+        }
+        
+        setSentMessages(data || []);
+      } catch (err) {
+        console.error('Fehler beim Laden der gesendeten Nachrichten:', err);
+        setSentMessagesError('Fehler beim Laden der gesendeten Nachrichten.');
+      } finally {
+        setSentMessagesLoading(false);
+      }
+    };
+    
+    fetchSentMessages();
+  }, [activeTab]);
 
   const dueToday = useMemo(
     () => tasks.filter((task) => isDueToday(task.due_at)),
@@ -878,6 +931,7 @@ export default function FollowUpsPage() {
         <TabsList>
           <TabsTrigger value="due">Heute fällig ({dueToday.length})</TabsTrigger>
           <TabsTrigger value="week">Diese Woche ({dueThisWeek.length})</TabsTrigger>
+          <TabsTrigger value="sent">Gesendet ({sentMessages.length})</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
         </TabsList>
 
@@ -1014,6 +1068,81 @@ export default function FollowUpsPage() {
                   viewMode={viewMode}
                 />
               )}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="sent">
+          {sentMessagesLoading ? (
+            <div className="mt-12 flex items-center justify-center text-slate-400">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-500 mr-3" />
+              <span>Lade gesendete Nachrichten...</span>
+            </div>
+          ) : sentMessagesError ? (
+            <div className="mt-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+              {sentMessagesError}
+            </div>
+          ) : sentMessages.length === 0 ? (
+            <div className="mt-12 text-center text-slate-400">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
+                <Send className="h-8 w-8 text-slate-600" />
+              </div>
+              <p className="text-lg">Noch keine Nachrichten gesendet</p>
+              <p className="mt-2 text-sm text-slate-500">
+                Gesendete Follow-up Nachrichten erscheinen hier.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {sentMessages.map((item) => {
+                const lead = item.leads || {};
+                const leadName = lead.name || lead.email || 'Unbekannt';
+                const sentDate = item.sent_at ? new Date(item.sent_at) : null;
+                const channel = item.channel || 'whatsapp';
+                
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-slate-700 bg-slate-800/80 p-4 hover:border-slate-600 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h3 className="text-base font-semibold text-white">{leadName}</h3>
+                        {lead.company && (
+                          <p className="text-xs text-slate-400 mt-1">{lead.company}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        {sentDate && (
+                          <span className="text-xs text-slate-400">
+                            {sentDate.toLocaleDateString('de-DE', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })} {sentDate.toLocaleTimeString('de-DE', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        )}
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 capitalize">
+                          {channel === 'whatsapp' ? 'WhatsApp' : 
+                           channel === 'instagram_dm' ? 'Instagram' :
+                           channel === 'email' ? 'Email' :
+                           channel}
+                        </span>
+                      </div>
+                    </div>
+                    {item.suggested_message && (
+                      <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900/70 p-3">
+                        <p className="text-sm text-slate-200 line-clamp-3">
+                          {item.suggested_message}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </TabsContent>
