@@ -21,6 +21,35 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 // ─────────────────────────────────────────────────────────────────
 
 /**
+ * Extrahiert Lead-Namen mit Fallback-Reihenfolge
+ */
+const extractLeadName = (lead: any): string => {
+  // 1. lead.name
+  if (lead?.name) return lead.name;
+  
+  // 2. lead.first_name + " " + lead.last_name
+  const firstName = lead?.first_name || lead?.firstname;
+  const lastName = lead?.last_name || lead?.lastname;
+  if (firstName || lastName) {
+    return [firstName, lastName].filter(Boolean).join(' ').trim();
+  }
+  
+  // 3. lead.instagram_username
+  if (lead?.instagram_username || lead?.instagram) {
+    return lead.instagram_username || lead.instagram;
+  }
+  
+  // 4. lead.email (before @)
+  if (lead?.email) {
+    const emailName = lead.email.split('@')[0];
+    if (emailName) return emailName;
+  }
+  
+  // 5. "Neuer Kontakt" (never "Unbekannt")
+  return 'Neuer Kontakt';
+};
+
+/**
  * Konvertiert Follow-up Task zu InboxItem
  */
 const followUpTaskToInboxItem = (task: any): InboxItem | null => {
@@ -46,13 +75,13 @@ const followUpTaskToInboxItem = (task: any): InboxItem | null => {
   const followUpMatch = task.template_key?.match(/fu_(\d+)/);
   const followUpNumber = followUpMatch ? parseInt(followUpMatch[1], 10) : undefined;
 
-  // Lead-Name aus verschiedenen Quellen extrahieren
+  // Lead-Name mit Fallback-Reihenfolge extrahieren
   const leadName = lead.name 
     || lead.lead_name 
     || task.lead_name
     || task.meta?.lead_name
     || task.contact_name
-    || 'Unbekannt';
+    || extractLeadName(lead);
 
   return {
     id: `followup_${task.id}`,
@@ -105,7 +134,7 @@ const approvalMessageToInboxItem = (message: any): InboxItem | null => {
     priority: (message.priority || 0) >= 80 ? 'hot' : 'today',
     lead: {
       id: message.lead_id || lead.id || '',
-      name: lead.name || lead.lead_name || 'Neuer Lead',
+      name: lead.name || lead.lead_name || extractLeadName(lead),
       avatar: lead.avatar || undefined,
       source: message.channel || 'WhatsApp',
       company: lead.company || lead.lead_company || undefined,
@@ -194,7 +223,7 @@ const newLeadToInboxItem = async (lead: any): Promise<InboxItem> => {
     priority: (lead.temperature || lead.score || 0) >= 80 ? 'hot' : 'today',
     lead: {
       id: lead.id,
-      name: lead.name || 'Neuer Kontakt',
+      name: extractLeadName(lead),
       avatar: lead.avatar || undefined,
       source: lead.source || lead.platform || 'Import',
       company: lead.company || undefined,
