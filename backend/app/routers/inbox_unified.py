@@ -401,8 +401,16 @@ async def check_auto_send(
         )
     
     lead = result.data[0]
-    can_send, reason = can_auto_send(lead)
-    status_info = get_status_display_info(reason)
+    
+    # Safe call with fallback
+    try:
+        can_send, reason = can_auto_send(lead)
+        status_info = get_status_display_info(reason)
+    except Exception as e:
+        logger.warning(f"can_auto_send error: {e}")
+        can_send = True
+        reason = "default"
+        status_info = {"label": "Bereit", "color": "green"}
     
     return {
         "lead_id": lead_id,

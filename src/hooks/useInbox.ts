@@ -332,24 +332,22 @@ const fetchInboxItems = async (): Promise<InboxItem[]> => {
     console.error('Fehler beim Laden der neuen Leads:', err);
   }
 
-  // Sortiere nach Priorität und Datum
-  // Filter ungültige Items heraus
+  // Safe sort with null checks
   return items
-    .filter(item => item && item.id && item.metadata)
+    .filter(item => item && item.id)
     .sort((a, b) => {
-      const priorityOrder = { hot: 0, today: 1, upcoming: 2 };
-      const priorityDiff = (priorityOrder[a?.priority] || 2) - (priorityOrder[b?.priority] || 2);
+      const priorityOrder: Record<string, number> = { hot: 0, today: 1, upcoming: 2 };
+      const priorityDiff = (priorityOrder[a?.priority] ?? 2) - (priorityOrder[b?.priority] ?? 2);
       if (priorityDiff !== 0) return priorityDiff;
       
-      // Safe date comparison
-      const dateA = a?.metadata?.dueDate instanceof Date 
-        ? a.metadata.dueDate.getTime() 
-        : new Date(a?.metadata?.dueDate || 0).getTime();
-      const dateB = b?.metadata?.dueDate instanceof Date 
-        ? b.metadata.dueDate.getTime() 
-        : new Date(b?.metadata?.dueDate || 0).getTime();
+      const getTime = (d: unknown): number => {
+        if (!d) return 0;
+        if (d instanceof Date) return d.getTime();
+        const parsed = new Date(d as string);
+        return isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+      };
       
-      return dateA - dateB;
+      return getTime(a?.metadata?.dueDate) - getTime(b?.metadata?.dueDate);
     });
 };
 
