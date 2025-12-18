@@ -400,6 +400,45 @@ export const InboxPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [reviewMode, items]);
 
+  // Grouped items with edited messages
+  const groupedItems = useMemo(() => {
+    try {
+      if (!items || !Array.isArray(items)) {
+        return { hot: [], today: [], upcoming: [] };
+      }
+      
+      if (!editedMessages || !(editedMessages instanceof Map)) {
+        return groupByPriority(items);
+      }
+      
+      const itemsWithEdits = items.map((item) => {
+        if (!item || !item.id) return null;
+        
+        try {
+          const editedMessage = editedMessages.get(item.id);
+          if (editedMessage) {
+            return {
+              ...item,
+              action: {
+                ...(item.action || {}),
+                message: editedMessage,
+              },
+            };
+          }
+          return item;
+        } catch (itemError) {
+          console.warn('Error processing item in useMemo:', itemError);
+          return item;
+        }
+      }).filter((item): item is InboxItem => item !== null && item !== undefined);
+      
+      return groupByPriority(itemsWithEdits);
+    } catch (error) {
+      console.error('Error in grouped useMemo, using fallback:', error);
+      return { hot: [], today: [], upcoming: [] };
+    }
+  }, [items, editedMessages]);
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
@@ -486,50 +525,7 @@ export const InboxPage: React.FC = () => {
 
       {/* Inbox List - mit bearbeiteten Nachrichten */}
       <InboxList
-        grouped={useMemo(() => {
-          try {
-            // Sicherheitscheck: items muss ein Array sein
-            if (!items || !Array.isArray(items)) {
-              return { hot: [], today: [], upcoming: [] };
-            }
-            
-            // Sicherheitscheck: editedMessages muss ein Map sein
-            if (!editedMessages || !(editedMessages instanceof Map)) {
-              // Wenn editedMessages nicht verfügbar ist, verwende items direkt
-              return groupByPriority(items);
-            }
-            
-            // Merge bearbeitete Nachrichten in die Items
-            const itemsWithEdits = items.map((item) => {
-              if (!item || !item.id) return null;
-              
-              try {
-                const editedMessage = editedMessages.get(item.id);
-                if (editedMessage) {
-                  // Sicherheitscheck: item.action muss existieren
-                  return {
-                    ...item,
-                    action: {
-                      ...(item.action || {}),
-                      message: editedMessage,
-                    },
-                  };
-                }
-                return item;
-              } catch (itemError) {
-                // Wenn ein einzelnes Item einen Fehler verursacht, überspringe es
-                console.warn('Error processing item in useMemo:', itemError);
-                return item;
-              }
-            }).filter((item): item is InboxItem => item !== null && item !== undefined);
-            
-            return groupByPriority(itemsWithEdits);
-          } catch (error) {
-            // Fallback: Bei jedem Fehler gebe leeres GroupedInboxItems zurück
-            console.error('Error in grouped useMemo, using fallback:', error);
-            return { hot: [], today: [], upcoming: [] };
-          }
-        }, [items, editedMessages])}
+        grouped={groupedItems}
         onSend={handleSend}
         onEdit={handleEdit}
         onSnooze={(id) => handleSnooze(id, 24)}
