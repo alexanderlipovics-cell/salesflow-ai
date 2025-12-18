@@ -163,6 +163,7 @@ async def _send_followup_suggestion(
     """
     Sendet eine Follow-up Suggestion.
     - Markiert als "sent" mit Timestamp
+    - Erstellt automatisch nächsten Follow-up
     - Loggt die Aktion
     """
     # Hole die Suggestion
@@ -183,6 +184,7 @@ async def _send_followup_suggestion(
     
     suggestion = result.data[0]
     message_to_send = edited_message or suggestion.get("suggested_message", "")
+    lead_id = suggestion.get("lead_id")
     
     # Update Status
     update_data = {
@@ -195,6 +197,27 @@ async def _send_followup_suggestion(
     
     db.table("followup_suggestions").update(update_data).eq("id", suggestion_id).execute()
     
+    # Erstelle automatisch nächsten Follow-up (7 Tage später)
+    if lead_id:
+        try:
+            next_due_date = (datetime.utcnow() + timedelta(days=7)).isoformat()
+            new_followup = {
+                "user_id": user_id,
+                "lead_id": lead_id,
+                "status": "pending",
+                "due_at": next_due_date,
+                "template_key": "fu_auto_generated",
+                "channel": suggestion.get("channel", "whatsapp"),
+                "suggested_message": None,  # AI wird generieren wenn fällig
+                "note": None,
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            db.table("followup_suggestions").insert(new_followup).execute()
+            logger.info(f"Auto-created next follow-up for lead {lead_id}, due in 7 days")
+        except Exception as e:
+            logger.warning(f"Could not create next follow-up: {e}")
+            # Nicht fatal - Hauptaktion (Senden) war erfolgreich
+    
     # Log Activity
     try:
         activity = ActivityLogger(db, user_id)
@@ -202,10 +225,10 @@ async def _send_followup_suggestion(
             action_type="completed",
             entity_type="follow_up",
             entity_id=suggestion_id,
-            entity_name=f"Follow-up für {suggestion.get('lead_id')}",
+            entity_name=f"Follow-up für {lead_id}",
             details={
                 "action": "send",
-                "lead_id": suggestion.get("lead_id"),
+                "lead_id": lead_id,
                 "channel": suggestion.get("channel"),
             },
             source="inbox",
@@ -454,17 +477,37 @@ async def send_inbox_item(
         from ..routers.inbox import approve_message
         return await approve_message(item_db_id, None, current_user, db)
     elif item_type == "lead":
-        # Für neue Leads: Nur als "reviewed" markieren
+        # Für neue Leads: Als "reviewed" markieren und ersten Follow-up erstellen
         db.table("leads").update({
             "status": "REVIEWED",
             "reviewed_at": datetime.utcnow().isoformat(),
         }).eq("id", item_db_id).eq("user_id", user_id).execute()
         
+        # Erstelle ersten Follow-up (3 Tage später für neue Leads)
+        try:
+            next_due_date = (datetime.utcnow() + timedelta(days=3)).isoformat()
+            new_followup = {
+                "user_id": user_id,
+                "lead_id": item_db_id,
+                "status": "pending",
+                "due_at": next_due_date,
+                "template_key": "fu_auto_generated",
+                "channel": "whatsapp",  # Default für neue Leads
+                "suggested_message": None,  # AI wird generieren wenn fällig
+                "note": None,
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            db.table("followup_suggestions").insert(new_followup).execute()
+            logger.info(f"Auto-created first follow-up for new lead {item_db_id}, due in 3 days")
+        except Exception as e:
+            logger.warning(f"Could not create follow-up for new lead: {e}")
+            # Nicht fatal - Hauptaktion war erfolgreich
+        
         return {
             "success": True,
             "item_id": item_id,
             "type": "lead",
-            "message": "Lead als reviewed markiert",
+            "message": "Lead als reviewed markiert und Follow-up erstellt",
         }
     else:
         raise HTTPException(
