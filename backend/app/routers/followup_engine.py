@@ -34,8 +34,8 @@ async def change_lead_state(
         raise HTTPException(status_code=401, detail="User ID not found")
     
     # Create engine instance - State Machine methods only need db parameter
-    # We pass None for repository, ai_router, tz_service since new methods use db directly
-    engine = FollowUpEngine(repository=None, ai_router=None, tz_service=None)
+    # We pass None for repo, ai_router, tz_service since new methods use db directly
+    engine = FollowUpEngine(repo=None, ai_router=None, tz_service=None)
     
     result = await engine.change_lead_state(
         user_id=user_id,
@@ -61,7 +61,7 @@ async def process_sent_followup(
     if not user_id:
         raise HTTPException(status_code=401, detail="User ID not found")
     
-    engine = FollowUpEngine(repository=None, ai_router=None, tz_service=None)
+    engine = FollowUpEngine(repo=None, ai_router=None, tz_service=None)
     
     result = await engine.process_sent_followup(
         user_id=user_id,
@@ -86,7 +86,7 @@ async def get_pending_queue(
     if not user_id:
         raise HTTPException(status_code=401, detail="User ID not found")
     
-    engine = FollowUpEngine(repository=None, ai_router=None, tz_service=None)
+    engine = FollowUpEngine(repo=None, ai_router=None, tz_service=None)
     
     items = await engine.get_queue_items(
         user_id=user_id,
