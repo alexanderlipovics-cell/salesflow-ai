@@ -5,7 +5,8 @@ State Machine endpoints for lead state transitions and queue management
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from app.core.deps import get_current_user, get_supabase
+from app.core.deps import get_supabase
+from app.core.security import get_current_active_user
 from app.services.followup_engine import FollowUpEngine, STATE_TRANSITIONS
 
 router = APIRouter(prefix="/api/engine", tags=["Follow-up Engine"])
@@ -21,7 +22,7 @@ class ProcessSentRequest(BaseModel):
 @router.post("/change-state")
 async def change_lead_state(
     request: StateChangeRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user = Depends(get_current_active_user),
     db = Depends(get_supabase)
 ):
     """
@@ -52,7 +53,7 @@ async def change_lead_state(
 @router.post("/process-sent")
 async def process_sent_followup(
     request: ProcessSentRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user = Depends(get_current_active_user),
     db = Depends(get_supabase)
 ):
     """Mark a follow-up as sent and schedule the next one in sequence"""
@@ -77,7 +78,7 @@ async def process_sent_followup(
 async def get_pending_queue(
     days_ahead: int = 7,
     limit: int = 50,
-    current_user: dict = Depends(get_current_user),
+    current_user = Depends(get_current_active_user),
     db = Depends(get_supabase)
 ):
     """Get pending follow-ups from the queue"""
