@@ -164,6 +164,54 @@ const approvalMessageToInboxItem = (message: any): InboxItem | null => {
 };
 
 /**
+ * Konvertiert Queue Item zu InboxItem
+ */
+const queueItemToInboxItem = (item: any): InboxItem | null => {
+  if (!item.contact_id) return null;
+  
+  const lead = item.leads || {};
+  const cycle = item.follow_up_cycles || {};
+  const dueDate = item.next_due_at ? new Date(item.next_due_at) : new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  dueDate.setHours(0, 0, 0, 0);
+  
+  const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  
+  let priority: 'hot' | 'today' | 'upcoming' = 'upcoming';
+  if (diffDays < 0) {
+    priority = 'hot';
+  } else if (diffDays === 0) {
+    priority = 'today';
+  }
+  
+  return {
+    id: `queue_${item.id}`,
+    type: 'follow_up',
+    priority,
+    lead: {
+      id: item.contact_id,
+      name: lead.name || 'Neuer Kontakt',
+      source: (lead.preferred_channel || cycle.message_type || 'whatsapp').charAt(0).toUpperCase() + (lead.preferred_channel || cycle.message_type || 'whatsapp').slice(1),
+      company: lead.company || undefined,
+      email: lead.email || undefined,
+      phone: lead.phone || lead.whatsapp || undefined,
+      instagram_username: lead.instagram || undefined,
+    },
+    action: {
+      type: 'send_message',
+      message: item.ai_generated_content || undefined,
+    },
+    metadata: {
+      dueDate: dueDate,
+      createdAt: item.created_at ? new Date(item.created_at) : new Date(),
+      templateKey: cycle.template_key,
+      channel: cycle.message_type || 'whatsapp',
+    },
+  };
+};
+
+/**
  * Generiert erste Nachricht für neuen Lead (via Backend)
  */
 const generateFirstMessage = async (lead: any): Promise<string | null> => {
@@ -291,7 +339,36 @@ const fetchInboxItems = async (): Promise<InboxItem[]> => {
   }
 
   try {
-    // 3. Neue Leads laden (Status = NEW, erstellt in letzten 7 Tagen)
+    // 3. State Machine Queue Items laden
+    const token = localStorage.getItem('access_token');
+    const queueResponse = await fetch(`${API_BASE_URL}/api/engine/queue?days_ahead=7&limit=50`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    
+    if (queueResponse.ok) {
+      const queueData = await queueResponse.json();
+      queueData.items?.forEach((queueItem: any) => {
+        const item = queueItemToInboxItem(queueItem);
+        if (item) {
+          // Avoid duplicates - check if lead already has a follow-up item
+          const existingItem = items.find(
+            (i) => i.lead.id === item.lead.id && i.type === 'follow_up'
+          );
+          if (!existingItem) {
+            items.push(item);
+          }
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('State Machine Queue items could not be loaded:', err);
+  }
+
+  try {
+    // 4. Neue Leads laden (Status = NEW, erstellt in letzten 7 Tagen)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
