@@ -171,58 +171,11 @@ const generateFirstMessage = async (lead: any): Promise<string | null> => {
 
 /**
  * Prüft Auto-Send Status für Lead
- * Absicherung: Verhindert Crash bei 404 oder anderen Fehlern
+ * API call disabled - always return defaults to prevent crash
  */
 const checkAutoSendStatus = async (lead: any): Promise<{ canSend: boolean; reason: string }> => {
-  // Default-Werte für Fallback
-  let canAutoSend = true;
-  let autoSendReason = 'default';
-
-  try {
-    const token = localStorage.getItem('access_token');
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
-      ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
-      : (import.meta.env.PROD ? 'https://salesflow-ai.onrender.com' : 'http://localhost:8000');
-
-    const response = await fetch(`${API_BASE_URL}/api/inbox-unified/check-auto-send/${lead.id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-
-    // Nur JSON parsen wenn Response OK ist
-    if (response.ok) {
-      try {
-        const data = await response.json();
-        canAutoSend = data.can_send ?? true;
-        autoSendReason = data.reason ?? 'default';
-      } catch (jsonError) {
-        // JSON-Parsing-Fehler - verwende Fallback
-        console.warn('check-auto-send: JSON parsing failed, using defaults:', jsonError);
-      }
-    } else {
-      // Response nicht OK (404, 500, etc.) - verwende Fallback
-      console.warn(`check-auto-send: HTTP ${response.status} for lead ${lead.id}, using defaults`);
-    }
-  } catch (error) {
-    // Network-Fehler oder andere Exceptions - verwende Fallback
-    console.warn('check-auto-send failed, using defaults:', error);
-  }
-  
-  // Fallback-Logik: Erlaube wenn never_contacted, sonst basierend auf Default
-  const status = lead.contact_status || 'never_contacted';
-  if (autoSendReason === 'default') {
-    // Wenn kein Grund vom Backend kam, verwende Contact-Status
-    canAutoSend = status === 'never_contacted';
-    autoSendReason = status === 'never_contacted' ? 'first_contact' : 'unknown_status';
-  }
-  
-  return {
-    canSend: canAutoSend,
-    reason: autoSendReason,
-  };
+  // API call disabled - always return defaults to prevent crash
+  return { canSend: true, reason: 'first_contact' };
 };
 
 /**
