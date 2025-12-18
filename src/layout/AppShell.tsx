@@ -3,25 +3,13 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  Zap,
-  Crosshair,
-  MapPin,
   MessageSquare,
-  UploadCloud,
   Menu,
   X,
   Settings,
-  BarChart3,
-  Brain,
-  PieChart,
-  FileText,
-  Target,
-  BookOpen,
-  AlertTriangle,
-  Network,
-  Shield,
-  Sparkles,
-  Calculator,
+  CheckSquare,
+  Calendar,
+  Mail,
   Inbox
 } from 'lucide-react';
 import { useFeatures } from '../hooks/useFeatures';
@@ -68,53 +56,20 @@ export const AppShell: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Die bereinigte Navigations-Struktur
+  // Bereinigte Navigations-Struktur - nur Kern-Items für MLM/Sales Workflow
   const navigation = [
     { 
-      category: 'OPERATIONS', 
+      category: 'CORE', 
       items: [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'Inbox', href: '/inbox', icon: Inbox, color: 'text-cyan-500' },
-        { name: 'Mein Team', href: '/network', icon: Users, feature: 'network_dashboard' },
-        { name: 'Daily Command', href: '/daily-command', icon: Zap },
-        { name: 'Nächste beste Aktionen', href: '/next-best-actions', icon: Target },
-        { name: 'Hunter Board', href: '/hunter', icon: Crosshair },
-      ]
-    },
-    {
-      category: 'AI & AUTOMATION',
-      items: [
-        { name: 'Autopilot Cockpit', href: '/autopilot', icon: Sparkles, color: 'text-emerald-500' },
-        { name: 'AI Coach', href: '/coach', icon: Brain, color: 'text-blue-500' },
-      ]
-    },
-    { 
-      category: 'TOOLS', 
-      items: [
-        { name: 'Compensation Simulator', href: '/compensation-simulator', icon: Calculator, color: 'text-cyan-500' },
-        { name: 'Power Hour', href: '/power-hour', icon: Zap, color: 'text-purple-500' },
-        { name: 'Churn Radar', href: '/churn-radar', icon: AlertTriangle, color: 'text-orange-500' },
-        { name: 'Network Graph', href: '/network-graph', icon: Network, color: 'text-blue-500' },
-        { name: 'Genealogy Tree', href: '/genealogy', icon: Network, color: 'text-cyan-500' },
-        { name: 'Roleplay Dojo', href: '/roleplay-dojo', icon: MessageSquare, color: 'text-green-500' },
-        { name: 'Außendienst', href: '/field-ops', icon: MapPin },
-        { name: 'Objection Brain', href: '/objections', icon: Brain },
-        { name: 'Lead Import', href: '/import', icon: UploadCloud },
-        { name: 'Angebote', href: '/proposals', icon: FileText },
-      ]
-    },
-    {
-      category: 'ANALYTICS',
-      items: [
-        { name: 'Template Performance', href: '/templates', icon: BarChart3 },
-        { name: 'Einwände Analytics', href: '/manager/objections', icon: PieChart },
-        { name: 'Follow-up Templates', href: '/manager/followup-templates', icon: FileText },
-      ]
-    },
-    {
-      category: 'EINSTELLUNGEN',
-      items: [
-        { name: 'KI-Einstellungen', href: '/settings/ai', icon: Settings },
+        { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
+        { name: 'Leads', href: '/leads', icon: Users },
+        { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
+        { name: 'Inbox', href: '/inbox', icon: Inbox },
+        { name: 'Kalender', href: '/calendar', icon: Calendar },
+        { name: 'Emails', href: '/emails', icon: Mail },
+        { name: 'Kunden', href: '/leads/customers', icon: Users },
+        { name: 'Settings', href: '/settings', icon: Settings },
       ]
     }
   ];
