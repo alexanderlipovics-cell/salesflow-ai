@@ -333,12 +333,24 @@ const fetchInboxItems = async (): Promise<InboxItem[]> => {
   }
 
   // Sortiere nach Priorität und Datum
-  return items.sort((a, b) => {
-    const priorityOrder = { hot: 0, today: 1, upcoming: 2 };
-    const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-    if (priorityDiff !== 0) return priorityDiff;
-    return a.metadata.dueDate.getTime() - b.metadata.dueDate.getTime();
-  });
+  // Filter ungültige Items heraus
+  return items
+    .filter(item => item && item.id && item.metadata)
+    .sort((a, b) => {
+      const priorityOrder = { hot: 0, today: 1, upcoming: 2 };
+      const priorityDiff = (priorityOrder[a?.priority] || 2) - (priorityOrder[b?.priority] || 2);
+      if (priorityDiff !== 0) return priorityDiff;
+      
+      // Safe date comparison
+      const dateA = a?.metadata?.dueDate instanceof Date 
+        ? a.metadata.dueDate.getTime() 
+        : new Date(a?.metadata?.dueDate || 0).getTime();
+      const dateB = b?.metadata?.dueDate instanceof Date 
+        ? b.metadata.dueDate.getTime() 
+        : new Date(b?.metadata?.dueDate || 0).getTime();
+      
+      return dateA - dateB;
+    });
 };
 
 /**
