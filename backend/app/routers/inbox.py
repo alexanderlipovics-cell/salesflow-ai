@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 
-from ..core.deps import get_supabase, get_current_user
+from ..core.deps import get_supabase
+from ..core.security import get_current_active_user
 from ..services.inbox_service import InboxService
 
 router = APIRouter(prefix="/api/inbox", tags=["inbox"])
@@ -19,11 +20,11 @@ class ApproveRequest(BaseModel):
 @router.get("/pending")
 async def get_pending_messages(
     limit: int = 20,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_active_user),
     db=Depends(get_supabase),
 ) -> Dict[str, Any]:
     """Get pending messages for approval."""
-    user_id = current_user.get("sub")
+    user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
     service = InboxService(db, user_id)
 
     messages = await service.get_pending_messages(limit)
@@ -34,11 +35,11 @@ async def get_pending_messages(
 
 @router.post("/generate-drafts")
 async def generate_drafts(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_active_user),
     db=Depends(get_supabase),
 ) -> Dict[str, Any]:
     """Generate drafts for all due tasks."""
-    user_id = current_user.get("sub")
+    user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
     service = InboxService(db, user_id)
 
     count = await service.generate_drafts_for_due_tasks()
@@ -50,11 +51,11 @@ async def generate_drafts(
 async def approve_message(
     message_id: str,
     request: ApproveRequest = None,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_active_user),
     db=Depends(get_supabase),
 ) -> Dict[str, Any]:
     """Approve and send a message."""
-    user_id = current_user.get("sub")
+    user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
     service = InboxService(db, user_id)
 
     edited = request.edited_message if request else None
@@ -69,11 +70,11 @@ async def approve_message(
 @router.post("/{message_id}/skip")
 async def skip_message(
     message_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_active_user),
     db=Depends(get_supabase),
 ) -> Dict[str, Any]:
     """Skip a message."""
-    user_id = current_user.get("sub")
+    user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
     service = InboxService(db, user_id)
 
     return await service.skip_message(message_id)
@@ -81,11 +82,11 @@ async def skip_message(
 
 @router.get("/stats")
 async def get_inbox_stats(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_active_user),
     db=Depends(get_supabase),
 ) -> Dict[str, Any]:
     """Get inbox statistics."""
-    user_id = current_user.get("sub")
+    user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
     service = InboxService(db, user_id)
 
     return await service.get_stats()
