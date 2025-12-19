@@ -127,6 +127,7 @@ const ChatPage = () => {
 
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
+  const [localInput, setLocalInput] = useState(""); // Local state for input to prevent re-renders
   const [isLoading, setIsLoading] = useState(false);
   const [leadContext, setLeadContext] = useState(defaultLeadContext);
   const [contextSaved, setContextSaved] = useState(false);
@@ -398,29 +399,44 @@ const ChatPage = () => {
     }
   };
 
+  // Debounced effect for list detection (prevents lag while typing)
   useEffect(() => {
-    const trimmed = input.trim();
+    const trimmed = localInput.trim();
     if (!trimmed) {
       resetListDetection();
       return;
     }
 
-    const looksLikeList = detectListInput(trimmed);
-    if (!looksLikeList) {
-      resetListDetection();
-      return;
-    }
+    const timeoutId = setTimeout(() => {
+      const looksLikeList = detectListInput(trimmed);
+      if (!looksLikeList) {
+        resetListDetection();
+        return;
+      }
 
-    // Vermeide erneute Analyse derselben Liste
-    if (lastParsedListRef.current === trimmed || isParsingList) return;
-    parseContactList(trimmed);
-  }, [input]);
+      // Vermeide erneute Analyse derselben Liste
+      if (lastParsedListRef.current === trimmed || isParsingList) return;
+      parseContactList(trimmed);
+    }, 300); // 300ms debounce
 
+    return () => clearTimeout(timeoutId);
+  }, [localInput]);
+
+  // Debounced effect for live mode detection
   useEffect(() => {
-    const liveKeywords = ['bin beim kunden', 'bin im gespräch', 'bin gerade bei', 'live call', 'im meeting', 'kunde fragt'];
-    const normalized = (input || '').toLowerCase();
-    const isLive = liveKeywords.some((kw) => normalized.includes(kw));
-    setIsLiveMode(isLive);
+    const timeoutId = setTimeout(() => {
+      const liveKeywords = ['bin beim kunden', 'bin im gespräch', 'bin gerade bei', 'live call', 'im meeting', 'kunde fragt'];
+      const normalized = (localInput || '').toLowerCase();
+      const isLive = liveKeywords.some((kw) => normalized.includes(kw));
+      setIsLiveMode(isLive);
+    }, 200); // 200ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [localInput]);
+
+  // Sync localInput to input when needed (for voice, etc.)
+  useEffect(() => {
+    setLocalInput(input);
   }, [input]);
 
   const handleSendMessage = async (event, customMessage = null) => {
@@ -428,7 +444,8 @@ const ChatPage = () => {
       event.preventDefault();
     }
 
-    const messageText = customMessage || input.trim();
+    // Use localInput for sending, then sync to input
+    const messageText = customMessage || localInput.trim();
     if (!messageText) return;
 
     // Detect meeting prep intent
@@ -449,6 +466,7 @@ const ChatPage = () => {
         if (data?.success) {
           setMeetingPrep(data);
           setInput("");
+          setLocalInput("");
           setMessages((prev) => [
             ...prev,
             {
@@ -474,6 +492,7 @@ const ChatPage = () => {
       const result = await analyzeText(messageText);
       if (result) {
         setInput('');
+        setLocalInput('');
         return; // Don't send as chat, show analysis card instead
       }
     }
@@ -487,6 +506,7 @@ const ChatPage = () => {
 
     setMessages((prev) => [...prev, humanMessage]);
     setInput("");
+    setLocalInput("");
     setIsLoading(true);
 
     try {
@@ -1682,8 +1702,8 @@ const ChatPage = () => {
           <form onSubmit={handleSendMessage} className="space-y-3">
           <div data-tour="chat-input" className="rounded-2xl border border-slate-800 bg-slate-900/60">
               <textarea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
+                value={localInput}
+                onChange={(event) => setLocalInput(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
@@ -1767,6 +1787,7 @@ const ChatPage = () => {
                     onAnalysis={(analysis, text) => {
                       if (text) {
                         setInput(text);
+                        setLocalInput(text);
                       }
                       if (analysis?.result) {
                         setAnalysisResult(analysis.result);
@@ -1775,6 +1796,7 @@ const ChatPage = () => {
                     onTranscription={(text) => {
                       if (text) {
                         setInput(text);
+                        setLocalInput(text);
                       }
                     }}
                     onCommandExecuted={(data) => {
@@ -1790,7 +1812,7 @@ const ChatPage = () => {
                   />
                   <button
                     type="submit"
-                    disabled={isLoading || isAnalyzing || isPreparingMeeting || !input.trim()}
+                    disabled={isLoading || isAnalyzing || isPreparingMeeting || !localInput.trim()}
                     className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isPreparingMeeting ? "Bereite vor..." : isAnalyzing ? "Analysiere..." : isLoading ? "Verarbeite..." : "Senden"}
@@ -1940,7 +1962,11 @@ const ChatPage = () => {
                       </button>
                       
                       <button
-                        onClick={() => setInput(`Schreibe ein Follow-up für ${parsedLeadContext.name}`)}
+                        onClick={() => {
+                          const text = `Schreibe ein Follow-up für ${parsedLeadContext.name}`;
+                          setInput(text);
+                          setLocalInput(text);
+                        }}
                         className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
                       >
                         <Send className="w-3 h-3" />
@@ -1948,7 +1974,11 @@ const ChatPage = () => {
                       </button>
                       
                       <button
-                        onClick={() => setInput(`Wie behandle ich Einwände bei ${parsedLeadContext.name}?`)}
+                        onClick={() => {
+                          const text = `Wie behandle ich Einwände bei ${parsedLeadContext.name}?`;
+                          setInput(text);
+                          setLocalInput(text);
+                        }}
                         className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
                       >
                         <Shield className="w-3 h-3" />
@@ -1956,7 +1986,11 @@ const ChatPage = () => {
                       </button>
                       
                       <button
-                        onClick={() => setInput(`Gib mir eine Abschluss-Strategie für ${parsedLeadContext.name}`)}
+                        onClick={() => {
+                          const text = `Gib mir eine Abschluss-Strategie für ${parsedLeadContext.name}`;
+                          setInput(text);
+                          setLocalInput(text);
+                        }}
                         className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
                       >
                         <TrendingUp className="w-3 h-3" />

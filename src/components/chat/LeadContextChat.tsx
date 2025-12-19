@@ -162,6 +162,7 @@ export function LeadContextChat({
   } = useAIChat();
 
   const [input, setInput] = useState('');
+  const [localInput, setLocalInput] = useState(''); // Local state for input to prevent re-renders
   const [isTyping, setIsTyping] = useState(false);
   const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
   const [downloadLoadingId, setDownloadLoadingId] = useState<string | null>(null);
@@ -223,12 +224,13 @@ export function LeadContextChat({
   }, []);
 
   const handleSend = async () => {
-    const trimmed = input.trim();
+    const trimmed = localInput.trim();
     if (!trimmed && !uploadedImage) return;
     if (sending) return;
 
     setIsTyping(true);
     setInput('');
+    setLocalInput('');
     try {
       await sendMessage(trimmed, uploadedImage || undefined);
     } finally {
@@ -246,6 +248,7 @@ export function LeadContextChat({
 
   const handleQuickAction = (action: QuickAction) => {
     setInput(action.prompt);
+    setLocalInput(action.prompt);
     inputRef.current?.focus();
   };
 
@@ -474,8 +477,8 @@ export function LeadContextChat({
         <div className="flex gap-3">
           <textarea
             ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={localInput}
+            onChange={(e) => setLocalInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Frag CHIEF etwas..."
             rows={1}
