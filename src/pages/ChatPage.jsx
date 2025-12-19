@@ -179,7 +179,9 @@ const ChatPage = () => {
   } = useVoice({
     language: 'de-DE',
     onResult: (text) => {
-      setInput((prev) => prev + (prev ? ' ' : '') + text);
+      const newText = (input || '') + (input ? ' ' : '') + text;
+      setInput(newText);
+      setLocalInput(newText);
     },
   });
 
@@ -213,6 +215,7 @@ const ChatPage = () => {
     if (promptParam && !prefillApplied) {
       const decodedPrompt = decodeURIComponent(promptParam);
       setInput(decodedPrompt);
+      setLocalInput(decodedPrompt);
       setPrefillApplied(true);
       // URL-Parameter entfernen, um bei Refresh nicht erneut zu setzen
       setSearchParams({}, { replace: true });
@@ -223,6 +226,7 @@ const ChatPage = () => {
   useEffect(() => {
     if (stateInitialMessage && !prefillApplied && !promptParam) {
       setInput(stateInitialMessage);
+      setLocalInput(stateInitialMessage);
       setPrefillApplied(true);
     }
   }, [stateInitialMessage, prefillApplied, promptParam]);
