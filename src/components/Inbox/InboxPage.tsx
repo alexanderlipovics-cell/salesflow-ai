@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Inbox, Loader2, RefreshCw, Keyboard, Sparkles } from 'lucide-react';
+import { Inbox, Loader2, RefreshCw, Keyboard, Sparkles, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InboxList } from './InboxList';
 import { MagicSendAll } from './MagicSendAll';
@@ -779,6 +779,25 @@ export const InboxPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Suche nach Name, Firma..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 w-64 text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <MagicSendAll items={items && Array.isArray(items) ? items : []} onSendAll={handleMagicSendAll} />
 
           <Button
