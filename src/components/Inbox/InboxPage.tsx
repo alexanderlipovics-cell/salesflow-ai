@@ -194,6 +194,12 @@ export const InboxPage: React.FC = () => {
     id: string;
     name: string;
     state: string;
+    contact?: {
+      instagram_url?: string;
+      whatsapp?: string;
+      email?: string;
+      phone?: string;
+    };
   } | null>(null);
 
   const handleMessageUpdated = useCallback(
@@ -349,7 +355,13 @@ export const InboxPage: React.FC = () => {
     setSelectedLeadForReply({
       id: item.lead.id,
       name: item.lead.name,
-      state: 'new' // TODO: Get actual state from item metadata if available
+      state: 'new', // TODO: Get actual state from item metadata if available
+      contact: {
+        instagram_url: item.lead.instagram_url,
+        whatsapp: item.lead.phone || item.lead.whatsapp,
+        email: item.lead.email,
+        phone: item.lead.phone
+      }
     });
     setReplyModalOpen(true);
   }, []);
@@ -686,6 +698,7 @@ export const InboxPage: React.FC = () => {
           leadName={selectedLeadForReply.name}
           currentState={selectedLeadForReply.state}
           onReplyProcessed={handleReplyProcessed}
+          leadContact={selectedLeadForReply.contact}
         />
       )}
     </div>

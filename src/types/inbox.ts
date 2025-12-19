@@ -72,6 +72,17 @@ export interface MagicSendAllResult {
 }
 
 /**
+ * Next Step Logic
+ */
+export interface NextStepLogic {
+  urgency_score: number;
+  hours_until_followup: number;
+  followup_datetime: string;
+  reason: string;
+  recommended_channel: 'whatsapp' | 'instagram' | 'email' | 'phone';
+}
+
+/**
  * Process Reply Response
  */
 export interface ProcessReplyResponse {
@@ -86,5 +97,6 @@ export interface ProcessReplyResponse {
   new_state: string;
   lead_name: string;
   cancelled_followups: number;
+  next_step: NextStepLogic;
 }
 
