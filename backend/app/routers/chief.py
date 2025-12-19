@@ -555,6 +555,20 @@ Ein Lead hat geantwortet. Analysiere die Antwort und generiere eine passende Rea
 - Notizen: {lead.get('notes', 'Keine')}
 - Instagram: {lead.get('instagram', 'Nicht vorhanden')}
 
+## State Transition Regeln
+- Aktueller State ist: {current_state}
+- Bei POSITIVER Antwort: Gehe einen State WEITER (new→engaged→opportunity→won)
+- Bei NEGATIVER Antwort: Setze auf "lost"
+- Bei UNSICHERER Antwort: Behalte aktuellen State
+
+Beispiele:
+- State "new" + "Klingt interessant" → suggested_state: "engaged"
+- State "engaged" + "Erzähl mir mehr" → suggested_state: "opportunity"
+- State "opportunity" + "Ja, ich will bestellen" → suggested_state: "won"
+- State "engaged" + "Kein Interesse" → suggested_state: "lost"
+- State "new" + "Später vielleicht" → suggested_state: "new" (bleibt)
+- State "engaged" + "Habe noch Fragen" → suggested_state: "engaged" (bleibt)
+
 {history_context}
 
 ## Neue Antwort des Leads
@@ -573,6 +587,13 @@ Analysiere die Antwort und gib zurück:
     "generated_response": "Die fertige Nachricht die der User senden kann"
 }}
 ```
+
+WICHTIG für suggested_state:
+- Wenn aktueller State = "new" und Lead antwortet positiv/interessiert → "engaged"
+- Wenn aktueller State = "engaged" und Lead antwortet positiv/interessiert → "opportunity"
+- Wenn aktueller State = "opportunity" und Lead will kaufen/starten → "won"
+- Negative/ablehnende Antwort → "lost"
+- Keine klare Reaktion/später → State bleibt gleich
 
 ## Regeln für die generierte Antwort
 - Duzen (informell)
@@ -604,12 +625,33 @@ Analysiere die Antwort und gib zurück:
             try:
                 analysis_json = json.loads(ai_response_text)
             except json.JSONDecodeError:
-                # Fallback: Erstelle einfache Analyse
+                # Fallback: Erstelle einfache Analyse mit State-Transition-Logik
+                # Bei positiver Antwort: State weiter
+                reply_lower = request.reply_text.lower()
+                is_positive = any(word in reply_lower for word in ["ja", "ok", "interessant", "erzähl", "mehr", "klar", "gerne", "klingt gut"])
+                is_negative = any(word in reply_lower for word in ["nein", "kein interesse", "nicht", "ne", "keine zeit", "nicht interessiert"])
+                
+                if is_negative:
+                    fallback_state = "lost"
+                elif is_positive:
+                    # State weiter: new→engaged→opportunity→won
+                    if current_state == "new":
+                        fallback_state = "engaged"
+                    elif current_state == "engaged":
+                        fallback_state = "opportunity"
+                    elif current_state == "opportunity":
+                        fallback_state = "won"
+                    else:
+                        fallback_state = current_state
+                else:
+                    # Unklar: State bleibt
+                    fallback_state = current_state
+                
                 analysis_json = {
-                    "sentiment": "neutral",
+                    "sentiment": "positive" if is_positive else ("negative" if is_negative else "neutral"),
                     "intent": "has_questions",
-                    "suggested_state": "engaged" if current_state == "new" else current_state,
-                    "state_reason": "Automatische Analyse",
+                    "suggested_state": fallback_state,
+                    "state_reason": "Automatische Analyse (Fallback)",
                     "response_strategy": "Freundlich antworten und weiterhelfen",
                     "generated_response": f"Hallo {lead_name.split()[0] if lead_name else 'dort'}, danke für deine Nachricht! Lass mich dir gerne weiterhelfen."
                 }
