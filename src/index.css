@@ -317,3 +317,30 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* GLASS DASHBOARD ANIMATIONS                                                  */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes glow-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Glass card utility - Enhanced */
+.glass-card {
+  @apply bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl;
+}
+
+/* Glow text utility - Enhanced */
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}

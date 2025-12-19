@@ -235,12 +235,26 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Urgency Score für Pulse-Animation
+  const urgencyScore = response?.next_step?.urgency_score || 0;
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative w-full max-w-2xl bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        
+        {/* Glow Effects */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700/50 relative z-10">
           <div className="flex items-center gap-3">
             <span className="text-2xl">💬</span>
             <div>
@@ -251,14 +265,14 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                 <div className="flex items-center gap-2">
                   <span className={`text-sm font-medium ${
                     response.next_step.urgency_score >= 70 ? 'text-orange-400' : 
-                    response.next_step.urgency_score >= 40 ? 'text-yellow-400' : 'text-gray-400'
+                    response.next_step.urgency_score >= 40 ? 'text-yellow-400' : 'text-slate-400'
                   }`}>
                     🔥 Urgency: {response.next_step.urgency_score}/100
                   </span>
                 </div>
               )}
               {phase !== 'action' && (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-slate-400">
                   Status: {currentState} {response && response.new_state !== currentState && (
                     <span className="text-cyan-400">→ {response.new_state}</span>
                   )}
@@ -266,13 +280,13 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
               )}
             </div>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-white">
+          <button onClick={handleClose} className="text-slate-400 hover:text-white transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 relative z-10">
           
           {/* ═══════════════════════════════════════════════════════ */}
           {/* PHASE: INPUT - Antwort eingeben                         */}
@@ -288,7 +302,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                     className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-colors ${
                       channel === ch 
                         ? 'bg-cyan-500 text-white' 
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                     }`}
                   >
                     {ch}
@@ -298,14 +312,14 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
 
               {/* Reply Input */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">
+                <label className="block text-sm text-slate-400 mb-2">
                   Was hat {leadName} geschrieben?
                 </label>
                 <textarea
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder={`Antwort von ${leadName} hier einfügen...`}
-                  className="w-full h-32 bg-gray-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:border-cyan-500 focus:outline-none resize-none"
+                  className="w-full h-32 bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none resize-none"
                   autoFocus
                 />
               </div>
@@ -346,51 +360,58 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Left: Analysis */}
-                <div className="bg-gray-800/50 rounded-xl p-4 space-y-3">
-                  <h3 className="text-sm font-medium text-cyan-400 uppercase tracking-wide flex items-center gap-2">
-                    <span>🧠</span> CHIEF Analyse
-                  </h3>
+                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                      <span className="text-sm">🧠</span>
+                    </div>
+                    <h3 className="text-white font-semibold">CHIEF ANALYSE</h3>
+                  </div>
                   
-                  {/* Urgency Score Bar */}
+                  {/* Urgency Score with Glow */}
                   {response.next_step && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-400">Dringlichkeit</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-slate-400">Dringlichkeit</span>
+                        <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              urgencyScore >= 80 
+                                ? 'bg-gradient-to-r from-orange-500 to-red-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]' 
+                                : urgencyScore >= 50 
+                                ? 'bg-gradient-to-r from-yellow-500 to-orange-500' 
+                                : 'bg-gradient-to-r from-green-500 to-cyan-500'
+                            }`}
+                            style={{ width: `${urgencyScore}%` }}
+                          />
+                        </div>
                         <span className={`font-bold ${
-                          response.next_step.urgency_score >= 70 ? 'text-orange-400' : 
-                          response.next_step.urgency_score >= 40 ? 'text-yellow-400' : 'text-green-400'
+                          urgencyScore >= 80 ? 'text-orange-400' : urgencyScore >= 50 ? 'text-yellow-400' : 'text-green-400'
                         }`}>
-                          {response.next_step.urgency_score}/100
+                          {urgencyScore}/100
                         </span>
-                      </div>
-                      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full transition-all ${
-                            response.next_step.urgency_score >= 70 ? 'bg-orange-500' : 
-                            response.next_step.urgency_score >= 40 ? 'bg-yellow-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${response.next_step.urgency_score}%` }}
-                        />
                       </div>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-gray-800 rounded-lg p-2">
-                      <p className="text-xs text-gray-500">Stimmung</p>
-                      <p className="font-medium text-white">
+                  {/* Sentiment & Intent Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-700/30">
+                      <p className="text-xs text-slate-500 mb-1">Stimmung</p>
+                      <p className="text-white font-medium flex items-center gap-2">
                         {getSentimentEmoji(response.analysis?.sentiment || 'neutral')} {response.analysis?.sentiment || 'neutral'}
                       </p>
                     </div>
-                    <div className="bg-gray-800 rounded-lg p-2">
-                      <p className="text-xs text-gray-500">Intent</p>
-                      <p className="font-medium text-white text-sm">{response.analysis?.intent || 'unknown'}</p>
+                    <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-700/30">
+                      <p className="text-xs text-slate-500 mb-1">Intent</p>
+                      <p className="text-white font-medium">{response.analysis?.intent || 'unknown'}</p>
                     </div>
                   </div>
-
-                  <div className="bg-gray-800 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">Strategie</p>
-                    <p className="text-sm text-gray-300">{response.analysis?.response_strategy || ''}</p>
+                  
+                  {/* Strategy */}
+                  <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-700/30">
+                    <p className="text-xs text-slate-500 mb-1">Strategie</p>
+                    <p className="text-slate-300 text-sm">{response.analysis?.response_strategy || ''}</p>
                   </div>
                 </div>
 
@@ -399,22 +420,31 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                   <h3 className="text-sm font-medium text-cyan-400 uppercase tracking-wide flex items-center gap-2">
                     <span>💬</span> Deine Antwort
                   </h3>
-                  <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl p-4 h-[calc(100%-2rem)]">
-                    <p className="text-white whitespace-pre-wrap">{response.generated_response}</p>
+                  {/* Generated Response Card */}
+                  <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        <span>💬</span> DEINE ANTWORT
+                      </h3>
+                      <span className="text-xs text-cyan-400 bg-cyan-500/20 px-2 py-1 rounded-full">
+                        Von CHIEF generiert
+                      </span>
+                    </div>
+                    <p className="text-white leading-relaxed whitespace-pre-wrap">{response.generated_response}</p>
                   </div>
                 </div>
               </div>
 
               {/* Follow-up Preview */}
               {response.next_step && (
-                <div className="bg-gray-800/30 rounded-xl p-3 flex items-center justify-between">
+                <div className="bg-slate-800/30 rounded-xl p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span>📅</span>
-                    <span className="text-gray-400 text-sm">
+                    <span className="text-slate-400 text-sm">
                       Follow-up: <span className="text-white font-medium">{formatFollowupTime(response.next_step.hours_until_followup)}</span>
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">{response.next_step.reason}</span>
+                  <span className="text-xs text-slate-500">{response.next_step.reason}</span>
                 </div>
               )}
 
@@ -447,31 +477,33 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
           {/* PHASE: ACTION - Kanal auswählen                        */}
           {/* ═══════════════════════════════════════════════════════ */}
           {phase === 'action' && response && (
-            <div className="space-y-6 py-4">
-              {/* Success Checkmark */}
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full mb-3">
-                  <span className="text-4xl">✅</span>
+            <div className="p-6 space-y-6">
+              {/* Success Checkmark with Glow */}
+              <div className="flex flex-col items-center py-6">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] animate-pulse">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-                <p className="text-xl font-semibold text-white">Nachricht kopiert!</p>
-                <p className="text-gray-400 mt-1">Wähle den Kanal zum Senden:</p>
+                <h2 className="text-2xl font-bold text-white mt-4">Nachricht kopiert!</h2>
+                <p className="text-slate-400 mt-1">Wähle den Kanal zum Senden:</p>
               </div>
 
-              {/* Channel Buttons - BIG */}
-              <div className="flex flex-wrap justify-center gap-4">
-                {leadContact?.whatsapp && (
+              {/* Channel Buttons */}
+              <div className="flex justify-center gap-4">
+                {(leadContact?.whatsapp || leadContact?.phone) && (
                   <button
                     onClick={() => handleOpenChannel('whatsapp')}
-                    className={`flex flex-col items-center gap-2 px-8 py-6 rounded-2xl font-medium transition-all transform hover:scale-105 ${
-                      response.next_step?.recommended_channel === 'whatsapp'
-                        ? 'bg-green-500 text-white ring-4 ring-green-500/50 shadow-lg shadow-green-500/25'
-                        : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                    }`}
+                    className="flex flex-col items-center gap-2 p-6 bg-green-500/10 border border-green-500/30 rounded-2xl hover:bg-green-500/20 hover:scale-105 transition-all group"
                   >
-                    <span className="text-4xl">📱</span>
-                    <span className="text-lg">WhatsApp</span>
+                    <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)] group-hover:shadow-[0_0_30px_rgba(34,197,94,0.6)]">
+                      <span className="text-2xl">📱</span>
+                    </div>
+                    <span className="text-green-400 font-medium">WhatsApp</span>
                     {response.next_step?.recommended_channel === 'whatsapp' && (
-                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Empfohlen</span>
+                      <span className="text-[10px] bg-green-500/30 text-green-300 px-2 py-0.5 rounded-full">
+                        Empfohlen
+                      </span>
                     )}
                   </button>
                 )}
@@ -479,16 +511,16 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                 {leadContact?.instagram_url && (
                   <button
                     onClick={() => handleOpenChannel('instagram')}
-                    className={`flex flex-col items-center gap-2 px-8 py-6 rounded-2xl font-medium transition-all transform hover:scale-105 ${
-                      response.next_step?.recommended_channel === 'instagram'
-                        ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white ring-4 ring-purple-500/50 shadow-lg shadow-purple-500/25'
-                        : 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
-                    }`}
+                    className="flex flex-col items-center gap-2 p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-pink-500/30 rounded-2xl hover:from-purple-500/20 hover:to-pink-500/20 hover:scale-105 transition-all group"
                   >
-                    <span className="text-4xl">📸</span>
-                    <span className="text-lg">Instagram</span>
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.4)] group-hover:shadow-[0_0_30px_rgba(236,72,153,0.6)]">
+                      <span className="text-2xl">📸</span>
+                    </div>
+                    <span className="text-pink-400 font-medium">Instagram</span>
                     {response.next_step?.recommended_channel === 'instagram' && (
-                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Empfohlen</span>
+                      <span className="text-[10px] bg-pink-500/30 text-pink-300 px-2 py-0.5 rounded-full">
+                        Empfohlen
+                      </span>
                     )}
                   </button>
                 )}
@@ -496,34 +528,12 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                 {leadContact?.email && (
                   <button
                     onClick={() => handleOpenChannel('email')}
-                    className={`flex flex-col items-center gap-2 px-8 py-6 rounded-2xl font-medium transition-all transform hover:scale-105 ${
-                      response.next_step?.recommended_channel === 'email'
-                        ? 'bg-blue-500 text-white ring-4 ring-blue-500/50 shadow-lg shadow-blue-500/25'
-                        : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
-                    }`}
+                    className="flex flex-col items-center gap-2 p-6 bg-blue-500/10 border border-blue-500/30 rounded-2xl hover:bg-blue-500/20 hover:scale-105 transition-all group"
                   >
-                    <span className="text-4xl">✉️</span>
-                    <span className="text-lg">Email</span>
-                    {response.next_step?.recommended_channel === 'email' && (
-                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Empfohlen</span>
-                    )}
-                  </button>
-                )}
-                
-                {leadContact?.phone && (
-                  <button
-                    onClick={() => handleOpenChannel('phone')}
-                    className={`flex flex-col items-center gap-2 px-8 py-6 rounded-2xl font-medium transition-all transform hover:scale-105 ${
-                      response.next_step?.recommended_channel === 'phone'
-                        ? 'bg-gray-500 text-white ring-4 ring-gray-500/50'
-                        : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
-                    }`}
-                  >
-                    <span className="text-4xl">📞</span>
-                    <span className="text-lg">Anrufen</span>
-                    {response.next_step?.recommended_channel === 'phone' && (
-                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Empfohlen</span>
-                    )}
+                    <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)] group-hover:shadow-[0_0_30px_rgba(59,130,246,0.6)]">
+                      <span className="text-2xl">✉️</span>
+                    </div>
+                    <span className="text-blue-400 font-medium">E-Mail</span>
                   </button>
                 )}
               </div>
@@ -531,30 +541,40 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
               {/* No channels fallback */}
               {!leadContact?.whatsapp && !leadContact?.instagram_url && !leadContact?.email && !leadContact?.phone && (
                 <div className="text-center py-4">
-                  <p className="text-gray-500">Keine Kontaktdaten hinterlegt</p>
+                  <p className="text-slate-500">Keine Kontaktdaten hinterlegt</p>
                   <button
                     onClick={handleClose}
-                    className="mt-4 px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+                    className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
                   >
                     Schließen
                   </button>
                 </div>
               )}
 
-              {/* Follow-up Info Bar */}
+              {/* Follow-up Banner */}
               {response.next_step && (
-                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mt-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📅</span>
-                    <div>
-                      <p className="text-cyan-400 font-medium">
-                        Follow-up {formatFollowupTime(response.next_step.hours_until_followup)} geplant
-                      </p>
-                      <p className="text-sm text-gray-400">{response.next_step.reason}</p>
-                    </div>
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                    <span>📅</span>
+                  </div>
+                  <div>
+                    <p className="text-cyan-400 font-medium">
+                      Follow-up {response.next_step?.display_text || formatFollowupTime(response.next_step.hours_until_followup)} geplant
+                    </p>
+                    <p className="text-slate-400 text-sm">
+                      {response.next_step?.reason || 'CHIEF plant automatisch nach'}
+                    </p>
                   </div>
                 </div>
               )}
+              
+              {/* Close Button */}
+              <button
+                onClick={handleClose}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition-colors"
+              >
+                Schließen
+              </button>
             </div>
           )}
         </div>

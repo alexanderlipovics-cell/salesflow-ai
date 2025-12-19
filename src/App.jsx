@@ -131,6 +131,7 @@ const InboxPage = lazy(() => import("./components/Inbox/InboxPage").then((m) => 
 const ImpressumPage = lazy(() => import("./pages/ImpressumPage"));
 const DatenschutzPage = lazy(() => import("./pages/DatenschutzPage"));
 const AGBPage = lazy(() => import("./pages/AGBPage"));
+const CeoChat = lazy(() => import("./pages/CeoChat"));
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -347,6 +348,7 @@ const App = () => {
                       <Route path="challenges" element={<SquadChallengeManager />} />
                       <Route path="coach/priority" element={<Navigate to="/team-coach?tab=priorities" replace />} />
                       <Route path="coach/v2" element={<Navigate to="/team-coach" replace />} />
+                      <Route path="ceo-chat" element={<CeoChat />} />
                       {placeholderRoutes.map((route) => (
                         <Route
                           key={route.path}

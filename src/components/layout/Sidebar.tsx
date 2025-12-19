@@ -10,7 +10,7 @@
 import { Link, NavLink } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { navigationItems } from "../../config/navigation";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Brain } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 
 interface SidebarProps {
@@ -84,6 +84,35 @@ export const Sidebar = ({ className, onClose }: SidebarProps) => {
             )}
           </NavLink>
         ))}
+        
+        {/* CEO Chat - Only visible for CEOs */}
+        {user?.role === 'ceo' && (
+          <NavLink
+            to="/ceo-chat"
+            onClick={onClose}
+            className={({ isActive }) =>
+              cn(
+                "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                isActive
+                  ? "bg-cyan-500/10 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Brain
+                  className={cn(
+                    "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                    isActive ? "text-cyan-400" : "text-gray-500 group-hover:text-gray-300"
+                  )}
+                />
+                <span>CEO Chat</span>
+                <span className="ml-auto text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">NEW</span>
+              </>
+            )}
+          </NavLink>
+        )}
       </nav>
 
       {/* 3. User Profile Snippet (Footer) */}
