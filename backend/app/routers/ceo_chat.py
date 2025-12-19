@@ -453,12 +453,16 @@ async def ceo_chat(
     print(f"🧠 CHIEF Routing: {ai_config['provider']} ({ai_config.get('model_key')}) - {ai_config['reason']}")
     
     # User Message speichern
+    message_metadata = {
+        "routing_decision": ai_config,
+        "files": [{"url": f.url, "type": f.type, "name": f.name} for f in (request.files or [])]
+    }
     db.table("chief_messages").insert({
         "user_id": user_id,
         "session_id": session_id,
         "role": "user",
         "content": request.message,
-        "metadata": {"routing_decision": ai_config},
+        "metadata": message_metadata,
     }).execute()
     
     # --- SCHRITT C: WORKER AUSFÜHREN ---
