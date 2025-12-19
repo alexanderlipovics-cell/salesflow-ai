@@ -65,6 +65,9 @@ export const InboxPage: React.FC = () => {
     contact_identifier?: string;
   }>>([]);
   
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // Magic Send All Handler
   const handleMagicSendAll = useCallback(
     async (itemIds: string[]): Promise<MagicSendAllResult> => {
