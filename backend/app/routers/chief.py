@@ -887,50 +887,70 @@ async def mark_sent_with_followup(
             
             if lead_result.data:
                 lead_state = lead_result.data.get("status", "ENGAGED").lower()
-                vertical = lead_result.data.get("vertical", "mlm")
+                vertical = lead_result.data.get("vertical")  # Kann None sein!
+                
+                # Berechne next_due_at: hours_until_followup > followup_hours > followup_days > default
+                hours = request.hours_until_followup or request.followup_hours
+                if hours:
+                    due_date = datetime.utcnow() + timedelta(hours=float(hours))
+                elif request.followup_days:
+                    due_date = datetime.utcnow() + timedelta(days=request.followup_days)
+                else:
+                    # Default: 3 Tage (72 Stunden)
+                    due_date = datetime.utcnow() + timedelta(hours=72)
                 
                 # Passenden Cycle finden (erster Step im State)
-                cycle_result = db.table("follow_up_cycles")\
-                    .select("*")\
-                    .eq("vertical", vertical)\
-                    .eq("state", lead_state)\
-                    .eq("is_active", True)\
-                    .order("sequence_order")\
-                    .limit(1)\
-                    .execute()
+                cycle_id = None
+                if vertical:
+                    # Versuche erst mit spezifischem Vertical
+                    cycle_result = db.table("follow_up_cycles")\
+                        .select("*")\
+                        .eq("vertical", vertical)\
+                        .eq("state", lead_state)\
+                        .eq("is_active", True)\
+                        .order("sequence_order")\
+                        .limit(1)\
+                        .execute()
+                    
+                    if cycle_result.data and len(cycle_result.data) > 0:
+                        cycle_id = cycle_result.data[0].get("id")
                 
-                if cycle_result.data and len(cycle_result.data) > 0:
-                    cycle = cycle_result.data[0]
+                # Fallback: Wenn kein Cycle mit Vertical gefunden, versuche ohne Vertical-Filter
+                if not cycle_id:
+                    cycle_result = db.table("follow_up_cycles")\
+                        .select("*")\
+                        .eq("state", lead_state)\
+                        .eq("is_active", True)\
+                        .order("sequence_order")\
+                        .limit(1)\
+                        .execute()
                     
-                    # Berechne next_due_at: hours_until_followup > followup_hours > followup_days > default
-                    hours = request.hours_until_followup or request.followup_hours
-                    if hours:
-                        due_date = datetime.utcnow() + timedelta(hours=float(hours))
-                    elif request.followup_days:
-                        due_date = datetime.utcnow() + timedelta(days=request.followup_days)
-                    else:
-                        # Default: 3 Tage (72 Stunden)
-                        due_date = datetime.utcnow() + timedelta(hours=72)
-                    
-                    queue_item = {
-                        "contact_id": request.lead_id,
-                        "user_id": user_id,
-                        "cycle_id": cycle.get("id"),
-                        "current_state": lead_state,
-                        "status": "pending",
-                        "next_due_at": due_date.isoformat(),
-                        "ai_generated_content": None,
-                    }
-                    try:
-                        insert_result = db.table("contact_follow_up_queue").insert(queue_item).execute()
-                        if insert_result.data and len(insert_result.data) > 0:
-                            new_followup_id = insert_result.data[0].get("id")
-                            next_followup = due_date.strftime("%d.%m.%Y %H:%M")
-                            logger.info(f"Created new follow-up for lead {request.lead_id}, due at {next_followup}")
-                    except Exception as e:
-                        logger.error(f"Could not schedule follow-up: {e}")
-                else:
-                    logger.warning(f"No active cycle found for state {lead_state}, vertical {vertical}")
+                    if cycle_result.data and len(cycle_result.data) > 0:
+                        cycle_id = cycle_result.data[0].get("id")
+                        logger.info(f"Using fallback cycle (no vertical match) for state {lead_state}")
+                
+                # Erstelle Follow-up auch wenn kein Cycle gefunden wurde
+                queue_item = {
+                    "contact_id": request.lead_id,
+                    "user_id": user_id,
+                    "cycle_id": cycle_id,  # Kann None sein!
+                    "current_state": lead_state or "engaged",
+                    "status": "pending",
+                    "next_due_at": due_date.isoformat(),
+                    "ai_generated_content": None,
+                }
+                
+                try:
+                    insert_result = db.table("contact_follow_up_queue").insert(queue_item).execute()
+                    if insert_result.data and len(insert_result.data) > 0:
+                        new_followup_id = insert_result.data[0].get("id")
+                        next_followup = due_date.strftime("%d.%m.%Y %H:%M")
+                        if cycle_id:
+                            logger.info(f"Created new follow-up for lead {request.lead_id}, due at {next_followup} (with cycle)")
+                        else:
+                            logger.info(f"Created new follow-up for lead {request.lead_id}, due at {next_followup} (without cycle - vertical was {vertical})")
+                except Exception as e:
+                    logger.error(f"Could not schedule follow-up: {e}")
             else:
                 logger.warning(f"Lead {request.lead_id} not found")
         

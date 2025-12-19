@@ -38,7 +38,7 @@ MODELS = {
     },
     "groq": {
         "provider": "groq",
-        "model": "llama-3.1-70b-versatile",
+        "model": "llama-3.3-70b-versatile",
         "strengths": "Ultra-Speed, Smalltalk, kurze Fragen",
     },
     "dalle": {
@@ -186,7 +186,7 @@ def rule_based_dispatch(message: str) -> dict:
     
     # Kurze, einfache Fragen -> Groq
     if len(message) < 100 and any(kw in msg for kw in ['hallo', 'hi', 'danke', 'wie geht', 'was ist', 'wer ist']):
-        return {"provider": "groq", "model": "llama-3.1-70b-versatile", "model_key": "groq", "reason": "Simple query - speed mode"}
+        return {"provider": "groq", "model": "llama-3.3-70b-versatile", "model_key": "groq", "reason": "Simple query - speed mode"}
     
     # Default -> GPT-4 Mini
     return {"provider": "openai", "model": "gpt-4o-mini", "model_key": "gpt4-mini", "reason": "General purpose"}
