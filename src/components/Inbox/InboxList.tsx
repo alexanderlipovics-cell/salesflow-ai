@@ -12,7 +12,7 @@ interface InboxListProps {
   grouped: GroupedInboxItems;
   onSend: (itemId: string) => void;
   onEdit: (itemId: string) => void;
-  onSnooze: (itemId: string) => void;
+  onSnooze: (itemId: string, hours: number) => Promise<void>;
   onArchive: (itemId: string) => void;
   onComposeMessage?: (itemId: string) => void;
   onMessageUpdated?: (itemId: string, newMessage: string) => void;
