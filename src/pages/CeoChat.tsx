@@ -285,15 +285,6 @@ export default function CeoChat() {
     }
   };
 
-  // Render content - Markdown for assistant, plain text for user
-  const renderContent = (content: string, role: 'user' | 'assistant') => {
-    if (role === 'user') {
-      return <p className="whitespace-pre-wrap leading-relaxed">{content}</p>;
-    }
-    // Assistant messages use full Markdown rendering
-    return <ChiefMessageContent content={content} />;
-  };
-
   // CEO Protection
   if (authLoading) {
     return (
@@ -470,7 +461,11 @@ export default function CeoChat() {
                           : 'bg-[#1A202C] border border-gray-700/50 text-gray-100 rounded-bl-none overflow-hidden'
                       }`}
                     >
-                      {renderContent(msg.content, msg.role)}
+                      {msg.role === 'assistant' ? (
+                        <ChiefMessageContent content={msg.content} />
+                      ) : (
+                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      )}
                       
                       {/* Model Badge for Assistant */}
                       {msg.role === 'assistant' && msg.model_name && MODEL_INFO[msg.model_name] && (
