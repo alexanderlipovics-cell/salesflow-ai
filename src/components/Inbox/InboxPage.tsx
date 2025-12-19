@@ -359,20 +359,36 @@ export const InboxPage: React.FC = () => {
     // Extrahiere Kontaktdaten aus item ODER item.lead
     const lead = item.lead || {};
     
-    // Fallback: Prüfe auch direkt am item (falls Daten dort sind)
-    const instagramUrl = lead.instagram_url || lead.source_url || (item as any).instagram_url;
-    const phone = lead.phone || (item as any).phone;
-    const email = lead.email || (item as any).email;
+    // Instagram: Prüfe alle möglichen Felder (wie in useInbox.ts)
+    const instagramUrl = 
+      lead.instagram_url || 
+      lead.source_url || 
+      (lead.instagram_username ? `https://instagram.com/${lead.instagram_username.replace('@', '')}` : null) ||
+      (lead.instagram ? `https://instagram.com/${lead.instagram.replace('@', '')}` : null) ||
+      (item as any).instagram_url ||
+      (item as any).source_url;
+    
+    // Phone: Prüfe alle möglichen Felder
+    const phone = 
+      lead.phone || 
+      (lead as any).whatsapp || 
+      (item as any).phone ||
+      (item as any).whatsapp;
+    
+    // Email: Prüfe alle möglichen Felder
+    const email = 
+      lead.email || 
+      (item as any).email;
     
     setSelectedLeadForReply({
       id: lead.id || item.id,
       name: lead.name || 'Unbekannt',
       state: 'new', // TODO: Get actual state from item metadata if available
       contact: {
-        instagram_url: instagramUrl,
-        phone: phone,
-        email: email,
-        whatsapp: phone, // WhatsApp nutzt Phone
+        instagram_url: instagramUrl || undefined,
+        phone: phone || undefined,
+        email: email || undefined,
+        whatsapp: phone || undefined, // WhatsApp nutzt Phone
       }
     });
     
