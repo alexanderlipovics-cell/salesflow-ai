@@ -803,16 +803,18 @@ export const InboxPage: React.FC = () => {
           </Button>
 
           {/* Review Overlay Button für inbox_drafts */}
-          {pendingDrafts.length > 0 && (
-            <Button
-              variant="default"
-              onClick={() => setShowReviewOverlay(true)}
-              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Review Mode ({pendingDrafts.length})
-            </Button>
-          )}
+          <Button
+            variant="default"
+            onClick={() => {
+              console.log('📝 Opening Review Overlay with drafts:', pendingDrafts.length);
+              setShowReviewOverlay(true);
+            }}
+            disabled={pendingDrafts.length === 0}
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Review Mode ({pendingDrafts.length})
+          </Button>
 
           <Button variant="outline" onClick={refetch} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
