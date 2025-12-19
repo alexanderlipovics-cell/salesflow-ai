@@ -1419,6 +1419,111 @@ class ToolExecutor:
             "message": f"✅ Follow-up für {lead_name or 'Lead'} am {date_str} geplant!",
         }
 
+    async def _update_followup_suggestion(
+        self,
+        lead_id: str = None,
+        lead_name: str = None,
+        new_date: str = None,
+        new_message: str = None,
+        new_title: str = None,
+        new_channel: str = None,
+    ) -> dict:
+        """Update an existing pending follow-up for a lead."""
+        try:
+            resolved_lead_id, resolved_lead_name = self._resolve_lead(lead_id, lead_name)
+            if not resolved_lead_id:
+                return {"success": False, "error": "Lead nicht gefunden"}
+
+            # Find existing pending follow-up
+            existing = (
+                self.db.table("followup_suggestions")
+                .select("id, due_at, suggested_message, title, channel")
+                .eq("lead_id", resolved_lead_id)
+                .eq("user_id", self.user_id)
+                .eq("status", "pending")
+                .execute()
+            )
+
+            if not existing.data or len(existing.data) == 0:
+                return {
+                    "success": False,
+                    "error": f"Kein pending Follow-up für {resolved_lead_name or 'Lead'} gefunden. Verwende 'create_follow_up' um eines zu erstellen.",
+                }
+
+            existing_fu = existing.data[0]
+            followup_id = existing_fu["id"]
+
+            # Build update data
+            update_data = {}
+            
+            if new_date:
+                # Parse new date
+                if new_date.lower() in ["today", "heute"]:
+                    parsed_date = datetime.now(timezone.utc).date()
+                    due_at_dt = datetime.combine(parsed_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+                elif new_date.lower() in ["tomorrow", "morgen"]:
+                    parsed_date = (datetime.now(timezone.utc) + timedelta(days=1)).date()
+                    due_at_dt = datetime.combine(parsed_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+                elif "in" in new_date.lower() and ("tag" in new_date.lower() or "day" in new_date.lower()):
+                    # "in 3 Tagen" or "in 3 days" -> extract number
+                    import re
+                    match = re.search(r"(\d+)", new_date)
+                    days = int(match.group(1)) if match else 1
+                    due_at_dt = datetime.now(timezone.utc) + timedelta(days=days)
+                else:
+                    # Try to parse as datetime
+                    due_at_dt = self._parse_due_datetime(new_date)
+                update_data["due_at"] = due_at_dt.isoformat()
+
+            if new_message:
+                update_data["suggested_message"] = new_message
+
+            if new_title:
+                update_data["title"] = new_title
+
+            if new_channel:
+                update_data["channel"] = new_channel.upper()
+
+            if not update_data:
+                return {
+                    "success": False,
+                    "error": "Keine Updates angegeben. Verwende 'new_date', 'new_message', 'new_title' oder 'new_channel'.",
+                }
+
+            # Update the follow-up
+            result = (
+                self.db.table("followup_suggestions")
+                .update(update_data)
+                .eq("id", followup_id)
+                .execute()
+            )
+
+            if result.data:
+                date_str = (
+                    update_data.get("due_at", existing_fu.get("due_at", ""))
+                    .replace("T", " ")
+                    .split(" ")[0]
+                )
+                if date_str:
+                    try:
+                        date_obj = datetime.fromisoformat(date_str)
+                        date_formatted = date_obj.strftime("%d.%m.%Y")
+                    except Exception:
+                        date_formatted = date_str
+                else:
+                    date_formatted = "unbekannt"
+
+                return {
+                    "success": True,
+                    "message": f"✅ Follow-up für {resolved_lead_name or 'Lead'} aktualisiert! (Fällig: {date_formatted})",
+                    "suggestion_id": followup_id,
+                }
+
+            return {"success": False, "error": "Fehler beim Aktualisieren des Follow-ups"}
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Update follow-up FAILED: {type(e).__name__}: {e}", exc_info=True)
+            return {"success": False, "error": str(e)}
+
     async def _log_interaction(self, params: dict) -> str:
         """Speichert eine Interaktion und aktualisiert den Lead."""
         lead_name_or_id = params.get("lead_name") or params.get("lead_name_or_id")
