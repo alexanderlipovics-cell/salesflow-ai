@@ -53,7 +53,18 @@ export const InboxPage: React.FC = () => {
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
   const [sentItemIds, setSentItemIds] = useState<Set<string>>(new Set());
   const [showMagicSendModal, setShowMagicSendModal] = useState(false);
-
+  
+  // Review Overlay State (für inbox_drafts)
+  const [showReviewOverlay, setShowReviewOverlay] = useState(false);
+  const [pendingDrafts, setPendingDrafts] = useState<Array<{
+    id: string;
+    contact_name: string;
+    platform: 'whatsapp' | 'instagram' | 'linkedin' | 'email';
+    draft_content: string;
+    original_message?: string;
+    contact_identifier?: string;
+  }>>([]);
+  
   // Magic Send All Handler
   const handleMagicSendAll = useCallback(
     async (itemIds: string[]): Promise<MagicSendAllResult> => {
@@ -462,14 +473,14 @@ export const InboxPage: React.FC = () => {
       }
       
       // Remove from local state
-      setPendingDrafts(prev => prev.filter(d => d.id !== id));
+      setPendingDrafts(prev => prev.filter((d: any) => d.id !== id));
     } catch (err) {
       console.error('Failed to mark draft as sent:', err);
       throw err;
     }
   }, []);
 
-  const handleReviewSkip = useCallback(async (id: string) => {
+  const handleDraftSkip = useCallback(async (id: string) => {
     try {
       const { supabaseClient } = await import('@/lib/supabaseClient');
       const { error } = await supabaseClient
@@ -483,7 +494,7 @@ export const InboxPage: React.FC = () => {
       }
       
       // Remove from local state
-      setPendingDrafts(prev => prev.filter(d => d.id !== id));
+      setPendingDrafts(prev => prev.filter((d: any) => d.id !== id));
     } catch (err) {
       console.error('Failed to skip draft:', err);
       throw err;
@@ -847,7 +858,7 @@ export const InboxPage: React.FC = () => {
         }}
         drafts={pendingDrafts}
         onSend={handleReviewSend}
-        onSkip={handleReviewSkip}
+        onSkip={handleDraftSkip}
       />
     </div>
   );
