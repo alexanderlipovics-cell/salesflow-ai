@@ -31,6 +31,30 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
 
+  // Reset state when modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      // Reset all state when modal closes
+      setReplyText('');
+      setResponse(null);
+      setError(null);
+      setIsProcessing(false);
+      setIsSending(false);
+      setSent(false);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    // Reset state before closing
+    setReplyText('');
+    setResponse(null);
+    setError(null);
+    setIsProcessing(false);
+    setIsSending(false);
+    setSent(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const handleProcessReply = async () => {
@@ -72,8 +96,13 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
       }
 
       const data: ProcessReplyResponse = await res.json();
+      console.log('Reply processed:', data); // Debug log
+      
+      // WICHTIG: Setze response State - das triggert Step 2 UI
       setResponse(data);
-      onReplyProcessed(data);
+      
+      // NICHT onReplyProcessed hier aufrufen - das macht Step 2
+      // onReplyProcessed wird erst beim "Kopieren & Senden" aufgerufen
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
@@ -93,6 +122,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
     }
 
     setIsSending(true);
+    setError(null);
 
     try {
       const token = localStorage.getItem('access_token');
@@ -104,7 +134,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
         }
       }
 
-      await fetch(`${API_URL}/api/chief/mark-sent-with-followup`, {
+      const res = await fetch(`${API_URL}/api/chief/mark-sent-with-followup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,12 +148,20 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
         })
       });
 
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+        throw new Error(errorData.detail || errorData.error || 'Fehler beim Speichern');
+      }
+
       setSent(true);
+      
+      // Callback für Parent
+      onReplyProcessed(response);
       
       // Close after 2 seconds
       setTimeout(() => {
         onClose();
-        // Reset state
+        // Reset state for next time
         setReplyText('');
         setResponse(null);
         setSent(false);
@@ -131,7 +169,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
       }, 2000);
 
     } catch (err) {
-      setError('Fehler beim Speichern');
+      setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
     } finally {
       setIsSending(false);
     }
@@ -180,7 +218,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={handleClose} className="text-gray-400 hover:text-white">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -260,22 +298,29 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-800 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Stimmung</p>
-                    <p className={`font-medium ${getSentimentColor(response.analysis.sentiment)}`}>
-                      {getSentimentEmoji(response.analysis.sentiment)} {response.analysis.sentiment}
+                    <p className={`font-medium ${getSentimentColor(response.analysis?.sentiment || 'neutral')}`}>
+                      {getSentimentEmoji(response.analysis?.sentiment || 'neutral')} {response.analysis?.sentiment || 'neutral'}
                     </p>
                   </div>
                   <div className="bg-gray-800 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Intent</p>
-                    <p className="font-medium text-white">{response.analysis.intent}</p>
+                    <p className="font-medium text-white">{response.analysis?.intent || 'unknown'}</p>
                   </div>
                 </div>
 
                 <div className="bg-gray-800 rounded-lg p-3">
                   <p className="text-xs text-gray-500 mb-1">Strategie</p>
-                  <p className="text-sm text-gray-300">{response.analysis.response_strategy}</p>
+                  <p className="text-sm text-gray-300">{response.analysis?.response_strategy || ''}</p>
                 </div>
 
-                {response.cancelled_followups > 0 && (
+                {response.new_state && response.new_state !== currentState && (
+                  <div className="flex items-center gap-2 text-sm text-cyan-400">
+                    <span>📈</span>
+                    Status: {currentState} → {response.new_state}
+                  </div>
+                )}
+
+                {response.cancelled_followups && response.cancelled_followups > 0 && (
                   <div className="flex items-center gap-2 text-sm text-yellow-400">
                     <CheckCircle className="w-4 h-4" />
                     {response.cancelled_followups} geplante Follow-ups gecancelt
@@ -319,8 +364,6 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                   <button
                     onClick={() => {
                       setResponse(null);
-                      setReplyText('');
-                      setError(null);
                     }}
                     className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition-colors"
                   >
@@ -338,7 +381,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                       </>
                     ) : (
                       <>
-                        <Send className="w-5 h-5" />
+                        <span>📋</span>
                         Kopieren & als gesendet markieren
                       </>
                     )}
@@ -346,7 +389,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2 py-3 bg-green-500/20 text-green-400 rounded-xl">
-                  <CheckCircle className="w-5 h-5" />
+                  <span>✓</span>
                   Gespeichert! Follow-up in 3 Tagen geplant.
                 </div>
               )}
