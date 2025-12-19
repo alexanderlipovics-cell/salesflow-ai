@@ -352,15 +352,18 @@ export const InboxPage: React.FC = () => {
 
   // Handler für "Hat geantwortet" Button
   const handleReplyReceived = useCallback((item: InboxItem) => {
+    // Extrahiere Kontaktdaten mit Fallbacks
+    const lead = item.lead || {};
+    
     setSelectedLeadForReply({
-      id: item.lead.id,
-      name: item.lead.name,
+      id: lead.id || item.id,
+      name: lead.name || 'Unbekannt',
       state: 'new', // TODO: Get actual state from item metadata if available
       contact: {
-        instagram_url: item.lead.instagram_url,
-        whatsapp: item.lead.phone, // Use phone as WhatsApp fallback
-        email: item.lead.email,
-        phone: item.lead.phone
+        instagram_url: lead.instagram_url || lead.source_url,
+        whatsapp: lead.phone, // Use phone as WhatsApp (phone number can be used for WhatsApp)
+        email: lead.email,
+        phone: lead.phone
       }
     });
     setReplyModalOpen(true);
