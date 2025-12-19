@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Send, MessageCircle, Loader2, CheckCircle, ArrowRight } from 'lucide-react';
 import type { ProcessReplyResponse } from '@/types/inbox';
 
@@ -32,7 +32,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
   const [sent, setSent] = useState(false);
 
   // Reset state when modal closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       // Reset all state when modal closes
       setReplyText('');
