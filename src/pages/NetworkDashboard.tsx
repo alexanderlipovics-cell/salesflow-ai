@@ -19,8 +19,38 @@ import QuickUpdateModal from "../components/network/QuickUpdateModal";
 import SyncReminderBanner from "../components/network/SyncReminderBanner";
 
 interface DashboardData {
-  has_setup: boolean;
-  stats: {
+  // Neue Struktur (aus mlm_downline_structure)
+  rank?: string;
+  rank_progress?: number;
+  next_rank?: string;
+  next_rank_gv_required?: number;
+  personal_volume?: number;
+  group_volume?: number;
+  team_size?: number;
+  active_partners?: number;
+  inactive_partners?: number;
+  new_this_month?: number;
+  left_credits?: number;
+  right_credits?: number;
+  balanced_credits?: number;
+  expected_commission?: number;
+  team_commission?: number;
+  cash_commission?: number;
+  recent_activity?: Array<{
+    member_name: string;
+    action: string;
+    timestamp: string;
+    pv: number;
+  }>;
+  recruitment_pipeline?: {
+    contacts: number;
+    presentations: number;
+    followups: number;
+    ready_to_close: number;
+  };
+  // Alte Struktur (Fallback für Kompatibilität)
+  has_setup?: boolean;
+  stats?: {
     total_partners: number;
     active_partners: number;
     inactive_partners: number;
@@ -29,7 +59,7 @@ interface DashboardData {
     right_leg_credits: number;
     balanced_credits: number;
   } | null;
-  rank_progress: {
+  rank_progress_old?: {
     current_rank_id: number;
     current_rank_name: string;
     current_rank_icon: string;
@@ -38,26 +68,12 @@ interface DashboardData {
     credits_needed: number;
     credits_current: number;
   } | null;
-  user_stats: {
-    pcp: number;
-    personal_credits: number;
-    z4f_customers: number;
-  } | null;
-  recent_activity: Array<{
-    id: string;
-    type: string;
-    name: string;
-    time: string;
-    rank?: string;
-    amount?: string;
-    days?: number;
-  }>;
-  monthly_projection: {
+  monthly_projection?: {
     team_commission: number;
     cash_bonus: number;
     total: number;
   };
-  z4f_status: {
+  z4f_status?: {
     current: number;
     target: number;
     qualified: boolean;
@@ -72,6 +88,24 @@ const API_BASE =
 const authHeaders = () => {
   const token = localStorage.getItem("access_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const formatTimeAgo = (timestamp: string): string => {
+  try {
+    const ts = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - ts.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor(diff / (1000 * 60));
+    
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return "just now";
+  } catch {
+    return "recently";
+  }
 };
 
 export default function NetworkDashboard() {
@@ -93,9 +127,13 @@ export default function NetworkDashboard() {
       const response = await fetch(`${API_BASE}/api/network/dashboard`, {
         headers: { ...authHeaders() },
       });
+      if (!response.ok) throw new Error('Fehler beim Laden');
       const result = await response.json();
       setData(result);
-      if (!result.has_setup) setShowOnboarding(true);
+      // Prüfe ob Daten vorhanden sind (neue oder alte Struktur)
+      if (result.has_setup === false || (!result.rank && !result.stats)) {
+        setShowOnboarding(true);
+      }
     } catch (error) {
       console.error("Dashboard fetch failed:", error);
     } finally {
@@ -131,7 +169,41 @@ export default function NetworkDashboard() {
     );
   }
 
-  if (!data || !data.stats) {
+  // Normalisiere Daten für neue und alte Struktur
+  const stats = data?.stats || {
+    total_partners: data?.team_size || 0,
+    active_partners: data?.active_partners || 0,
+    inactive_partners: data?.inactive_partners || 0,
+    new_this_month: data?.new_this_month || 0,
+    left_leg_credits: data?.left_credits || 0,
+    right_leg_credits: data?.right_credits || 0,
+    balanced_credits: data?.balanced_credits || 0,
+  };
+  
+  const rankProgress = data?.rank_progress_old || {
+    current_rank_name: data?.rank || "Starter",
+    current_rank_icon: "👤",
+    next_rank_name: data?.next_rank || "Partner",
+    progress_percent: data?.rank_progress || 0,
+    credits_needed: data?.next_rank_gv_required || 100,
+    credits_current: data?.group_volume || 0,
+  };
+  
+  const monthlyProjection = data?.monthly_projection || {
+    team_commission: data?.team_commission || 0,
+    cash_bonus: data?.cash_commission || 0,
+    total: data?.expected_commission || 0,
+  };
+  
+  const recentActivity = data?.recent_activity || [];
+  const recruitmentPipeline = data?.recruitment_pipeline || {
+    contacts: 0,
+    presentations: 0,
+    followups: 0,
+    ready_to_close: 0,
+  };
+  
+  if (!data || (!data.rank && !data.stats)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white">
         <AlertCircle className="w-12 h-12 text-slate-500 mb-4" />
@@ -146,7 +218,6 @@ export default function NetworkDashboard() {
     );
   }
 
-  const { stats, rank_progress, monthly_projection, recent_activity, z4f_status } = data;
   const totalCredits = stats.left_leg_credits + stats.right_leg_credits;
   const leftPercent = totalCredits > 0 ? Math.round((stats.left_leg_credits / totalCredits) * 100) : 50;
   const rightPercent = 100 - leftPercent;
@@ -202,21 +273,21 @@ export default function NetworkDashboard() {
             <Trophy className="w-5 h-5 text-yellow-500" />
           </div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-3xl">{rank_progress?.current_rank_icon || "👤"}</span>
+            <span className="text-3xl">{rankProgress?.current_rank_icon || "👤"}</span>
             <div>
-              <p className="text-xl font-bold text-white">{rank_progress?.current_rank_name || "Partner"}</p>
-              <p className="text-sm text-slate-500">→ {rank_progress?.next_rank_name || "Max"}</p>
+              <p className="text-xl font-bold text-white">{rankProgress?.current_rank_name || "Partner"}</p>
+              <p className="text-sm text-slate-500">→ {rankProgress?.next_rank_name || "Max"}</p>
             </div>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-slate-400">
               <span>Fortschritt</span>
-              <span>{rank_progress?.progress_percent || 0}%</span>
+              <span>{rankProgress?.progress_percent || 0}%</span>
             </div>
             <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
               <div
                 className="h-full bg-yellow-500 rounded-full transition-all duration-500"
-                style={{ width: `${rank_progress?.progress_percent || 0}%` }}
+                style={{ width: `${rankProgress?.progress_percent || 0}%` }}
               />
             </div>
           </div>
@@ -272,10 +343,10 @@ export default function NetworkDashboard() {
             <span className="text-sm font-medium text-green-400">Erwartete Provision</span>
             <DollarSign className="w-5 h-5 text-green-500" />
           </div>
-          <p className="text-3xl font-bold text-white">€{data.monthly_projection.total}</p>
+          <p className="text-3xl font-bold text-white">€{monthlyProjection.total}</p>
           <p className="text-sm text-slate-400 mt-1">diesen Monat</p>
           <p className="text-xs text-slate-500 mt-2">
-            Team: €{data.monthly_projection.team_commission} • Cash: €{data.monthly_projection.cash_bonus}
+            Team: €{monthlyProjection.team_commission} • Cash: €{monthlyProjection.cash_bonus}
           </p>
         </div>
       </div>
@@ -293,50 +364,41 @@ export default function NetworkDashboard() {
           </div>
 
           <div className="space-y-4">
-            {data.recent_activity.length > 0 ? (
-              data.recent_activity.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between group p-3 rounded-lg hover:bg-slate-800/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        item.type === "new_partner"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : item.type === "rank_up"
-                          ? "bg-yellow-500/20 text-yellow-400"
-                          : item.type === "order"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-orange-500/20 text-orange-400"
-                      }`}
-                    >
-                      {item.type === "new_partner" && <UserPlus className="w-5 h-5" />}
-                      {item.type === "rank_up" && <Trophy className="w-5 h-5" />}
-                      {item.type === "order" && <DollarSign className="w-5 h-5" />}
-                      {item.type === "inactive_alert" && <AlertCircle className="w-5 h-5" />}
+            {recentActivity.length > 0 ? (
+              recentActivity.map((item, idx) => {
+                const actionType = item.action || "active";
+                const timeAgo = item.timestamp 
+                  ? formatTimeAgo(item.timestamp) 
+                  : "recently";
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between group p-3 rounded-lg hover:bg-slate-800/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400">
+                        <UserPlus className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{item.member_name || "Partner"}</p>
+                        <p className="text-sm text-slate-400">
+                          {actionType === "joined" && "Neuer Partner im Team"}
+                          {actionType === "active" && `Aktiv • ${item.pv || 0} PV`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-white">{item.name}</p>
-                      <p className="text-sm text-slate-400">
-                        {item.type === "new_partner" && "Neuer Partner im Team"}
-                        {item.type === "rank_up" && `Aufstieg zu ${item.rank}`}
-                        {item.type === "order" && `Bestellung: ${item.amount}`}
-                        {item.type === "inactive_alert" && `${item.days} Tage inaktiv`}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-slate-500">{timeAgo}</span>
+                      <button
+                        onClick={() => console.log(`Send message to ${item.member_name}`)}
+                        className="p-2 opacity-0 group-hover:opacity-100 hover:bg-slate-700 rounded-lg transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4 text-slate-300" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-500">{item.time}</span>
-                    <button
-                      onClick={() => console.log(`Send message to ${item.name}`)}
-                      className="p-2 opacity-0 group-hover:opacity-100 hover:bg-slate-700 rounded-lg transition-all"
-                    >
-                      <MessageCircle className="w-4 h-4 text-slate-300" />
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="text-center text-slate-500 py-8">Noch keine Team-Aktivität</p>
             )}
@@ -350,45 +412,27 @@ export default function NetworkDashboard() {
           </div>
 
           <div className="space-y-5">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-300">Kontakte</span>
-                <span className="font-bold text-white">15</span>
+            {[
+              { label: 'Kontakte', value: recruitmentPipeline.contacts, color: 'bg-gray-500' },
+              { label: 'Präsentationen', value: recruitmentPipeline.presentations, color: 'bg-blue-500' },
+              { label: 'Follow-ups', value: recruitmentPipeline.followups, color: 'bg-yellow-500' },
+              { label: 'Abschlussbereit', value: recruitmentPipeline.ready_to_close, color: 'bg-green-500' },
+            ].map((item, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-300">{item.label}</span>
+                  <span className={`font-bold ${item.label === 'Abschlussbereit' ? 'text-green-400' : 'text-white'}`}>
+                    {item.value}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${item.color} rounded-full`}
+                    style={{ width: `${Math.min((item.value / 20) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div className="bg-slate-600 h-full w-full" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-300">Präsentationen</span>
-                <span className="font-bold text-white">5</span>
-              </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div className="bg-blue-500 h-full" style={{ width: "33%" }} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-300">Follow-ups</span>
-                <span className="font-bold text-white">8</span>
-              </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div className="bg-yellow-500 h-full" style={{ width: "53%" }} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-300">Abschlussbereit</span>
-                <span className="font-bold text-green-400">2</span>
-              </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div className="bg-green-500 h-full" style={{ width: "13%" }} />
-              </div>
-            </div>
+            ))}
 
             <Link
               to="/leads"
@@ -400,30 +444,32 @@ export default function NetworkDashboard() {
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Z4F Status</h2>
-            <p className="text-sm text-slate-500">Zinzino For Free - 4 Kunden = Gratis Abo</p>
+      {data?.z4f_status && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Z4F Status</h2>
+              <p className="text-sm text-slate-500">Zinzino For Free - 4 Kunden = Gratis Abo</p>
+            </div>
+            {data.z4f_status.qualified && (
+              <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">✓ Qualifiziert</span>
+            )}
           </div>
-          {data.z4f_status.qualified && (
-            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">✓ Qualifiziert</span>
-          )}
+          <div className="flex items-center gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={`flex-1 h-4 rounded-full transition-colors ${
+                  i <= data.z4f_status.current ? "bg-green-500" : "bg-slate-800"
+                }`}
+              />
+            ))}
+          </div>
+          <p className="text-center text-slate-400 mt-3">
+            <span className="text-2xl font-bold text-white">{data.z4f_status.current}</span> / 4 Kunden
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className={`flex-1 h-4 rounded-full transition-colors ${
-                i <= data.z4f_status.current ? "bg-green-500" : "bg-slate-800"
-              }`}
-            />
-          ))}
-        </div>
-        <p className="text-center text-slate-400 mt-3">
-          <span className="text-2xl font-bold text-white">{data.z4f_status.current}</span> / 4 Kunden
-        </p>
-      </div>
+      )}
 
       <div className="bg-gradient-to-r from-violet-900/40 to-slate-900 border border-violet-900/40 rounded-xl p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -435,21 +481,21 @@ export default function NetworkDashboard() {
             <p className="text-sm text-slate-300">
               Du bist nur noch{" "}
               <span className="text-white font-bold">
-                {data.rank_progress?.credits_needed
-                  ? data.rank_progress.credits_needed - (data.rank_progress?.credits_current || 0)
+                {rankProgress?.credits_needed
+                  ? rankProgress.credits_needed - (rankProgress?.credits_current || 0)
                   : 0}{" "}
                 Credits
               </span>{" "}
-              von {data.rank_progress?.next_rank_name || "dem nächsten Rank"} entfernt! Konzentriere dich diese Woche auf
+              von {rankProgress?.next_rank_name || "dem nächsten Rank"} entfernt! Konzentriere dich diese Woche auf
               deine abschlussbereiten Leads.
             </p>
           </div>
           <button
             onClick={() => {
-              const creditsNeeded = data.rank_progress?.credits_needed
-                ? data.rank_progress.credits_needed - (data.rank_progress?.credits_current || 0)
+              const creditsNeeded = rankProgress?.credits_needed
+                ? rankProgress.credits_needed - (rankProgress?.credits_current || 0)
                 : 0;
-              const nextRank = data.rank_progress?.next_rank_name || "dem nächsten Rank";
+              const nextRank = rankProgress?.next_rank_name || "dem nächsten Rank";
               navigate('/chat', {
                 state: {
                   initialMessage: `Hilf mir eine Strategie zu entwickeln um meinen nächsten Rang zu erreichen. Ich bin nur noch ${creditsNeeded} Credits von ${nextRank} entfernt. Konzentriere dich auf meine abschlussbereiten Leads.`
