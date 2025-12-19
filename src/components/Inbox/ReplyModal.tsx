@@ -111,7 +111,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
       console.error('Clipboard error:', err);
     }
 
-    setIsSending(true);
+    setIsProcessing(true);
     setError(null);
 
     try {
@@ -155,7 +155,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
     } finally {
-      setIsSending(false);
+      setIsProcessing(false);
     }
   };
 
