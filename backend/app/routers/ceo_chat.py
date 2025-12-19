@@ -5,14 +5,20 @@ Ein schnelles AI (Groq) entscheidet, welches Super-AI den Job macht.
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import json
 import os
+import uuid
+import logging
 from datetime import datetime
 import httpx
 
 from app.core.deps import get_supabase
 from app.core.security import get_current_active_user
+from app.services.ceo_db_service import execute_safe_query, get_user_stats, DB_SCHEMA
+from app.services.document_service import generate_pdf, generate_pptx, generate_xlsx, generate_docx
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/ceo", tags=["CEO Chat"])
 
@@ -84,6 +90,18 @@ class CEOChatResponse(BaseModel):
     routing_reason: str
     tokens_used: dict
     created_at: str
+
+class DBQueryRequest(BaseModel):
+    table: str
+    select: str = "*"
+    filters: Optional[Dict[str, Any]] = None
+    order_by: Optional[str] = None
+    limit: int = 100
+
+class DocumentRequest(BaseModel):
+    doc_type: str  # "pdf", "pptx", "xlsx", "docx"
+    title: str
+    content: Any  # Structure depends on doc_type
 
 # ============================================
 # AI DISPATCHER (Das schnelle Gehirn)
@@ -428,10 +446,28 @@ async def ceo_chat(
     # --- SCHRITT A: GEDÄCHTNIS LADEN ---
     history = await get_chat_context(db, session_id, 10)
     
-    # --- SCHRITT B: AI DISPATCHER ENTSCHEIDET ---
+    # --- SCHRITT B: TOOL DETECTION & CONTEXT ENRICHMENT ---
     has_files = bool(request.files and len(request.files) > 0)
+    
+    # Check für DB-Anfragen und füge Context hinzu
+    db_keywords = ["wie viele", "zeig mir", "liste", "leads", "follow-ups", "stats", "umsatz", "performance", "anzahl"]
+    has_db_query = any(kw in request.message.lower() for kw in db_keywords)
+    
+    enriched_message = request.message
+    if has_db_query:
+        # Hole aktuelle Stats als Context
+        stats_result = await get_user_stats(user_id)
+        if stats_result.get("success"):
+            stats = stats_result.get("stats", {})
+            enriched_message = f"{request.message}\n\n[Context: Aktuelle Business-Stats]\n- Gesamt Leads: {stats.get('total_leads', 0)}\n- Leads nach Status: {stats.get('leads_by_status', {})}\n- Pending Follow-ups: {stats.get('pending_followups', 0)}\n- Nachrichten heute: {stats.get('messages_sent_today', 0)}"
+    
+    # Check für Document-Anfragen
+    doc_keywords = ["erstelle pdf", "powerpoint", "excel", "word dokument", "präsentation", "freebie", "generiere"]
+    has_doc_request = any(kw in request.message.lower() for kw in doc_keywords)
+    
+    # --- SCHRITT C: AI DISPATCHER ENTSCHEIDET ---
     if request.model == "auto":
-        ai_config = await dispatch_to_best_ai(request.message, has_files=has_files)
+        ai_config = await dispatch_to_best_ai(enriched_message, has_files=has_files)
     else:
         # Manual Override
         model_key = request.model
@@ -455,7 +491,9 @@ async def ceo_chat(
     # User Message speichern
     message_metadata = {
         "routing_decision": ai_config,
-        "files": [{"url": f.url, "type": f.type, "name": f.name} for f in (request.files or [])]
+        "files": [{"url": f.url, "type": f.type, "name": f.name} for f in (request.files or [])],
+        "has_db_query": has_db_query,
+        "has_doc_request": has_doc_request
     }
     db.table("chief_messages").insert({
         "user_id": user_id,
@@ -465,9 +503,9 @@ async def ceo_chat(
         "metadata": message_metadata,
     }).execute()
     
-    # --- SCHRITT C: WORKER AUSFÜHREN ---
+    # --- SCHRITT D: WORKER AUSFÜHREN ---
     # Build messages with file attachments if present
-    user_message_content = request.message
+    user_message_content = enriched_message
     
     # For Vision models (Claude/GPT-4 Vision), build multimodal content
     if has_files and provider == "anthropic":
@@ -614,3 +652,83 @@ async def delete_session(
     db.table("chief_sessions").delete().eq("id", session_id).eq("user_id", user_id).execute()
     
     return {"success": True}
+
+
+@router.post("/db-query")
+async def ceo_db_query(
+    request: DBQueryRequest,
+    current_user = Depends(get_current_active_user)
+):
+    """Sichere DB-Queries für CEO."""
+    user_id = _extract_user_id(current_user)
+    return await execute_safe_query(
+        user_id=user_id,
+        table=request.table,
+        select=request.select,
+        filters=request.filters,
+        order_by=request.order_by,
+        limit=request.limit
+    )
+
+
+@router.get("/stats")
+async def ceo_stats(current_user = Depends(get_current_active_user)):
+    """Aggregierte Stats für CEO."""
+    return await get_user_stats(_extract_user_id(current_user))
+
+
+@router.post("/generate-document")
+async def ceo_generate_document(
+    request: DocumentRequest,
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase),
+):
+    """Generiert PDF/PPTX/XLSX/DOCX und lädt zu Supabase Storage hoch."""
+    user_id = _extract_user_id(current_user)
+    
+    try:
+        if request.doc_type == "pdf":
+            doc_bytes = generate_pdf(request.title, request.content)
+            ext, mime = "pdf", "application/pdf"
+        elif request.doc_type == "pptx":
+            doc_bytes = generate_pptx(request.title, request.content)
+            ext, mime = "pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        elif request.doc_type == "xlsx":
+            doc_bytes = generate_xlsx(request.title, request.content)
+            ext, mime = "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif request.doc_type == "docx":
+            doc_bytes = generate_docx(request.title, request.content)
+            ext, mime = "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        else:
+            return {"success": False, "error": f"Unbekannter Typ: {request.doc_type}"}
+        
+        # Upload to Supabase Storage
+        filename = f"{user_id}/documents/{uuid.uuid4()}.{ext}"
+        
+        upload_result = db.storage.from_("chief-uploads").upload(
+            filename, 
+            doc_bytes, 
+            {"content-type": mime}
+        )
+        
+        if upload_result.error:
+            raise Exception(f"Upload failed: {upload_result.error}")
+        
+        url_data = db.storage.from_("chief-uploads").create_signed_url(filename, 3600)
+        
+        return {
+            "success": True,
+            "filename": f"{request.title}.{ext}",
+            "download_url": url_data.get("signedUrl") if url_data else None,
+            "expires_in": "1 hour"
+        }
+        
+    except Exception as e:
+        logger.error(f"Document generation error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/db-schema")
+async def get_db_schema():
+    """Gibt DB Schema Info für AI zurück."""
+    return {"schema": DB_SCHEMA}

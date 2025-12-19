@@ -83,4 +83,5 @@ firebase-admin
  
 PyMuPDF>=1.23.0
 python-docx>=1.1.0
+python-pptx==0.6.23
  
