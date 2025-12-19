@@ -14,6 +14,7 @@ import { ReviewMode } from './ReviewMode';
 import { MagicSendModal } from './MagicSendModal';
 import { ChiefEditPopup } from './ChiefEditPopup';
 import { ReplyModal } from './ReplyModal';
+import ReviewOverlay from './ReviewOverlay';
 import { useInbox } from '@/hooks/useInbox';
 import type { MagicSendAllResult, InboxItem, GroupedInboxItems, ProcessReplyResponse } from '@/types/inbox';
 
@@ -411,6 +412,84 @@ export const InboxPage: React.FC = () => {
     setReplyModalOpen(true);
   }, []);
 
+  // Load pending drafts for Review Overlay
+  const loadPendingDrafts = useCallback(async () => {
+    try {
+      const { supabaseClient } = await import('@/lib/supabaseClient');
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      
+      if (!user) return;
+      
+      const { data, error } = await supabaseClient
+        .from('inbox_drafts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error loading drafts:', error);
+        return;
+      }
+      
+      setPendingDrafts(data || []);
+    } catch (err) {
+      console.error('Failed to load drafts:', err);
+    }
+  }, []);
+
+  // Load drafts on mount
+  React.useEffect(() => {
+    loadPendingDrafts();
+  }, [loadPendingDrafts]);
+
+  // Review Overlay Handlers
+  const handleReviewSend = useCallback(async (id: string, content: string) => {
+    try {
+      const { supabaseClient } = await import('@/lib/supabaseClient');
+      const { error } = await supabaseClient
+        .from('inbox_drafts')
+        .update({ 
+          status: 'sent', 
+          draft_content: content, 
+          sent_at: new Date().toISOString() 
+        })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error updating draft:', error);
+        throw error;
+      }
+      
+      // Remove from local state
+      setPendingDrafts(prev => prev.filter(d => d.id !== id));
+    } catch (err) {
+      console.error('Failed to mark draft as sent:', err);
+      throw err;
+    }
+  }, []);
+
+  const handleReviewSkip = useCallback(async (id: string) => {
+    try {
+      const { supabaseClient } = await import('@/lib/supabaseClient');
+      const { error } = await supabaseClient
+        .from('inbox_drafts')
+        .update({ status: 'skipped' })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error skipping draft:', error);
+        throw error;
+      }
+      
+      // Remove from local state
+      setPendingDrafts(prev => prev.filter(d => d.id !== id));
+    } catch (err) {
+      console.error('Failed to skip draft:', err);
+      throw err;
+    }
+  }, []);
+
   // Handler wenn Reply verarbeitet wurde
   const handleReplyProcessed = useCallback((response: ProcessReplyResponse) => {
     // Optional: Item aus Liste entfernen oder updaten
@@ -672,6 +751,18 @@ export const InboxPage: React.FC = () => {
             Review Mode
           </Button>
 
+          {/* Review Overlay Button für inbox_drafts */}
+          {pendingDrafts.length > 0 && (
+            <Button
+              variant="default"
+              onClick={() => setShowReviewOverlay(true)}
+              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Review Mode ({pendingDrafts.length})
+            </Button>
+          )}
+
           <Button variant="outline" onClick={refetch} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Aktualisieren
@@ -746,6 +837,18 @@ export const InboxPage: React.FC = () => {
           leadContact={selectedLeadForReply.contact}
         />
       )}
+
+      {/* Review Overlay für inbox_drafts */}
+      <ReviewOverlay
+        isOpen={showReviewOverlay}
+        onClose={() => {
+          setShowReviewOverlay(false);
+          loadPendingDrafts(); // Refresh nach Close
+        }}
+        drafts={pendingDrafts}
+        onSend={handleReviewSend}
+        onSkip={handleReviewSkip}
+      />
     </div>
   );
 };
