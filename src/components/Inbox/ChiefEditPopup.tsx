@@ -6,38 +6,10 @@
  */
 
 import React, { useState } from 'react';
-import { X, Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
-// Simple Dialog Component (falls nicht vorhanden)
-const Dialog = ({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) => {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative z-50" onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
-  );
-};
-
-const DialogContent = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-slate-900 border border-slate-700 rounded-lg shadow-xl ${className}`}>
-    {children}
-  </div>
-);
-
-const DialogHeader = ({ children }: { children: React.ReactNode }) => (
-  <div className="px-6 pt-6 pb-4">
-    {children}
-  </div>
-);
-
-const DialogTitle = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <h2 className={`text-xl font-semibold ${className}`}>
-    {children}
-  </h2>
-);
+import ChiefModal from '../ui/ChiefModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
   ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
@@ -130,114 +102,106 @@ export const ChiefEditPopup: React.FC<ChiefEditPopupProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={handleClose}>
-      <div className="relative z-50 w-full max-w-2xl mx-4" onClick={(e) => e.stopPropagation()}>
-        <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-xl">
-          <div className="px-6 pt-6 pb-4 border-b border-slate-700">
-            <h2 className="text-xl font-semibold flex items-center gap-2 text-white">
-              <Sparkles className="h-5 w-5 text-cyan-400" />
-              CHIEF - Nachricht anpassen
-            </h2>
-          </div>
-
-          <div className="px-6 py-4 space-y-4 max-h-[80vh] overflow-y-auto">
-          {/* Original Nachricht */}
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide">Original:</p>
-            <p className="text-sm text-slate-200 whitespace-pre-wrap">{originalMessage}</p>
-          </div>
-
-          {/* User Input */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Deine Anweisung:
-            </label>
-            <input
-              type="text"
-              placeholder="z.B. 'Kürzer' oder 'Mehr Emojis' oder 'Frag nach Telefonnummer'"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Drücke Enter zum Generieren
-            </p>
-          </div>
-
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
-              <span className="ml-2 text-slate-400">CHIEF bearbeitet...</span>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3">
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
-
-          {/* CHIEF Response */}
-          {newMessage && !isLoading && (
-            <div className="bg-cyan-500/10 border border-cyan-500/50 rounded-lg p-4">
-              <p className="text-xs text-cyan-400 mb-2 uppercase tracking-wide flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
-                CHIEF's Vorschlag:
-              </p>
-              <p className="text-sm text-cyan-100 whitespace-pre-wrap">{newMessage}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-700">
+    <ChiefModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="CHIEF - Nachricht anpassen"
+      icon={<Zap className="text-yellow-500 w-5 h-5" />}
+      actions={
+        <>
+          <Button
+            variant="ghost"
+            onClick={handleClose}
+            className="text-gray-400 hover:text-white"
+          >
+            Abbrechen
+          </Button>
+          {newMessage && (
             <Button
-              variant="ghost"
-              onClick={handleClose}
-              className="text-slate-400 hover:text-white"
+              onClick={handleApply}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white"
             >
-              Abbrechen
+              Übernehmen
             </Button>
-            {newMessage && (
-              <Button
-                onClick={handleApply}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white"
-              >
-                Übernehmen
-              </Button>
-            )}
-            {!newMessage && (
-              <Button
-                onClick={handleSubmit}
-                disabled={!userInput.trim() || isLoading}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Bearbeiten...
-                  </>
-                ) : (
-                  'Bearbeiten'
-                )}
-              </Button>
-            )}
-          </div>
-          </div>
+          )}
+          {!newMessage && (
+            <Button
+              onClick={handleSubmit}
+              disabled={!userInput.trim() || isLoading}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Bearbeiten...
+                </>
+              ) : (
+                'Bearbeiten'
+              )}
+            </Button>
+          )}
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {/* Original Nachricht */}
+        <div className="bg-[#0B0F19] rounded-xl p-4 border border-gray-700/50">
+          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-bold">Original:</p>
+          <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">{originalMessage}</p>
         </div>
+
+        {/* User Input */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Deine Anweisung an CHIEF:
+          </label>
+          <input
+            type="text"
+            placeholder="z.B. 'Kürzer' oder 'Mehr Emojis' oder 'Frag nach Telefonnummer'"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+            className="w-full px-4 py-2 bg-[#0B0F19] border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+            disabled={isLoading}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Drücke Enter zum Generieren
+          </p>
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
+            <span className="ml-2 text-gray-400">CHIEF bearbeitet...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
+
+        {/* CHIEF Response */}
+        {newMessage && !isLoading && (
+          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl p-4">
+            <p className="text-xs text-cyan-400 mb-2 uppercase tracking-wider font-bold flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              CHIEF's Vorschlag:
+            </p>
+            <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">{newMessage}</p>
+          </div>
+        )}
       </div>
-    </div>
+    </ChiefModal>
   );
 };
 
