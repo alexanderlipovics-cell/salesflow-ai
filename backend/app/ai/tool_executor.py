@@ -40,6 +40,7 @@ class ToolExecutor:
             "create_task": self._create_task,
             "create_followup": self._create_followup_suggestion,
             "create_follow_up": self._create_followup_suggestion,
+            "update_follow_up": self._update_followup_suggestion,
             "log_interaction": self._log_interaction,
             "generate_customer_protocol": self._generate_customer_protocol,
             "update_lead_status": self._update_lead_status,
@@ -1261,6 +1262,35 @@ class ToolExecutor:
             resolved_lead_id, resolved_lead_name = self._resolve_lead(lead_id, lead_name)
             if not resolved_lead_id:
                 return {"success": False, "error": "Lead nicht gefunden"}
+
+            # CHECK FOR EXISTING PENDING FOLLOW-UP (Duplicate Prevention)
+            existing = (
+                self.db.table("followup_suggestions")
+                .select("id, due_at, suggested_message, title")
+                .eq("lead_id", resolved_lead_id)
+                .eq("user_id", self.user_id)
+                .eq("status", "pending")
+                .execute()
+            )
+
+            if existing.data and len(existing.data) > 0:
+                existing_fu = existing.data[0]
+                due_at_str = existing_fu.get("due_at", "")
+                if due_at_str:
+                    try:
+                        due_at_dt = datetime.fromisoformat(due_at_str.replace("Z", "+00:00"))
+                        due_at_formatted = due_at_dt.strftime("%d.%m.%Y")
+                    except Exception:
+                        due_at_formatted = due_at_str[:10] if len(due_at_str) >= 10 else due_at_str
+                else:
+                    due_at_formatted = "unbekannt"
+                
+                return {
+                    "success": False,
+                    "error": f"⚠️ Follow-up für {resolved_lead_name or 'Lead'} existiert bereits (fällig: {due_at_formatted}). Verwende 'update_follow_up' um es zu ändern.",
+                    "existing_id": existing_fu["id"],
+                    "existing_due_at": due_at_formatted,
+                }
 
             if due_in_days is not None:
                 due_at_dt = datetime.now(timezone.utc) + timedelta(days=due_in_days)

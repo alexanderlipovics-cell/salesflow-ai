@@ -434,7 +434,7 @@ SALES_AGENT_TOOLS = [
         "type": "function",
         "function": {
             "name": "create_follow_up",
-            "description": "Plant ein Follow-up. Erstelle sofort mit verfügbaren Infos. WICHTIG: due_date sollte IMMER relativ sein wie 'in 3 days', 'morgen', 'in 1 week'. NIEMALS historische Daten aus Chat-Verläufen verwenden!",
+            "description": "Plant ein Follow-up. Erstelle sofort mit verfügbaren Infos. WICHTIG: due_date sollte IMMER relativ sein wie 'in 3 days', 'morgen', 'in 1 week'. NIEMALS historische Daten aus Chat-Verläufen verwenden! Wenn bereits ein Follow-up für diesen Lead existiert, wird ein Fehler zurückgegeben - verwende dann 'update_follow_up'.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -447,6 +447,27 @@ SALES_AGENT_TOOLS = [
                     "message": {"type": "string", "description": "Notiz zum Follow-up"}
                 },
                 "required": ["lead_name", "due_date"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_follow_up",
+            "description": "Aktualisiert ein bestehendes pending Follow-up für einen Lead (ändert Datum, Nachricht, Titel oder Kanal). Wenn kein Follow-up existiert, wird ein Fehler zurückgegeben - verwende dann 'create_follow_up'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lead_name": {"type": "string", "description": "Name des Leads"},
+                    "new_date": {
+                        "type": "string", 
+                        "description": "Neues Fälligkeitsdatum. Relative Zeitangaben: 'today', 'heute', 'tomorrow', 'morgen', 'in 3 days', 'in 3 Tagen'"
+                    },
+                    "new_message": {"type": "string", "description": "Neue Nachricht/Notiz für das Follow-up"},
+                    "new_title": {"type": "string", "description": "Neuer Titel für das Follow-up"},
+                    "new_channel": {"type": "string", "enum": ["whatsapp", "email", "call"], "description": "Neuer Kanal für das Follow-up"}
+                },
+                "required": ["lead_name"]
             }
         }
     },
