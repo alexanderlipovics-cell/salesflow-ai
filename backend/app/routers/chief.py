@@ -456,6 +456,14 @@ class ProcessReplyRequest(BaseModel):
     channel: Optional[str] = "whatsapp"  # whatsapp, instagram, email, sms
 
 
+class NextStepLogic(BaseModel):
+    urgency_score: int  # 0-100
+    hours_until_followup: float  # Kann 6, 12, 24, 48 etc. sein
+    display_text: str  # "in 6 Stunden", "morgen", "in 3 Tagen"
+    reason: str
+    recommended_channel: str  # "whatsapp", "instagram", "email", "phone"
+
+
 class ProcessReplyResponse(BaseModel):
     success: bool
     generated_response: str
@@ -463,6 +471,7 @@ class ProcessReplyResponse(BaseModel):
     new_state: str
     lead_name: str
     cancelled_followups: int
+    next_step: NextStepLogic
 
 
 @router.post("/process-reply", response_model=ProcessReplyResponse)
@@ -534,76 +543,70 @@ async def process_lead_reply(
             logger.warning(f"Could not load history: {e}")
         
         # 4. CHIEF analysiert und generiert Reaktion
-        history_context = ""
+        conversation_history = []
         if history:
-            history_context = "\n## Konversations-Historie (letzte Nachrichten)\n"
-            for h in history[:5]:
-                h_type = h.get('type', 'unknown')
-                h_content = h.get('content', '')[:200]
-                h_direction = h.get('metadata', {}).get('direction', 'outbound') if isinstance(h.get('metadata'), dict) else 'outbound'
-                history_context += f"- {h_direction}: {h_type}: {h_content}\n"
+            conversation_history = [
+                {
+                    'type': h.get('type', 'unknown'),
+                    'content': h.get('content', '')[:150]
+                }
+                for h in history[:3]
+            ]
+        
+        # Verfügbare Kanäle prüfen
+        has_instagram = bool(lead.get('instagram') or lead.get('instagram_url'))
+        has_whatsapp = bool(lead.get('whatsapp') or lead.get('phone'))
+        has_email = bool(lead.get('email'))
         
         analysis_prompt = f"""Du bist CHIEF, der intelligente Sales-Assistent von AlSales.
-
-## Deine Aufgabe
-Ein Lead hat geantwortet. Analysiere die Antwort und generiere eine passende Reaktion.
 
 ## Lead-Informationen
 - Name: {lead_name}
 - Aktueller Status: {current_state}
 - Quelle: {lead.get('source', 'Unbekannt')}
-- Notizen: {lead.get('notes', 'Keine')}
-- Instagram: {lead.get('instagram', 'Nicht vorhanden')}
+- Verfügbare Kanäle: Instagram: {'Ja' if has_instagram else 'Nein'}, WhatsApp: {'Ja' if has_whatsapp else 'Nein'}, Email: {'Ja' if has_email else 'Nein'}
 
-## State Transition Regeln
-- Aktueller State ist: {current_state}
-- Bei POSITIVER Antwort: Gehe einen State WEITER (new→engaged→opportunity→won)
-- Bei NEGATIVER Antwort: Setze auf "lost"
-- Bei UNSICHERER Antwort: Behalte aktuellen State
+## Neue Antwort des Leads ({request.channel})
+"{request.reply_text}"
 
-Beispiele:
-- State "new" + "Klingt interessant" → suggested_state: "engaged"
-- State "engaged" + "Erzähl mir mehr" → suggested_state: "opportunity"
-- State "opportunity" + "Ja, ich will bestellen" → suggested_state: "won"
-- State "engaged" + "Kein Interesse" → suggested_state: "lost"
-- State "new" + "Später vielleicht" → suggested_state: "new" (bleibt)
-- State "engaged" + "Habe noch Fragen" → suggested_state: "engaged" (bleibt)
+## Konversations-Historie
+{json.dumps(conversation_history, ensure_ascii=False, indent=2)}
 
-{history_context}
+## State Transition
+- Aktuell: {current_state}
+- POSITIV (Interesse/Zusage) → einen State weiter (new→engaged→opportunity→won)
+- NEGATIV → "lost"
+- UNKLAR → State bleibt
 
-## Neue Antwort des Leads
-Kanal: {request.channel}
-Nachricht: "{request.reply_text}"
+## URGENCY SCORE (0-100)
+90-100: Kaufabsicht, Termin-Zusage, "Ja!", Bestellung → Follow-up in 6-12h
+70-89: Preis-Frage, "Erzähl mehr", aktives Interesse → Follow-up in 24h
+50-69: Neugierig aber unverbindlich → Follow-up in 48-72h
+30-49: Zögert, Einwände, "muss überlegen" → Follow-up in 96-120h
+10-29: Desinteresse, Absage → Follow-up in 168h (1 Woche)
+0-9: "Nie wieder" → Kein Follow-up, State = lost
 
-## Deine Analyse (antworte als JSON)
-Analysiere die Antwort und gib zurück:
+## Empfohlener Kanal
+- Bevorzuge den Kanal auf dem geantwortet wurde: {request.channel}
+- Bei hoher Urgency: Schnellster verfügbarer Kanal
+- NUR Kanäle empfehlen die existieren!
+
+## WICHTIG: Antworte NUR mit diesem JSON, KEIN anderer Text!
+
 ```json
 {{
-    "sentiment": "positive" | "neutral" | "negative" | "interested" | "hesitant" | "objection",
-    "intent": "wants_info" | "wants_meeting" | "not_interested" | "has_questions" | "ready_to_buy" | "needs_time" | "objection",
-    "suggested_state": "new" | "engaged" | "opportunity" | "won" | "lost" | "dormant",
-    "state_reason": "Kurze Begründung warum dieser State",
-    "response_strategy": "Kurze Beschreibung der Strategie für die Antwort",
-    "generated_response": "Die fertige Nachricht die der User senden kann"
+  "sentiment": "positive|neutral|negative|interested|hesitant",
+  "intent": "ready_to_buy|wants_meeting|wants_info|has_questions|interested|hesitant|needs_time|not_interested",
+  "suggested_state": "new|engaged|opportunity|won|lost|dormant",
+  "state_reason": "Kurze Begründung",
+  "response_strategy": "Was die Antwort erreichen soll",
+  "generated_response": "Fertige Nachricht (kurz, persönlich, duzen, max 3 Sätze)",
+  "urgency_score": 85,
+  "hours_until_followup": 24,
+  "followup_reason": "Warum dieses Timing",
+  "recommended_channel": "whatsapp|instagram|email|phone"
 }}
-```
-
-WICHTIG für suggested_state:
-- Wenn aktueller State = "new" und Lead antwortet positiv/interessiert → "engaged"
-- Wenn aktueller State = "engaged" und Lead antwortet positiv/interessiert → "opportunity"
-- Wenn aktueller State = "opportunity" und Lead will kaufen/starten → "won"
-- Negative/ablehnende Antwort → "lost"
-- Keine klare Reaktion/später → State bleibt gleich
-
-## Regeln für die generierte Antwort
-- Duzen (informell)
-- Kurz und persönlich (max 3-4 Sätze)
-- Auf den Inhalt der Antwort eingehen
-- Nächsten Schritt vorschlagen (Termin, Info, etc.)
-- Kein Spam-Gefühl
-- Emojis sparsam (max 1-2)
-- Authentisch, nicht roboterhaft
-"""
+```"""
 
         # AI Call
         ai_client = AIClient(
@@ -647,16 +650,68 @@ WICHTIG für suggested_state:
                     # Unklar: State bleibt
                     fallback_state = current_state
                 
+                # Fallback Urgency Score basierend auf Sentiment
+                if is_positive:
+                    fallback_urgency = 75
+                    fallback_hours = 24
+                elif is_negative:
+                    fallback_urgency = 15
+                    fallback_hours = 168
+                else:
+                    fallback_urgency = 50
+                    fallback_hours = 72
+                
                 analysis_json = {
                     "sentiment": "positive" if is_positive else ("negative" if is_negative else "neutral"),
                     "intent": "has_questions",
                     "suggested_state": fallback_state,
                     "state_reason": "Automatische Analyse (Fallback)",
                     "response_strategy": "Freundlich antworten und weiterhelfen",
-                    "generated_response": f"Hallo {lead_name.split()[0] if lead_name else 'dort'}, danke für deine Nachricht! Lass mich dir gerne weiterhelfen."
+                    "generated_response": f"Hallo {lead_name.split()[0] if lead_name else 'dort'}, danke für deine Nachricht! Lass mich dir gerne weiterhelfen.",
+                    "urgency_score": fallback_urgency,
+                    "hours_until_followup": fallback_hours,
+                    "followup_reason": "Automatische Berechnung (Fallback)",
+                    "recommended_channel": request.channel
                 }
         
-        # 5. State automatisch updaten
+        # 5. Urgency Score und NextStepLogic erstellen
+        urgency_score = int(analysis_json.get("urgency_score", 50))
+        hours = float(analysis_json.get("hours_until_followup", 72))
+        
+        # Display Text generieren
+        if hours <= 6:
+            display_text = "in 6 Stunden"
+        elif hours <= 12:
+            display_text = "heute Abend"
+        elif hours <= 24:
+            display_text = "morgen"
+        elif hours <= 48:
+            display_text = "in 2 Tagen"
+        elif hours <= 72:
+            display_text = "in 3 Tagen"
+        elif hours <= 120:
+            display_text = "in 5 Tagen"
+        else:
+            display_text = f"in {int(hours/24)} Tagen"
+        
+        # Kanal validieren - nur wenn verfügbar
+        recommended_channel = analysis_json.get("recommended_channel", request.channel)
+        if recommended_channel == "instagram" and not has_instagram:
+            recommended_channel = request.channel
+        elif recommended_channel == "whatsapp" and not has_whatsapp:
+            recommended_channel = request.channel
+        elif recommended_channel == "email" and not has_email:
+            recommended_channel = request.channel
+        
+        next_step = NextStepLogic(
+            urgency_score=urgency_score,
+            hours_until_followup=hours,
+            display_text=display_text,
+            reason=analysis_json.get("followup_reason", "Standard Follow-up"),
+            recommended_channel=recommended_channel
+        )
+        
+        # 6. State automatisch updaten
         new_state = analysis_json.get("suggested_state", current_state).lower()
         
         # State Transition validieren (aus followup_engine.py)
@@ -694,7 +749,7 @@ WICHTIG für suggested_state:
                 "updated_at": datetime.utcnow().isoformat()
             }).eq("id", request.lead_id).execute()
         
-        # 6. Geplante Follow-ups canceln (Lead hat geantwortet)
+        # 7. Geplante Follow-ups canceln (Lead hat geantwortet)
         cancelled_count = 0
         try:
             cancel_result = db.table("contact_follow_up_queue")\
@@ -711,7 +766,7 @@ WICHTIG für suggested_state:
         except Exception as e:
             logger.warning(f"Could not cancel follow-ups: {e}")
         
-        # 7. Activity für generierte Antwort speichern
+        # 8. Activity für generierte Antwort speichern
         response_activity = {
             "lead_id": request.lead_id,
             "user_id": user_id,
@@ -745,7 +800,8 @@ WICHTIG für suggested_state:
             },
             new_state=new_state,
             lead_name=lead_name,
-            cancelled_followups=cancelled_count
+            cancelled_followups=cancelled_count,
+            next_step=next_step
         )
         
     except HTTPException:
@@ -762,7 +818,7 @@ class MarkSentRequest(BaseModel):
     lead_id: str
     message_sent: str
     schedule_followup: bool = True
-    followup_days: int = 3  # Default: 3 Tage
+    hours_until_followup: float = 72  # CHIEF überschreibt das (Default: 3 Tage)
 
 
 class MarkSentResponse(BaseModel):
@@ -826,7 +882,8 @@ async def mark_sent_with_followup(
                 
                 if cycle_result.data and len(cycle_result.data) > 0:
                     cycle = cycle_result.data[0]
-                    due_date = datetime.utcnow() + timedelta(days=request.followup_days)
+                    # Verwende hours_until_followup statt days
+                    due_date = datetime.utcnow() + timedelta(hours=request.hours_until_followup)
                     
                     queue_item = {
                         "contact_id": request.lead_id,
@@ -838,7 +895,7 @@ async def mark_sent_with_followup(
                     }
                     try:
                         db.table("contact_follow_up_queue").insert(queue_item).execute()
-                        next_followup = due_date.strftime("%d.%m.%Y")
+                        next_followup = due_date.strftime("%d.%m.%Y %H:%M")
                     except Exception as e:
                         logger.warning(f"Could not schedule follow-up: {e}")
         
