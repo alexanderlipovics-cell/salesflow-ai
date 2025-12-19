@@ -971,6 +971,67 @@ async def mark_sent_with_followup(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class SnoozeRequest(BaseModel):
+    followup_id: str
+    snooze_hours: int  # Stunden bis zum nächsten Erscheinen
+
+
+class SnoozeResponse(BaseModel):
+    success: bool
+    new_due_at: Optional[str] = None
+    message: str
+    error: Optional[str] = None
+
+
+@router.post("/snooze-followup", response_model=SnoozeResponse)
+async def snooze_followup(
+    request: SnoozeRequest,
+    current_user=Depends(get_current_active_user),
+    db=Depends(get_supabase),
+):
+    """Verschiebt einen Follow-up auf später."""
+    user_id = _extract_user_id(current_user)
+    
+    try:
+        from datetime import datetime, timedelta
+        new_due_at = datetime.utcnow() + timedelta(hours=request.snooze_hours)
+        
+        # Extrahiere queue_id aus followup_id (kann "queue_123" oder nur "123" sein)
+        queue_id = request.followup_id.replace("queue_", "") if request.followup_id.startswith("queue_") else request.followup_id
+        
+        # Update follow-up queue item
+        result = db.table("contact_follow_up_queue").update({
+            "next_due_at": new_due_at.isoformat(),
+        }).eq("id", queue_id).eq("user_id", user_id).execute()
+        
+        if not result.data or len(result.data) == 0:
+            # Fallback: Versuche auch mit contact_id zu finden
+            lead_result = db.table("leads").select("id").eq("id", request.followup_id).eq("user_id", user_id).single().execute()
+            if lead_result.data:
+                # Update alle pending follow-ups für diesen Lead
+                db.table("contact_follow_up_queue").update({
+                    "next_due_at": new_due_at.isoformat(),
+                }).eq("contact_id", request.followup_id).eq("user_id", user_id).eq("status", "pending").execute()
+            else:
+                return SnoozeResponse(
+                    success=False,
+                    error="Follow-up nicht gefunden"
+                )
+        
+        return SnoozeResponse(
+            success=True,
+            new_due_at=new_due_at.isoformat(),
+            message=f"Follow-up verschoben auf {new_due_at.strftime('%d.%m.%Y %H:%M')}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Snooze error: {e}")
+        return SnoozeResponse(
+            success=False,
+            error=str(e)
+        )
+
+
 def _extract_user_id(current_user: Any) -> str:
     """Extrahiert user_id aus current_user (verschiedene Formate möglich)"""
     if isinstance(current_user, dict):

@@ -593,8 +593,54 @@ export const useInbox = (): UseInboxReturn => {
   }, []);
 
   const snoozeItem = useCallback(async (itemId: string, hours: number) => {
-    // Item temporär aus Liste entfernen (wird beim nächsten Refetch wieder geladen, wenn fällig)
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    try {
+      // Token holen
+      let token = authService.getAccessToken();
+      if (!token) {
+        token = localStorage.getItem('access_token');
+      }
+      if (!token) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        token = session?.access_token || null;
+      }
+
+      if (!token) {
+        throw new Error('Nicht authentifiziert. Bitte melde dich erneut an.');
+      }
+
+      // Extrahiere queue_id aus itemId (kann "queue_123" oder nur "123" sein)
+      const followupId = itemId.startsWith("queue_") ? itemId.replace("queue_", "") : itemId;
+
+      // API Call
+      const response = await fetch(`${API_BASE_URL}/api/chief/snooze-followup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          followup_id: followupId,
+          snooze_hours: hours
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+        throw new Error(errorData.detail || errorData.error || `HTTP ${response.status}: Snooze fehlgeschlagen`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Item aus Liste entfernen (wird beim nächsten Refetch wieder geladen, wenn fällig)
+        setItems((prev) => prev.filter((i) => i.id !== itemId));
+      } else {
+        throw new Error(data.error || 'Snooze fehlgeschlagen');
+      }
+    } catch (err) {
+      console.error('Fehler beim Snooze:', err);
+      throw err;
+    }
   }, []);
 
   return {

@@ -11,12 +11,13 @@ import { generateContactLink } from '@/utils/contactLinks';
 import type { InboxItem } from '@/types/inbox';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChiefEditPopup } from './ChiefEditPopup';
+import { SnoozeDropdown } from './SnoozeDropdown';
 
 interface InboxItemProps {
   item: InboxItem;
   onSend: () => void;
   onEdit: () => void;
-  onSnooze: () => void;
+  onSnooze: (hours: number) => Promise<void>;
   onArchive: () => void;
   onComposeMessage?: () => void;
   onMessageUpdated?: (newMessage: string) => void;
@@ -234,6 +235,15 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
             >
               <Instagram className="w-4 h-4" />
             </button>
+          )}
+          
+          {/* Snooze Button - nur für Follow-ups */}
+          {item?.type === 'follow_up' && (
+            <SnoozeDropdown
+              followupId={item.id}
+              onSnooze={onSnooze}
+              disabled={isProcessing}
+            />
           )}
           
           {/* Send Button */}

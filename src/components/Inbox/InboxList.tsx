@@ -80,7 +80,7 @@ export const InboxList: React.FC<InboxListProps> = ({
                   item={item}
                   onSend={() => onSend(item.id)}
                   onEdit={() => onEdit(item.id)}
-                  onSnooze={() => onSnooze(item.id)}
+                  onSnooze={(hours) => onSnooze(item.id, hours)}
                   onArchive={() => onArchive(item.id)}
                   onComposeMessage={onComposeMessage ? () => onComposeMessage(item.id) : undefined}
                   onMessageUpdated={onMessageUpdated ? (newMessage) => onMessageUpdated(item.id, newMessage) : undefined}

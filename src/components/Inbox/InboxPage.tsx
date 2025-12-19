@@ -320,8 +320,13 @@ export const InboxPage: React.FC = () => {
   }, [items, editedMessages, handleMessageUpdated]);
 
   const handleSnooze = useCallback(
-    async (itemId: string, hours: number = 24) => {
-      await snoozeItem(itemId, hours);
+    async (itemId: string, hours: number) => {
+      try {
+        await snoozeItem(itemId, hours);
+      } catch (error) {
+        console.error('Snooze error:', error);
+        // Error wird bereits in snoozeItem behandelt
+      }
     },
     [snoozeItem]
   );
