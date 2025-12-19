@@ -686,18 +686,44 @@ export const InboxPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [reviewMode, items]);
 
-  // Grouped items with edited messages
+  // Filter items by search query
+  const filteredItems = useMemo(() => {
+    if (!items || !Array.isArray(items)) {
+      return [];
+    }
+    
+    if (!searchQuery.trim()) {
+      return items;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return items.filter(item => {
+      const name = item.lead?.name?.toLowerCase() || '';
+      const company = item.lead?.company?.toLowerCase() || '';
+      const message = (item.action?.message || '').toLowerCase();
+      const email = item.lead?.email?.toLowerCase() || '';
+      const phone = item.lead?.phone?.toLowerCase() || '';
+      
+      return name.includes(query) || 
+             company.includes(query) || 
+             message.includes(query) ||
+             email.includes(query) ||
+             phone.includes(query);
+    });
+  }, [items, searchQuery]);
+
+  // Grouped items with edited messages and search filter
   const groupedItems = useMemo(() => {
     try {
-      if (!items || !Array.isArray(items)) {
+      if (!filteredItems || !Array.isArray(filteredItems)) {
         return { hot: [], today: [], upcoming: [] };
       }
       
       if (!editedMessages || !(editedMessages instanceof Map)) {
-        return groupByPriority(items);
+        return groupByPriority(filteredItems);
       }
       
-      const itemsWithEdits = items.map((item) => {
+      const itemsWithEdits = filteredItems.map((item) => {
         if (!item || !item.id) return null;
         
         try {
@@ -723,7 +749,7 @@ export const InboxPage: React.FC = () => {
       console.error('Error in grouped useMemo, using fallback:', error);
       return { hot: [], today: [], upcoming: [] };
     }
-  }, [items, editedMessages]);
+  }, [filteredItems, editedMessages]);
 
   if (loading) {
     return (
