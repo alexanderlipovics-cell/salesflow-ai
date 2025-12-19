@@ -1,17 +1,15 @@
 """
-CHIEF CEO Chat - Multi-Model AI Router
-Automatisch das beste Modell für jede Anfrage wählen
+CHIEF CEO Chat - AI-Powered Multi-Model Router (Enterprise Grade)
+Ein schnelles AI (Groq) entscheidet, welches Super-AI den Job macht.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, List, AsyncGenerator
+from typing import Optional, List
 import json
-import re
+import os
 from datetime import datetime
 import httpx
-import os
 
 from app.core.deps import get_supabase
 from app.core.security import get_current_active_user
@@ -25,58 +23,51 @@ router = APIRouter(prefix="/api/ceo", tags=["CEO Chat"])
 MODELS = {
     "claude": {
         "provider": "anthropic",
-        "model": "claude-3-5-sonnet-20241022",
-        "api_key_env": "ANTHROPIC_API_KEY",
-        "strengths": ["analysis", "code", "writing", "reasoning", "long_context"],
-        "cost_per_1k_input": 0.003,
-        "cost_per_1k_output": 0.015,
+        "model": "claude-sonnet-4-20250514",
+        "strengths": "Code, Analyse, Dokumente, komplexe Logik",
     },
     "gpt4": {
         "provider": "openai",
         "model": "gpt-4o",
-        "api_key_env": "OPENAI_API_KEY",
-        "strengths": ["general", "tools", "function_calling", "vision"],
-        "cost_per_1k_input": 0.005,
-        "cost_per_1k_output": 0.015,
+        "strengths": "Allrounder, Kreativität, Tools",
     },
     "gpt4-mini": {
         "provider": "openai",
         "model": "gpt-4o-mini",
-        "api_key_env": "OPENAI_API_KEY",
-        "strengths": ["fast", "cheap", "general"],
-        "cost_per_1k_input": 0.00015,
-        "cost_per_1k_output": 0.0006,
+        "strengths": "Schnell, günstig, einfache Tasks",
     },
     "groq": {
         "provider": "groq",
         "model": "llama-3.1-70b-versatile",
-        "api_key_env": "GROQ_API_KEY",
-        "strengths": ["speed", "cheap", "simple_tasks"],
-        "cost_per_1k_input": 0.00059,
-        "cost_per_1k_output": 0.00079,
+        "strengths": "Ultra-Speed, Smalltalk, kurze Fragen",
     },
-    "gemini": {
-        "provider": "google",
-        "model": "gemini-1.5-pro",
-        "api_key_env": "GEMINI_API_KEY",
-        "strengths": ["google_integration", "long_context", "multimodal"],
-        "cost_per_1k_input": 0.00125,
-        "cost_per_1k_output": 0.005,
+    "dalle": {
+        "provider": "openai",
+        "model": "dall-e-3",
+        "strengths": "Bildgenerierung",
     },
 }
+
+# System Prompt für CHIEF Persona
+CHIEF_SYSTEM_PROMPT = """Du bist CHIEF, der High-Performance AI Executive Assistant für CEOs.
+- Sei präzise, professionell und extrem effizient.
+- Nutze Formatierung (Bullet Points, Fettschrift) für bessere Lesbarkeit.
+- Bei Code: Produktionsreif und sauber.
+- Bei Analysen: Kritisch und direkt. Kein Fülltext.
+- Antworte auf Deutsch, außer der User fragt auf Englisch."""
 
 # ============================================
 # REQUEST/RESPONSE MODELS
 # ============================================
 
 class ChatMessage(BaseModel):
-    role: str  # 'user', 'assistant', 'system'
+    role: str
     content: str
 
 class CEOChatRequest(BaseModel):
     session_id: Optional[str] = None
     message: str
-    model: str = "auto"  # 'auto', 'claude', 'gpt4', 'groq', 'gemini'
+    model: str = "auto"
     history: Optional[List[ChatMessage]] = []
 
 class CEOChatResponse(BaseModel):
@@ -84,63 +75,125 @@ class CEOChatResponse(BaseModel):
     message: str
     model_used: str
     provider: str
+    routing_reason: str
     tokens_used: dict
     created_at: str
 
 # ============================================
-# AUTO ROUTER LOGIC
+# AI DISPATCHER (Das schnelle Gehirn)
 # ============================================
 
-def detect_intent(message: str) -> str:
-    """Erkennt was der User will und wählt das beste Modell"""
+async def dispatch_to_best_ai(message: str, has_files: bool = False) -> dict:
+    """
+    AI-powered Router: Groq Llama 8b analysiert den Input und entscheidet.
+    Dauert ca. 0.2 Sekunden, kostet fast nichts.
+    """
     
-    message_lower = message.lower()
+    # HARD RULE: Dateien IMMER zu Claude
+    if has_files:
+        return {
+            "provider": "anthropic",
+            "model": "claude-sonnet-4-20250514",
+            "model_key": "claude",
+            "reason": "File Analysis Specialist"
+        }
     
-    # Code-bezogen → Claude
-    code_keywords = ['code', 'python', 'javascript', 'typescript', 'react', 
-                     'function', 'class', 'bug', 'error', 'debug', 'api',
-                     'programmier', 'script', 'sql', 'database', 'backend', 'frontend']
-    if any(kw in message_lower for kw in code_keywords):
-        return "claude"
+    # AI Dispatcher via Groq
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        # Fallback zu rule-based wenn kein Groq Key
+        return rule_based_dispatch(message)
     
-    # Analyse/Reasoning → Claude
-    analysis_keywords = ['analysier', 'erkläre', 'warum', 'vergleich', 'strategie',
-                        'review', 'bewerte', 'vor- und nachteile', 'zusammenfass']
-    if any(kw in message_lower for kw in analysis_keywords):
-        return "claude"
+    dispatcher_prompt = """Du bist der Router AI für einen CEO Assistant.
+Analysiere den User-Input und wähle das BESTE Model basierend auf Komplexität und Kosten.
+
+Verfügbare Models:
+1. CLAUDE (anthropic): Für Code, komplexe Logik, Strategie, lange Dokumente, Analysen.
+2. GROQ (groq): Für einfache Fragen, Grüße, Fakten, kurzen Smalltalk (Speed ist key!).
+3. GPT4 (openai): Für generelle Kreativität, Formatierung, oder wenn unsicher.
+4. DALLE (openai): NUR wenn der User explizit ein Bild/Logo/Grafik generieren will.
+
+Antworte NUR mit einem JSON Objekt:
+{"provider": "anthropic|groq|openai", "model_key": "claude|groq|gpt4|dalle", "reason": "kurze Erklärung"}"""
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama-3.1-8b-instant",  # Ultra schnell für Routing
+                    "messages": [
+                        {"role": "system", "content": dispatcher_prompt},
+                        {"role": "user", "content": f'User Input: "{message}"'}
+                    ],
+                    "temperature": 0,
+                    "max_tokens": 150,
+                },
+                timeout=5.0,  # Max 5 Sekunden für Router
+            )
+            
+            if response.status_code != 200:
+                return rule_based_dispatch(message)
+            
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+            
+            # Parse JSON aus der Antwort
+            # Manchmal kommt ```json ... ``` zurück
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0]
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0]
+            
+            decision = json.loads(content.strip())
+            
+            # Model Config hinzufügen
+            model_key = decision.get("model_key", "gpt4-mini")
+            if model_key in MODELS:
+                decision["model"] = MODELS[model_key]["model"]
+                decision["provider"] = MODELS[model_key]["provider"]
+            else:
+                decision["model"] = "gpt-4o-mini"
+                decision["provider"] = "openai"
+                decision["model_key"] = "gpt4-mini"
+            
+            return decision
+            
+    except Exception as e:
+        print(f"Dispatcher Error: {e}")
+        return rule_based_dispatch(message)
+
+
+def rule_based_dispatch(message: str) -> dict:
+    """Fallback: Einfache Regel-basierte Entscheidung"""
+    msg = message.lower()
     
-    # Langes Dokument → Claude (bester Kontext)
-    if len(message) > 2000:
-        return "claude"
+    # Code/Analyse -> Claude
+    if any(kw in msg for kw in ['code', 'python', 'javascript', 'analysier', 'strategie', 'vergleich', 'zusammenfass', 'funktion', 'script', 'bug', 'error']):
+        return {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "model_key": "claude", "reason": "Code/Analysis detected"}
     
-    # Schnelle Antwort gewünscht → Groq
-    speed_keywords = ['schnell', 'kurz', 'quick', 'fast', 'einfach nur']
-    if any(kw in message_lower for kw in speed_keywords):
-        return "groq"
+    # Lange Nachrichten -> Claude
+    if len(message) > 500:
+        return {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "model_key": "claude", "reason": "Long input needs deep thinking"}
     
-    # Einfache Fragen → Groq (spart Geld)
-    simple_patterns = [
-        r'^was ist\s', r'^wer ist\s', r'^wann\s', r'^wo\s',
-        r'^wie viel', r'^ja oder nein', r'^definiere\s'
-    ]
-    if any(re.match(p, message_lower) for p in simple_patterns):
-        return "groq"
+    # Bilder -> DALL-E
+    if any(kw in msg for kw in ['bild', 'logo', 'zeichne', 'generiere bild', 'male', 'design']):
+        return {"provider": "openai", "model": "dall-e-3", "model_key": "dalle", "reason": "Image generation request"}
     
-    # Google-spezifisch → Gemini
-    google_keywords = ['google', 'gmail', 'calendar', 'docs', 'sheets', 'drive']
-    if any(kw in message_lower for kw in google_keywords):
-        return "gemini"
+    # Kurze, einfache Fragen -> Groq
+    if len(message) < 100 and any(kw in msg for kw in ['hallo', 'hi', 'danke', 'wie geht', 'was ist', 'wer ist']):
+        return {"provider": "groq", "model": "llama-3.1-70b-versatile", "model_key": "groq", "reason": "Simple query - speed mode"}
     
-    # Bilder → GPT-4 (DALL-E Zugang)
-    image_keywords = ['bild', 'image', 'foto', 'design', 'logo', 'visuali']
-    if any(kw in message_lower for kw in image_keywords):
-        return "gpt4"
-    
-    # Default für mittlere Komplexität → GPT-4-mini (gute Balance)
-    return "gpt4-mini"
+    # Default -> GPT-4 Mini
+    return {"provider": "openai", "model": "gpt-4o-mini", "model_key": "gpt4-mini", "reason": "General purpose"}
+
 
 # ============================================
-# API CALLS
+# AI WORKERS (Die Spezialisten)
 # ============================================
 
 async def call_anthropic(messages: List[dict], model: str) -> tuple[str, dict]:
@@ -150,7 +203,7 @@ async def call_anthropic(messages: List[dict], model: str) -> tuple[str, dict]:
         raise HTTPException(status_code=500, detail="Anthropic API key not configured")
     
     # Convert messages to Anthropic format
-    system_msg = ""
+    system_msg = CHIEF_SYSTEM_PROMPT
     chat_msgs = []
     for msg in messages:
         if msg["role"] == "system":
@@ -169,14 +222,16 @@ async def call_anthropic(messages: List[dict], model: str) -> tuple[str, dict]:
             json={
                 "model": model,
                 "max_tokens": 4096,
-                "system": system_msg or "Du bist CHIEF, der intelligente AI-Assistent für CEOs.",
+                "system": system_msg,
                 "messages": chat_msgs,
             },
             timeout=60.0,
         )
         
         if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Anthropic error: {response.text}")
+            error_text = response.text
+            print(f"Anthropic Error: {response.status_code} - {error_text}")
+            raise HTTPException(status_code=response.status_code, detail=f"Claude error: {error_text}")
         
         data = response.json()
         content = data["content"][0]["text"]
@@ -186,11 +241,16 @@ async def call_anthropic(messages: List[dict], model: str) -> tuple[str, dict]:
         }
         return content, tokens
 
+
 async def call_openai(messages: List[dict], model: str) -> tuple[str, dict]:
     """Call OpenAI API"""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+    
+    # Add system prompt if not present
+    if not any(m["role"] == "system" for m in messages):
+        messages = [{"role": "system", "content": CHIEF_SYSTEM_PROMPT}] + messages
     
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -218,11 +278,16 @@ async def call_openai(messages: List[dict], model: str) -> tuple[str, dict]:
         }
         return content, tokens
 
+
 async def call_groq(messages: List[dict], model: str) -> tuple[str, dict]:
     """Call Groq API (ultra fast)"""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Groq API key not configured")
+    
+    # Add system prompt if not present
+    if not any(m["role"] == "system" for m in messages):
+        messages = [{"role": "system", "content": CHIEF_SYSTEM_PROMPT}] + messages
     
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -235,6 +300,7 @@ async def call_groq(messages: List[dict], model: str) -> tuple[str, dict]:
                 "model": model,
                 "messages": messages,
                 "max_tokens": 4096,
+                "temperature": 0.7,
             },
             timeout=30.0,
         )
@@ -250,6 +316,74 @@ async def call_groq(messages: List[dict], model: str) -> tuple[str, dict]:
         }
         return content, tokens
 
+
+async def generate_image(prompt: str) -> tuple[str, dict]:
+    """Generate image with DALL-E 3"""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.openai.com/v1/images/generations",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "dall-e-3",
+                "prompt": prompt,
+                "n": 1,
+                "size": "1024x1024",
+            },
+            timeout=60.0,
+        )
+        
+        if response.status_code != 200:
+            return "Entschuldigung, ich konnte das Bild nicht generieren.", {"input": 0, "output": 0}
+        
+        data = response.json()
+        image_url = data["data"][0]["url"]
+        
+        return f"Hier ist dein Bild:\n\n![Generiertes Bild]({image_url})\n\n*(Link ist ca. 60 Minuten gültig)*", {"input": 0, "output": 1}
+
+
+# ============================================
+# MEMORY SYSTEM
+# ============================================
+
+async def get_chat_context(db, session_id: str, limit: int = 10) -> List[dict]:
+    """Holt die letzten Nachrichten für Kontext"""
+    try:
+        result = db.table("chief_messages")\
+            .select("role, content")\
+            .eq("session_id", session_id)\
+            .order("created_at", desc=True)\
+            .limit(limit)\
+            .execute()
+        
+        # Chronologisch umdrehen (Alt -> Neu)
+        messages = result.data[::-1] if result.data else []
+        return [{"role": m["role"], "content": m["content"]} for m in messages]
+    except:
+        return []
+
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def _extract_user_id(current_user) -> str:
+    """Extrahiert user_id aus current_user (verschiedene Formate möglich)"""
+    if isinstance(current_user, dict):
+        return current_user.get("user_id") or current_user.get("id") or current_user.get("sub")
+    if hasattr(current_user, "user_id"):
+        return str(current_user.user_id)
+    if hasattr(current_user, "id"):
+        return str(current_user.id)
+    raise HTTPException(status_code=401, detail="User ID konnte nicht extrahiert werden")
+
+
 # ============================================
 # MAIN ENDPOINT
 # ============================================
@@ -257,124 +391,115 @@ async def call_groq(messages: List[dict], model: str) -> tuple[str, dict]:
 @router.post("/chat", response_model=CEOChatResponse)
 async def ceo_chat(
     request: CEOChatRequest,
-    current_user=Depends(get_current_active_user),
-    db=Depends(get_supabase),
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase),
 ):
     """
-    CHIEF CEO Chat - Multi-Model AI Router
+    CHIEF CEO Chat - AI-Powered Multi-Model Router
     
-    - model: 'auto' (default) - CHIEF wählt das beste Modell
-    - model: 'claude', 'gpt4', 'gpt4-mini', 'groq', 'gemini' - Manual override
+    1. AI Dispatcher entscheidet welches Model (0.2s)
+    2. Gewähltes Model antwortet
+    3. Alles wird gespeichert (Memory + Billing)
     """
-    from app.routers.chief import _extract_user_id
-    
     user_id = _extract_user_id(current_user)
     
     # Session erstellen oder verwenden
     session_id = request.session_id
     if not session_id:
-        # Neue Session erstellen
-        try:
-            session_result = db.table("chief_sessions").insert({
-                "user_id": user_id,
-                "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
-            }).execute()
-            session_id = session_result.data[0]["id"]
-        except Exception as e:
-            # Fallback: Session ID generieren
-            import uuid
-            session_id = str(uuid.uuid4())
+        session_result = db.table("chief_sessions").insert({
+            "user_id": user_id,
+            "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+        }).execute()
+        session_id = session_result.data[0]["id"]
     
-    # Model wählen
+    # --- SCHRITT A: GEDÄCHTNIS LADEN ---
+    history = await get_chat_context(db, session_id, 10)
+    
+    # --- SCHRITT B: AI DISPATCHER ENTSCHEIDET ---
     if request.model == "auto":
-        selected_model = detect_intent(request.message)
+        ai_config = await dispatch_to_best_ai(request.message, has_files=False)
     else:
-        selected_model = request.model
+        # Manual Override
+        model_key = request.model
+        if model_key in MODELS:
+            ai_config = {
+                "provider": MODELS[model_key]["provider"],
+                "model": MODELS[model_key]["model"],
+                "model_key": model_key,
+                "reason": "Manual selection"
+            }
+        else:
+            ai_config = {
+                "provider": "openai",
+                "model": "gpt-4o-mini",
+                "model_key": "gpt4-mini",
+                "reason": "Default fallback"
+            }
     
-    model_config = MODELS.get(selected_model, MODELS["gpt4-mini"])
-    
-    # System Message
-    system_message = """Du bist CHIEF, der intelligente AI-Assistent für CEOs und Unternehmer.
-
-Du bist:
-- Direkt und auf den Punkt
-- Strategisch denkend
-- Praktisch orientiert
-- Unterstützend aber ehrlich
-
-Du kannst:
-- Code schreiben und erklären
-- Dokumente analysieren
-- Strategien entwickeln
-- Content erstellen
-- Business-Entscheidungen unterstützen
-
-Antworte immer auf Deutsch, außer der User fragt explizit auf Englisch."""
-
-    # Messages aufbauen
-    messages = [{"role": "system", "content": system_message}]
-    
-    # History hinzufügen
-    for msg in request.history:
-        messages.append({"role": msg.role, "content": msg.content})
-    
-    # Aktuelle Nachricht
-    messages.append({"role": "user", "content": request.message})
+    print(f"🧠 CHIEF Routing: {ai_config['provider']} ({ai_config.get('model_key')}) - {ai_config['reason']}")
     
     # User Message speichern
+    db.table("chief_messages").insert({
+        "user_id": user_id,
+        "session_id": session_id,
+        "role": "user",
+        "content": request.message,
+        "metadata": {"routing_decision": ai_config},
+    }).execute()
+    
+    # --- SCHRITT C: WORKER AUSFÜHREN ---
+    messages = history + [{"role": "user", "content": request.message}]
+    
+    provider = ai_config["provider"]
+    model = ai_config["model"]
+    
     try:
-        db.table("chief_messages").insert({
-            "user_id": user_id,
-            "session_id": session_id,
-            "role": "user",
-            "content": request.message,
-            "model_name": None,
-            "provider": None,
-            "metadata": {},
-        }).execute()
-    except Exception as e:
-        # Tabelle existiert möglicherweise nicht - das ist OK
-        pass
-    
-    # API Call basierend auf Provider
-    provider = model_config["provider"]
-    model_name = model_config["model"]
-    
-    if provider == "anthropic":
-        response_content, tokens = await call_anthropic(messages, model_name)
-    elif provider == "openai":
-        response_content, tokens = await call_openai(messages, model_name)
-    elif provider == "groq":
-        response_content, tokens = await call_groq(messages, model_name)
-    else:
-        # Fallback to OpenAI
+        if ai_config.get("model_key") == "dalle":
+            response_content, tokens = await generate_image(request.message)
+        elif provider == "anthropic":
+            response_content, tokens = await call_anthropic(messages, model)
+        elif provider == "groq":
+            response_content, tokens = await call_groq(messages, model)
+        else:
+            response_content, tokens = await call_openai(messages, model)
+    except HTTPException as e:
+        # Fallback bei Fehler
+        print(f"Worker Error, falling back to GPT-4 Mini: {e.detail}")
         response_content, tokens = await call_openai(messages, "gpt-4o-mini")
-        provider = "openai"
-        model_name = "gpt-4o-mini"
+        ai_config["model_key"] = "gpt4-mini"
+        ai_config["provider"] = "openai"
+        ai_config["reason"] = "Fallback after error"
     
-    # Assistant Message speichern
-    try:
-        db.table("chief_messages").insert({
-            "user_id": user_id,
-            "session_id": session_id,
-            "role": "assistant",
-            "content": response_content,
-            "model_name": model_name,
-            "provider": provider,
-            "metadata": {"tokens": tokens},
-        }).execute()
-    except Exception as e:
-        # Tabelle existiert möglicherweise nicht - das ist OK
-        pass
+    # --- SCHRITT D: SPEICHERN (Memory + Billing) ---
+    db.table("chief_messages").insert({
+        "user_id": user_id,
+        "session_id": session_id,
+        "role": "assistant",
+        "content": response_content,
+        "model_name": ai_config.get("model_key", "unknown"),
+        "provider": ai_config["provider"],
+        "metadata": {
+            "tokens": tokens,
+            "routing_reason": ai_config["reason"],
+            "billed": False,
+        },
+    }).execute()
+    
+    # Session updated_at aktualisieren
+    db.table("chief_sessions").update({
+        "updated_at": datetime.utcnow().isoformat(),
+    }).eq("id", session_id).execute()
     
     return CEOChatResponse(
         session_id=session_id,
         message=response_content,
-        model_used=selected_model,
-        provider=provider,
+        model_used=ai_config.get("model_key", "unknown"),
+        provider=ai_config["provider"],
+        routing_reason=ai_config["reason"],
         tokens_used=tokens,
         created_at=datetime.utcnow().isoformat(),
     )
+
 
 # ============================================
 # HELPER ENDPOINTS
@@ -382,84 +507,64 @@ Antworte immer auf Deutsch, außer der User fragt explizit auf Englisch."""
 
 @router.get("/sessions")
 async def get_sessions(
-    current_user=Depends(get_current_active_user),
-    db=Depends(get_supabase),
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase),
 ):
     """Get all chat sessions for current user"""
-    from app.routers.chief import _extract_user_id
-    
     user_id = _extract_user_id(current_user)
     
-    try:
-        result = db.table("chief_sessions")\
-            .select("*")\
-            .eq("user_id", user_id)\
-            .order("updated_at", desc=True)\
-            .limit(50)\
-            .execute()
-        
-        return {"sessions": result.data or []}
-    except Exception as e:
-        return {"sessions": []}
+    result = db.table("chief_sessions")\
+        .select("*")\
+        .eq("user_id", user_id)\
+        .order("updated_at", desc=True)\
+        .limit(50)\
+        .execute()
+    
+    return {"sessions": result.data}
+
 
 @router.get("/sessions/{session_id}/messages")
 async def get_session_messages(
     session_id: str,
-    current_user=Depends(get_current_active_user),
-    db=Depends(get_supabase),
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase),
 ):
     """Get all messages for a session"""
-    from app.routers.chief import _extract_user_id
-    
     user_id = _extract_user_id(current_user)
     
-    try:
-        # Verify session belongs to user
-        session = db.table("chief_sessions")\
-            .select("*")\
-            .eq("id", session_id)\
-            .eq("user_id", user_id)\
-            .single()\
-            .execute()
-        
-        if not session.data:
-            raise HTTPException(status_code=404, detail="Session not found")
-        
-        messages = db.table("chief_messages")\
-            .select("*")\
-            .eq("session_id", session_id)\
-            .order("created_at")\
-            .execute()
-        
-        return {
-            "session": session.data,
-            "messages": messages.data or [],
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Verify session belongs to user
+    session = db.table("chief_sessions")\
+        .select("*")\
+        .eq("id", session_id)\
+        .eq("user_id", user_id)\
+        .single()\
+        .execute()
+    
+    if not session.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    messages = db.table("chief_messages")\
+        .select("*")\
+        .eq("session_id", session_id)\
+        .order("created_at")\
+        .execute()
+    
+    return {"session": session.data, "messages": messages.data}
+
 
 @router.delete("/sessions/{session_id}")
 async def delete_session(
     session_id: str,
-    current_user=Depends(get_current_active_user),
-    db=Depends(get_supabase),
+    current_user = Depends(get_current_active_user),
+    db = Depends(get_supabase),
 ):
     """Delete a chat session and all its messages"""
-    from app.routers.chief import _extract_user_id
-    
     user_id = _extract_user_id(current_user)
     
-    try:
-        # Delete session (messages cascade)
-        db.table("chief_sessions")\
-            .delete()\
-            .eq("id", session_id)\
-            .eq("user_id", user_id)\
-            .execute()
-        
-        return {"success": True}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+    # Delete messages first
+    db.table("chief_messages").delete().eq("session_id", session_id).execute()
+    
+    # Delete session
+    db.table("chief_sessions").delete().eq("id", session_id).eq("user_id", user_id).execute()
+    
+    return {"success": True}
