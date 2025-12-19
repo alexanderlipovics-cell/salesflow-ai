@@ -3,7 +3,7 @@ CEO DB Service - Sichere Datenbank-Zugriffe für CEO Chat
 """
 
 from typing import Optional, List, Dict, Any
-from app.core.database import get_supabase
+from app.core.deps import get_supabase
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ async def execute_safe_query(
         }
     
     try:
-        db = get_supabase()
+        db = await get_supabase()
         query = db.table(table).select(select)
         
         # IMMER auf user_id filtern (Sicherheit!)
@@ -134,7 +134,7 @@ async def execute_safe_query(
 async def get_user_stats(user_id: str) -> Dict[str, Any]:
     """Holt aggregierte Stats für den User."""
     
-    db = get_supabase()
+    db = await get_supabase()
     
     try:
         # Leads Count by Status
