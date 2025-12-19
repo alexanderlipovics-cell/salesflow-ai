@@ -480,10 +480,19 @@ export const InboxPage: React.FC = () => {
     }
   }, []);
 
-  // Load drafts on mount
+  // Load drafts on mount and when user changes
   React.useEffect(() => {
+    console.log('🚀 InboxPage mounted, loading drafts...');
     loadPendingDrafts();
   }, [loadPendingDrafts]);
+  
+  // Also reload drafts when items change (after refetch)
+  React.useEffect(() => {
+    if (items && items.length >= 0) {
+      // Reload drafts when inbox is refreshed
+      loadPendingDrafts();
+    }
+  }, [items?.length, loadPendingDrafts]); // Trigger when item count changes
 
   // Review Overlay Handlers
   const handleReviewSend = useCallback(async (id: string, content: string) => {
