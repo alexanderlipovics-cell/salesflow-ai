@@ -352,20 +352,41 @@ export const InboxPage: React.FC = () => {
 
   // Handler für "Hat geantwortet" Button
   const handleReplyReceived = useCallback((item: InboxItem) => {
-    // Extrahiere Kontaktdaten mit Fallbacks
+    // Debug: Zeige was im item steckt
+    console.log('Item for reply:', item);
+    console.log('Lead data:', item.lead);
+    
+    // Extrahiere Kontaktdaten aus item ODER item.lead
     const lead = item.lead || {};
+    
+    // Fallback: Prüfe auch direkt am item (falls Daten dort sind)
+    const instagramUrl = lead.instagram_url || lead.source_url || (item as any).instagram_url;
+    const phone = lead.phone || (item as any).phone;
+    const email = lead.email || (item as any).email;
     
     setSelectedLeadForReply({
       id: lead.id || item.id,
       name: lead.name || 'Unbekannt',
       state: 'new', // TODO: Get actual state from item metadata if available
       contact: {
-        instagram_url: lead.instagram_url || lead.source_url,
-        whatsapp: lead.phone, // Use phone as WhatsApp (phone number can be used for WhatsApp)
-        email: lead.email,
-        phone: lead.phone
+        instagram_url: instagramUrl,
+        phone: phone,
+        email: email,
+        whatsapp: phone, // WhatsApp nutzt Phone
       }
     });
+    
+    console.log('Selected lead for reply:', {
+      id: lead.id || item.id,
+      name: lead.name || 'Unbekannt',
+      contact: {
+        instagram_url: instagramUrl,
+        phone: phone,
+        email: email,
+        whatsapp: phone,
+      }
+    });
+    
     setReplyModalOpen(true);
   }, []);
 
