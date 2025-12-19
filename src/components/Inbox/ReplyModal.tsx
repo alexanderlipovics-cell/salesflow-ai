@@ -104,14 +104,14 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
   const handleCopyAndProceed = async () => {
     if (!response) return;
 
-    // Copy to clipboard
+    // Copy to clipboard FIRST
     try {
       await navigator.clipboard.writeText(response.generated_response);
     } catch (err) {
-      console.error('Fehler beim Kopieren:', err);
+      console.error('Clipboard error:', err);
     }
 
-    setIsProcessing(true);
+    setIsSending(true);
     setError(null);
 
     try {
@@ -145,16 +145,17 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
         throw new Error(errorData.detail || errorData.error || 'Fehler beim Speichern');
       }
 
-      // Callback
-      onReplyProcessed(response);
-      
-      // → Zur Action-Phase (Kanal auswählen)
+      // WICHTIG: Erst Phase setzen, DANN callback
+      console.log('Setting phase to action');
       setPhase('action');
+      
+      // Callback NICHT sofort aufrufen - das würde Modal schließen/resetten
+      // onReplyProcessed wird erst aufgerufen wenn User auf Kanal klickt
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
     } finally {
-      setIsProcessing(false);
+      setIsSending(false);
     }
   };
 
@@ -186,11 +187,17 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
         break;
     }
     
+    // Link öffnen
     if (url) {
       window.open(url, '_blank');
     }
     
-    // Modal sofort schließen nach Kanal-Klick
+    // JETZT erst callback aufrufen (refresht Inbox)
+    if (response) {
+      onReplyProcessed(response);
+    }
+    
+    // Modal schließen
     handleClose();
   };
 
