@@ -450,16 +450,38 @@ async def ceo_chat(
     has_files = bool(request.files and len(request.files) > 0)
     
     # Check für DB-Anfragen und füge Context hinzu
-    db_keywords = ["wie viele", "zeig mir", "liste", "leads", "follow-ups", "stats", "umsatz", "performance", "anzahl"]
-    has_db_query = any(kw in request.message.lower() for kw in db_keywords)
+    DB_KEYWORDS = [
+        "wie viele", "wieviele", "anzahl", "zeig mir", "liste", 
+        "leads", "follow-ups", "followups", "stats", "statistik",
+        "umsatz", "performance", "übersicht", "dashboard",
+        "meine daten", "mein team", "meine leads", "meine follow-ups"
+    ]
+    message_lower = request.message.lower()
+    has_db_query = any(kw in message_lower for kw in DB_KEYWORDS)
     
-    enriched_message = request.message
+    # Stats Context vorbereiten
+    stats_context = ""
     if has_db_query:
         # Hole aktuelle Stats als Context
         stats_result = await get_user_stats(user_id)
         if stats_result.get("success"):
             stats = stats_result.get("stats", {})
-            enriched_message = f"{request.message}\n\n[Context: Aktuelle Business-Stats]\n- Gesamt Leads: {stats.get('total_leads', 0)}\n- Leads nach Status: {stats.get('leads_by_status', {})}\n- Pending Follow-ups: {stats.get('pending_followups', 0)}\n- Nachrichten heute: {stats.get('messages_sent_today', 0)}"
+            leads_by_status = stats.get('leads_by_status', {})
+            status_text = ", ".join([f"{k}: {v}" for k, v in leads_by_status.items()]) if leads_by_status else "Keine"
+            
+            stats_context = f"""
+📊 AKTUELLE BUSINESS-DATEN DES USERS:
+- Gesamt Leads: {stats.get('total_leads', 0)}
+- Leads nach Status: {status_text}
+- Pending Follow-ups: {stats.get('pending_followups', 0)}
+- Nachrichten heute gesendet: {stats.get('messages_sent_today', 0)}
+
+Beantworte die Frage des Users basierend auf diesen Daten.
+---
+"""
+    
+    # Enhanced message mit Stats Context
+    enriched_message = stats_context + request.message if stats_context else request.message
     
     # Check für Document-Anfragen
     doc_keywords = ["erstelle pdf", "powerpoint", "excel", "word dokument", "präsentation", "freebie", "generiere"]
@@ -510,7 +532,8 @@ async def ceo_chat(
     # For Vision models (Claude/GPT-4 Vision), build multimodal content
     if has_files and provider == "anthropic":
         # Claude Vision: Build content array with text + images
-        content_parts = [{"type": "text", "text": request.message}]
+        # WICHTIG: Verwende enriched_message (mit Stats) statt request.message
+        content_parts = [{"type": "text", "text": user_message_content}]
         
         for file in request.files:
             if file.type.startswith("image/"):
@@ -532,7 +555,8 @@ async def ceo_chat(
             user_message_content += f"\n\n[Attached file: {file.name} - {file.url}]"
         messages = history + [{"role": "user", "content": user_message_content}]
     else:
-        messages = history + [{"role": "user", "content": request.message}]
+        # WICHTIG: Verwende user_message_content (enthält enriched_message mit Stats)
+        messages = history + [{"role": "user", "content": user_message_content}]
     
     provider = ai_config["provider"]
     model = ai_config["model"]
