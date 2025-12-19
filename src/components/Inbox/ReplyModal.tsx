@@ -134,9 +134,8 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
           lead_id: leadId,
           message_sent: response.generated_response,
           schedule_followup: true,
-          followup_hours: response.next_step?.hours_until_followup || 72,
-          followup_reason: response.next_step?.reason || 'Standard Follow-up',
-          urgency_score: response.next_step?.urgency_score || 50
+          hours_until_followup: response.next_step?.hours_until_followup || 72,
+          followup_hours: response.next_step?.hours_until_followup || 72,  // Fallback für Kompatibilität
         })
       });
 

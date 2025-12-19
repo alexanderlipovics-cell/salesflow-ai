@@ -818,7 +818,9 @@ class MarkSentRequest(BaseModel):
     lead_id: str
     message_sent: str
     schedule_followup: bool = True
-    hours_until_followup: float = 72  # CHIEF überschreibt das (Default: 3 Tage)
+    hours_until_followup: Optional[float] = None  # CHIEF überschreibt das
+    followup_hours: Optional[float] = None  # Alternative Feldname (Frontend compatibility)
+    followup_days: Optional[int] = None  # Fallback: in Tagen
 
 
 class MarkSentResponse(BaseModel):
@@ -855,9 +857,26 @@ async def mark_sent_with_followup(
         except Exception as e:
             logger.warning(f"Could not save sent activity: {e}")
         
-        next_followup = None
+        # 2. Alte pending Follow-ups für diesen Lead canceln
+        try:
+            cancel_result = db.table("contact_follow_up_queue")\
+                .update({
+                    "status": "cancelled",
+                    "cancelled_reason": "message_sent"
+                })\
+                .eq("contact_id", request.lead_id)\
+                .eq("status", "pending")\
+                .execute()
+            cancelled_count = len(cancel_result.data) if cancel_result.data else 0
+            if cancelled_count > 0:
+                logger.info(f"Cancelled {cancelled_count} old follow-up(s) for lead {request.lead_id}")
+        except Exception as e:
+            logger.warning(f"Could not cancel old follow-ups: {e}")
         
-        # 2. Follow-up planen falls gewünscht
+        next_followup = None
+        new_followup_id = None
+        
+        # 3. Neuen Follow-up planen falls gewünscht
         if request.schedule_followup:
             # Lead laden für State
             lead_result = db.table("leads")\
@@ -882,8 +901,16 @@ async def mark_sent_with_followup(
                 
                 if cycle_result.data and len(cycle_result.data) > 0:
                     cycle = cycle_result.data[0]
-                    # Verwende hours_until_followup statt days
-                    due_date = datetime.utcnow() + timedelta(hours=request.hours_until_followup)
+                    
+                    # Berechne next_due_at: hours_until_followup > followup_hours > followup_days > default
+                    hours = request.hours_until_followup or request.followup_hours
+                    if hours:
+                        due_date = datetime.utcnow() + timedelta(hours=float(hours))
+                    elif request.followup_days:
+                        due_date = datetime.utcnow() + timedelta(days=request.followup_days)
+                    else:
+                        # Default: 3 Tage (72 Stunden)
+                        due_date = datetime.utcnow() + timedelta(hours=72)
                     
                     queue_item = {
                         "contact_id": request.lead_id,
@@ -892,12 +919,26 @@ async def mark_sent_with_followup(
                         "current_state": lead_state,
                         "status": "pending",
                         "next_due_at": due_date.isoformat(),
+                        "ai_generated_content": None,
                     }
                     try:
-                        db.table("contact_follow_up_queue").insert(queue_item).execute()
-                        next_followup = due_date.strftime("%d.%m.%Y %H:%M")
+                        insert_result = db.table("contact_follow_up_queue").insert(queue_item).execute()
+                        if insert_result.data and len(insert_result.data) > 0:
+                            new_followup_id = insert_result.data[0].get("id")
+                            next_followup = due_date.strftime("%d.%m.%Y %H:%M")
+                            logger.info(f"Created new follow-up for lead {request.lead_id}, due at {next_followup}")
                     except Exception as e:
-                        logger.warning(f"Could not schedule follow-up: {e}")
+                        logger.error(f"Could not schedule follow-up: {e}")
+                else:
+                    logger.warning(f"No active cycle found for state {lead_state}, vertical {vertical}")
+            else:
+                logger.warning(f"Lead {request.lead_id} not found")
+        
+        return MarkSentResponse(
+            success=True,
+            next_followup_date=next_followup,
+            message=f"Nachricht gespeichert. {'Nächster Follow-up am ' + next_followup if next_followup else 'Kein Follow-up geplant.'}"
+        )
         
         return MarkSentResponse(
             success=True,
