@@ -197,6 +197,9 @@ const queueItemToInboxItem = (item: any): InboxItem | null => {
       email: lead.email || undefined,
       phone: lead.phone || lead.whatsapp || undefined,
       instagram_username: lead.instagram || undefined,
+      instagram: lead.instagram || undefined,
+      instagram_url: (lead as any).instagram_url || undefined,
+      source_url: (lead as any).source_url || undefined,
     },
     action: {
       type: (cycle.message_type || 'followup') as InboxActionType,
