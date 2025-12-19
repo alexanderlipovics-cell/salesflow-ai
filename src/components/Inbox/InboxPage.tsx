@@ -13,8 +13,9 @@ import { MagicSendAll } from './MagicSendAll';
 import { ReviewMode } from './ReviewMode';
 import { MagicSendModal } from './MagicSendModal';
 import { ChiefEditPopup } from './ChiefEditPopup';
+import { ReplyModal } from './ReplyModal';
 import { useInbox } from '@/hooks/useInbox';
-import type { MagicSendAllResult, InboxItem, GroupedInboxItems } from '@/types/inbox';
+import type { MagicSendAllResult, InboxItem, GroupedInboxItems, ProcessReplyResponse } from '@/types/inbox';
 
 // Helper: Gruppiert Items nach Priorität
 // Sicherheitscheck: Verhindert Crash wenn items undefined/null ist
@@ -187,6 +188,13 @@ export const InboxPage: React.FC = () => {
   const [showChiefEdit, setShowChiefEdit] = useState(false);
   // Lokaler State für bearbeitete Nachrichten (überschreibt Items aus useInbox)
   const [editedMessages, setEditedMessages] = useState<Map<string, string>>(new Map());
+  // Reply Modal State
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedLeadForReply, setSelectedLeadForReply] = useState<{
+    id: string;
+    name: string;
+    state: string;
+  } | null>(null);
 
   const handleMessageUpdated = useCallback(
     (itemId: string, newMessage: string) => {
@@ -335,6 +343,25 @@ export const InboxPage: React.FC = () => {
     },
     [items, navigate]
   );
+
+  // Handler für "Hat geantwortet" Button
+  const handleReplyReceived = useCallback((item: InboxItem) => {
+    setSelectedLeadForReply({
+      id: item.lead.id,
+      name: item.lead.name,
+      state: 'new' // TODO: Get actual state from item metadata if available
+    });
+    setReplyModalOpen(true);
+  }, []);
+
+  // Handler wenn Reply verarbeitet wurde
+  const handleReplyProcessed = useCallback((response: ProcessReplyResponse) => {
+    // Optional: Item aus Liste entfernen oder updaten
+    console.log('Reply processed:', response);
+    
+    // Inbox neu laden
+    refetch();
+  }, [refetch]);
 
   // Mark as Sent Handler
   const handleMarkAsSent = useCallback(
@@ -605,6 +632,7 @@ export const InboxPage: React.FC = () => {
         onComposeMessage={handleComposeMessage}
         onMessageUpdated={handleMessageUpdated}
         onMarkAsSent={handleMarkAsSent}
+        onReplyReceived={handleReplyReceived}
         processingId={processingId}
         sentItemIds={sentItemIds}
         autoAdvance={true}
@@ -643,6 +671,21 @@ export const InboxPage: React.FC = () => {
             setEditingItem(null);
             // Kein Refetch nötig - State wird direkt aktualisiert
           }}
+        />
+      )}
+
+      {/* Reply Modal */}
+      {selectedLeadForReply && (
+        <ReplyModal
+          isOpen={replyModalOpen}
+          onClose={() => {
+            setReplyModalOpen(false);
+            setSelectedLeadForReply(null);
+          }}
+          leadId={selectedLeadForReply.id}
+          leadName={selectedLeadForReply.name}
+          currentState={selectedLeadForReply.state}
+          onReplyProcessed={handleReplyProcessed}
         />
       )}
     </div>

@@ -28,6 +28,7 @@ interface InboxItemProps {
   onComposeMessage?: () => void; // Für neue Leads
   onMessageUpdated?: (newMessage: string) => void; // Für CHIEF Edit
   onMarkAsSent?: () => void; // Als Gesendet markieren
+  onReplyReceived?: () => void; // "Hat geantwortet" Button
   isProcessing?: boolean;
   isSent?: boolean; // Für Erfolgs-Animation
 }
@@ -41,6 +42,7 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
   onComposeMessage,
   onMessageUpdated,
   onMarkAsSent,
+  onReplyReceived,
   isProcessing = false,
   isSent = false,
 }) => {
@@ -215,6 +217,23 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
         {/* Für Items mit Nachricht: Bearbeiten, Kopieren, Als Gesendet markieren */}
         {currentMessage || item?.action?.message ? (
           <div className="flex gap-2">
+            {/* "Hat geantwortet" Button */}
+            {onReplyReceived && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReplyReceived();
+                }}
+                className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/30"
+                title="Lead hat geantwortet"
+              >
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Antwort
+              </Button>
+            )}
+            
             {/* Bearbeiten - öffnet CHIEF Popup */}
             <Button 
               variant="ghost" 
@@ -314,11 +333,11 @@ export const InboxItemComponent: React.FC<InboxItemProps> = ({
                 align="end"
                 className="border border-slate-700 bg-slate-800 text-slate-100"
               >
-                <DropdownMenuItem onClick={onSnooze} className="cursor-pointer">
+                <DropdownMenuItem onClick={onSnooze}>
                   <Clock className="mr-2 h-4 w-4" />
                   Snooze
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onArchive} className="cursor-pointer">
+                <DropdownMenuItem onClick={onArchive}>
                   <Archive className="mr-2 h-4 w-4" />
                   Archivieren
                 </DropdownMenuItem>

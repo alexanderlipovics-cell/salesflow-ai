@@ -71,3 +71,20 @@ export interface MagicSendAllResult {
   skipped: number;
 }
 
+/**
+ * Process Reply Response
+ */
+export interface ProcessReplyResponse {
+  success: boolean;
+  generated_response: string;
+  analysis: {
+    sentiment: string;
+    intent: string;
+    state_reason: string;
+    response_strategy: string;
+  };
+  new_state: string;
+  lead_name: string;
+  cancelled_followups: number;
+}
+

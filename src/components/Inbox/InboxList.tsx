@@ -17,6 +17,7 @@ interface InboxListProps {
   onComposeMessage?: (itemId: string) => void;
   onMessageUpdated?: (itemId: string, newMessage: string) => void;
   onMarkAsSent?: (itemId: string) => void;
+  onReplyReceived?: (item: InboxItem) => void; // "Hat geantwortet" Button
   processingId?: string | null;
   sentItemIds?: Set<string>; // Für Erfolgs-Animation
   autoAdvance?: boolean;
@@ -32,6 +33,7 @@ export const InboxList: React.FC<InboxListProps> = ({
   onComposeMessage,
   onMessageUpdated,
   onMarkAsSent,
+  onReplyReceived,
   processingId = null,
   sentItemIds = new Set(),
   autoAdvance = false,
@@ -83,6 +85,7 @@ export const InboxList: React.FC<InboxListProps> = ({
                   onComposeMessage={onComposeMessage ? () => onComposeMessage(item.id) : undefined}
                   onMessageUpdated={onMessageUpdated ? (newMessage) => onMessageUpdated(item.id, newMessage) : undefined}
                   onMarkAsSent={onMarkAsSent ? () => onMarkAsSent(item.id) : undefined}
+                  onReplyReceived={onReplyReceived ? () => onReplyReceived(item) : undefined}
                   isProcessing={processingId === item.id}
                   isSent={sentItemIds.has(item.id)}
                 />
