@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { uploadChiefFile, UploadedFile } from '../utils/uploadChiefFile';
 import { supabaseClient } from '../lib/supabaseClient';
+import ChiefMessageContent from '../components/ui/ChiefMessageContent';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://salesflow-ai.onrender.com';
 
@@ -284,52 +285,13 @@ export default function CeoChat() {
     }
   };
 
-  // Render markdown-style content (basic)
-  const renderContent = (content: string) => {
-    // Check for image markdown: ![alt](url)
-    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-    const parts = content.split(imageRegex);
-    
-    if (parts.length === 1) {
+  // Render content - Markdown for assistant, plain text for user
+  const renderContent = (content: string, role: 'user' | 'assistant') => {
+    if (role === 'user') {
       return <p className="whitespace-pre-wrap leading-relaxed">{content}</p>;
     }
-
-    const elements: React.ReactNode[] = [];
-    let i = 0;
-    let match;
-    let lastIndex = 0;
-    
-    const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-    while ((match = regex.exec(content)) !== null) {
-      // Add text before the image
-      if (match.index > lastIndex) {
-        elements.push(
-          <span key={`text-${i++}`} className="whitespace-pre-wrap">
-            {content.slice(lastIndex, match.index)}
-          </span>
-        );
-      }
-      // Add the image
-      elements.push(
-        <img 
-          key={`img-${i++}`} 
-          src={match[2]} 
-          alt={match[1]} 
-          className="rounded-xl max-w-full max-h-96 border border-gray-700 shadow-lg my-3"
-        />
-      );
-      lastIndex = regex.lastIndex;
-    }
-    // Add remaining text
-    if (lastIndex < content.length) {
-      elements.push(
-        <span key={`text-${i++}`} className="whitespace-pre-wrap">
-          {content.slice(lastIndex)}
-        </span>
-      );
-    }
-    
-    return <div className="leading-relaxed">{elements}</div>;
+    // Assistant messages use full Markdown rendering
+    return <ChiefMessageContent content={content} />;
   };
 
   // CEO Protection
@@ -505,10 +467,10 @@ export default function CeoChat() {
                       className={`rounded-2xl px-5 py-4 shadow-xl ${
                         msg.role === 'user'
                           ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-none'
-                          : 'bg-[#1A202C] border border-gray-700/50 text-gray-100 rounded-bl-none'
+                          : 'bg-[#1A202C] border border-gray-700/50 text-gray-100 rounded-bl-none overflow-hidden'
                       }`}
                     >
-                      {renderContent(msg.content)}
+                      {renderContent(msg.content, msg.role)}
                       
                       {/* Model Badge for Assistant */}
                       {msg.role === 'assistant' && msg.model_name && MODEL_INFO[msg.model_name] && (
