@@ -1173,6 +1173,7 @@ const ChatPage = () => {
       if (successCount > 0) {
         resetListDetection();
         setInput("");
+        setLocalInput("");
       } else {
         // Keine Fehlermeldung mehr anzeigen - nur in Console loggen
         console.log("Keine Kontakte importiert - möglicherweise API-Fehler");
