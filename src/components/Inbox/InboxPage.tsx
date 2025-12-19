@@ -358,7 +358,7 @@ export const InboxPage: React.FC = () => {
       state: 'new', // TODO: Get actual state from item metadata if available
       contact: {
         instagram_url: item.lead.instagram_url,
-        whatsapp: item.lead.phone || item.lead.whatsapp,
+        whatsapp: item.lead.phone, // Use phone as WhatsApp fallback
         email: item.lead.email,
         phone: item.lead.phone
       }
