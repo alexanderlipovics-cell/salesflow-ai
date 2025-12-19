@@ -64,11 +64,17 @@ class ChatMessage(BaseModel):
     role: str
     content: str
 
+class FileAttachment(BaseModel):
+    url: str
+    type: str
+    name: str
+
 class CEOChatRequest(BaseModel):
     session_id: Optional[str] = None
     message: str
     model: str = "auto"
     history: Optional[List[ChatMessage]] = []
+    files: Optional[List[FileAttachment]] = None  # [{url, type, name}]
 
 class CEOChatResponse(BaseModel):
     session_id: str
@@ -209,7 +215,14 @@ async def call_anthropic(messages: List[dict], model: str) -> tuple[str, dict]:
         if msg["role"] == "system":
             system_msg = msg["content"]
         else:
-            chat_msgs.append({"role": msg["role"], "content": msg["content"]})
+            # Support both string content and multimodal content (array)
+            content = msg["content"]
+            if isinstance(content, list):
+                # Multimodal content (text + images)
+                chat_msgs.append({"role": msg["role"], "content": content})
+            else:
+                # Simple text content
+                chat_msgs.append({"role": msg["role"], "content": content})
     
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -416,8 +429,9 @@ async def ceo_chat(
     history = await get_chat_context(db, session_id, 10)
     
     # --- SCHRITT B: AI DISPATCHER ENTSCHEIDET ---
+    has_files = bool(request.files and len(request.files) > 0)
     if request.model == "auto":
-        ai_config = await dispatch_to_best_ai(request.message, has_files=False)
+        ai_config = await dispatch_to_best_ai(request.message, has_files=has_files)
     else:
         # Manual Override
         model_key = request.model
@@ -448,7 +462,35 @@ async def ceo_chat(
     }).execute()
     
     # --- SCHRITT C: WORKER AUSFÜHREN ---
-    messages = history + [{"role": "user", "content": request.message}]
+    # Build messages with file attachments if present
+    user_message_content = request.message
+    
+    # For Vision models (Claude/GPT-4 Vision), build multimodal content
+    if has_files and provider == "anthropic":
+        # Claude Vision: Build content array with text + images
+        content_parts = [{"type": "text", "text": request.message}]
+        
+        for file in request.files:
+            if file.type.startswith("image/"):
+                content_parts.append({
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": file.url
+                    }
+                })
+            else:
+                # Non-image files: mention in text
+                user_message_content += f"\n\n[Attached file: {file.name} - {file.url}]"
+        
+        messages = history + [{"role": "user", "content": content_parts}]
+    elif has_files:
+        # For other providers, append file URLs to message text
+        for file in request.files:
+            user_message_content += f"\n\n[Attached file: {file.name} - {file.url}]"
+        messages = history + [{"role": "user", "content": user_message_content}]
+    else:
+        messages = history + [{"role": "user", "content": request.message}]
     
     provider = ai_config["provider"]
     model = ai_config["model"]

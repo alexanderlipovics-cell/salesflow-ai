@@ -6,6 +6,8 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { uploadChiefFile, UploadedFile } from '../utils/uploadChiefFile';
+import { supabaseClient } from '../lib/supabaseClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://salesflow-ai.onrender.com';
 
@@ -49,6 +51,7 @@ export default function CeoChat() {
   // File Upload State
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -145,25 +148,49 @@ export default function CeoChat() {
   const sendMessage = async () => {
     if ((!input.trim() && files.length === 0) || isLoading) return;
 
-    const userMessage = input.trim();
-    const userImages = [...previews];
+    const currentFiles = [...files];
+    const currentInput = input.trim();
+    const currentPreviews = [...previews];
+    
+    // Optimistic UI update
+    const tempUserMsg: Message = {
+      id: 'temp-user-' + Date.now(),
+      role: 'user',
+      content: currentInput,
+      images: currentPreviews,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, tempUserMsg]);
     
     setInput('');
     setFiles([]);
     setPreviews([]);
     setIsLoading(true);
 
-    // Optimistic UI update
-    const tempUserMsg: Message = {
-      id: 'temp-user-' + Date.now(),
-      role: 'user',
-      content: userMessage,
-      images: userImages,
-      created_at: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, tempUserMsg]);
-
     try {
+      // 1. Upload Files parallel (wenn vorhanden)
+      let uploadedAttachments: UploadedFile[] = [];
+      
+      if (currentFiles.length > 0) {
+        setUploadingFiles(true);
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        if (user) {
+          try {
+            uploadedAttachments = await Promise.all(
+              currentFiles.map(f => uploadChiefFile(f, user.id))
+            );
+          } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
+            alert('Fehler beim Hochladen der Dateien. Bitte versuche es erneut.');
+            return;
+          }
+        }
+        setUploadingFiles(false);
+      }
+
+      // 2. API Call mit Files
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${API_URL}/api/ceo/chat`, {
         method: 'POST',
@@ -173,13 +200,21 @@ export default function CeoChat() {
         },
         body: JSON.stringify({
           session_id: currentSessionId,
-          message: userMessage,
+          message: currentInput,
           model: selectedModel,
           history: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          files: uploadedAttachments.map(f => ({
+            url: f.signedUrl || '',
+            type: f.type,
+            name: f.name
+          }))
         })
       });
 
-      if (!res.ok) throw new Error('Chat request failed');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+        throw new Error(errorData.detail || errorData.error || 'Chat request failed');
+      }
 
       const data = await res.json();
       
@@ -193,11 +228,11 @@ export default function CeoChat() {
       const assistantMsg: Message = {
         id: 'assistant-' + Date.now(),
         role: 'assistant',
-        content: data.message,
+        content: data.message || data.message_used || 'Keine Antwort erhalten',
         model_name: data.model_used,
         provider: data.provider,
         routing_reason: data.routing_reason,
-        created_at: data.created_at,
+        created_at: data.created_at || new Date().toISOString(),
       };
 
       setMessages(prev => [...prev.filter(m => !m.id.startsWith('temp-')), 
@@ -210,8 +245,10 @@ export default function CeoChat() {
     } catch (err) {
       console.error('Chat error:', err);
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
+      alert(err instanceof Error ? err.message : 'Fehler beim Senden der Nachricht');
     } finally {
       setIsLoading(false);
+      setUploadingFiles(false);
       inputRef.current?.focus();
     }
   };
@@ -311,10 +348,10 @@ export default function CeoChat() {
   return (
     <div className="flex h-screen bg-[#0B0F19] text-white overflow-hidden">
       {/* Hidden file input */}
-      <input
+              <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xlsx"
         multiple
         className="hidden"
         onChange={handleFileSelect}
@@ -533,13 +570,22 @@ export default function CeoChat() {
               </div>
             )}
 
+            {/* Upload Indicator */}
+            {uploadingFiles && (
+              <div className="flex items-center gap-2 text-cyan-400 text-sm mb-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Dateien werden hochgeladen...</span>
+              </div>
+            )}
+
             {/* Input Container */}
             <div className="relative flex items-end gap-2 bg-[#131825] border border-gray-700 rounded-xl p-2 shadow-2xl focus-within:border-cyan-500/50 focus-within:ring-1 focus-within:ring-cyan-500/20 transition-all">
               
               {/* Upload Button */}
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                disabled={uploadingFiles}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Paperclip className="w-5 h-5" />
               </button>
