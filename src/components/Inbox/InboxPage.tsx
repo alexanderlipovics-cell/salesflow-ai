@@ -425,11 +425,26 @@ export const InboxPage: React.FC = () => {
 
   // Load pending drafts for Review Overlay
   const loadPendingDrafts = useCallback(async () => {
+    console.log('🔍 Loading pending drafts...');
+    
     try {
       const { supabaseClient } = await import('@/lib/supabaseClient');
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      console.log('✅ Supabase client loaded');
       
-      if (!user) return;
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ Error getting user:', userError);
+        return;
+      }
+      
+      if (!user) {
+        console.log('⚠️ No user found, skipping draft load');
+        setPendingDrafts([]);
+        return;
+      }
+      
+      console.log('👤 User ID:', user.id);
       
       const { data, error } = await supabaseClient
         .from('inbox_drafts')
@@ -438,14 +453,30 @@ export const InboxPage: React.FC = () => {
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
       
+      console.log('📦 Drafts query result:', { data, error, count: data?.length || 0 });
+      
       if (error) {
-        console.error('Error loading drafts:', error);
+        console.error('❌ Error loading drafts:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        setPendingDrafts([]);
         return;
       }
       
-      setPendingDrafts(data || []);
+      if (data && data.length > 0) {
+        console.log(`✅ Found ${data.length} pending drafts:`, data.map(d => ({ id: d.id, contact: d.contact_name, platform: d.platform })));
+        setPendingDrafts(data);
+      } else {
+        console.log('⚠️ No pending drafts found');
+        setPendingDrafts([]);
+      }
     } catch (err) {
-      console.error('Failed to load drafts:', err);
+      console.error('💥 Exception loading drafts:', err);
+      setPendingDrafts([]);
     }
   }, []);
 
