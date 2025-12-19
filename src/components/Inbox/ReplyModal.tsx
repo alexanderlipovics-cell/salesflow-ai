@@ -170,9 +170,9 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({
         }
         break;
       case 'whatsapp':
-        if (leadContact?.whatsapp) {
-          const phone = leadContact.whatsapp.replace(/[^0-9+]/g, '');
-          url = `https://wa.me/${phone}`;
+        if (leadContact?.whatsapp || leadContact?.phone) {
+          const phone = (leadContact.whatsapp || leadContact.phone || '').replace(/[^0-9+]/g, '');
+          url = `https://wa.me/${phone.replace('+', '')}`;
         }
         break;
       case 'email':
