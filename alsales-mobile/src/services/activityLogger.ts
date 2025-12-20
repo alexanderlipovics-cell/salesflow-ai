@@ -2,197 +2,54 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE = 'https://salesflow-ai.onrender.com';
 
-export type ActionType = 
-  | 'created' 
-  | 'updated' 
-  | 'deleted' 
-  | 'viewed' 
-  | 'contacted' 
-  | 'completed'
-  | 'message_sent'
-  | 'message_received'
-  | 'call'
-  | 'note';
-
-export type EntityType = 
-  | 'lead' 
-  | 'follow_up' 
-  | 'deal' 
-  | 'task' 
-  | 'interaction'
-  | 'message';
-
-interface LogActivityParams {
-  actionType: ActionType;
-  entityType: EntityType;
-  entityId: string;
-  entityName?: string;
-  details?: Record<string, any>;
-  source?: 'ui' | 'chief';
-}
-
 class ActivityLogger {
   private async getToken(): Promise<string | null> {
     return await AsyncStorage.getItem('access_token');
   }
 
-  async log(params: LogActivityParams): Promise<boolean> {
+  async log(actionType: string, entityType: string, entityId: string, entityName?: string, details?: any): Promise<boolean> {
     try {
       const token = await this.getToken();
-      if (!token) {
-        console.log('ActivityLogger: No token, skipping log');
-        return false;
-      }
-
-      const response = await fetch(`${API_BASE}/api/activity/log`, {
+      if (!token) return false;
+      await fetch(`${API_BASE}/api/activity/log`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          action_type: params.actionType,
-          entity_type: params.entityType,
-          entity_id: params.entityId,
-          entity_name: params.entityName || null,
-          details: params.details || {},
-          source: params.source || 'ui',
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ action_type: actionType, entity_type: entityType, entity_id: entityId, entity_name: entityName, details: details || {}, source: 'ui' }),
       });
-
-      if (response.ok) {
-        console.log(`✅ Activity logged: ${params.actionType} ${params.entityType}`);
-        return true;
-      } else {
-        // Fallback: Log locally if API fails
-        console.log(`⚠️ Activity API failed, logged locally: ${params.actionType} ${params.entityType}`);
-        return false;
-      }
-    } catch (error) {
-      console.log('ActivityLogger error:', error);
-      return false;
-    }
+      console.log(`✅ ${actionType} ${entityType}`);
+      return true;
+    } catch (e) { return false; }
   }
 
-  // Convenience methods
-  async logLeadViewed(leadId: string, leadName: string) {
-    return this.log({
-      actionType: 'viewed',
-      entityType: 'lead',
-      entityId: leadId,
-      entityName: leadName,
-    });
+  logLeadViewed = (id: string, name: string) => this.log('viewed', 'lead', id, name);
+  logCall = (id: string, name: string) => this.log('call', 'interaction', id, name);
+  logNote = (id: string, name: string, note: string) => this.log('note', 'interaction', id, name, { preview: note.substring(0, 200) });
+  logStatusChanged = (id: string, name: string, from: string, to: string) => this.log('updated', 'lead', id, name, { field: 'status', old: from, new: to });
+  logTempChanged = (id: string, name: string, from: string, to: string) => this.log('updated', 'lead', id, name, { field: 'temperature', old: from, new: to });
+  logMessageSent = (id: string, name: string, platform: string) => this.log('message_sent', 'message', id, name, { platform });
+
+  async saveMessage(leadId: string, leadName: string, direction: 'sent' | 'received', platform: string, content: string, messageType = 'general', generatedBy = 'chief'): Promise<boolean> {
+    try {
+      const token = await this.getToken();
+      if (!token) return false;
+      const res = await fetch(`${API_BASE}/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ lead_id: leadId, direction, platform, content, message_type: messageType, generated_by: generatedBy, metadata: { lead_name: leadName } }),
+      });
+      console.log(`✅ Message saved: ${direction} via ${platform}`);
+      return res.ok;
+    } catch (e) { return false; }
   }
 
-  async logLeadUpdated(leadId: string, leadName: string, fieldsChanged: string[]) {
-    return this.log({
-      actionType: 'updated',
-      entityType: 'lead',
-      entityId: leadId,
-      entityName: leadName,
-      details: { fields_changed: fieldsChanged },
-    });
-  }
-
-  async logLeadCreated(leadId: string, leadName: string, source: string) {
-    return this.log({
-      actionType: 'created',
-      entityType: 'lead',
-      entityId: leadId,
-      entityName: leadName,
-      details: { source },
-    });
-  }
-
-  async logMessageSent(leadId: string, leadName: string, platform: string, messagePreview?: string) {
-    return this.log({
-      actionType: 'message_sent',
-      entityType: 'message',
-      entityId: leadId,
-      entityName: leadName,
-      details: { 
-        platform, 
-        preview: messagePreview?.substring(0, 100),
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-
-  async logMessageReceived(leadId: string, leadName: string, platform: string) {
-    return this.log({
-      actionType: 'message_received',
-      entityType: 'message',
-      entityId: leadId,
-      entityName: leadName,
-      details: { platform },
-    });
-  }
-
-  async logCall(leadId: string, leadName: string, duration?: number, outcome?: string) {
-    return this.log({
-      actionType: 'call',
-      entityType: 'interaction',
-      entityId: leadId,
-      entityName: leadName,
-      details: { 
-        duration_seconds: duration,
-        outcome,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-
-  async logNote(leadId: string, leadName: string, notePreview: string) {
-    return this.log({
-      actionType: 'note',
-      entityType: 'interaction',
-      entityId: leadId,
-      entityName: leadName,
-      details: { 
-        preview: notePreview.substring(0, 200),
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-
-  async logFollowUpCompleted(followUpId: string, leadName: string, taskType: string) {
-    return this.log({
-      actionType: 'completed',
-      entityType: 'follow_up',
-      entityId: followUpId,
-      entityName: `Follow-up für ${leadName}`,
-      details: { task_type: taskType },
-    });
-  }
-
-  async logStatusChanged(leadId: string, leadName: string, oldStatus: string, newStatus: string) {
-    return this.log({
-      actionType: 'updated',
-      entityType: 'lead',
-      entityId: leadId,
-      entityName: leadName,
-      details: { 
-        field: 'status',
-        old_value: oldStatus,
-        new_value: newStatus,
-      },
-    });
-  }
-
-  async logTemperatureChanged(leadId: string, leadName: string, oldTemp: string, newTemp: string) {
-    return this.log({
-      actionType: 'updated',
-      entityType: 'lead',
-      entityId: leadId,
-      entityName: leadName,
-      details: { 
-        field: 'temperature',
-        old_value: oldTemp,
-        new_value: newTemp,
-      },
-    });
+  async getLeadMessages(leadId: string): Promise<any[]> {
+    try {
+      const token = await this.getToken();
+      if (!token) return [];
+      const res = await fetch(`${API_BASE}/api/messages/lead/${leadId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      return res.ok ? await res.json() : [];
+    } catch (e) { return []; }
   }
 }
 
 export const activityLogger = new ActivityLogger();
-

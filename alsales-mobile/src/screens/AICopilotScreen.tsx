@@ -289,12 +289,13 @@ export default function AICopilotScreen() {
           <FlatList
             ref={flatListRef}
             data={messages}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => index.toString()}
             renderItem={renderMessage}
             contentContainerStyle={styles.messagesList}
+            showsVerticalScrollIndicator={true}
+            inverted={false}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-            keyboardShouldPersistTaps="handled"
-            onScrollBeginDrag={dismissKeyboard}
+            style={{ flex: 1 }}
           />
         </View>
       </TouchableWithoutFeedback>
@@ -467,8 +468,8 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingHorizontal: 16,
-    paddingVertical: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   messageRow: {
     flexDirection: 'row',

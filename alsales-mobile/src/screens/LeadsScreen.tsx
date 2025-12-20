@@ -18,6 +18,28 @@ import NewLeadModal from './NewLeadModal';
 
 const { width } = Dimensions.get('window');
 
+const getPriorityLabel = (lead: any): { icon: string; label: string; color: string } | null => {
+  const now = new Date();
+  const lastContact = lead.last_contacted ? new Date(lead.last_contacted) : null;
+  const daysSinceContact = lastContact ? Math.floor((now.getTime() - lastContact.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+  const status = (lead.status || 'new').toLowerCase();
+  const temp = (lead.temperature || 'cold').toLowerCase();
+  
+  if (temp === 'hot' && status === 'contacted') {
+    return { icon: '🔥', label: 'Antwort erwartet!', color: '#EF4444' };
+  }
+  if (status === 'contacted' && daysSinceContact >= 2 && daysSinceContact <= 7) {
+    return { icon: '⏰', label: `Follow-up fällig (${daysSinceContact}d)`, color: '#F59E0B' };
+  }
+  if (status === 'new') {
+    return { icon: '🆕', label: 'Erstkontakt nötig', color: '#3B82F6' };
+  }
+  if (daysSinceContact > 7 && status === 'contacted') {
+    return { icon: '💀', label: 'Wiederbeleben', color: '#8B5CF6' };
+  }
+  return null;
+};
+
 interface Lead {
   id: string;
   name: string;
@@ -32,6 +54,7 @@ interface Lead {
   platform: string;
   created_at: string;
   next_follow_up: string | null;
+  last_contacted?: string | null;
 }
 
 const STATUS_OPTIONS = [
@@ -71,7 +94,6 @@ const SwipeableLeadCard = ({
   const translateX = useRef(new Animated.Value(0)).current;
   const score = item.bant_score || 30;
   const scoreColor = getScoreColor(score);
-  const recommendation = getAIRecommendation(item);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -158,11 +180,19 @@ const SwipeableLeadCard = ({
             </View>
           </View>
 
-          {/* AI Insight */}
-          <View style={styles.aiInsight}>
-            <Text style={styles.aiInsightIcon}>✨</Text>
-            <Text style={styles.aiInsightText}>{recommendation}</Text>
-          </View>
+          {/* Priority Label */}
+          {(() => {
+            const priority = getPriorityLabel(item);
+            if (!priority) return null;
+            return (
+              <View style={[styles.aiRecommendation, { borderColor: priority.color + '40' }]}>
+                <Text style={styles.aiRecommendationIcon}>{priority.icon}</Text>
+                <Text style={[styles.aiRecommendationText, { color: priority.color }]}>
+                  {priority.label}
+                </Text>
+              </View>
+            );
+          })()}
 
           {/* Quick Stats */}
           <View style={styles.quickStats}>
@@ -193,6 +223,7 @@ const SwipeableLeadCard = ({
 
 export default function LeadsScreen() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,6 +234,10 @@ export default function LeadsScreen() {
   useEffect(() => {
     loadLeads();
   }, []);
+
+  useEffect(() => {
+    filterLeads();
+  }, [leads, selectedStatus, searchQuery]);
 
   const loadLeads = async () => {
     try {
@@ -222,20 +257,80 @@ export default function LeadsScreen() {
   };
 
   const filterLeads = () => {
-    let result = leads;
+    let result = [...leads];
+    
+    // Apply status filter if not "all"
     if (selectedStatus !== 'all') {
-      result = result.filter(lead => 
-        lead.status?.toLowerCase() === selectedStatus.toLowerCase()
-      );
+      result = result.filter(lead => {
+        const status = (lead.status || '').toLowerCase();
+        if (selectedStatus === 'kunden') return status === 'won' || status === 'customer';
+        if (selectedStatus === 'verloren') return status === 'lost';
+        return status === selectedStatus;
+      });
     }
+    
+    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(lead =>
-        lead.name?.toLowerCase().includes(query) ||
-        lead.company?.toLowerCase().includes(query)
+        (lead.name?.toLowerCase() || '').includes(query) ||
+        (lead.email?.toLowerCase() || '').includes(query) ||
+        (lead.company?.toLowerCase() || '').includes(query) ||
+        (lead.instagram?.toLowerCase() || '').includes(query)
       );
     }
-    return result;
+    
+    // SMART PRIORITY SORTING
+    result.sort((a, b) => {
+      const getPriority = (lead: any): number => {
+        const now = new Date();
+        const lastContact = lead.last_contacted ? new Date(lead.last_contacted) : null;
+        const daysSinceContact = lastContact ? Math.floor((now.getTime() - lastContact.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+        const status = (lead.status || 'new').toLowerCase();
+        const temp = (lead.temperature || 'cold').toLowerCase();
+        
+        // 1. 🔥 HOT ACTION - Responded leads (need immediate action)
+        if (temp === 'hot' && status === 'contacted') return 1;
+        
+        // 2. ⏰ DUE FOLLOW-UPS - Contacted 2-5 days ago, no response
+        if (status === 'contacted' && daysSinceContact >= 2 && daysSinceContact <= 7) return 2;
+        
+        // 3. 🆕 NEW LEADS - Never contacted
+        if (status === 'new') return 3;
+        
+        // 4. 🔥 HOT but not yet contacted
+        if (temp === 'hot') return 4;
+        
+        // 5. ☀️ WARM leads
+        if (temp === 'warm') return 5;
+        
+        // 6. ❄️ NURTURE - Old leads to re-engage (contacted > 7 days ago)
+        if (daysSinceContact > 7) return 6;
+        
+        // 7. Recently contacted (waiting for response)
+        if (status === 'contacted' && daysSinceContact < 2) return 7;
+        
+        // 8. Everything else
+        return 8;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      // Within same priority: sort by temperature (hot first), then by date
+      const tempOrder: Record<string, number> = { hot: 1, warm: 2, cold: 3 };
+      const tempA = tempOrder[(a.temperature || 'cold').toLowerCase()] || 3;
+      const tempB = tempOrder[(b.temperature || 'cold').toLowerCase()] || 3;
+      
+      if (tempA !== tempB) return tempA - tempB;
+      
+      // Finally by created date (newest first)
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+    
+    setFilteredLeads(result);
   };
 
   const handleSwipeLeft = (lead: Lead) => {
@@ -249,16 +344,20 @@ export default function LeadsScreen() {
     console.log('Call:', lead.phone);
   };
 
-  const filteredLeads = filterLeads();
-
   if (selectedLeadId) {
+    const currentIndex = filteredLeads.findIndex(l => l.id === selectedLeadId);
+    const nextLead = filteredLeads[currentIndex + 1];
+    
     return (
-      <LeadDetailScreen
-        leadId={selectedLeadId}
+      <LeadDetailScreen 
+        leadId={selectedLeadId} 
         onBack={() => {
           setSelectedLeadId(null);
           loadLeads();
         }}
+        onNextLead={nextLead ? () => {
+          setSelectedLeadId(nextLead.id);
+        } : undefined}
       />
     );
   }
@@ -643,26 +742,24 @@ const styles = StyleSheet.create({
   statusEmoji: {
     fontSize: 16,
   },
-  // AI Insight
-  aiInsight: {
+  // Priority Label / AI Recommendation
+  aiRecommendation: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    backgroundColor: 'rgba(31, 41, 55, 0.6)',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.2)',
   },
-  aiInsightIcon: {
+  aiRecommendationIcon: {
     fontSize: 14,
     marginRight: 8,
   },
-  aiInsightText: {
-    color: '#06B6D4',
+  aiRecommendationText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
     flex: 1,
   },
   // Quick Stats

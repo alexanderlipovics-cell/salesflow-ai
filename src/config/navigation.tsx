@@ -19,6 +19,7 @@ import {
   Mail,
   Calendar,
   Gift,
+  Target,
 } from 'lucide-react';
 
 
@@ -27,6 +28,7 @@ import {
 
 export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Command Center', href: '/command', icon: Target },
   { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
