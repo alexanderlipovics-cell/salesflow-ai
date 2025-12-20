@@ -32,16 +32,17 @@ async def create_message(message: MessageCreate, current_user: dict = Depends(ge
             "generated_by": message.generated_by,
             "metadata": message.metadata,
         }).execute()
+        logger.info(f"Message saved for lead {message.lead_id}")
         return {"success": True, "data": result.data[0] if result.data else None}
     except Exception as e:
         logger.exception(f"Message save error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/lead/{lead_id}")
-async def get_lead_messages(lead_id: str, limit: int = 20, current_user: dict = Depends(get_current_user_dict)):
+async def get_lead_messages(lead_id: str, current_user: dict = Depends(get_current_user_dict)):
     try:
         db = await get_supabase()
-        result = db.table("lead_messages").select("*").eq("user_id", current_user.get("user_id") or current_user.get("id") or current_user.get("sub")).eq("lead_id", lead_id).order("created_at", desc=True).limit(limit).execute()
+        result = db.table("lead_messages").select("*").eq("user_id", current_user.get("user_id") or current_user.get("id") or current_user.get("sub")).eq("lead_id", lead_id).order("created_at", desc=True).limit(20).execute()
         return result.data if result.data else []
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
