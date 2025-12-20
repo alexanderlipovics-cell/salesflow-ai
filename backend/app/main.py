@@ -562,6 +562,7 @@ from .routers.inbox_unified import router as inbox_unified_router  # 📨 Unifie
 from .routers.chief import router as chief_router  # 🤖 CHIEF AI Assistant
 from .routers.followup_engine import router as followup_engine_router  # 🔄 Follow-up State Machine Engine
 from .routers.ceo_chat import router as ceo_chat_router  # 👑 CHIEF CEO Chat - Multi-Model Router
+from .api.routes.messages import router as messages_router  # 📨 Messages API für Chief memory
 
 # Router registrieren
 app.include_router(auth_router, prefix="/api")  # Authentication (public endpoints)
@@ -655,6 +656,7 @@ app.include_router(inbox_unified_router)  # 📨 Unified Inbox (hat eigenes /api
 app.include_router(chief_router)  # 🤖 CHIEF AI Assistant (hat eigenes /api/chief Prefix)
 app.include_router(followup_engine_router)  # 🔄 Follow-up State Machine Engine (hat eigenes /api/engine Prefix)
 app.include_router(ceo_chat_router)  # 👑 CHIEF CEO Chat - Multi-Model Router (hat eigenes /api/ceo Prefix)
+app.include_router(messages_router, prefix="/api")  # 📨 Messages API für Chief memory
 
 
 # Health check und root sind jetzt am Anfang der Datei definiert
