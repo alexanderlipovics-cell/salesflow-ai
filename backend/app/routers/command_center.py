@@ -1405,13 +1405,14 @@ async def mark_lead_processed(
                         "priority": "medium",
                         "channel": "WHATSAPP",
                         "flow": "follow_up",
-                        "source": "system"
+                        "source": "system",
+                        "stage": "first_contact"
                     }).execute()
                     logger.info(f"Auto-Follow-up created for lead {lead_id}")
             except Exception as e:
                 logger.warning(f"Could not create auto-followup: {e}")
         
-        await supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
+        supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
         
         return {
             "success": True,
