@@ -190,7 +190,7 @@ class ChiefBrain:
         messages = messages or []
         followups = followups or []
         
-        lead_status = lead.get('status', 'new')
+        lead_status = (lead.get('status') or 'new').lower()
         lead_temp = lead.get('temperature', 'cold')
         last_contact = lead.get('last_contact_at')
         name = lead.get('name', 'Lead').split()[0] if lead.get('name') else 'Lead'
@@ -285,7 +285,7 @@ class ChiefBrain:
     ) -> Dict[str, Any]:
         """Baut das Workflow-Result Objekt."""
         workflow_config = WORKFLOW_CASES.get(case, WORKFLOW_CASES['NEW_LEAD'])
-        state = lead.get('status', 'new')
+        state = (lead.get('status') or 'new').lower()
         psychology = STATE_PSYCHOLOGY.get(state, STATE_PSYCHOLOGY['new'])
         
         # Bestimme bevorzugten Kanal
@@ -554,10 +554,11 @@ class ChiefBrain:
     async def get_prioritized_queue(self, limit: int = 20) -> List[Dict]:
         """
         Holt priorisierte Queue mit Workflow Detection für jeden Lead.
-        FIXED: Bessere Queries die tatsächlich Leads finden.
+        FIXED: Case-insensitive Status matching.
         """
         queue = []
         seen_ids = set()
+        all_leads_result = None
         
         try:
             # 1. Hot Leads (temperature = 'hot', nicht won/lost)
@@ -565,17 +566,17 @@ class ChiefBrain:
                 .select('*')\
                 .eq('user_id', self.user_id)\
                 .eq('temperature', 'hot')\
-                .not_.in_('status', ['won', 'lost'])\
-                .limit(5)\
                 .execute()
             
             for lead in (hot_result.data or []):
-                if lead.get('id') not in seen_ids:
-                    workflow = await self.detect_workflow(lead)
-                    queue.append({'lead': lead, 'workflow': workflow, 'score': 100})
-                    seen_ids.add(lead.get('id'))
+                status = (lead.get('status') or '').lower()
+                if status not in ['won', 'lost']:
+                    if lead.get('id') not in seen_ids:
+                        workflow = await self.detect_workflow(lead)
+                        queue.append({'lead': lead, 'workflow': workflow, 'score': 100})
+                        seen_ids.add(lead.get('id'))
             
-            logger.info(f"Hot leads found: {len(hot_result.data or [])}")
+            logger.info(f"Hot leads found: {len([l for l in (hot_result.data or []) if (l.get('status') or '').lower() not in ['won', 'lost']])}")
         except Exception as e:
             logger.error(f"Error fetching hot leads: {e}")
         
@@ -602,69 +603,100 @@ class ChiefBrain:
             logger.error(f"Error fetching follow-ups: {e}")
         
         try:
-            # 3. Neue Leads (status = 'new')
-            # WICHTIG: Nicht auf last_contact_at = null filtern, viele neue Leads haben das gesetzt
-            new_result = self.db.table('leads')\
+            # 3. Neue Leads (status = 'new' OR 'NEW' - case insensitive)
+            # Hole ALLE Leads und filtere in Python
+            all_leads_result = self.db.table('leads')\
                 .select('*')\
                 .eq('user_id', self.user_id)\
-                .eq('status', 'new')\
-                .limit(10)\
+                .limit(200)\
                 .execute()
             
-            for lead in (new_result.data or []):
+            new_leads = [
+                l for l in (all_leads_result.data or [])
+                if (l.get('status') or '').lower() == 'new'
+            ]
+            
+            for lead in new_leads[:10]:
                 if lead.get('id') not in seen_ids:
                     workflow = await self.detect_workflow(lead)
                     queue.append({'lead': lead, 'workflow': workflow, 'score': 60})
                     seen_ids.add(lead.get('id'))
             
-            logger.info(f"New leads found: {len(new_result.data or [])}")
+            logger.info(f"New leads found: {len(new_leads)}")
         except Exception as e:
             logger.error(f"Error fetching new leads: {e}")
         
         try:
-            # 4. Contacted Leads ohne Antwort (> 3 Tage alt)
-            three_days_ago = (datetime.utcnow() - timedelta(days=3)).isoformat()
-            stale_result = self.db.table('leads')\
-                .select('*')\
-                .eq('user_id', self.user_id)\
-                .eq('status', 'contacted')\
-                .lt('last_contact_at', three_days_ago)\
-                .limit(10)\
-                .execute()
+            # 4. Engaged/Opportunity Leads (high value)
+            if all_leads_result is None:
+                all_leads_result = self.db.table('leads')\
+                    .select('*')\
+                    .eq('user_id', self.user_id)\
+                    .limit(200)\
+                    .execute()
             
-            for lead in (stale_result.data or []):
-                if lead.get('id') not in seen_ids:
-                    workflow = await self.detect_workflow(lead)
-                    queue.append({'lead': lead, 'workflow': workflow, 'score': 40})
-                    seen_ids.add(lead.get('id'))
+            engaged_leads = [
+                l for l in (all_leads_result.data or [])
+                if (l.get('status') or '').lower() in ['engaged', 'opportunity', 'qualified']
+                and l.get('id') not in seen_ids
+            ]
             
-            logger.info(f"Stale contacted leads found: {len(stale_result.data or [])}")
+            for lead in engaged_leads[:10]:
+                workflow = await self.detect_workflow(lead)
+                queue.append({'lead': lead, 'workflow': workflow, 'score': 70})
+                seen_ids.add(lead.get('id'))
+            
+            logger.info(f"Engaged/Opportunity leads found: {len(engaged_leads)}")
         except Exception as e:
-            logger.error(f"Error fetching stale leads: {e}")
+            logger.error(f"Error fetching engaged leads: {e}")
         
-        # 5. FALLBACK: Wenn Queue immer noch leer, hole einfach die neuesten Leads
+        try:
+            # 5. Contacted Leads (need follow-up)
+            if all_leads_result is None:
+                all_leads_result = self.db.table('leads')\
+                    .select('*')\
+                    .eq('user_id', self.user_id)\
+                    .limit(200)\
+                    .execute()
+            
+            contacted_leads = [
+                l for l in (all_leads_result.data or [])
+                if (l.get('status') or '').lower() in ['contacted', 'reviewed']
+                and l.get('id') not in seen_ids
+            ]
+            
+            for lead in contacted_leads[:10]:
+                workflow = await self.detect_workflow(lead)
+                queue.append({'lead': lead, 'workflow': workflow, 'score': 50})
+                seen_ids.add(lead.get('id'))
+            
+            logger.info(f"Contacted leads found: {len(contacted_leads)}")
+        except Exception as e:
+            logger.error(f"Error fetching contacted leads: {e}")
+        
+        # 6. FALLBACK: Wenn Queue immer noch leer, hole alle nicht-abgeschlossenen Leads
         if len(queue) == 0:
             logger.warning("Queue still empty, fetching fallback leads")
             try:
-                fallback_result = self.db.table('leads')\
-                    .select('*')\
-                    .eq('user_id', self.user_id)\
-                    .not_.in_('status', ['won', 'lost'])\
-                    .order('created_at', desc=True)\
-                    .limit(limit)\
-                    .execute()
+                if all_leads_result is None:
+                    all_leads_result = self.db.table('leads')\
+                        .select('*')\
+                        .eq('user_id', self.user_id)\
+                        .limit(limit)\
+                        .execute()
                 
-                for lead in (fallback_result.data or []):
-                    if lead.get('id') not in seen_ids:
+                for lead in (all_leads_result.data or [])[:limit]:
+                    status = (lead.get('status') or '').lower()
+                    if status not in ['won', 'lost'] and lead.get('id') not in seen_ids:
                         workflow = await self.detect_workflow(lead)
                         queue.append({'lead': lead, 'workflow': workflow, 'score': 30})
                         seen_ids.add(lead.get('id'))
                 
-                logger.info(f"Fallback leads found: {len(fallback_result.data or [])}")
+                logger.info(f"Fallback leads added: {len(queue)}")
             except Exception as e:
                 logger.error(f"Error fetching fallback leads: {e}")
         
-        # Sortiere nach Score
+        # Sortiere nach Score (höchste zuerst)
         queue.sort(key=lambda x: x.get('score', 0), reverse=True)
         
         logger.info(f"Total queue size: {len(queue)}")
