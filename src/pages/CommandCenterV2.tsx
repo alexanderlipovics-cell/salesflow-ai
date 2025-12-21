@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Phone, Calendar, FileText, XCircle, Send, 
   ChevronDown, ChevronUp, Mail, MessageSquare,
@@ -1778,33 +1778,50 @@ export default function CommandCenterV2() {
   const [missionControlOpen, setMissionControlOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'timeline' | 'network' | 'calendar' | 'insights'>('info');
 
-  useEffect(() => {
-    loadLeads();
+  // Load functions with useCallback to prevent infinite loops
+  const loadTimeline = useCallback(async (leadId: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/api/leads/${leadId}/interactions`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        setTimeline([]);
+        return;
+      }
+      const data = await res.json();
+      setTimeline((Array.isArray(data) ? data : []).map((item: any) => ({
+        id: item.id,
+        type: item.interaction_type || item.type,
+        content: item.notes || item.content || item.interaction_type,
+        timestamp: item.created_at || item.timestamp,
+        channel: item.channel
+      })));
+    } catch (error) {
+      setTimeline([]);
+    }
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!leads.length || showEditModal || showNewLeadModal) return;
-      
-      const currentIndex = selectedLead ? leads.findIndex(l => l.id === selectedLead.id) : -1;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const nextIndex = currentIndex < leads.length - 1 ? currentIndex + 1 : 0;
-        setSelectedLead(leads[nextIndex]);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const prevIndex = currentIndex > 0 ? currentIndex - 1 : leads.length - 1;
-        setSelectedLead(leads[prevIndex]);
+  const loadMessages = useCallback(async (leadId: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/api/command-center/${leadId}/messages`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        setMessages([]);
+        return;
       }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [leads, selectedLead, showEditModal, showNewLeadModal]);
+      const data = await res.json();
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([]);
+    }
+  }, []);
 
   // Aggregierter Data Load - EIN Request für ALLES
-  const loadLeadData = async (leadId: string) => {
+  const loadLeadData = useCallback(async (leadId: string) => {
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${API_URL}/api/command-center/${leadId}`, {
@@ -1848,36 +1865,9 @@ export default function CommandCenterV2() {
       await loadTimeline(leadId);
       await loadMessages(leadId);
     }
-  };
+  }, [loadTimeline, loadMessages]);
 
-  useEffect(() => {
-    if (selectedLead?.id) {
-      loadLeadData(selectedLead.id);
-    }
-  }, [selectedLead?.id]); // Nur bei ID-Änderung
-
-  const loadLeads = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_URL}/api/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      let data = await res.json();
-      if (!Array.isArray(data)) data = data.leads || data.data || [];
-      
-      const sorted = sortLeadsByPriority(data);
-      setLeads(sorted);
-      if (sorted.length > 0 && !selectedLead) {
-        setSelectedLead(sorted[0]);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sortLeadsByPriority = (leads: Lead[]): Lead[] => {
+  const sortLeadsByPriority = useCallback((leads: Lead[]): Lead[] => {
     return [...leads].sort((a, b) => {
       const getScore = (lead: Lead) => {
         let score = 0;
@@ -1890,48 +1880,62 @@ export default function CommandCenterV2() {
       };
       return getScore(b) - getScore(a);
     });
-  };
+  }, []);
 
-  const loadTimeline = async (leadId: string) => {
+  const loadLeads = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_URL}/api/leads/${leadId}/interactions`, {
+      const res = await fetch(`${API_URL}/api/leads`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!res.ok) {
-        setTimeline([]);
-        return;
-      }
-      const data = await res.json();
-      setTimeline((Array.isArray(data) ? data : []).map((item: any) => ({
-        id: item.id,
-        type: item.interaction_type || item.type,
-        content: item.notes || item.content || item.interaction_type,
-        timestamp: item.created_at || item.timestamp,
-        channel: item.channel
-      })));
+      let data = await res.json();
+      if (!Array.isArray(data)) data = data.leads || data.data || [];
+      
+      const sorted = sortLeadsByPriority(data);
+      setLeads(sorted);
+      setSelectedLead(prev => {
+        if (sorted.length > 0 && !prev) {
+          return sorted[0];
+        }
+        return prev;
+      });
     } catch (error) {
-      setTimeline([]);
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [sortLeadsByPriority]);
 
-  const loadMessages = async (leadId: string) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_URL}/api/command-center/${leadId}/messages`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) {
-        setMessages([]);
-        return;
-      }
-      const data = await res.json();
-      setMessages(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      setMessages([]);
+  useEffect(() => {
+    loadLeads();
+  }, [loadLeads]);
+
+  useEffect(() => {
+    if (selectedLead?.id) {
+      loadLeadData(selectedLead.id);
     }
-  };
+  }, [selectedLead?.id, loadLeadData]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!leads.length || showEditModal || showNewLeadModal) return;
+      
+      const currentIndex = selectedLead ? leads.findIndex(l => l.id === selectedLead.id) : -1;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = currentIndex < leads.length - 1 ? currentIndex + 1 : 0;
+        setSelectedLead(leads[nextIndex]);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : leads.length - 1;
+        setSelectedLead(leads[prevIndex]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [leads, selectedLead, showEditModal, showNewLeadModal]);
 
   const handleStatusChange = async (status: string) => {
     if (!selectedLead) return;
