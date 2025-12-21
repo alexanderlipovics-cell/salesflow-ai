@@ -9,12 +9,17 @@ from typing import Optional, List, Dict, Any
 import json
 import logging
 
-from app.core.deps import get_current_user, get_supabase
+from app.core.deps import get_supabase
+from app.core.security import get_current_user_dict
 from app.ai_client import AIClient
 from app.core.config import get_settings
 from app.ai.chief_identity import get_chief_system_prompt, is_ceo_user, get_vertical_context
 
-router = APIRouter(prefix="/command-center", tags=["command-center"])
+router = APIRouter(
+    prefix="/command-center", 
+    tags=["command-center"],
+    dependencies=[Depends(get_current_user_dict)]  # ALLE Endpoints brauchen Auth
+)
 logger = logging.getLogger(__name__)
 
 # ============================================================================
@@ -24,7 +29,7 @@ logger = logging.getLogger(__name__)
 @router.get("/{lead_id}")
 async def get_lead_command_center_data(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -137,7 +142,7 @@ async def get_lead_command_center_data(
 async def update_lead(
     lead_id: str,
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -190,7 +195,7 @@ async def update_lead(
 @router.get("/{lead_id}/messages")
 async def get_lead_messages(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -423,7 +428,7 @@ def suggest_status(lead: dict, timeline: list, messages: list) -> Optional[str]:
 @router.post("/chat")
 async def chief_lead_chat(
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -571,7 +576,7 @@ def format_followups_for_prompt(followups: list) -> str:
 @router.post("/process-reply")
 async def process_lead_reply(
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -708,7 +713,7 @@ Antworte NUR mit diesem JSON Format:
 @router.post("/extract-lead")
 async def extract_lead_from_image(
     request: dict,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_dict)
 ):
     """
     Extrahiert Lead-Daten aus Screenshot (Instagram, LinkedIn, Visitenkarte, etc.)
@@ -914,7 +919,7 @@ Wenn keine Kontakte gefunden werden: []"""
 @router.post("/bulk-extract")
 async def bulk_extract_leads(
     request: dict,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_dict)
 ):
     """
     Extrahiert Leads aus mehreren Screenshots auf einmal.
@@ -965,7 +970,7 @@ async def bulk_extract_leads(
 @router.post("/bulk-import")
 async def bulk_import_leads(
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -1053,7 +1058,7 @@ async def bulk_import_leads(
 
 @router.get("/queue")
 async def get_smart_queue(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
@@ -1240,7 +1245,7 @@ async def generate_suggested_action(
 async def mark_lead_processed(
     lead_id: str,
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
     """
