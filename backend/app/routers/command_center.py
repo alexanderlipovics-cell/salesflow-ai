@@ -1339,11 +1339,12 @@ async def mark_lead_processed(
         # Wenn Nachricht gesendet wurde, aktualisiere last_contact_at
         if action in ["message_sent", "call_made", "meeting_scheduled"]:
             updates["last_contact_at"] = datetime.now().isoformat()
+            updates["waiting_for_response"] = True
         
         # Wenn "Later" gewählt, erstelle Follow-up
         if action == "later" and next_followup:
             try:
-                await supabase.table("followup_suggestions").insert({
+                supabase.table("followup_suggestions").insert({
                     "lead_id": lead_id,
                     "user_id": user_id,
                     "due_at": next_followup,
@@ -1353,11 +1354,61 @@ async def mark_lead_processed(
             except Exception as e:
                 logger.debug(f"Could not create followup: {e}")
         
-        # Wenn "Done" (gewonnen oder verloren), setze Status
+        # Status-Updates basierend auf Action
         if action == "won":
             updates["status"] = "won"
+            updates["customer_since"] = datetime.now().isoformat()
         elif action == "lost":
             updates["status"] = "lost"
+        elif action in ["done", "message_sent"]:
+            # Bei "Done" oder "Nachricht gesendet": 
+            # Setze Status auf "contacted" wenn noch "new"
+            try:
+                lead_result = supabase.table("leads")\
+                    .select("status")\
+                    .eq("id", lead_id)\
+                    .eq("user_id", user_id)\
+                    .single()\
+                    .execute()
+                
+                current_status = (lead_result.data.get("status") or "").lower() if lead_result.data else ""
+                
+                if current_status in ["new", ""]:
+                    updates["status"] = "contacted"
+                    logger.info(f"Lead {lead_id}: Status changed from '{current_status}' to 'contacted'")
+            except Exception as e:
+                logger.warning(f"Could not check lead status: {e}")
+                # Fallback: Setze auf contacted wenn action ist done/message_sent
+                updates["status"] = "contacted"
+            
+            # Setze last_contact_at
+            updates["last_contact_at"] = datetime.now().isoformat()
+            updates["waiting_for_response"] = True  # Wir warten jetzt auf Antwort
+            
+            # Erstelle Auto-Follow-up in 3 Tagen (wenn noch keins existiert)
+            try:
+                existing_followup = supabase.table("followup_suggestions")\
+                    .select("id")\
+                    .eq("lead_id", lead_id)\
+                    .eq("user_id", user_id)\
+                    .eq("status", "pending")\
+                    .execute()
+                
+                if not existing_followup.data:
+                    followup_date = (datetime.now() + timedelta(days=3)).isoformat()
+                    supabase.table("followup_suggestions").insert({
+                        "lead_id": lead_id,
+                        "user_id": user_id,
+                        "due_at": followup_date,
+                        "title": "Auto-Follow-up nach Erstkontakt",
+                        "reason": "Automatisch erstellt nach Nachricht",
+                        "status": "pending",
+                        "priority": "medium",
+                        "channel": "WHATSAPP"
+                    }).execute()
+                    logger.info(f"Auto-Follow-up created for lead {lead_id}")
+            except Exception as e:
+                logger.warning(f"Could not create auto-followup: {e}")
         
         await supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
         
