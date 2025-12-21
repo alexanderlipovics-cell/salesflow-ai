@@ -14,6 +14,7 @@ from app.core.security import get_current_user_dict
 from app.ai_client import AIClient
 from app.core.config import get_settings
 from app.ai.chief_identity import get_chief_system_prompt, is_ceo_user, get_vertical_context
+from app.services.workflow_engine import detect_workflow_status
 
 router = APIRouter(
     prefix="/command-center", 
@@ -216,114 +217,101 @@ async def generate_suggested_action(
 
 
 @router.get("/{lead_id}")
-async def get_lead_command_center_data(
+async def get_lead_details(
     lead_id: str,
     current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
-    """
-    Holt ALLE Daten für einen Lead im Command Center:
-    - Lead Details
-    - Timeline (Interactions)
-    - Messages (alle Kanäle)
-    - Follow-ups
-    - Inbox Items
-    - CHIEF Insight (Score, Strategie, nächster Schritt)
-    """
-    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    """Holt Lead-Details inkl. Workflow-Status"""
+    user_id = current_user.get("id") or current_user.get("sub") or current_user.get("user_id")
     
     if not user_id:
         raise HTTPException(status_code=401, detail="User not authenticated")
     
-    # 1. Lead Details
+    # Lead laden
     try:
-        lead_result = supabase.table("leads").select("*").eq(
-            "id", lead_id
-        ).eq("user_id", user_id).maybe_single().execute()
+        lead_res = supabase.table("leads").select("*").eq("id", lead_id).eq("user_id", user_id).maybe_single().execute()
+        lead = lead_res.data
         
-        if not lead_result.data:
-            raise HTTPException(status_code=404, detail="Lead nicht gefunden")
-        
-        lead = lead_result.data
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error loading lead: {e}")
         raise HTTPException(status_code=500, detail=f"Error loading lead: {str(e)}")
     
-    # 2. Timeline (Interactions)
-    timeline = []
-    try:
-        interactions_result = supabase.table("lead_interactions").select("*").eq(
-            "lead_id", lead_id
-        ).order("created_at", desc=True).limit(50).execute()
-        
-        timeline = [
-            {
-                "id": i.get("id"),
-                "type": i.get("interaction_type", "note"),
-                "content": i.get("notes") or i.get("content") or i.get("interaction_type", ""),
-                "channel": i.get("channel"),
-                "timestamp": i.get("created_at") or i.get("timestamp"),
-                "metadata": i.get("metadata")
-            }
-            for i in (interactions_result.data or [])
-        ]
-    except Exception as e:
-        logger.warning(f"Timeline error: {e}")
-    
-    # 3. Messages (alle Kanäle) - Falls lead_messages Tabelle existiert
+    # Messages laden (falls Tabelle existiert)
     messages = []
     try:
-        messages_result = supabase.table("lead_messages").select("*").eq(
-            "lead_id", lead_id
-        ).order("sent_at", desc=True).limit(100).execute()
-        
-        messages = messages_result.data or []
-    except Exception as e:
-        # Tabelle existiert vielleicht noch nicht
-        logger.debug(f"Messages table not found: {e}")
+        messages_res = supabase.table("messages").select("*").eq("lead_id", lead_id).order("created_at").execute()
+        messages = messages_res.data or []
+    except:
+        # Falls messages Tabelle nicht existiert, versuche lead_messages
+        try:
+            messages_res = supabase.table("lead_messages").select("*").eq("lead_id", lead_id).order("sent_at").execute()
+            messages = messages_res.data or []
+        except:
+            pass
     
-    # 4. Follow-ups für diesen Lead
+    # Interactions/Timeline laden
+    interactions = []
+    try:
+        interactions_res = supabase.table("lead_interactions").select("*").eq("lead_id", lead_id).order("created_at", desc=True).execute()
+        interactions = interactions_res.data or []
+    except:
+        pass
+    
+    # Follow-ups laden
     followups = []
     try:
-        followups_result = supabase.table("followup_suggestions").select("*").eq(
-            "lead_id", lead_id
-        ).eq("user_id", user_id).eq("status", "pending").order("due_at", desc=False).execute()
-        
-        followups = followups_result.data or []
-    except Exception as e:
-        logger.debug(f"Followups error: {e}")
+        followups_res = supabase.table("followup_suggestions").select("*").eq("lead_id", lead_id).eq("status", "pending").execute()
+        followups = followups_res.data or []
+    except:
+        pass
     
-    # 5. Inbox Items für diesen Lead
-    inbox_items = []
-    try:
-        # Suche nach verschiedenen möglichen Inbox-Tabellen
-        for table_name in ["inbox_items", "approval_queue", "contact_follow_up_queue"]:
-            try:
-                inbox_result = supabase.table(table_name).select("*").eq(
-                    "lead_id", lead_id
-                ).eq("user_id", user_id).eq("status", "pending").execute()
-                
-                if inbox_result.data:
-                    inbox_items.extend(inbox_result.data)
-            except:
-                pass
-    except Exception as e:
-        logger.debug(f"Inbox error: {e}")
+    # WORKFLOW STATUS DETECTION
+    workflow = detect_workflow_status(lead, messages, followups)
     
-    # 6. CHIEF Insight - Intelligente Analyse
-    chief_insight = generate_chief_insight(lead, timeline, messages, followups)
+    # Score berechnen
+    score = 10
+    status_scores = {'new': 10, 'contacted': 25, 'qualified': 60, 'won': 100, 'lost': 0}
+    score = status_scores.get(lead.get('status', 'new'), 10)
+    if lead.get('temperature') == 'hot':
+        score += 25
+    elif lead.get('temperature') == 'warm':
+        score += 10
+    score += min(len(interactions) * 5, 20)
+    score = min(score, 95)
     
-    # 7. Berechne Score falls nicht vorhanden
-    if not lead.get("score"):
-        lead["score"] = calculate_lead_score(lead, timeline, messages)
+    # CHIEF Insight aus Workflow
+    chief_insight = {
+        "strategy": workflow.get('reason'),
+        "next_action": workflow.get('action'),
+        "icebreaker": workflow.get('suggested_message'),
+        "probability": score,
+        "workflow_case": workflow.get('case'),
+        "urgency": workflow.get('urgency'),
+        "buttons": workflow.get('buttons'),
+        "channel": workflow.get('channel')
+    }
+    
+    # Timeline formatieren
+    timeline = [{
+        "id": i.get("id"),
+        "type": i.get("interaction_type"),
+        "content": i.get("notes") or i.get("interaction_type"),
+        "timestamp": i.get("created_at"),
+        "channel": i.get("channel")
+    } for i in interactions]
     
     return {
-        "lead": lead,
-        "timeline": timeline,
+        "lead": {**lead, "score": score},
         "messages": messages,
+        "timeline": timeline,
         "followups": followups,
-        "inbox_items": inbox_items,
-        "chief_insight": chief_insight
+        "chief_insight": chief_insight,
+        "workflow": workflow
     }
 
 
@@ -1232,7 +1220,7 @@ async def bulk_import_leads(
                         "lead_id": lead_id,
                         "user_id": user_id,
                         "title": "Erstkontakt",
-                        "message": f"Follow-up für {lead_data.get('name', 'Lead')}",
+                        "suggested_message": f"Follow-up für {lead_data.get('name', 'Lead')}",
                         "due_at": followup_date,
                         "status": "pending",
                         "created_at": datetime.now().isoformat()
