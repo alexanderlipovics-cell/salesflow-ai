@@ -11,6 +11,7 @@ import {
 import SmartQueue from '@/components/command-center/SmartQueue';
 import AllLeadsTable from '@/components/command-center/AllLeadsTable';
 import AutopilotPreview from '@/components/command-center/AutopilotPreview';
+import BulkImportModal from '@/components/command-center/BulkImportModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://salesflow-ai.onrender.com';
 
@@ -1242,6 +1243,7 @@ export default function CommandCenterV2() {
   // Modals
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [pastedResponse, setPastedResponse] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -1664,8 +1666,15 @@ export default function CommandCenterV2() {
           )}
         </div>
 
-        {/* New Lead Button */}
-        <div className="p-3 border-t border-cyan-500/10">
+        {/* New Lead Buttons */}
+        <div className="p-3 border-t border-cyan-500/10 space-y-2">
+          <button
+            onClick={() => setShowBulkImport(true)}
+            className="w-full py-2 px-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
+          >
+            <Users className="w-4 h-4" />
+            Bulk Import
+          </button>
           <button
             onClick={() => setShowNewLeadModal(true)}
             className="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all flex items-center justify-center gap-2"
@@ -1717,6 +1726,21 @@ export default function CommandCenterV2() {
         isOpen={showNewLeadModal}
         onClose={() => setShowNewLeadModal(false)}
         onCreate={handleCreateLead}
+      />
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onImportComplete={() => {
+          setShowBulkImport(false);
+          loadLeads(); // Refresh die Lead-Liste
+          // Refresh Queue if using SmartQueue
+          if (queueView === 'queue') {
+            // Trigger queue refresh
+            window.dispatchEvent(new Event('refresh-queue'));
+          }
+        }}
       />
 
       {/* Response Analysis Modal */}

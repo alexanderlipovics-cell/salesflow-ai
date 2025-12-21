@@ -93,7 +93,7 @@ async def get_lead_command_center_data(
     try:
         followups_result = supabase.table("followup_suggestions").select("*").eq(
             "lead_id", lead_id
-        ).eq("user_id", user_id).eq("status", "pending").order("due_date", desc=False).execute()
+        ).eq("user_id", user_id).eq("status", "pending").order("due_at", desc=False).execute()
         
         followups = followups_result.data or []
     except Exception as e:
@@ -160,7 +160,7 @@ def generate_chief_insight(lead: dict, timeline: list, messages: list, followups
     next_action = "Nachricht senden"
     if followups:
         next_followup = followups[0]
-        due_date = next_followup.get("due_date") or next_followup.get("due_at", "")
+        due_date = next_followup.get("due_at") or next_followup.get("due_date", "")
         if due_date:
             try:
                 due_dt = datetime.fromisoformat(due_date.replace("Z", "+00:00"))
@@ -459,7 +459,7 @@ def format_followups_for_prompt(followups: list) -> str:
     
     lines = []
     for f in followups[:5]:
-        due = f.get("due_date") or f.get("due_at", "")
+        due = f.get("due_at") or f.get("due_date", "")
         due_str = due[:10] if due else "?"
         title = (f.get("title") or f.get("message", "Follow-up") or "")[:50]
         lines.append(f"- Fällig {due_str}: {title}")
@@ -711,6 +711,246 @@ Extrahiere NUR was du SICHER erkennst. Antworte NUR mit JSON:
 
 
 # ============================================================================
+# BULK EXTRACT & IMPORT
+# ============================================================================
+
+async def extract_leads_from_image(image_base64: str, image_number: int) -> list:
+    """
+    Nutzt GPT-4o Vision um Leads aus einem Screenshot zu extrahieren.
+    Kann MEHRERE Leads pro Bild finden (z.B. Chat-Liste).
+    """
+    from openai import AsyncOpenAI
+    import json
+    
+    settings = get_settings()
+    if not settings.openai_api_key:
+        logger.error("OpenAI API Key nicht konfiguriert")
+        return []
+    
+    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    
+    # Bereinige base64 falls nötig
+    if "," in image_base64:
+        image_base64 = image_base64.split(",")[1]
+    
+    system_prompt = """Du bist ein Experte für das Extrahieren von Kontaktdaten aus Screenshots.
+
+Analysiere das Bild und extrahiere ALLE sichtbaren Kontakte/Profile/Leads.
+
+Das Bild kann sein:
+- Instagram DM Liste (mehrere Chats sichtbar)
+- WhatsApp Chat-Liste
+- Facebook Messenger Liste
+- LinkedIn Nachrichten
+- Einzelnes Profil
+- Visitenkarte
+
+Für JEDEN gefundenen Kontakt extrahiere:
+- name: Vollständiger Name oder Username
+- platform: instagram, whatsapp, facebook, linkedin, unknown
+- username: @username falls sichtbar
+- phone: Telefonnummer falls sichtbar
+- email: Email falls sichtbar
+- company: Firma falls sichtbar
+- bio: Bio/Status falls sichtbar
+- last_message: Letzte Nachricht im Chat falls sichtbar
+- has_unread: true/false - Hat ungelesene Nachrichten
+
+Antworte NUR mit validem JSON Array. Kein Markdown, keine Erklärung.
+Beispiel: [{"name": "Max Müller", "platform": "instagram", "username": "@maxm", ...}]
+
+Wenn keine Kontakte gefunden werden: []"""
+
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"Bild {image_number}: Extrahiere alle Kontakte/Leads aus diesem Screenshot."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}",
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=4000,
+            temperature=0.1
+        )
+        
+        result_text = response.choices[0].message.content.strip()
+        
+        # Bereinige falls in Markdown eingewickelt
+        if result_text.startswith("```"):
+            result_text = result_text.split("```")[1]
+            if result_text.startswith("json"):
+                result_text = result_text[4:]
+            result_text = result_text.strip()
+        
+        leads = json.loads(result_text)
+        
+        # Füge Quelle hinzu
+        for lead in leads:
+            lead["source"] = f"bulk_import_image_{image_number}"
+            lead["extracted_at"] = datetime.now().isoformat()
+        
+        return leads if isinstance(leads, list) else []
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error bei Bild {image_number}: {e}")
+        logger.debug(f"Response text: {result_text[:500]}")
+        return []
+    except Exception as e:
+        logger.error(f"GPT-4o Vision Fehler bei Bild {image_number}: {e}")
+        return []
+
+
+@router.post("/bulk-extract")
+async def bulk_extract_leads(
+    request: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Extrahiert Leads aus mehreren Screenshots auf einmal.
+    Nutzt GPT-4o Vision für Analyse.
+    
+    Request body:
+    {
+        "images": ["base64_image_1", "base64_image_2", ...]
+    }
+    """
+    images = request.get("images", [])
+    
+    if not images:
+        raise HTTPException(status_code=400, detail="Keine Bilder übermittelt")
+    
+    if len(images) > 20:
+        raise HTTPException(status_code=400, detail="Maximal 20 Bilder erlaubt")
+    
+    all_leads = []
+    
+    for idx, image_base64 in enumerate(images):
+        try:
+            # GPT-4o Vision Analyse
+            extracted = await extract_leads_from_image(image_base64, idx + 1)
+            if extracted:
+                all_leads.extend(extracted)
+        except Exception as e:
+            logger.error(f"Fehler bei Bild {idx + 1}: {e}")
+            continue
+    
+    # Deduplizierung nach Name (case-insensitive)
+    seen_names = set()
+    unique_leads = []
+    for lead in all_leads:
+        name_lower = lead.get("name", "").lower().strip()
+        if name_lower and name_lower not in seen_names:
+            seen_names.add(name_lower)
+            unique_leads.append(lead)
+    
+    return {
+        "total_found": len(all_leads),
+        "unique_leads": len(unique_leads),
+        "duplicates_removed": len(all_leads) - len(unique_leads),
+        "leads": unique_leads
+    }
+
+
+@router.post("/bulk-import")
+async def bulk_import_leads(
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Importiert mehrere Leads auf einmal.
+    
+    Request body:
+    {
+        "leads": [...],
+        "default_status": "new",
+        "default_temperature": "cold",
+        "create_followup": true,
+        "followup_days": 3
+    }
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    leads_to_import = request.get("leads", [])
+    default_status = request.get("default_status", "new")
+    default_temperature = request.get("default_temperature", "cold")
+    create_followup = request.get("create_followup", True)
+    followup_days = request.get("followup_days", 3)
+    
+    imported = []
+    failed = []
+    
+    for lead_data in leads_to_import:
+        try:
+            # Erstelle Lead
+            new_lead = {
+                "user_id": user_id,
+                "name": lead_data.get("name", "Unbekannt"),
+                "email": lead_data.get("email"),
+                "phone": lead_data.get("phone"),
+                "company": lead_data.get("company"),
+                "status": default_status,
+                "temperature": default_temperature,
+                "source": lead_data.get("platform") or lead_data.get("source", "bulk_import"),
+                "instagram_handle": lead_data.get("username"),
+                "notes": lead_data.get("bio", ""),
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            # Entferne None values
+            new_lead = {k: v for k, v in new_lead.items() if v is not None}
+            
+            result = supabase.table("leads").insert(new_lead).execute()
+            
+            if result.data:
+                lead_id = result.data[0]["id"]
+                imported.append(result.data[0])
+                
+                # Erstelle Follow-up wenn gewünscht
+                if create_followup:
+                    followup_date = (datetime.now() + timedelta(days=followup_days)).isoformat()
+                    supabase.table("followup_suggestions").insert({
+                        "lead_id": lead_id,
+                        "user_id": user_id,
+                        "title": "Erstkontakt",
+                        "message": f"Follow-up für {lead_data.get('name', 'Lead')}",
+                        "due_at": followup_date,
+                        "status": "pending",
+                        "created_at": datetime.now().isoformat()
+                    }).execute()
+                    
+        except Exception as e:
+            logger.error(f"Fehler beim Import von Lead {lead_data.get('name', 'Unbekannt')}: {e}")
+            failed.append({"lead": lead_data, "error": str(e)})
+    
+    return {
+        "success": True,
+        "imported_count": len(imported),
+        "failed_count": len(failed),
+        "imported": imported,
+        "failed": failed
+    }
+
+
+# ============================================================================
 # COMMAND CENTER V3 - SMART QUEUE SYSTEM
 # ============================================================================
 
@@ -754,7 +994,7 @@ async def get_smart_queue(
             followups_result = supabase.table("followup_suggestions").select(
                 "*, leads(*)"
             ).eq("user_id", user_id).eq("status", "pending").lte(
-                "due_date", today + "T23:59:59"
+                "due_at", today + "T23:59:59"
             ).execute()
             
             for fu in followups_result.data or []:
@@ -867,7 +1107,7 @@ async def generate_suggested_action(
     if followup:
         return {
             "type": "followup",
-            "reason": f"Follow-up geplant für {followup.get('due_date', 'heute')}",
+            "reason": f"Follow-up geplant für {followup.get('due_at', 'heute')}",
             "message": followup.get("suggested_message") or followup.get("message") or f"Hey {lead.get('name', '').split()[0] if lead.get('name') else ''}! Wollte kurz nachfragen...",
             "urgency": "high"
         }
@@ -936,7 +1176,7 @@ async def mark_lead_processed(
                 await supabase.table("followup_suggestions").insert({
                     "lead_id": lead_id,
                     "user_id": user_id,
-                    "due_date": next_followup,
+                    "due_at": next_followup,
                     "title": "Manueller Follow-up",
                     "status": "pending"
                 }).execute()
