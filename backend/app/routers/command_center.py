@@ -15,6 +15,7 @@ from app.ai_client import AIClient
 from app.core.config import get_settings
 from app.ai.chief_identity import get_chief_system_prompt, is_ceo_user, get_vertical_context
 from app.services.workflow_engine import detect_workflow_status
+from app.services.chief_brain import ChiefBrain
 
 router = APIRouter(
     prefix="/command-center", 
@@ -37,90 +38,57 @@ async def get_smart_queue(
     supabase = Depends(get_supabase)
 ):
     """
+    Get prioritized queue using CHIEF Brain.
     Gibt NUR die Leads zurück die JETZT actionable sind.
-    Sortiert nach Priorität.
+    Sortiert nach Priorität mit Workflow Detection.
     """
     user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
     
     if not user_id:
         raise HTTPException(status_code=401, detail="User not authenticated")
     
-    queue = {
-        "action_required": [],   # Lead wartet auf Antwort
-        "followups_today": [],   # Follow-ups fällig
-        "hot_leads": [],         # Hot ohne Aktivität 24h
-        "new_leads": [],         # Noch nie kontaktiert
-        "nurture": [],           # >7 Tage kein Kontakt
-        "appointments_today": [] # Termine heute
-    }
-    
     try:
-        # 1. Leads die auf Antwort warten (KRITISCH)
-        waiting_result = supabase.table("leads").select("*").eq(
-            "user_id", user_id
-        ).eq("waiting_for_response", True).not_.in_("status", ["won", "lost"]).execute()
+        # Nutze CHIEF Brain für priorisierte Queue
+        brain = ChiefBrain(supabase, user_id)
+        queue_items = await brain.get_prioritized_queue(limit=20)
         
-        for lead in waiting_result.data or []:
-            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
-            lead["priority"] = "critical"
-            queue["action_required"].append(lead)
+        # Transformiere in das erwartete Format
+        queue = {
+            "action_required": [],   # Lead wartet auf Antwort
+            "followups_today": [],   # Follow-ups fällig
+            "hot_leads": [],         # Hot ohne Aktivität 24h
+            "new_leads": [],         # Noch nie kontaktiert
+            "nurture": [],           # >7 Tage kein Kontakt
+            "appointments_today": [] # Termine heute
+        }
         
-        # 2. Follow-ups heute fällig
-        today = datetime.now().date().isoformat()
-        try:
-            followups_result = supabase.table("followup_suggestions").select(
-                "*, leads(*)"
-            ).eq("user_id", user_id).eq("status", "pending").lte(
-                "due_at", today + "T23:59:59"
-            ).execute()
+        for item in queue_items:
+            lead = item['lead']
+            workflow = item['workflow']
             
-            for fu in followups_result.data or []:
-                lead = fu.get("leads") or {}
-                if lead:
-                    lead["followup"] = fu
-                    lead["suggested_action"] = await generate_suggested_action(supabase, lead, fu)
-                    lead["priority"] = "high"
-                    queue["followups_today"].append(lead)
-        except Exception as e:
-            logger.debug(f"Followups table might not exist: {e}")
-        
-        # 3. Hot Leads ohne Aktivität 24h
-        day_ago = (datetime.now() - timedelta(days=1)).isoformat()
-        hot_result = supabase.table("leads").select("*").eq(
-            "user_id", user_id
-        ).eq("temperature", "hot").not_.in_("status", ["won", "lost"]).or_(
-            f"last_contact_at.is.null,last_contact_at.lt.{day_ago}"
-        ).execute()
-        
-        for lead in hot_result.data or []:
-            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
-            lead["priority"] = "high"
-            queue["hot_leads"].append(lead)
-        
-        # 4. Neue Leads (noch nie kontaktiert)
-        new_result = supabase.table("leads").select("*").eq(
-            "user_id", user_id
-        ).eq("status", "new").is_("last_contact_at", "null").execute()
-        
-        for lead in new_result.data or []:
-            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
-            lead["priority"] = "medium"
-            queue["new_leads"].append(lead)
-        
-        # 5. Nurture (>7 Tage kein Kontakt)
-        week_ago = (datetime.now() - timedelta(days=7)).isoformat()
-        nurture_result = supabase.table("leads").select("*").eq(
-            "user_id", user_id
-        ).not_.in_("status", ["won", "lost"]).lt(
-            "last_contact_at", week_ago
-        ).execute()
-        
-        for lead in nurture_result.data or []:
-            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
-            lead["priority"] = "low"
-            queue["nurture"].append(lead)
-        
-        # TODO: 6. Termine heute (wenn appointments table existiert)
+            # Füge workflow als suggested_action hinzu (für Kompatibilität)
+            lead["suggested_action"] = workflow
+            lead["priority"] = workflow.get('priority', 'medium')
+            lead["workflow"] = workflow
+            
+            # Kategorisiere basierend auf Workflow Case
+            case = workflow.get('case', '').upper()
+            
+            if case == 'RESPONSE_RECEIVED':
+                queue["action_required"].append(lead)
+            elif case == 'FOLLOWUP_DUE':
+                queue["followups_today"].append(lead)
+            elif case == 'HOT_LEAD':
+                queue["hot_leads"].append(lead)
+            elif case == 'NEW_LEAD':
+                queue["new_leads"].append(lead)
+            elif case == 'GONE_COLD':
+                queue["nurture"].append(lead)
+            elif case == 'QUALIFIED':
+                queue["action_required"].append(lead)
+            else:
+                # Default: in new_leads
+                queue["new_leads"].append(lead)
         
         return {
             "queue": queue,
@@ -131,6 +99,103 @@ async def get_smart_queue(
     except Exception as e:
         logger.error(f"Error generating smart queue: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating queue: {str(e)}")
+
+
+@router.get("/queue/debug")
+async def debug_queue(
+    current_user: dict = Depends(get_current_user_dict),
+    supabase = Depends(get_supabase)
+):
+    """Debug endpoint to see why queue might be empty."""
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    now = datetime.utcnow()
+    three_days_ago = (now - timedelta(days=3)).isoformat()
+    
+    try:
+        # Count leads by status
+        all_leads_result = supabase.table("leads").select("id, status, temperature, last_contact_at").eq("user_id", user_id).execute()
+        leads_data = all_leads_result.data or []
+        
+        status_counts = {}
+        temp_counts = {"hot": 0, "warm": 0, "cold": 0, "none": 0}
+        last_contact_stats = {"null": 0, "recent_3d": 0, "older_3d": 0}
+        
+        for lead in leads_data:
+            # Status
+            status = lead.get("status", "unknown")
+            status_counts[status] = status_counts.get(status, 0) + 1
+            
+            # Temperature
+            temp = lead.get("temperature", "none")
+            if temp in temp_counts:
+                temp_counts[temp] += 1
+            else:
+                temp_counts["none"] += 1
+            
+            # Last contact
+            lc = lead.get("last_contact_at")
+            if not lc:
+                last_contact_stats["null"] += 1
+            else:
+                try:
+                    lc_dt = datetime.fromisoformat(lc.replace('Z', '+00:00'))
+                    three_days_ago_dt = datetime.fromisoformat(three_days_ago.replace('Z', '+00:00'))
+                    if lc_dt > three_days_ago_dt:
+                        last_contact_stats["recent_3d"] += 1
+                    else:
+                        last_contact_stats["older_3d"] += 1
+                except:
+                    last_contact_stats["null"] += 1
+        
+        # Count pending follow-ups
+        followups_result = supabase.table("followup_suggestions")\
+            .select("id, status, due_at")\
+            .eq("user_id", user_id)\
+            .eq("status", "pending")\
+            .execute()
+        followups_data = followups_result.data or []
+        
+        due_now = 0
+        due_future = 0
+        for fu in followups_data:
+            due_at = fu.get("due_at", "")
+            if due_at:
+                try:
+                    due_dt = datetime.fromisoformat(due_at.replace('Z', '+00:00'))
+                    if due_dt <= now:
+                        due_now += 1
+                    else:
+                        due_future += 1
+                except:
+                    due_future += 1
+            else:
+                due_future += 1
+        
+        return {
+            "total_leads": len(leads_data),
+            "status_breakdown": status_counts,
+            "temperature_breakdown": temp_counts,
+            "last_contact_breakdown": last_contact_stats,
+            "followups": {
+                "total_pending": len(followups_data),
+                "due_now": due_now,
+                "due_future": due_future,
+            },
+            "queue_criteria": {
+                "hot_leads": f"{temp_counts.get('hot', 0)} leads with temperature='hot'",
+                "new_no_contact": f"{last_contact_stats['null']} leads with last_contact_at=null",
+                "stale_contacted": f"Leads with status='contacted' AND last_contact > 3 days",
+                "followups_due": f"{due_now} follow-ups due now",
+            },
+            "debug_timestamp": now.isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Error in debug_queue: {e}")
+        raise HTTPException(status_code=500, detail=f"Error in debug: {str(e)}")
 
 
 async def generate_suggested_action(
