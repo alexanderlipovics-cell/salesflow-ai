@@ -20,7 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import SalesAiSettingsPage from './SalesAiSettingsPage';
-import CompanyKnowledgeSettingsPage from './CompanyKnowledgeSettingsPage';
+import CompanyKnowledgeManager from '@/components/settings/CompanyKnowledgeManager';
 import AIPromptsPage from './AIPromptsPage';
 import { AutopilotSettings } from '@/components/autopilot/AutopilotSettings';
 import { resetTour } from '@/components/onboarding/ProductTour';
@@ -679,7 +679,7 @@ export default function SettingsPage() {
 
         <TabsContent value="company">
           <div className="space-y-6">
-            <CompanyKnowledgeSettingsPage />
+            <CompanyKnowledgeManager />
           </div>
         </TabsContent>
 
