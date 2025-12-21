@@ -529,7 +529,7 @@ const ChiefCopilot: React.FC<{
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chiefChat]);
+  }, [chiefChat.length]);
 
   const channels = [
     { key: 'whatsapp', icon: MessageSquare, label: 'WhatsApp', color: 'text-green-400' },
@@ -980,7 +980,7 @@ const EditLeadModal: React.FC<{
         notes: lead.notes || '',
       });
     }
-  }, [lead, isOpen]);
+  }, [lead.id, lead.name, lead.email, lead.phone, lead.company, lead.position, lead.instagram_url, lead.linkedin_url, lead.notes, isOpen]);
 
   if (!isOpen) return null;
 
@@ -1260,7 +1260,7 @@ const ChiefChatPanel: React.FC<ChiefChatPanelProps> = ({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages.length]);
 
   const handleSend = () => {
     if (!input.trim() || !lead) return;
@@ -1935,7 +1935,7 @@ export default function CommandCenterV2() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [leads, selectedLead, showEditModal, showNewLeadModal]);
+  }, [leads.length, selectedLead?.id, showEditModal, showNewLeadModal]);
 
   const handleStatusChange = async (status: string) => {
     if (!selectedLead) return;
