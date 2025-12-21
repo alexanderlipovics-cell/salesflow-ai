@@ -99,7 +99,7 @@ async def get_smart_queue(
         # 4. Neue Leads (noch nie kontaktiert)
         new_result = supabase.table("leads").select("*").eq(
             "user_id", user_id
-        ).eq("status", "new").is_("last_contact_at", None).execute()
+        ).eq("status", "new").is_("last_contact_at", "null").execute()
         
         for lead in new_result.data or []:
             lead["suggested_action"] = await generate_suggested_action(supabase, lead)
@@ -1190,29 +1190,31 @@ async def bulk_import_leads(
     
     for lead_data in leads_to_import:
         try:
-            # Erstelle Lead - WICHTIG: Nur Spalten die in der DB existieren!
+            # Extrahiere Social Handles
+            instagram_handle = lead_data.get("instagram_handle") or lead_data.get("username")
+            
+            # Erstelle Lead mit Social Handles
             new_lead = {
                 "user_id": user_id,
-                "name": lead_data.get("name") or lead_data.get("username") or "Unbekannt",
+                "name": lead_data.get("name") or instagram_handle or "Unknown",
                 "email": lead_data.get("email"),
                 "phone": lead_data.get("phone"),
                 "company": lead_data.get("company"),
                 "status": default_status,
                 "temperature": default_temperature,
                 "source": lead_data.get("platform") or lead_data.get("source", "bulk_import"),
-                "notes": f"Imported from {lead_data.get('platform', 'screenshot')}" + (f"\nInstagram: {lead_data.get('username')}" if lead_data.get("username") else ""),
+                "notes": f"Imported from {lead_data.get('platform', 'screenshot')}",
                 "created_at": datetime.now().isoformat(),
                 "updated_at": datetime.now().isoformat()
             }
             
-            # Social handles gehen in notes oder separate Felder falls vorhanden
-            if lead_data.get("username"):
-                # Falls instagram_url Feld existiert, nutze das
-                if "instagram_url" in [col for col in ["instagram_url", "linkedin_url", "facebook_url"]]:
-                    new_lead["instagram_url"] = f"https://instagram.com/{lead_data.get('username').lstrip('@')}"
-                else:
-                    # Sonst in notes speichern
-                    new_lead["notes"] = (new_lead.get("notes", "") or "") + f"\nInstagram Handle: {lead_data.get('username')}"
+            # Social Handles in separate Felder
+            if instagram_handle:
+                new_lead["instagram_handle"] = instagram_handle.lstrip("@") if instagram_handle.startswith("@") else instagram_handle
+                new_lead["instagram_url"] = f"https://instagram.com/{new_lead['instagram_handle']}"
+            
+            if lead_data.get("whatsapp_number"):
+                new_lead["whatsapp_number"] = lead_data.get("whatsapp_number")
             
             # Entferne None values
             new_lead = {k: v for k, v in new_lead.items() if v is not None}
