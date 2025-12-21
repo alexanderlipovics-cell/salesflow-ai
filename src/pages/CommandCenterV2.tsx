@@ -1392,7 +1392,7 @@ export default function CommandCenterV2() {
   const loadMessages = async (leadId: string) => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_URL}/api/leads/${leadId}/messages`, {
+      const res = await fetch(`${API_URL}/api/command-center/${leadId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) {
@@ -1402,6 +1402,7 @@ export default function CommandCenterV2() {
       const data = await res.json();
       setMessages(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('Error loading messages:', error);
       setMessages([]);
     }
   };
@@ -1410,15 +1411,21 @@ export default function CommandCenterV2() {
     if (!selectedLead) return;
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`${API_URL}/api/leads/${selectedLead.id}`, {
+      const res = await fetch(`${API_URL}/api/command-center/${selectedLead.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status })
       });
-      setSelectedLead({ ...selectedLead, status });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      const data = await res.json();
+      if (data.lead) {
+        setSelectedLead({ ...selectedLead, status });
+      }
       loadLeads();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error updating status:', error);
     }
   };
 
@@ -1426,15 +1433,21 @@ export default function CommandCenterV2() {
     if (!selectedLead) return;
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`${API_URL}/api/leads/${selectedLead.id}`, {
+      const res = await fetch(`${API_URL}/api/command-center/${selectedLead.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ temperature })
       });
-      setSelectedLead({ ...selectedLead, temperature: temperature as any });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      const data = await res.json();
+      if (data.lead) {
+        setSelectedLead({ ...selectedLead, temperature: temperature as any });
+      }
       loadLeads();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error updating temperature:', error);
     }
   };
 

@@ -133,6 +133,103 @@ async def get_lead_command_center_data(
     }
 
 
+@router.patch("/{lead_id}")
+async def update_lead(
+    lead_id: str,
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Update Lead Status/Temperature oder andere Felder.
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    # Prüfe ob Lead existiert und User gehört
+    try:
+        lead_check = supabase.table("leads").select("id").eq(
+            "id", lead_id
+        ).eq("user_id", user_id).maybe_single().execute()
+        
+        if not lead_check.data:
+            raise HTTPException(status_code=404, detail="Lead nicht gefunden")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking lead ownership: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+    
+    # Erstelle Updates Dict
+    updates = {}
+    allowed_fields = ["status", "temperature", "score", "notes", "company", "position", "email", "phone"]
+    
+    for field in allowed_fields:
+        if field in request:
+            updates[field] = request[field]
+    
+    if not updates:
+        raise HTTPException(status_code=400, detail="Keine gültigen Felder zum Update")
+    
+    updates["updated_at"] = datetime.now().isoformat()
+    
+    try:
+        result = supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
+        
+        return {
+            "success": True,
+            "lead": result.data[0] if result.data else None
+        }
+    except Exception as e:
+        logger.error(f"Error updating lead: {e}")
+        raise HTTPException(status_code=500, detail=f"Error updating lead: {str(e)}")
+
+
+@router.get("/{lead_id}/messages")
+async def get_lead_messages(
+    lead_id: str,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Holt alle Messages für einen Lead (alle Kanäle).
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    # Prüfe ob Lead existiert und User gehört
+    try:
+        lead_check = supabase.table("leads").select("id").eq(
+            "id", lead_id
+        ).eq("user_id", user_id).maybe_single().execute()
+        
+        if not lead_check.data:
+            raise HTTPException(status_code=404, detail="Lead nicht gefunden")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking lead ownership: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+    
+    # Hole Messages
+    messages = []
+    try:
+        messages_result = supabase.table("lead_messages").select("*").eq(
+            "lead_id", lead_id
+        ).order("sent_at", desc=True).limit(100).execute()
+        
+        messages = messages_result.data or []
+    except Exception as e:
+        # Tabelle existiert vielleicht noch nicht
+        logger.debug(f"Messages table not found or error: {e}")
+    
+    return messages
+
+
 def generate_chief_insight(lead: dict, timeline: list, messages: list, followups: list) -> dict:
     """
     Generiert intelligente Insights basierend auf Lead-Daten.
