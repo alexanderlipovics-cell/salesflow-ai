@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Phone, Calendar, FileText, XCircle, Send, 
   ChevronDown, ChevronUp, Mail, MessageSquare,
-  Instagram, Flame, Clock, Sparkles, Target,
-  TrendingUp, User, Building, Copy, Check,
-  Camera, Mic, Edit3, X, Plus, Image,
-  Linkedin, Facebook, MoreHorizontal, Paperclip,
-  Home, Users, CalendarDays, Lightbulb, List
+  Instagram, Clock, Sparkles, Target,
+  Building, Check, Copy, TrendingUp,
+  Camera, Mic, Edit3, X, Plus,
+  Facebook,
+  Home, Users, CalendarDays, Lightbulb,
+  Loader2, Zap
 } from 'lucide-react';
 import SmartQueue from '@/components/command-center/SmartQueue';
 import AllLeadsTable from '@/components/command-center/AllLeadsTable';
@@ -27,6 +28,8 @@ interface Lead {
   email?: string;
   phone?: string;
   instagram_url?: string;
+  instagram_handle?: string;
+  whatsapp_number?: string;
   linkedin_url?: string;
   facebook_url?: string;
   status: string;
@@ -46,6 +49,12 @@ interface Lead {
     message: string;
     urgency?: string;
   };
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: string;
 }
 
 interface Message {
@@ -1228,6 +1237,505 @@ const NewLeadModal: React.FC<{
 };
 
 // ============================================================================
+// CHIEF CHAT PANEL (Center)
+// ============================================================================
+
+interface ChiefChatPanelProps {
+  lead: Lead | null;
+  messages: ChatMessage[];
+  onSendMessage: (message: string) => void;
+  isLoading: boolean;
+  onQuickAction: (action: string) => void;
+}
+
+const ChiefChatPanel: React.FC<ChiefChatPanelProps> = ({ 
+  lead, 
+  messages, 
+  onSendMessage, 
+  isLoading,
+  onQuickAction 
+}) => {
+  const [input, setInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!input.trim() || !lead) return;
+    onSendMessage(input);
+    setInput('');
+  };
+
+  return (
+    <div className="flex-1 flex flex-col min-w-0 bg-[#0a0a0f]">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-700 flex items-center gap-3">
+        <Sparkles className="w-6 h-6 text-cyan-400" />
+        <div>
+          <h2 className="text-lg font-semibold text-white">CHIEF Copilot</h2>
+          {lead && (
+            <p className="text-sm text-gray-400">
+              Arbeite mit {lead.name}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Messages Area - SCROLLABLE */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {!lead ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <Users className="w-12 h-12 mb-4" />
+            <p>Wähle einen Lead aus der Liste</p>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <Sparkles className="w-12 h-12 mb-4 text-cyan-400" />
+            <p className="text-lg mb-2">Bereit für {lead.name}</p>
+            <p className="text-sm">Frag CHIEF was zu tun ist...</p>
+          </div>
+        ) : (
+          messages.map((msg, i) => (
+            <div 
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[80%] p-4 rounded-2xl ${
+                msg.role === 'user' 
+                  ? 'bg-cyan-600 text-white rounded-br-sm'
+                  : 'bg-gray-800 text-gray-100 rounded-bl-sm'
+              }`}>
+                {msg.role === 'assistant' && (
+                  <div className="flex items-center gap-2 mb-2 text-cyan-400">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-xs font-medium">CHIEF</span>
+                  </div>
+                )}
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              </div>
+            </div>
+          ))
+        )}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-800 p-4 rounded-2xl rounded-bl-sm">
+              <div className="flex items-center gap-2 text-cyan-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">CHIEF denkt nach...</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area - FIXED AT BOTTOM */}
+      <div className="p-4 border-t border-gray-700">
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+            placeholder={lead ? `Sag CHIEF was zu tun ist mit ${lead.name}...` : "Wähle zuerst einen Lead..."}
+            disabled={!lead}
+            className="flex-1 bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 disabled:opacity-50"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!lead || !input.trim() || isLoading}
+            className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl text-white font-medium hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Quick Actions */}
+        {lead && (
+          <div className="flex gap-2 mt-3">
+            <QuickActionButton icon={Phone} label="Call" onClick={() => onQuickAction('call')} />
+            <QuickActionButton icon={Calendar} label="Termin" onClick={() => onQuickAction('termin')} />
+            <QuickActionButton icon={FileText} label="Notiz" onClick={() => onQuickAction('notiz')} />
+            <QuickActionButton icon={XCircle} label="Verloren" onClick={() => onQuickAction('verloren')} variant="danger" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// LEAD PROFILE PANEL (Right)
+// ============================================================================
+
+interface LeadProfilePanelProps {
+  lead: Lead | null;
+  timeline: TimelineItem[];
+  chiefInsight: any;
+  missionControlOpen: boolean;
+  onToggleMissionControl: () => void;
+  activeTab: 'info' | 'timeline' | 'network' | 'calendar' | 'insights';
+  onTabChange: (tab: 'info' | 'timeline' | 'network' | 'calendar' | 'insights') => void;
+  onStatusChange: (status: string) => void;
+  onTemperatureChange: (temp: string) => void;
+  onEdit: () => void;
+}
+
+const LeadProfilePanel: React.FC<LeadProfilePanelProps> = ({
+  lead,
+  timeline,
+  chiefInsight,
+  missionControlOpen,
+  onToggleMissionControl,
+  activeTab,
+  onTabChange,
+  onStatusChange,
+  onTemperatureChange,
+  onEdit
+}) => {
+  if (!lead) {
+    return (
+      <div className="w-[380px] flex-shrink-0 border-l border-gray-700 flex items-center justify-center text-gray-500 bg-[#0a0a0f]">
+        <p>Kein Lead ausgewählt</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-[380px] flex-shrink-0 border-l border-gray-700 flex flex-col bg-[#0a0a0f]">
+      {/* Lead Card - Kompakt */}
+      <div className="p-4 border-b border-gray-700">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-2xl font-bold text-white">
+            {lead.name?.charAt(0) || '?'}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-white">{lead.name}</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <StatusPill status={lead.status} />
+              <TemperatureBadge temperature={lead.temperature} />
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-bold text-cyan-400">{lead.score || 0}</div>
+            <div className="text-xs text-gray-500">Score</div>
+          </div>
+        </div>
+
+        {/* Deep Links */}
+        {(lead.instagram_handle || lead.whatsapp_number || lead.email) && (
+          <div className="flex gap-2 mt-4">
+            {lead.instagram_handle && (
+              <DeepLinkButton 
+                icon={Instagram} 
+                label="DM"
+                href={`https://ig.me/m/${lead.instagram_handle}`}
+              />
+            )}
+            {lead.whatsapp_number && (
+              <DeepLinkButton 
+                icon={MessageSquare} 
+                label="WhatsApp"
+                href={`https://wa.me/${lead.whatsapp_number}?text=Hey ${lead.name}!`}
+              />
+            )}
+            {lead.email && (
+              <DeepLinkButton 
+                icon={Mail} 
+                label="Email"
+                href={`mailto:${lead.email}?subject=Hey ${lead.name}`}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Mission Control - Collapsible */}
+      <div className="border-b border-gray-700">
+        <button 
+          onClick={onToggleMissionControl}
+          className="w-full p-3 flex items-center justify-between hover:bg-gray-800/50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-cyan-400" />
+            <span className="font-medium text-white">Mission Control</span>
+            {chiefInsight?.probability !== undefined && (
+              <span className="text-cyan-400 text-sm">{chiefInsight.probability}%</span>
+            )}
+          </div>
+          {missionControlOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        </button>
+        
+        {missionControlOpen && chiefInsight && (
+          <div className="p-4 pt-0">
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              {chiefInsight.probability !== undefined && (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-400">Wahrscheinlichkeit</span>
+                    <span className="text-sm text-cyan-400">{chiefInsight.probability}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2 mb-3">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-green-500 h-2 rounded-full transition-all" 
+                      style={{ width: `${chiefInsight.probability}%` }} 
+                    />
+                  </div>
+                </>
+              )}
+              <p className="text-sm text-gray-300 mb-3">
+                {chiefInsight.strategy || `Analysiere ${lead.name}...`}
+              </p>
+              
+              {chiefInsight.next_action && (
+                <div className="mt-3 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs mb-1">
+                    <Zap className="w-3 h-3" />
+                    <span>Vorgeschlagene Aktion</span>
+                  </div>
+                  <p className="text-sm text-white">{chiefInsight.next_action}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-700">
+        <TabButton icon={Home} active={activeTab === 'info'} onClick={() => onTabChange('info')} tooltip="Info" />
+        <TabButton icon={Clock} active={activeTab === 'timeline'} onClick={() => onTabChange('timeline')} tooltip="Timeline" />
+        <TabButton icon={Users} active={activeTab === 'network'} onClick={() => onTabChange('network')} tooltip="Netzwerk" />
+        <TabButton icon={Calendar} active={activeTab === 'calendar'} onClick={() => onTabChange('calendar')} tooltip="Kalender" />
+        <TabButton icon={Lightbulb} active={activeTab === 'insights'} onClick={() => onTabChange('insights')} tooltip="Insights" />
+      </div>
+
+      {/* Tab Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {activeTab === 'info' && <LeadInfoTab lead={lead} onEdit={onEdit} onStatusChange={onStatusChange} onTemperatureChange={onTemperatureChange} />}
+        {activeTab === 'timeline' && <TimelineTab timeline={timeline} />}
+        {activeTab === 'network' && <NetworkTab lead={lead} />}
+        {activeTab === 'calendar' && <CalendarTab lead={lead} />}
+        {activeTab === 'insights' && <InsightsTab lead={lead} chiefInsight={chiefInsight} />}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// HELPER COMPONENTS
+// ============================================================================
+
+interface QuickActionButtonProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  variant?: 'default' | 'danger';
+}
+
+const QuickActionButton: React.FC<QuickActionButtonProps> = ({ icon: Icon, label, onClick, variant = 'default' }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        variant === 'danger'
+          ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </button>
+  );
+};
+
+interface DeepLinkButtonProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href: string;
+}
+
+const DeepLinkButton: React.FC<DeepLinkButtonProps> = ({ icon: Icon, label, href }) => {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white transition-colors"
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </a>
+  );
+};
+
+interface TabButtonProps {
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+  onClick: () => void;
+  tooltip: string;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ icon: Icon, active, onClick, tooltip }) => {
+  return (
+    <button
+      onClick={onClick}
+      title={tooltip}
+      className={`flex-1 p-3 flex items-center justify-center transition-colors ${
+        active 
+          ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-400/5'
+          : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+      }`}
+    >
+      <Icon className="w-5 h-5" />
+    </button>
+  );
+};
+
+const StatusPill: React.FC<{ status: string }> = ({ status }) => {
+  const colors: Record<string, string> = {
+    new: 'bg-cyan-500/20 text-cyan-400',
+    contacted: 'bg-blue-500/20 text-blue-400',
+    qualified: 'bg-green-500/20 text-green-400',
+    won: 'bg-emerald-500/20 text-emerald-400',
+    lost: 'bg-red-500/20 text-red-400'
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || 'bg-gray-500/20 text-gray-400'}`}>
+      {status}
+    </span>
+  );
+};
+
+const TemperatureBadge: React.FC<{ temperature?: string }> = ({ temperature }) => {
+  const colors: Record<string, string> = {
+    hot: 'bg-orange-500/20 text-orange-400',
+    warm: 'bg-yellow-500/20 text-yellow-400',
+    cold: 'bg-blue-500/20 text-blue-400'
+  };
+  const emoji: Record<string, string> = {
+    hot: '🔥',
+    warm: '☀️',
+    cold: '❄️'
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[temperature || 'cold'] || colors.cold}`}>
+      {emoji[temperature || 'cold'] || emoji.cold} {temperature || 'cold'}
+    </span>
+  );
+};
+
+// ============================================================================
+// TAB CONTENT COMPONENTS
+// ============================================================================
+
+const LeadInfoTab: React.FC<{ 
+  lead: Lead; 
+  onEdit: () => void;
+  onStatusChange: (status: string) => void;
+  onTemperatureChange: (temp: string) => void;
+}> = ({ lead, onEdit, onStatusChange, onTemperatureChange }) => {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-semibold">Lead Informationen</h3>
+        <button onClick={onEdit} className="text-cyan-400 hover:text-cyan-300 text-sm">
+          <Edit3 className="w-4 h-4" />
+        </button>
+      </div>
+      
+      {lead.company && <div><span className="text-gray-400">Firma:</span> <span className="text-white">{lead.company}</span></div>}
+      {lead.position && <div><span className="text-gray-400">Position:</span> <span className="text-white">{lead.position}</span></div>}
+      {lead.email && <div><span className="text-gray-400">Email:</span> <span className="text-white">{lead.email}</span></div>}
+      {lead.phone && <div><span className="text-gray-400">Telefon:</span> <span className="text-white">{lead.phone}</span></div>}
+      
+      <div className="pt-4 border-t border-gray-700">
+        <p className="text-gray-400 text-sm mb-2">Status ändern:</p>
+        <div className="flex gap-2 flex-wrap">
+          {['new', 'contacted', 'qualified', 'won', 'lost'].map(s => (
+            <button
+              key={s}
+              onClick={() => onStatusChange(s)}
+              className={`px-3 py-1 rounded text-sm ${lead.status === s ? 'bg-cyan-500 text-white' : 'bg-gray-800 text-gray-400'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div className="pt-4 border-t border-gray-700">
+        <p className="text-gray-400 text-sm mb-2">Temperatur ändern:</p>
+        <div className="flex gap-2">
+          {['cold', 'warm', 'hot'].map(temp => (
+            <button
+              key={temp}
+              onClick={() => onTemperatureChange(temp)}
+              className={`px-3 py-1 rounded text-sm ${lead.temperature === temp ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}
+            >
+              {temp === 'hot' ? '🔥' : temp === 'warm' ? '☀️' : '❄️'} {temp}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TimelineTab: React.FC<{ timeline: TimelineItem[] }> = ({ timeline }) => {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-white font-semibold mb-4">Timeline</h3>
+      {timeline.length > 0 ? timeline.map((item) => (
+        <div key={item.id} className="bg-gray-800/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-gray-400" />
+            <span className="text-xs text-gray-500">{new Date(item.timestamp).toLocaleString('de-DE')}</span>
+          </div>
+          <p className="text-white text-sm">{item.content}</p>
+        </div>
+      )) : (
+        <p className="text-gray-500 text-center py-8">Noch keine Aktivitäten</p>
+      )}
+    </div>
+  );
+};
+
+const NetworkTab: React.FC<{ lead: Lead }> = () => {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-white font-semibold">Netzwerk</h3>
+      <p className="text-gray-500 text-sm">Netzwerk-Feature kommt bald...</p>
+    </div>
+  );
+};
+
+const CalendarTab: React.FC<{ lead: Lead }> = () => {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-white font-semibold">Kalender</h3>
+      <p className="text-gray-500 text-sm">Kalender-Feature kommt bald...</p>
+    </div>
+  );
+};
+
+const InsightsTab: React.FC<{ lead: Lead; chiefInsight: any }> = ({ lead, chiefInsight }) => {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-white font-semibold">Insights</h3>
+      {chiefInsight?.icebreaker && (
+        <div className="bg-gray-800/50 rounded-lg p-3">
+          <p className="text-gray-400 text-xs mb-1">💡 Eisbrecher:</p>
+          <p className="text-white text-sm">"{chiefInsight.icebreaker}"</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN COMMAND CENTER V2
 // ============================================================================
 
@@ -1261,6 +1769,14 @@ export default function CommandCenterV2() {
   
   // Queue View Toggle
   const [queueView, setQueueView] = useState<'queue' | 'all'>('queue');
+  
+  // CHIEF Chat State
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isLoadingChief, setIsLoadingChief] = useState(false);
+  
+  // Right Panel State
+  const [missionControlOpen, setMissionControlOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<'info' | 'timeline' | 'network' | 'calendar' | 'insights'>('info');
 
   useEffect(() => {
     loadLeads();
@@ -1646,12 +2162,74 @@ export default function CommandCenterV2() {
     );
   }
 
+  // CHIEF Chat Handler
+  const handleChiefChat = async (message: string) => {
+    if (!message.trim() || !selectedLead) return;
+    
+    const userMessage: ChatMessage = { role: 'user', content: message, timestamp: new Date().toISOString() };
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsLoadingChief(true);
+    
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/api/command-center/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lead_id: selectedLead.id,
+          message: message,
+          context: {
+            lead: selectedLead,
+            timeline: timeline,
+            messages: messages,
+            followups: followups
+          }
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const assistantMessage: ChatMessage = { 
+          role: 'assistant', 
+          content: data.response || 'Keine Antwort erhalten.',
+          timestamp: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, assistantMessage]);
+      } else {
+        const errorMessage: ChatMessage = { 
+          role: 'assistant', 
+          content: 'Fehler bei der Verbindung zu CHIEF.',
+          timestamp: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Chief chat error:', error);
+      const errorMessage: ChatMessage = { 
+        role: 'assistant', 
+        content: 'Fehler bei der Verbindung zu CHIEF.',
+        timestamp: new Date().toISOString()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoadingChief(false);
+    }
+  };
+
+  // Reset chat when lead changes
+  useEffect(() => {
+    setChatMessages([]);
+  }, [selectedLead?.id]);
+
   return (
     <div className="h-screen bg-[#0a0a0f] flex overflow-hidden">
-      {/* Smart Queue / All Leads */}
-      <div className="w-[320px] flex-shrink-0 border-r border-cyan-500/10 flex flex-col">
+      {/* LEFT PANEL - Lead Liste (280px) */}
+      <div className="w-[280px] flex-shrink-0 border-r border-gray-700 flex flex-col bg-gradient-to-b from-[#0d1117] to-[#0a0a0f]">
         {/* View Toggle */}
-        <div className="flex border-b border-cyan-500/10">
+        <div className="flex border-b border-gray-700">
           <button
             onClick={() => setQueueView('queue')}
             className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
@@ -1690,7 +2268,7 @@ export default function CommandCenterV2() {
         </div>
 
         {/* New Lead Buttons */}
-        <div className="p-3 border-t border-cyan-500/10 space-y-2">
+        <div className="p-3 border-t border-gray-700 space-y-2">
           <button
             onClick={() => setShowBulkImport(true)}
             className="w-full py-2 px-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
@@ -1708,32 +2286,28 @@ export default function CommandCenterV2() {
         </div>
       </div>
 
-      {/* Dossier */}
-      <div className="flex-1 min-w-0 border-r border-cyan-500/10">
-        <Dossier
-          lead={selectedLead}
-          timeline={timeline}
-          onStatusChange={handleStatusChange}
-          onTemperatureChange={handleTemperatureChange}
-          onEdit={() => setShowEditModal(true)}
-          onScreenshot={() => setShowNewLeadModal(true)}
-          onMarkProcessed={handleMarkProcessed}
-        />
-      </div>
+      {/* CENTER PANEL - CHIEF Chat (flex-1) */}
+      <ChiefChatPanel 
+        lead={selectedLead}
+        messages={chatMessages}
+        onSendMessage={handleChiefChat}
+        isLoading={isLoadingChief}
+        onQuickAction={handleQuickAction}
+      />
 
-      {/* Chief Copilot */}
-      <div className="w-[400px] flex-shrink-0">
-        <ChiefCopilot
-          lead={selectedLead}
-          messages={messages}
-          chiefInsight={chiefInsight}
-          onSendMessage={handleSendMessage}
-          onQuickAction={handleQuickAction}
-          onStatusChange={handleStatusChange}
-          onTemperatureChange={handleTemperatureChange}
-          onAnalyzeResponse={() => setShowResponseModal(true)}
-        />
-      </div>
+      {/* RIGHT PANEL - Lead Profil (380px) */}
+      <LeadProfilePanel
+        lead={selectedLead}
+        timeline={timeline}
+        chiefInsight={chiefInsight}
+        missionControlOpen={missionControlOpen}
+        onToggleMissionControl={() => setMissionControlOpen(!missionControlOpen)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onStatusChange={handleStatusChange}
+        onTemperatureChange={handleTemperatureChange}
+        onEdit={() => setShowEditModal(true)}
+      />
 
       {/* Modals */}
       {selectedLead && (
