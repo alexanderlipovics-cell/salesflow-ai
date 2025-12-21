@@ -12,6 +12,7 @@ import logging
 from app.core.deps import get_current_user, get_supabase
 from app.ai_client import AIClient
 from app.core.config import get_settings
+from app.ai.chief_identity import get_chief_system_prompt, is_ceo_user, get_vertical_context
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
 logger = logging.getLogger(__name__)
@@ -363,53 +364,34 @@ async def chief_lead_chat(
     except:
         user_data = {}
     
-    # Baue System Prompt
+    # Hole Company Knowledge (falls vorhanden)
+    company_knowledge = None
+    try:
+        knowledge_result = supabase.table("company_knowledge").select("content").eq(
+            "user_id", user_id
+        ).eq("is_active", True).execute()
+        if knowledge_result.data:
+            company_knowledge = "\n".join([k.get("content", "") for k in knowledge_result.data])
+    except:
+        pass
+    
+    # Generiere CHIEF System Prompt mit Identity System
     lead = context.get("lead", {})
-    system_prompt = f"""Du bist CHIEF, der KI-Verkaufsassistent für AlSales.
-
-## AKTUELLER LEAD
-Name: {lead.get('name', 'Unbekannt')}
-Firma: {lead.get('company', 'Nicht angegeben')}
-Position: {lead.get('position', 'Nicht angegeben')}
-Status: {lead.get('status', 'new')}
-Temperatur: {lead.get('temperature', 'cold')}
-Score: {lead.get('score', 0)}/100
-Email: {lead.get('email', '-')}
-Telefon: {lead.get('phone', '-')}
-Instagram: {lead.get('instagram_url', '-')}
-Notizen: {lead.get('notes', 'Keine')}
-
-## LETZTE AKTIVITÄTEN
-{format_timeline_for_prompt(context.get('timeline', []))}
-
-## LETZTE NACHRICHTEN
-{format_messages_for_prompt(context.get('messages', []))}
-
-## OFFENE FOLLOW-UPS
-{format_followups_for_prompt(context.get('followups', []))}
-
-## USER KONTEXT
-Name: {user_data.get('name', 'User')}
-Firma: {user_data.get('company_name', 'AlSales')}
-MLM Company: {user_data.get('mlm_company', '-')}
-Erfahrungslevel: {user_data.get('experience_level', 'intermediate')}
-
-## DEINE AUFGABEN
-1. Beantworte Fragen über diesen Lead
-2. Generiere personalisierte Nachrichten
-3. Schlage Strategien vor
-4. Analysiere Situationen
-5. Empfehle nächste Schritte
-
-## WICHTIGE REGELN
-- Sei konkret und actionable
-- Nutze den Namen des Leads
-- Berücksichtige den aktuellen Status
-- Passe den Ton an die Temperatur an (hot = dringend, cold = vorsichtig)
-- Wenn nach einer Nachricht gefragt wird, liefere sie direkt ohne Erklärung
-- Halte Nachrichten kurz und natürlich (wie echte WhatsApp/Instagram DMs)
-- Antworte auf Deutsch
-"""
+    system_prompt = get_chief_system_prompt(
+        user_data=user_data,
+        lead_data=lead,
+        company_knowledge=company_knowledge
+    )
+    
+    # Füge Timeline und Messages zum Prompt hinzu
+    if context.get("timeline"):
+        system_prompt += f"\n\n## LETZTE AKTIVITÄTEN\n{format_timeline_for_prompt(context['timeline'])}"
+    
+    if context.get("messages"):
+        system_prompt += f"\n\n## LETZTE NACHRICHTEN\n{format_messages_for_prompt(context['messages'])}"
+    
+    if context.get("followups"):
+        system_prompt += f"\n\n## OFFENE FOLLOW-UPS\n{format_followups_for_prompt(context['followups'])}"
 
     # API Call
     try:

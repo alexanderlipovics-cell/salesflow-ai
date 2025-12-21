@@ -31,7 +31,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
-logger = logging.getLogger("salesflow")
+logger = logging.getLogger("alsales")
 
 # Event Handler registrieren (beim Import)
 # Dies muss VOR der App-Erstellung passieren, damit Handler registriert sind

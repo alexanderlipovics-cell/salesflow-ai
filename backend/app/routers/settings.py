@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.core.deps import get_current_user
 from ..core.deps import get_supabase
+from ..supabase_client import SupabaseNotConfiguredError
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -107,4 +108,96 @@ async def update_user_settings(
         .execute()
     )
     return refreshed.data or {}
+
+
+# ============================================================================
+# COMPANY KNOWLEDGE ENDPOINTS
+# ============================================================================
+
+@router.get("/company-knowledge")
+async def get_company_knowledge(
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_supabase)
+):
+    """Holt alle Company Knowledge Einträge für den aktuellen User."""
+    user_id = _extract_user_id(current_user)
+    
+    try:
+        result = supabase.table("company_knowledge").select("*").eq(
+            "user_id", user_id
+        ).eq("is_active", True).order("created_at", desc=True).execute()
+        
+        return result.data or []
+    except Exception as e:
+        # Tabelle existiert vielleicht noch nicht
+        return []
+
+
+@router.post("/company-knowledge")
+async def add_company_knowledge(
+    request: dict,
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_supabase)
+):
+    """Fügt einen neuen Company Knowledge Eintrag hinzu."""
+    user_id = _extract_user_id(current_user)
+    
+    try:
+        result = supabase.table("company_knowledge").insert({
+            "user_id": user_id,
+            "title": request.get("title", "Untitled"),
+            "content": request.get("content", ""),
+            "category": request.get("category", "general")
+        }).execute()
+        
+        return result.data[0] if result.data else None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding knowledge: {str(e)}")
+
+
+@router.put("/company-knowledge/{knowledge_id}")
+async def update_company_knowledge(
+    knowledge_id: str,
+    request: dict,
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_supabase)
+):
+    """Aktualisiert einen Company Knowledge Eintrag."""
+    user_id = _extract_user_id(current_user)
+    
+    try:
+        update_data = {
+            key: value
+            for key, value in request.items()
+            if value is not None and key in ["title", "content", "category", "is_active"]
+        }
+        update_data["updated_at"] = datetime.now().isoformat()
+        
+        result = supabase.table("company_knowledge").update(update_data).eq(
+            "id", knowledge_id
+        ).eq("user_id", user_id).execute()
+        
+        return result.data[0] if result.data else None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating knowledge: {str(e)}")
+
+
+@router.delete("/company-knowledge/{knowledge_id}")
+async def delete_company_knowledge(
+    knowledge_id: str,
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_supabase)
+):
+    """Löscht einen Company Knowledge Eintrag (soft delete: is_active = false)."""
+    user_id = _extract_user_id(current_user)
+    
+    try:
+        result = supabase.table("company_knowledge").update({
+            "is_active": False,
+            "updated_at": datetime.now().isoformat()
+        }).eq("id", knowledge_id).eq("user_id", user_id).execute()
+        
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting knowledge: {str(e)}")
 

@@ -1,7 +1,7 @@
 /**
  * Sidebar Component
  * 
- * Main navigation sidebar with Aura OS glassmorphism design
+ * Main navigation sidebar with AlSales glassmorphism design
  * Responsive (desktop fixed, mobile drawer)
  * 
  * @author Gemini 3 Ultra - Layout Architecture
