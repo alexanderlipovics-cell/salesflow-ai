@@ -920,6 +920,7 @@ const ChiefCopilot: React.FC<{
           </button>
         )}
       </div>
+      )}
     </div>
   );
 };
