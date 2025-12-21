@@ -1332,7 +1332,6 @@ async def mark_lead_processed(
         updates = {
             "waiting_for_response": False,  # User hat geantwortet
             "last_action": action,
-            "last_action_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
         }
         
@@ -1404,7 +1403,9 @@ async def mark_lead_processed(
                         "reason": "Automatisch erstellt nach Nachricht",
                         "status": "pending",
                         "priority": "medium",
-                        "channel": "WHATSAPP"
+                        "channel": "WHATSAPP",
+                        "flow": "follow_up",
+                        "source": "system"
                     }).execute()
                     logger.info(f"Auto-Follow-up created for lead {lead_id}")
             except Exception as e:
