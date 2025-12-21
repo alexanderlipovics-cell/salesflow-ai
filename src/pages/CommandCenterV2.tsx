@@ -27,6 +27,8 @@ interface Lead {
   email?: string;
   phone?: string;
   instagram_url?: string;
+  instagram_handle?: string;
+  whatsapp_number?: string;
   linkedin_url?: string;
   facebook_url?: string;
   status: string;
@@ -199,12 +201,19 @@ const SmartFeed: React.FC<{
 const Dossier: React.FC<{
   lead: Lead | null;
   timeline: TimelineItem[];
+  chiefInsight?: {
+    probability?: number;
+    buttons?: string[];
+    workflow_case?: string;
+    urgency?: string;
+    channel?: string;
+  } | null;
   onStatusChange: (status: string) => void;
   onTemperatureChange: (temp: string) => void;
   onEdit: () => void;
   onScreenshot: () => void;
   onMarkProcessed?: (action: string, nextFollowup?: string) => Promise<void>;
-}> = ({ lead, timeline, onStatusChange, onTemperatureChange, onEdit, onScreenshot, onMarkProcessed }) => {
+}> = ({ lead, timeline, chiefInsight, onStatusChange, onTemperatureChange, onEdit, onScreenshot, onMarkProcessed }) => {
   
   if (!lead) {
     return (
@@ -282,7 +291,7 @@ const Dossier: React.FC<{
                 strokeWidth="4" 
                 fill="none"
                 strokeLinecap="round"
-                strokeDasharray={`${(lead.score || 0) * 3.02} 302`}
+                strokeDasharray={`${(chiefInsight?.probability || lead.score || 0) * 3.02} 302`}
                 className="transition-all duration-1000"
               />
               <defs>
@@ -354,7 +363,7 @@ const Dossier: React.FC<{
           {/* Score */}
           <div className="text-center">
             <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-cyan-400 to-cyan-600">
-              {lead.score || 0}
+              {chiefInsight?.probability || lead.score || 0}
             </div>
             <p className="text-gray-500 text-xs mt-1">Score</p>
           </div>
@@ -502,6 +511,10 @@ const ChiefCopilot: React.FC<{
     probability: number;
     temperature_suggestion?: string;
     status_suggestion?: string;
+    buttons?: string[];
+    workflow_case?: string;
+    urgency?: string;
+    channel?: string;
   } | null;
   onSendMessage: (message: string, channel: string) => void;
   onQuickAction: (action: string) => void;
@@ -894,29 +907,108 @@ const ChiefCopilot: React.FC<{
         </>
       )}
 
-      {/* Quick Actions - Nur in Chief und Chat Tabs */}
+      {/* Quick Actions - Dynamisch basierend auf Workflow */}
       {(activeTab === 'chief' || activeTab === 'chat') && (
       <div className="p-4 border-t border-gray-800">
         <p className="text-gray-500 text-xs mb-3">Quick Actions</p>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { icon: Phone, label: 'Call', color: 'hover:border-green-500/50 hover:text-green-400' },
-            { icon: Calendar, label: 'Termin', color: 'hover:border-cyan-500/50 hover:text-cyan-400' },
-            { icon: FileText, label: 'Notiz', color: 'hover:border-yellow-500/50 hover:text-yellow-400' },
-            { icon: XCircle, label: 'Verloren', color: 'hover:border-red-500/50 hover:text-red-400' },
-          ].map((action) => (
-            <button
-              key={action.label}
-              onClick={() => onQuickAction(action.label.toLowerCase())}
-              className={`
-                p-3 rounded-xl bg-[#14202c] border border-gray-800 
-                transition-all duration-300 group ${action.color}
-              `}
-            >
-              <action.icon className="w-5 h-5 mx-auto mb-1 text-gray-500 group-hover:scale-110 transition-transform" />
-              <span className="text-xs text-gray-500">{action.label}</span>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 gap-2">
+          {(() => {
+            const buttons = chiefInsight?.buttons || ['call', 'email'];
+            
+            return (
+              <>
+                {buttons.includes('instagram') && lead?.instagram_handle && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(chiefInsight?.icebreaker || '');
+                      window.open(`https://ig.me/m/${lead.instagram_handle}`, '_blank');
+                    }}
+                    className="p-3 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:border-pink-400 transition-all group"
+                  >
+                    <Instagram className="w-5 h-5 mx-auto mb-1 text-pink-400" />
+                    <span className="text-xs text-pink-400">Instagram</span>
+                  </button>
+                )}
+                
+                {buttons.includes('whatsapp') && (lead?.whatsapp_number || lead?.phone) && (
+                  <button
+                    onClick={() => {
+                      const phone = (lead.whatsapp_number || lead.phone)?.replace(/[^0-9]/g, '');
+                      const msg = encodeURIComponent(chiefInsight?.icebreaker || '');
+                      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                    }}
+                    className="p-3 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:border-green-400 transition-all group"
+                  >
+                    <MessageSquare className="w-5 h-5 mx-auto mb-1 text-green-400" />
+                    <span className="text-xs text-green-400">WhatsApp</span>
+                  </button>
+                )}
+                
+                {buttons.includes('email') && lead?.email && (
+                  <button
+                    onClick={() => {
+                      const subject = encodeURIComponent(`Hey ${lead.name?.split(' ')[0]}!`);
+                      const body = encodeURIComponent(chiefInsight?.icebreaker || '');
+                      window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`, '_blank');
+                    }}
+                    className="p-3 rounded-xl bg-[#14202c] border border-cyan-500/30 hover:border-cyan-400 transition-all group"
+                  >
+                    <Mail className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
+                    <span className="text-xs text-cyan-400">Email</span>
+                  </button>
+                )}
+                
+                {buttons.includes('call') && lead?.phone && (
+                  <button
+                    onClick={() => window.open(`tel:${lead.phone}`, '_blank')}
+                    className="p-3 rounded-xl bg-[#14202c] border border-green-500/30 hover:border-green-400 transition-all group"
+                  >
+                    <Phone className="w-5 h-5 mx-auto mb-1 text-green-400" />
+                    <span className="text-xs text-green-400">Call</span>
+                  </button>
+                )}
+                
+                {buttons.includes('call_now') && lead?.phone && (
+                  <button
+                    onClick={() => window.open(`tel:${lead.phone}`, '_blank')}
+                    className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 transition-all"
+                  >
+                    <Phone className="w-5 h-5 mx-auto mb-1 text-white" />
+                    <span className="text-xs text-white font-bold">JETZT ANRUFEN</span>
+                  </button>
+                )}
+                
+                {buttons.includes('book_meeting') && (
+                  <button
+                    onClick={() => alert('Kalender Feature kommt bald!')}
+                    className="p-3 rounded-xl bg-[#14202c] border border-purple-500/30 hover:border-purple-400 transition-all group"
+                  >
+                    <Calendar className="w-5 h-5 mx-auto mb-1 text-purple-400" />
+                    <span className="text-xs text-purple-400">Termin</span>
+                  </button>
+                )}
+                
+                {buttons.includes('send_followup') && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(chiefInsight?.icebreaker || '');
+                      // Open preferred channel
+                      if (lead?.instagram_handle) {
+                        window.open(`https://ig.me/m/${lead.instagram_handle}`, '_blank');
+                      } else if (lead?.phone) {
+                        const phone = lead.phone.replace(/[^0-9]/g, '');
+                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(chiefInsight?.icebreaker || '')}`, '_blank');
+                      }
+                    }}
+                    className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 transition-all"
+                  >
+                    <Send className="w-5 h-5 mx-auto mb-1 text-white" />
+                    <span className="text-xs text-white font-bold">Follow-up senden</span>
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
         {/* Antwort analysieren Button */}
         {onAnalyzeResponse && (
@@ -929,6 +1021,64 @@ const ChiefCopilot: React.FC<{
               <span className="text-xs text-gray-500 group-hover:text-purple-400">Antwort analysieren</span>
             </div>
           </button>
+        )}
+
+        {/* Action Confirmation */}
+        {lead && (
+          <div className="mt-4 pt-4 border-t border-gray-800">
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('access_token');
+                    await fetch(`${API_URL}/api/command-center/${lead.id}/mark-processed`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        action: 'message_sent',
+                        channel: chiefInsight?.channel || 'instagram',
+                        message: chiefInsight?.icebreaker
+                      })
+                    });
+                    // Refresh oder nächster Lead
+                    window.location.reload();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-xl font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all"
+              >
+                ✅ Done
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('access_token');
+                    await fetch(`${API_URL}/api/command-center/${lead.id}/mark-processed`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        action: 'snoozed',
+                        snooze_days: 1
+                      })
+                    });
+                    window.location.reload();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="flex-1 py-3 px-4 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-all"
+              >
+                ⏰ Morgen
+              </button>
+            </div>
+          </div>
         )}
       </div>
       )}
@@ -1248,6 +1398,10 @@ export default function CommandCenterV2() {
     probability: number;
     temperature_suggestion?: string;
     status_suggestion?: string;
+    buttons?: string[];
+    workflow_case?: string;
+    urgency?: string;
+    channel?: string;
   } | null>(null);
   
   // Modals
@@ -1713,6 +1867,7 @@ export default function CommandCenterV2() {
         <Dossier
           lead={selectedLead}
           timeline={timeline}
+          chiefInsight={chiefInsight}
           onStatusChange={handleStatusChange}
           onTemperatureChange={handleTemperatureChange}
           onEdit={() => setShowEditModal(true)}
