@@ -1,0 +1,726 @@
+"""
+Command Center Router - Aggregierte Daten & CHIEF Integration
+Non Plus Ultra: Alles für einen Lead in einem Request
+"""
+
+from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timedelta
+from typing import Optional, List, Dict, Any
+import json
+import logging
+
+from app.core.deps import get_current_user, get_supabase
+from app.ai_client import AIClient
+from app.core.config import get_settings
+
+router = APIRouter(prefix="/command-center", tags=["command-center"])
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# AGGREGATION ENDPOINT - Alles für einen Lead in einem Request
+# ============================================================================
+
+@router.get("/{lead_id}")
+async def get_lead_command_center_data(
+    lead_id: str,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Holt ALLE Daten für einen Lead im Command Center:
+    - Lead Details
+    - Timeline (Interactions)
+    - Messages (alle Kanäle)
+    - Follow-ups
+    - Inbox Items
+    - CHIEF Insight (Score, Strategie, nächster Schritt)
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    # 1. Lead Details
+    try:
+        lead_result = supabase.table("leads").select("*").eq(
+            "id", lead_id
+        ).eq("user_id", user_id).maybe_single().execute()
+        
+        if not lead_result.data:
+            raise HTTPException(status_code=404, detail="Lead nicht gefunden")
+        
+        lead = lead_result.data
+    except Exception as e:
+        logger.error(f"Error loading lead: {e}")
+        raise HTTPException(status_code=500, detail=f"Error loading lead: {str(e)}")
+    
+    # 2. Timeline (Interactions)
+    timeline = []
+    try:
+        interactions_result = supabase.table("lead_interactions").select("*").eq(
+            "lead_id", lead_id
+        ).order("created_at", desc=True).limit(50).execute()
+        
+        timeline = [
+            {
+                "id": i.get("id"),
+                "type": i.get("interaction_type", "note"),
+                "content": i.get("notes") or i.get("content") or i.get("interaction_type", ""),
+                "channel": i.get("channel"),
+                "timestamp": i.get("created_at") or i.get("timestamp"),
+                "metadata": i.get("metadata")
+            }
+            for i in (interactions_result.data or [])
+        ]
+    except Exception as e:
+        logger.warning(f"Timeline error: {e}")
+    
+    # 3. Messages (alle Kanäle) - Falls lead_messages Tabelle existiert
+    messages = []
+    try:
+        messages_result = supabase.table("lead_messages").select("*").eq(
+            "lead_id", lead_id
+        ).order("sent_at", desc=True).limit(100).execute()
+        
+        messages = messages_result.data or []
+    except Exception as e:
+        # Tabelle existiert vielleicht noch nicht
+        logger.debug(f"Messages table not found: {e}")
+    
+    # 4. Follow-ups für diesen Lead
+    followups = []
+    try:
+        followups_result = supabase.table("followup_suggestions").select("*").eq(
+            "lead_id", lead_id
+        ).eq("user_id", user_id).eq("status", "pending").order("due_date", desc=False).execute()
+        
+        followups = followups_result.data or []
+    except Exception as e:
+        logger.debug(f"Followups error: {e}")
+    
+    # 5. Inbox Items für diesen Lead
+    inbox_items = []
+    try:
+        # Suche nach verschiedenen möglichen Inbox-Tabellen
+        for table_name in ["inbox_items", "approval_queue", "contact_follow_up_queue"]:
+            try:
+                inbox_result = supabase.table(table_name).select("*").eq(
+                    "lead_id", lead_id
+                ).eq("user_id", user_id).eq("status", "pending").execute()
+                
+                if inbox_result.data:
+                    inbox_items.extend(inbox_result.data)
+            except:
+                pass
+    except Exception as e:
+        logger.debug(f"Inbox error: {e}")
+    
+    # 6. CHIEF Insight - Intelligente Analyse
+    chief_insight = generate_chief_insight(lead, timeline, messages, followups)
+    
+    # 7. Berechne Score falls nicht vorhanden
+    if not lead.get("score"):
+        lead["score"] = calculate_lead_score(lead, timeline, messages)
+    
+    return {
+        "lead": lead,
+        "timeline": timeline,
+        "messages": messages,
+        "followups": followups,
+        "inbox_items": inbox_items,
+        "chief_insight": chief_insight
+    }
+
+
+def generate_chief_insight(lead: dict, timeline: list, messages: list, followups: list) -> dict:
+    """
+    Generiert intelligente Insights basierend auf Lead-Daten.
+    """
+    name = lead.get("name", "Lead")
+    status = lead.get("status", "new")
+    temperature = lead.get("temperature", "cold")
+    last_contact = lead.get("last_contact_at")
+    
+    # Basis-Strategie basierend auf Status + Temperature
+    strategies = {
+        ("new", "cold"): f"Erster Kontakt mit {name}. Starte mit einem personalisierten Eisbrecher basierend auf dem Profil.",
+        ("new", "warm"): f"{name} wurde empfohlen oder hat Interesse gezeigt. Nutze die Empfehlung als Gesprächseinstieg.",
+        ("new", "hot"): f"{name} ist sehr interessiert! Schnell handeln - innerhalb von 24h kontaktieren.",
+        ("contacted", "cold"): f"{name} wurde kontaktiert aber zeigt wenig Interesse. Versuche einen anderen Ansatz oder Kanal.",
+        ("contacted", "warm"): f"{name} ist interessiert. Follow-up mit Mehrwert (Case Study, Testimonial).",
+        ("contacted", "hot"): f"{name} ist heiß! Dranbleiben und konkretes Angebot machen.",
+        ("qualified", "warm"): f"{name} ist qualifiziert. Zeit für ein konkretes Angebot oder Termin.",
+        ("qualified", "hot"): f"{name} ist kaufbereit! Abschluss vorbereiten.",
+    }
+    
+    strategy = strategies.get((status, temperature), f"Analysiere {name}'s Situation und plane den nächsten Schritt.")
+    
+    # Nächste Aktion basierend auf Kontext
+    next_action = "Nachricht senden"
+    if followups:
+        next_followup = followups[0]
+        due_date = next_followup.get("due_date") or next_followup.get("due_at", "")
+        if due_date:
+            try:
+                due_dt = datetime.fromisoformat(due_date.replace("Z", "+00:00"))
+                if due_dt.date() == datetime.now().date():
+                    next_action = f"Follow-up fällig: Heute!"
+                else:
+                    next_action = f"Follow-up fällig: {due_date[:10]}"
+            except:
+                next_action = f"Follow-up fällig: {due_date[:10] if due_date else 'Heute'}"
+    elif status == "qualified":
+        next_action = "Termin vereinbaren"
+    elif temperature == "hot":
+        next_action = "Sofort kontaktieren!"
+    elif last_contact:
+        try:
+            last_contact_dt = datetime.fromisoformat(last_contact.replace("Z", "+00:00"))
+            days_since = (datetime.now(last_contact_dt.tzinfo) - last_contact_dt).days
+            if days_since > 7:
+                next_action = f"Seit {days_since} Tagen kein Kontakt - Follow-up!"
+        except:
+            pass
+    
+    # Eisbrecher generieren
+    icebreakers = {
+        "new": [
+            f"Hey {name.split()[0] if name else 'du'}! Ich hab gesehen, dass du...",
+            f"Hi {name.split()[0] if name else 'du'}, kurze Frage...",
+            f"Hallo {name.split()[0] if name else 'du'}, ich bin auf dein Profil gestoßen und..."
+        ],
+        "contacted": [
+            f"Hey {name.split()[0] if name else 'du'}, wollte kurz nachhaken...",
+            f"Hi {name.split()[0] if name else 'du'}, hattest du Zeit drüber nachzudenken?",
+        ],
+        "qualified": [
+            f"Hey {name.split()[0] if name else 'du'}, wann passt dir ein kurzer Call?",
+            f"Hi {name.split()[0] if name else 'du'}, sollen wir mal telefonieren?",
+        ]
+    }
+    
+    icebreaker = icebreakers.get(status, icebreakers["new"])[0] if icebreakers.get(status) else icebreakers["new"][0]
+    
+    # Win-Wahrscheinlichkeit
+    probability = calculate_win_probability(lead, timeline, messages)
+    
+    return {
+        "strategy": strategy,
+        "next_action": next_action,
+        "icebreaker": icebreaker,
+        "probability": probability,
+        "temperature_suggestion": suggest_temperature(lead, timeline),
+        "status_suggestion": suggest_status(lead, timeline, messages)
+    }
+
+
+def calculate_lead_score(lead: dict, timeline: list, messages: list) -> int:
+    """
+    Berechnet Lead-Score (0-100) basierend auf Aktivität und Engagement.
+    """
+    score = 30  # Basis
+    
+    # Temperature Bonus
+    temp_scores = {"hot": 30, "warm": 15, "cold": 0}
+    score += temp_scores.get(lead.get("temperature", "cold"), 0)
+    
+    # Status Bonus
+    status_scores = {"won": 100, "qualified": 25, "contacted": 10, "new": 0}
+    score += status_scores.get(lead.get("status", "new"), 0)
+    
+    # Activity Bonus
+    score += min(len(timeline) * 2, 20)  # Max 20 für Aktivität
+    
+    # Response Bonus (hat der Lead geantwortet?)
+    inbound_messages = [m for m in messages if m.get("direction") == "inbound"]
+    score += min(len(inbound_messages) * 5, 15)  # Max 15
+    
+    # Recency Bonus
+    if lead.get("last_contact_at"):
+        try:
+            last_contact_dt = datetime.fromisoformat(lead["last_contact_at"].replace("Z", "+00:00"))
+            days_ago = (datetime.now(last_contact_dt.tzinfo) - last_contact_dt).days
+            if days_ago <= 1:
+                score += 10
+            elif days_ago <= 3:
+                score += 5
+        except:
+            pass
+    
+    return min(score, 100)
+
+
+def calculate_win_probability(lead: dict, timeline: list, messages: list) -> int:
+    """
+    Berechnet Gewinn-Wahrscheinlichkeit (0-100%).
+    """
+    base = 10
+    
+    # Temperature
+    if lead.get("temperature") == "hot":
+        base += 30
+    elif lead.get("temperature") == "warm":
+        base += 15
+    
+    # Status
+    status_boost = {"qualified": 25, "contacted": 10, "new": 0, "won": 100, "lost": 0}
+    base += status_boost.get(lead.get("status", "new"), 0)
+    
+    # Engagement (Antworten)
+    inbound = len([m for m in messages if m.get("direction") == "inbound"])
+    base += min(inbound * 10, 30)
+    
+    return min(base, 95)  # Max 95%, nie 100% sicher
+
+
+def suggest_temperature(lead: dict, timeline: list) -> Optional[str]:
+    """
+    Schlägt Temperature-Änderung vor basierend auf Aktivität.
+    """
+    current = lead.get("temperature", "cold")
+    
+    # Wenn viel Aktivität in letzten 24h -> suggest hot
+    recent = []
+    for t in timeline:
+        timestamp = t.get("timestamp") or t.get("created_at")
+        if timestamp:
+            try:
+                t_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                days_ago = (datetime.now(t_dt.tzinfo) - t_dt).days
+                if days_ago < 1:
+                    recent.append(t)
+            except:
+                pass
+    
+    if len(recent) >= 3 and current != "hot":
+        return "hot"
+    elif len(recent) >= 1 and current == "cold":
+        return "warm"
+    
+    return None
+
+
+def suggest_status(lead: dict, timeline: list, messages: list) -> Optional[str]:
+    """
+    Schlägt Status-Änderung vor.
+    """
+    current = lead.get("status", "new")
+    
+    # Wenn Antwort erhalten -> mindestens contacted
+    inbound = [m for m in messages if m.get("direction") == "inbound"]
+    if inbound and current == "new":
+        return "contacted"
+    
+    # Wenn mehrere positive Antworten -> qualified
+    if len(inbound) >= 2 and current == "contacted":
+        return "qualified"
+    
+    return None
+
+
+# ============================================================================
+# CHIEF LEAD CHAT - Kontext-bewusster Chat
+# ============================================================================
+
+@router.post("/chat")
+async def chief_lead_chat(
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Chat mit CHIEF über einen spezifischen Lead.
+    CHIEF kennt den vollen Kontext (Lead, Timeline, Messages, etc.)
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    lead_id = request.get("lead_id")
+    user_message = request.get("message")
+    context = request.get("context", {})
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    if not lead_id or not user_message:
+        raise HTTPException(status_code=400, detail="lead_id and message required")
+    
+    # Hole Lead-Daten falls nicht im Context
+    if not context.get("lead"):
+        try:
+            lead_result = supabase.table("leads").select("*").eq(
+                "id", lead_id
+            ).eq("user_id", user_id).maybe_single().execute()
+            context["lead"] = lead_result.data
+        except Exception as e:
+            logger.error(f"Error loading lead: {e}")
+            raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Hole User-Präferenzen
+    try:
+        user_result = supabase.table("users").select("*").eq(
+            "id", user_id
+        ).maybe_single().execute()
+        user_data = user_result.data or {}
+    except:
+        user_data = {}
+    
+    # Baue System Prompt
+    lead = context.get("lead", {})
+    system_prompt = f"""Du bist CHIEF, der KI-Verkaufsassistent für AlSales.
+
+## AKTUELLER LEAD
+Name: {lead.get('name', 'Unbekannt')}
+Firma: {lead.get('company', 'Nicht angegeben')}
+Position: {lead.get('position', 'Nicht angegeben')}
+Status: {lead.get('status', 'new')}
+Temperatur: {lead.get('temperature', 'cold')}
+Score: {lead.get('score', 0)}/100
+Email: {lead.get('email', '-')}
+Telefon: {lead.get('phone', '-')}
+Instagram: {lead.get('instagram_url', '-')}
+Notizen: {lead.get('notes', 'Keine')}
+
+## LETZTE AKTIVITÄTEN
+{format_timeline_for_prompt(context.get('timeline', []))}
+
+## LETZTE NACHRICHTEN
+{format_messages_for_prompt(context.get('messages', []))}
+
+## OFFENE FOLLOW-UPS
+{format_followups_for_prompt(context.get('followups', []))}
+
+## USER KONTEXT
+Name: {user_data.get('name', 'User')}
+Firma: {user_data.get('company_name', 'AlSales')}
+MLM Company: {user_data.get('mlm_company', '-')}
+Erfahrungslevel: {user_data.get('experience_level', 'intermediate')}
+
+## DEINE AUFGABEN
+1. Beantworte Fragen über diesen Lead
+2. Generiere personalisierte Nachrichten
+3. Schlage Strategien vor
+4. Analysiere Situationen
+5. Empfehle nächste Schritte
+
+## WICHTIGE REGELN
+- Sei konkret und actionable
+- Nutze den Namen des Leads
+- Berücksichtige den aktuellen Status
+- Passe den Ton an die Temperatur an (hot = dringend, cold = vorsichtig)
+- Wenn nach einer Nachricht gefragt wird, liefere sie direkt ohne Erklärung
+- Halte Nachrichten kurz und natürlich (wie echte WhatsApp/Instagram DMs)
+- Antworte auf Deutsch
+"""
+
+    # API Call
+    try:
+        settings = get_settings()
+        if not settings.openai_api_key:
+            return {"response": "OpenAI API Key nicht konfiguriert.", "success": False}
+        
+        ai_client = AIClient(api_key=settings.openai_api_key, model="gpt-4o-mini")
+        response = await ai_client.generate_async(
+            system_prompt=system_prompt,
+            messages=[{"role": "user", "content": user_message}],
+            max_tokens=512,
+            temperature=0.7
+        )
+        
+        # Speichere Interaktion
+        try:
+            supabase.table("lead_interactions").insert({
+                "lead_id": lead_id,
+                "user_id": user_id,
+                "interaction_type": "chief_chat",
+                "notes": f"User: {user_message}\n\nCHIEF: {response}",
+                "created_at": datetime.now().isoformat()
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Could not log interaction: {e}")
+        
+        return {"response": response, "success": True}
+        
+    except Exception as e:
+        logger.error(f"CHIEF chat error: {e}")
+        return {"response": "Entschuldigung, da ist etwas schief gelaufen. Versuch es nochmal.", "success": False}
+
+
+def format_timeline_for_prompt(timeline: list) -> str:
+    if not timeline:
+        return "Keine Aktivitäten"
+    
+    lines = []
+    for t in timeline[:10]:  # Letzte 10
+        timestamp = t.get("timestamp", "")[:10] if t.get("timestamp") else ""
+        content = (t.get("content", "") or "")[:100]
+        lines.append(f"- {timestamp}: {t.get('type', 'activity')} - {content}")
+    
+    return "\n".join(lines)
+
+
+def format_messages_for_prompt(messages: list) -> str:
+    if not messages:
+        return "Keine Nachrichten"
+    
+    lines = []
+    for m in messages[:10]:
+        direction = "→" if m.get("direction") == "outbound" else "←"
+        channel = m.get("channel", "?")
+        content = (m.get("content", "") or "")[:100]
+        lines.append(f"{direction} [{channel}] {content}")
+    
+    return "\n".join(lines)
+
+
+def format_followups_for_prompt(followups: list) -> str:
+    if not followups:
+        return "Keine offenen Follow-ups"
+    
+    lines = []
+    for f in followups[:5]:
+        due = f.get("due_date") or f.get("due_at", "")
+        due_str = due[:10] if due else "?"
+        title = (f.get("title") or f.get("message", "Follow-up") or "")[:50]
+        lines.append(f"- Fällig {due_str}: {title}")
+    
+    return "\n".join(lines)
+
+
+# ============================================================================
+# PROCESS REPLY - Antwort analysieren
+# ============================================================================
+
+@router.post("/process-reply")
+async def process_lead_reply(
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Analysiert eine Lead-Antwort und:
+    - Erkennt Status-Änderung
+    - Erkennt Temperatur-Änderung
+    - Generiert passende Antwort
+    - Updated Lead automatisch
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    lead_id = request.get("lead_id")
+    lead_reply = request.get("lead_reply")
+    current_state = request.get("current_state", "new")
+    
+    if not user_id or not lead_id or not lead_reply:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    # Hole Lead
+    try:
+        lead_result = supabase.table("leads").select("*").eq(
+            "id", lead_id
+        ).maybe_single().execute()
+        lead = lead_result.data or {}
+    except Exception as e:
+        logger.error(f"Error loading lead: {e}")
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Analyse Prompt
+    analysis_prompt = f"""Analysiere diese Antwort von {lead.get('name', 'dem Lead')}:
+
+"{lead_reply}"
+
+Aktueller Status: {current_state}
+Aktuelle Temperatur: {lead.get('temperature', 'cold')}
+
+Antworte NUR mit diesem JSON Format:
+{{
+    "sentiment": "positive|neutral|negative",
+    "intent": "interested|wants_info|wants_meeting|not_interested|unclear",
+    "new_status": "new|contacted|qualified|won|lost|null",
+    "new_temperature": "cold|warm|hot|null",
+    "urgency_score": 0-100,
+    "suggested_response": "Deine vorgeschlagene Antwort hier",
+    "next_action": "Was der User als nächstes tun sollte",
+    "key_points": ["Wichtiger Punkt 1", "Wichtiger Punkt 2"]
+}}
+"""
+
+    try:
+        settings = get_settings()
+        if not settings.openai_api_key:
+            return {
+                "success": False,
+                "error": "OpenAI API Key nicht konfiguriert",
+                "suggested_response": "Danke für deine Nachricht! Ich melde mich gleich."
+            }
+        
+        ai_client = AIClient(api_key=settings.openai_api_key, model="gpt-4o-mini")
+        response = await ai_client.generate_async(
+            system_prompt="Du bist ein Experte für Lead-Analyse. Antworte NUR mit gültigem JSON.",
+            messages=[{"role": "user", "content": analysis_prompt}],
+            max_tokens=512,
+            temperature=0.3
+        )
+        
+        # Parse JSON
+        clean_response = response.strip()
+        if clean_response.startswith("```"):
+            parts = clean_response.split("```")
+            if len(parts) > 1:
+                clean_response = parts[1]
+                if clean_response.startswith("json"):
+                    clean_response = clean_response[4:]
+        
+        analysis = json.loads(clean_response)
+        
+        # Auto-Update Lead wenn Änderungen vorgeschlagen
+        updates = {}
+        if analysis.get("new_status") and analysis["new_status"] != "null":
+            updates["status"] = analysis["new_status"]
+        if analysis.get("new_temperature") and analysis["new_temperature"] != "null":
+            updates["temperature"] = analysis["new_temperature"]
+        
+        if updates:
+            updates["updated_at"] = datetime.now().isoformat()
+            try:
+                supabase.table("leads").update(updates).eq("id", lead_id).execute()
+            except Exception as e:
+                logger.error(f"Error updating lead: {e}")
+        
+        # Log die Antwort als Interaction
+        try:
+            supabase.table("lead_interactions").insert({
+                "lead_id": lead_id,
+                "user_id": user_id,
+                "interaction_type": "reply_received",
+                "notes": lead_reply,
+                "metadata": {"analysis": analysis},
+                "created_at": datetime.now().isoformat()
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Could not log interaction: {e}")
+        
+        return {
+            "success": True,
+            "analysis": analysis,
+            "lead_updated": bool(updates),
+            "updates_applied": updates
+        }
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error: {e}")
+        return {
+            "success": False,
+            "error": "Could not parse AI response",
+            "suggested_response": "Danke für deine Nachricht! Ich melde mich gleich."
+        }
+    except Exception as e:
+        logger.error(f"Process reply error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "suggested_response": "Danke für deine Nachricht! Ich melde mich gleich."
+        }
+
+
+# ============================================================================
+# EXTRACT LEAD FROM SCREENSHOT
+# ============================================================================
+
+@router.post("/extract-lead")
+async def extract_lead_from_image(
+    request: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Extrahiert Lead-Daten aus Screenshot (Instagram, LinkedIn, Visitenkarte, etc.)
+    """
+    from openai import AsyncOpenAI
+    
+    image_base64 = request.get("image")
+    
+    if not image_base64:
+        raise HTTPException(status_code=400, detail="Kein Bild")
+    
+    settings = get_settings()
+    if not settings.openai_api_key:
+        raise HTTPException(status_code=500, detail="OpenAI API Key nicht konfiguriert")
+    
+    extraction_prompt = """Analysiere dieses Bild und extrahiere alle Kontaktinformationen.
+
+Das kann sein:
+- Ein Instagram/Facebook/LinkedIn Profil Screenshot
+- Eine Visitenkarte
+- Ein Chat-Verlauf
+- Ein Kontakt-Screenshot
+
+Extrahiere NUR was du SICHER erkennst. Antworte NUR mit JSON:
+{
+    "name": "Voller Name oder null",
+    "company": "Firmenname oder null",
+    "position": "Position/Titel oder null",
+    "email": "Email oder null",
+    "phone": "Telefon oder null",
+    "instagram": "Instagram Handle oder URL oder null",
+    "linkedin": "LinkedIn URL oder null",
+    "facebook": "Facebook URL oder null",
+    "bio": "Bio/Beschreibung falls sichtbar oder null",
+    "interests": ["Interesse1", "Interesse2"],
+    "source": "instagram|linkedin|facebook|visitenkarte|chat|andere",
+    "confidence": 0.0-1.0
+}
+"""
+
+    try:
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
+        
+        # Entferne data:image prefix falls vorhanden
+        if image_base64.startswith("data:image"):
+            image_base64 = image_base64.split(",")[1]
+        
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": extraction_prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}
+                        }
+                    ]
+                }
+            ],
+            max_tokens=512
+        )
+        
+        response_text = response.choices[0].message.content
+        
+        # Parse JSON
+        clean_response = response_text.strip()
+        if clean_response.startswith("```"):
+            parts = clean_response.split("```")
+            if len(parts) > 1:
+                clean_response = parts[1]
+                if clean_response.startswith("json"):
+                    clean_response = clean_response[4:]
+        
+        extracted = json.loads(clean_response)
+        
+        return {
+            "success": True,
+            "extracted": extracted
+        }
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error: {e}")
+        return {
+            "success": False,
+            "error": "Could not parse extraction result",
+            "extracted": {}
+        }
+    except Exception as e:
+        logger.error(f"Extraction error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "extracted": {}
+        }
+

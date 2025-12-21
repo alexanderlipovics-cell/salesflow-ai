@@ -683,4 +683,57 @@ async def mark_message_sent(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/{lead_id}/interactions")
+async def get_lead_interactions(
+    lead_id: str,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Holt alle Interaktionen für einen Lead.
+    GET /api/leads/{lead_id}/interactions
+    """
+    try:
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+        
+        db = get_supabase()
+        
+        # Prüfe ob Lead existiert und dem User gehört
+        lead_check = (
+            db.table("leads")
+            .select("id")
+            .eq("id", lead_id)
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        
+        if not lead_check.data:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        # Versuche lead_interactions Tabelle
+        try:
+            result = (
+                db.table("lead_interactions")
+                .select("*")
+                .eq("lead_id", lead_id)
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .execute()
+            )
+            
+            return result.data or []
+        except Exception as e:
+            # Falls Tabelle nicht existiert, return leere Liste
+            logger.warning(f"Error loading interactions: {e}")
+            return []
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Get lead interactions error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 __all__ = ["router"]

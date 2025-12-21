@@ -512,6 +512,7 @@ from .routers.linkedin_webhook import router as linkedin_webhook_router  # 🆕 
 from .routers.instagram_webhook import router as instagram_webhook_router  # 🆕 Instagram DM Webhook
 from .routers.instagram_oauth import router as instagram_oauth_router  # 🆕 Instagram OAuth Connection
 from .routers.freebies import router as freebies_router  # 🆕 Lead Magnet / Freebies System
+from .routers.command_center import router as command_center_router  # 🆕 Command Center V2 - Aggregated Data
 from .routers.usage import router as usage_router  # 🆕 Usage & Quota Management
 from .routers.conversations import router as conversations_router  # 🆕 Conversation Memory
 from .routers.conversation_webhooks import router as conversation_webhooks_router  # 🆕 Conversation Engine 2.0 Webhooks
@@ -603,6 +604,7 @@ app.include_router(usage_router)  # 🆕 Usage & Quota Management
 app.include_router(conversations_router, prefix="/api")  # 🆕 Conversation Memory
 app.include_router(conversation_webhooks_router)  # 🆕 Conversation Engine 2.0 Webhooks
 app.include_router(domain_leads_router, prefix="/api")  # 🆕 Domain Architecture - Leads
+app.include_router(command_center_router, prefix="/api")  # 🆕 Command Center V2 - Aggregated Data
 app.include_router(events_router, prefix="/api")  # 🆕 Event Management API
 app.include_router(lead_suggestions_router, prefix="/api")  # 🆕 Smart Suggestions
 app.include_router(ops_deployments_router, prefix="/api")  # 🆕 AI Ops Deployment Management

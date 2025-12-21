@@ -133,6 +133,7 @@ const DatenschutzPage = lazy(() => import("./pages/DatenschutzPage"));
 const AGBPage = lazy(() => import("./pages/AGBPage"));
 const CeoChat = lazy(() => import("./pages/CeoChat"));
 const CommandCenter = lazy(() => import("./pages/CommandCenter"));
+const CommandCenterV2 = lazy(() => import("./pages/CommandCenterV2"));
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -272,7 +273,8 @@ const App = () => {
                       <Route path="daily-command" element={<DailyCommandPage />} />
                       <Route path="hunter" element={<HunterPage />} />
                       <Route path="dashboard" element={<DashboardPage />} />
-                      <Route path="command" element={<CommandCenter />} />
+                      <Route path="command" element={<CommandCenterV2 />} />
+                      <Route path="command-v1" element={<CommandCenter />} />
                       <Route path="choose-vertical" element={<ChooseVerticalPage />} />
                       <Route path="pricing" element={<PricingPage />} />
                       <Route path="settings" element={<SettingsPage />} />
