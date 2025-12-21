@@ -515,6 +515,7 @@ const ChiefCopilot: React.FC<{
   const [chiefInput, setChiefInput] = useState('');
   const [isLoadingChief, setIsLoadingChief] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'chief' | 'autopilot'>('chief');
+  const [missionControlOpen, setMissionControlOpen] = useState(true); // Collapsible Mission Control
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -637,93 +638,102 @@ const ChiefCopilot: React.FC<{
 
       {activeTab === 'chief' ? (
         <>
-          {/* Mission Control - Mit echten Insights */}
-          <div className="p-4">
-            <div className="bg-gradient-to-br from-cyan-500/10 to-teal-500/10 border border-cyan-500/20 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-cyan-400 text-sm font-semibold flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  Mission Control
-                </h3>
+          {/* Mission Control - Collapsible */}
+          <div className="p-4 border-b border-gray-800">
+            <button
+              onClick={() => setMissionControlOpen(!missionControlOpen)}
+              className="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <span className="flex items-center gap-2 text-cyan-400 text-sm font-semibold">
+                <Target className="w-4 h-4" />
+                Mission Control
                 {chiefInsight?.probability !== undefined && (
-                  <span className="text-cyan-400 text-sm font-bold">
+                  <span className="text-cyan-400 text-sm font-bold ml-2">
                     {chiefInsight.probability}%
                   </span>
                 )}
+              </span>
+              {missionControlOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            </button>
+            
+            {missionControlOpen && (
+            <div className="mt-2 bg-gradient-to-br from-cyan-500/10 to-teal-500/10 border border-cyan-500/20 rounded-xl p-4">
+              <div className="mb-3">
+              
+                {/* Probability Bar */}
+                {chiefInsight?.probability !== undefined && (
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Wahrscheinlichkeit</span>
+                      <span>{chiefInsight.probability}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-cyan-500 to-green-500 rounded-full transition-all duration-1000"
+                        style={{ width: `${chiefInsight.probability}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Strategy */}
+                <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                  {chiefInsight?.strategy || `Analysiere ${lead?.name || 'den Lead'}...`}
+                </p>
+                
+                {/* Next Action */}
+                {chiefInsight?.next_action && (
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-2 mb-3">
+                    <p className="text-cyan-300 text-xs font-medium">
+                      ⚡ {chiefInsight.next_action}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Icebreaker */}
+                {chiefInsight?.icebreaker && (
+                  <div className="bg-gray-800/50 rounded-lg p-3 mb-3">
+                    <p className="text-gray-500 text-xs mb-1">💡 Eisbrecher:</p>
+                    <p className="text-gray-300 text-sm italic">"{chiefInsight.icebreaker}"</p>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(chiefInsight.icebreaker);
+                        // Toast notification könnte hier hinzugefügt werden
+                      }}
+                      className="mt-2 text-xs text-cyan-400 hover:text-cyan-300"
+                    >
+                      Kopieren
+                    </button>
+                  </div>
+                )}
+                
+                {/* Suggestions */}
+                {(chiefInsight?.temperature_suggestion || chiefInsight?.status_suggestion) && (
+                  <div className="mt-3 pt-3 border-t border-gray-800">
+                    <p className="text-gray-500 text-xs mb-2">CHIEF empfiehlt:</p>
+                    <div className="flex gap-2">
+                      {chiefInsight.temperature_suggestion && onTemperatureChange && (
+                        <button 
+                          onClick={() => onTemperatureChange(chiefInsight.temperature_suggestion!)}
+                          className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-lg hover:bg-orange-500/30"
+                        >
+                          → {chiefInsight.temperature_suggestion}
+                        </button>
+                      )}
+                      {chiefInsight.status_suggestion && onStatusChange && (
+                        <button 
+                          onClick={() => onStatusChange(chiefInsight.status_suggestion!)}
+                          className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-lg hover:bg-green-500/30"
+                        >
+                          → {chiefInsight.status_suggestion}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              {/* Probability Bar */}
-              {chiefInsight?.probability !== undefined && (
-                <div className="mb-3">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Wahrscheinlichkeit</span>
-                    <span>{chiefInsight.probability}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-cyan-500 to-green-500 rounded-full transition-all duration-1000"
-                      style={{ width: `${chiefInsight.probability}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Strategy */}
-              <p className="text-gray-300 text-sm leading-relaxed mb-3">
-                {chiefInsight?.strategy || `Analysiere ${lead?.name || 'den Lead'}...`}
-              </p>
-              
-              {/* Next Action */}
-              {chiefInsight?.next_action && (
-                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-2 mb-3">
-                  <p className="text-cyan-300 text-xs font-medium">
-                    ⚡ {chiefInsight.next_action}
-                  </p>
-                </div>
-              )}
-              
-              {/* Icebreaker */}
-              {chiefInsight?.icebreaker && (
-                <div className="bg-gray-800/50 rounded-lg p-3 mb-3">
-                  <p className="text-gray-500 text-xs mb-1">💡 Eisbrecher:</p>
-                  <p className="text-gray-300 text-sm italic">"{chiefInsight.icebreaker}"</p>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(chiefInsight.icebreaker);
-                      // Toast notification könnte hier hinzugefügt werden
-                    }}
-                    className="mt-2 text-xs text-cyan-400 hover:text-cyan-300"
-                  >
-                    Kopieren
-                  </button>
-                </div>
-              )}
-              
-              {/* Suggestions */}
-              {(chiefInsight?.temperature_suggestion || chiefInsight?.status_suggestion) && (
-                <div className="mt-3 pt-3 border-t border-gray-800">
-                  <p className="text-gray-500 text-xs mb-2">CHIEF empfiehlt:</p>
-                  <div className="flex gap-2">
-                    {chiefInsight.temperature_suggestion && onTemperatureChange && (
-                      <button 
-                        onClick={() => onTemperatureChange(chiefInsight.temperature_suggestion!)}
-                        className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-lg hover:bg-orange-500/30"
-                      >
-                        → {chiefInsight.temperature_suggestion}
-                      </button>
-                    )}
-                    {chiefInsight.status_suggestion && onStatusChange && (
-                      <button 
-                        onClick={() => onStatusChange(chiefInsight.status_suggestion!)}
-                        className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-lg hover:bg-green-500/30"
-                      >
-                        → {chiefInsight.status_suggestion}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
+            )}
           </div>
 
           {/* CHIEF Chat */}

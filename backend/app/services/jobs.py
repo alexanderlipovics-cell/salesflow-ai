@@ -21,7 +21,7 @@ async def check_follow_ups():
     Checks for overdue follow-ups and leads without response.
     Creates notifications for users.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "check_follow_ups")
 
     try:
@@ -75,7 +75,7 @@ async def update_lead_scores():
     """
     Recalculates lead scores and flags newly hot leads.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "update_lead_scores")
 
     try:
@@ -190,7 +190,7 @@ async def detect_churn_risks():
     """
     Identifies customers at risk of churning.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "detect_churn_risks")
 
     try:
@@ -251,7 +251,7 @@ async def track_goals():
     """
     Compares current performance vs goals.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "track_goals")
 
     try:
@@ -338,7 +338,7 @@ async def send_daily_briefing():
     """
     Sends personalized morning briefing to all users.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "send_daily_briefing")
 
     try:
@@ -442,7 +442,7 @@ async def power_hour_reminder():
     """
     Reminds users about upcoming Power Hour.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "power_hour_reminder")
 
     try:
@@ -489,7 +489,7 @@ async def generate_all_suggestions():
     Placeholder für globale Follow-up Vorschlags-Generierung.
     Aktuell nur Logging – kann später mit Supabase-Flow befüllt werden.
     """
-    db = get_supabase()
+    db = await get_supabase()  # MUSS awaited werden!
     job_id = await log_job_start(db, "generate_all_suggestions")
 
     try:
