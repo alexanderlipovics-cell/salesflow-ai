@@ -552,18 +552,21 @@ Antworte NUR mit diesem JSON Format:
         analysis = json.loads(clean_response)
         
         # Auto-Update Lead wenn Änderungen vorgeschlagen
-        updates = {}
+        updates = {
+            "waiting_for_response": False,  # User bearbeitet jetzt, nicht mehr "wartend"
+            "last_inbound_message": lead_reply,
+            "last_inbound_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }
         if analysis.get("new_status") and analysis["new_status"] != "null":
             updates["status"] = analysis["new_status"]
         if analysis.get("new_temperature") and analysis["new_temperature"] != "null":
             updates["temperature"] = analysis["new_temperature"]
         
-        if updates:
-            updates["updated_at"] = datetime.now().isoformat()
-            try:
-                supabase.table("leads").update(updates).eq("id", lead_id).execute()
-            except Exception as e:
-                logger.error(f"Error updating lead: {e}")
+        try:
+            supabase.table("leads").update(updates).eq("id", lead_id).execute()
+        except Exception as e:
+            logger.error(f"Error updating lead: {e}")
         
         # Log die Antwort als Interaction
         try:
@@ -705,4 +708,256 @@ Extrahiere NUR was du SICHER erkennst. Antworte NUR mit JSON:
             "error": str(e),
             "extracted": {}
         }
+
+
+# ============================================================================
+# COMMAND CENTER V3 - SMART QUEUE SYSTEM
+# ============================================================================
+
+@router.get("/queue")
+async def get_smart_queue(
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Gibt NUR die Leads zurück die JETZT actionable sind.
+    Sortiert nach Priorität.
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    queue = {
+        "action_required": [],   # Lead wartet auf Antwort
+        "followups_today": [],   # Follow-ups fällig
+        "hot_leads": [],         # Hot ohne Aktivität 24h
+        "new_leads": [],         # Noch nie kontaktiert
+        "nurture": [],           # >7 Tage kein Kontakt
+        "appointments_today": [] # Termine heute
+    }
+    
+    try:
+        # 1. Leads die auf Antwort warten (KRITISCH)
+        waiting_result = supabase.table("leads").select("*").eq(
+            "user_id", user_id
+        ).eq("waiting_for_response", True).not_.in_("status", ["won", "lost"]).execute()
+        
+        for lead in waiting_result.data or []:
+            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
+            lead["priority"] = "critical"
+            queue["action_required"].append(lead)
+        
+        # 2. Follow-ups heute fällig
+        today = datetime.now().date().isoformat()
+        try:
+            followups_result = supabase.table("followup_suggestions").select(
+                "*, leads(*)"
+            ).eq("user_id", user_id).eq("status", "pending").lte(
+                "due_date", today + "T23:59:59"
+            ).execute()
+            
+            for fu in followups_result.data or []:
+                lead = fu.get("leads") or {}
+                if lead:
+                    lead["followup"] = fu
+                    lead["suggested_action"] = await generate_suggested_action(supabase, lead, fu)
+                    lead["priority"] = "high"
+                    queue["followups_today"].append(lead)
+        except Exception as e:
+            logger.debug(f"Followups table might not exist: {e}")
+        
+        # 3. Hot Leads ohne Aktivität 24h
+        day_ago = (datetime.now() - timedelta(days=1)).isoformat()
+        hot_result = supabase.table("leads").select("*").eq(
+            "user_id", user_id
+        ).eq("temperature", "hot").not_.in_("status", ["won", "lost"]).or_(
+            f"last_contact_at.is.null,last_contact_at.lt.{day_ago}"
+        ).execute()
+        
+        for lead in hot_result.data or []:
+            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
+            lead["priority"] = "high"
+            queue["hot_leads"].append(lead)
+        
+        # 4. Neue Leads (noch nie kontaktiert)
+        new_result = supabase.table("leads").select("*").eq(
+            "user_id", user_id
+        ).eq("status", "new").is_("last_contact_at", None).execute()
+        
+        for lead in new_result.data or []:
+            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
+            lead["priority"] = "medium"
+            queue["new_leads"].append(lead)
+        
+        # 5. Nurture (>7 Tage kein Kontakt)
+        week_ago = (datetime.now() - timedelta(days=7)).isoformat()
+        nurture_result = supabase.table("leads").select("*").eq(
+            "user_id", user_id
+        ).not_.in_("status", ["won", "lost"]).lt(
+            "last_contact_at", week_ago
+        ).execute()
+        
+        for lead in nurture_result.data or []:
+            lead["suggested_action"] = await generate_suggested_action(supabase, lead)
+            lead["priority"] = "low"
+            queue["nurture"].append(lead)
+        
+        # TODO: 6. Termine heute (wenn appointments table existiert)
+        
+        return {
+            "queue": queue,
+            "total_actionable": sum(len(v) for v in queue.values()),
+            "generated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating smart queue: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating queue: {str(e)}")
+
+
+async def generate_suggested_action(
+    supabase,
+    lead: dict,
+    followup: Optional[dict] = None
+) -> dict:
+    """
+    Generiert die vorgeschlagene nächste Aktion basierend auf Kontext.
+    """
+    status = lead.get("status", "new")
+    temperature = lead.get("temperature", "cold")
+    waiting = lead.get("waiting_for_response", False)
+    last_message = lead.get("last_inbound_message", "")
+    
+    # Lead wartet auf Antwort - höchste Priorität
+    if waiting and last_message:
+        # Analysiere was der Lead gesagt hat
+        message_lower = last_message.lower()
+        
+        if "termin" in message_lower or "zeit" in message_lower or "wann" in message_lower:
+            return {
+                "type": "schedule_meeting",
+                "reason": "Lead fragt nach Termin",
+                "message": "Hey! Perfekt, lass uns telefonieren. Passt dir Donnerstag um 15 Uhr? Dauert nur 20 Minuten, dann zeig ich dir alles.",
+                "urgency": "high"
+            }
+        elif "preis" in message_lower or "kostet" in message_lower or "kosten" in message_lower:
+            return {
+                "type": "pricing",
+                "reason": "Lead fragt nach Preis",
+                "message": "Gerne erkläre ich dir die Preise persönlich. Lass uns kurz telefonieren - ich zeig dir auch, wie du das System optimal nutzt.",
+                "urgency": "high"
+            }
+        elif any(word in message_lower for word in ["ja", "ok", "klingt gut", "interessant"]):
+            return {
+                "type": "respond_positive",
+                "reason": "Lead zeigt Interesse",
+                "message": "Super! Lass uns kurz telefonieren damit ich dir alles zeigen kann. Wann passt es dir am besten?",
+                "urgency": "high"
+            }
+        else:
+            return {
+                "type": "respond",
+                "reason": "Lead wartet auf Antwort",
+                "message": "Danke für deine Nachricht! Lass mich dir das gerne persönlich erklären.",
+                "urgency": "critical"
+            }
+    
+    # Follow-up fällig
+    if followup:
+        return {
+            "type": "followup",
+            "reason": f"Follow-up geplant für {followup.get('due_date', 'heute')}",
+            "message": followup.get("suggested_message") or followup.get("message") or f"Hey {lead.get('name', '').split()[0] if lead.get('name') else ''}! Wollte kurz nachfragen...",
+            "urgency": "high"
+        }
+    
+    # Neuer Lead
+    if status == "new" or not lead.get("last_contact_at"):
+        return {
+            "type": "icebreaker",
+            "reason": "Erstkontakt nötig",
+            "message": f"Hey {lead.get('name', '').split()[0] if lead.get('name') else 'dort'}! Ich hab gesehen dass du dich für [Produkt] interessierst. Lass uns kurz telefonieren damit ich dir alles zeigen kann!",
+            "urgency": "medium"
+        }
+    
+    # Qualifizierter Lead
+    if status == "qualified":
+        return {
+            "type": "close",
+            "reason": "Lead ist qualifiziert - Zeit für Abschluss",
+            "message": "Perfekt! Lass uns jetzt den nächsten Schritt gehen. Ich zeig dir wie du startest.",
+            "urgency": "high"
+        }
+    
+    # Default
+    return {
+        "type": "check_in",
+        "reason": "Beziehung pflegen",
+        "message": f"Hey {lead.get('name', '').split()[0] if lead.get('name') else 'dort'}! Wie läuft es? Alles klar?",
+        "urgency": "low"
+    }
+
+
+@router.post("/{lead_id}/mark-processed")
+async def mark_lead_processed(
+    lead_id: str,
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    supabase = Depends(get_supabase)
+):
+    """
+    Markiert einen Lead als bearbeitet.
+    Er verschwindet aus der Queue bis zum nächsten Trigger.
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    action = request.get("action")  # "message_sent", "call_made", "later", "done", etc.
+    next_followup = request.get("next_followup")  # Optional: Wann wieder erscheinen
+    
+    try:
+        updates = {
+            "waiting_for_response": False,  # User hat geantwortet
+            "last_action": action,
+            "last_action_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }
+        
+        # Wenn Nachricht gesendet wurde, aktualisiere last_contact_at
+        if action in ["message_sent", "call_made", "meeting_scheduled"]:
+            updates["last_contact_at"] = datetime.now().isoformat()
+        
+        # Wenn "Later" gewählt, erstelle Follow-up
+        if action == "later" and next_followup:
+            try:
+                await supabase.table("followup_suggestions").insert({
+                    "lead_id": lead_id,
+                    "user_id": user_id,
+                    "due_date": next_followup,
+                    "title": "Manueller Follow-up",
+                    "status": "pending"
+                }).execute()
+            except Exception as e:
+                logger.debug(f"Could not create followup: {e}")
+        
+        # Wenn "Done" (gewonnen oder verloren), setze Status
+        if action == "won":
+            updates["status"] = "won"
+        elif action == "lost":
+            updates["status"] = "lost"
+        
+        await supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
+        
+        return {
+            "success": True,
+            "removed_from_queue": True,
+            "message": "Lead wurde als bearbeitet markiert und verschwindet aus der Queue."
+        }
+        
+    except Exception as e:
+        logger.error(f"Error marking lead as processed: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 

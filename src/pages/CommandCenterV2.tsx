@@ -6,8 +6,11 @@ import {
   TrendingUp, User, Building, Copy, Check,
   Camera, Mic, Edit3, X, Plus, Image,
   Linkedin, Facebook, MoreHorizontal, Paperclip,
-  Home, Users, CalendarDays, Lightbulb
+  Home, Users, CalendarDays, Lightbulb, List
 } from 'lucide-react';
+import SmartQueue from '@/components/command-center/SmartQueue';
+import AllLeadsTable from '@/components/command-center/AllLeadsTable';
+import AutopilotPreview from '@/components/command-center/AutopilotPreview';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://salesflow-ai.onrender.com';
 
@@ -34,6 +37,14 @@ interface Lead {
   notes?: string;
   avatar_url?: string;
   source?: string;
+  waiting_for_response?: boolean;
+  last_inbound_message?: string;
+  suggested_action?: {
+    type: string;
+    reason: string;
+    message: string;
+    urgency?: string;
+  };
 }
 
 interface Message {
@@ -191,7 +202,8 @@ const Dossier: React.FC<{
   onTemperatureChange: (temp: string) => void;
   onEdit: () => void;
   onScreenshot: () => void;
-}> = ({ lead, timeline, onStatusChange, onTemperatureChange, onEdit, onScreenshot }) => {
+  onMarkProcessed?: (action: string, nextFollowup?: string) => Promise<void>;
+}> = ({ lead, timeline, onStatusChange, onTemperatureChange, onEdit, onScreenshot, onMarkProcessed }) => {
   
   if (!lead) {
     return (
@@ -348,6 +360,57 @@ const Dossier: React.FC<{
         </div>
       </div>
 
+      {/* Suggested Action - Command Center V3 */}
+      {lead.suggested_action && (
+        <div className="mb-4 p-4 bg-gradient-to-br from-cyan-500/10 to-teal-500/10 border border-cyan-500/20 rounded-xl">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-cyan-400 font-semibold text-sm">NÄCHSTE AKTION</span>
+            </div>
+            {lead.suggested_action.urgency === 'critical' && (
+              <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">KRITISCH</span>
+            )}
+          </div>
+          <p className="text-white text-sm mb-2">{lead.suggested_action.reason}</p>
+          {lead.suggested_action.message && (
+            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3 mb-3">
+              <p className="text-gray-300 text-sm italic">"{lead.suggested_action.message}"</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(lead.suggested_action!.message);
+                  // TODO: Toast notification
+                }}
+                className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+              >
+                <Copy className="w-3 h-3" />
+                Kopieren
+              </button>
+            </div>
+          )}
+          
+          {/* Quick Actions */}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => onMarkProcessed?.('message_sent')}
+              className="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all"
+            >
+              ✅ Done
+            </button>
+            <button
+              onClick={() => {
+                const nextDate = new Date();
+                nextDate.setDate(nextDate.getDate() + 1);
+                onMarkProcessed?.('later', nextDate.toISOString().split('T')[0]);
+              }}
+              className="flex-1 py-2 px-3 bg-gray-800 text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-700 transition-all"
+            >
+              ⏰ Later
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Status Bar */}
       <div className="flex gap-2 mb-4">
         {statuses.map((s, i) => (
@@ -450,7 +513,7 @@ const ChiefCopilot: React.FC<{
   const [chiefChat, setChiefChat] = useState<{role: string, content: string}[]>([]);
   const [chiefInput, setChiefInput] = useState('');
   const [isLoadingChief, setIsLoadingChief] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'chief'>('chief');
+  const [activeTab, setActiveTab] = useState<'chat' | 'chief' | 'autopilot'>('chief');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -736,7 +799,7 @@ const ChiefCopilot: React.FC<{
             </div>
           </div>
         </>
-      ) : (
+      ) : activeTab === 'chat' ? (
         <>
           {/* Messages View */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -813,9 +876,15 @@ const ChiefCopilot: React.FC<{
             </div>
           </div>
         </>
+      ) : (
+        <>
+          {/* Autopilot Preview */}
+          <AutopilotPreview selectedLeadId={lead?.id || null} />
+        </>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Nur in Chief und Chat Tabs */}
+      {(activeTab === 'chief' || activeTab === 'chat') && (
       <div className="p-4 border-t border-gray-800">
         <p className="text-gray-500 text-xs mb-3">Quick Actions</p>
         <div className="grid grid-cols-4 gap-2">
@@ -1176,6 +1245,9 @@ export default function CommandCenterV2() {
   const [pastedResponse, setPastedResponse] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Queue View Toggle
+  const [queueView, setQueueView] = useState<'queue' | 'all'>('queue');
 
   useEffect(() => {
     loadLeads();
@@ -1363,6 +1435,42 @@ export default function CommandCenterV2() {
     }
   };
 
+  const handleMarkProcessed = async (action: string, nextFollowup?: string) => {
+    if (!selectedLead) return;
+    
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/api/command-center/${selectedLead.id}/mark-processed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action,
+          next_followup: nextFollowup
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Lead aus Queue entfernen (wird durch reload der Queue gemacht)
+        // Update selectedLead - remove suggested_action
+        setSelectedLead(prev => prev ? {
+          ...prev,
+          waiting_for_response: false,
+          suggested_action: undefined
+        } : null);
+        
+        // Queue neu laden (wird von SmartQueue gemacht, aber wir können es triggern)
+        // TODO: Event oder State update um Queue zu refreshen
+      }
+    } catch (error) {
+      console.error('Error marking lead as processed:', error);
+    }
+  };
+
   const handleSendMessage = (message: string, channel: string) => {
     if (!selectedLead) return;
     
@@ -1514,14 +1622,57 @@ export default function CommandCenterV2() {
 
   return (
     <div className="h-screen bg-[#0a0a0f] flex overflow-hidden">
-      {/* Smart Feed */}
-      <div className="w-[280px] flex-shrink-0 border-r border-cyan-500/10">
-        <SmartFeed
-          leads={leads}
-          selectedId={selectedLead?.id || null}
-          onSelect={setSelectedLead}
-          onNewLead={() => setShowNewLeadModal(true)}
-        />
+      {/* Smart Queue / All Leads */}
+      <div className="w-[320px] flex-shrink-0 border-r border-cyan-500/10 flex flex-col">
+        {/* View Toggle */}
+        <div className="flex border-b border-cyan-500/10">
+          <button
+            onClick={() => setQueueView('queue')}
+            className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
+              queueView === 'queue'
+                ? 'bg-cyan-500/10 text-cyan-400 border-b-2 border-cyan-400'
+                : 'text-gray-500 hover:text-gray-400'
+            }`}
+          >
+            Queue
+          </button>
+          <button
+            onClick={() => setQueueView('all')}
+            className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
+              queueView === 'all'
+                ? 'bg-cyan-500/10 text-cyan-400 border-b-2 border-cyan-400'
+                : 'text-gray-500 hover:text-gray-400'
+            }`}
+          >
+            Alle Leads
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          {queueView === 'queue' ? (
+            <SmartQueue
+              onSelectLead={(lead) => setSelectedLead(lead as any)}
+              selectedLeadId={selectedLead?.id || null}
+            />
+          ) : (
+            <AllLeadsTable
+              onSelectLead={(lead) => setSelectedLead(lead as any)}
+              selectedLeadId={selectedLead?.id || null}
+            />
+          )}
+        </div>
+
+        {/* New Lead Button */}
+        <div className="p-3 border-t border-cyan-500/10">
+          <button
+            onClick={() => setShowNewLeadModal(true)}
+            className="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all flex items-center justify-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Neuer Lead
+          </button>
+        </div>
       </div>
 
       {/* Dossier */}
@@ -1533,6 +1684,7 @@ export default function CommandCenterV2() {
           onTemperatureChange={handleTemperatureChange}
           onEdit={() => setShowEditModal(true)}
           onScreenshot={() => setShowNewLeadModal(true)}
+          onMarkProcessed={handleMarkProcessed}
         />
       </div>
 
