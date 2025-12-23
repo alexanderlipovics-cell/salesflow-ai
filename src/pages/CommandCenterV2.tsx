@@ -1022,64 +1022,6 @@ const ChiefCopilot: React.FC<{
             </div>
           </button>
         )}
-
-        {/* Action Confirmation */}
-        {lead && (
-          <div className="mt-4 pt-4 border-t border-gray-800">
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('access_token');
-                    await fetch(`${API_URL}/api/command-center/${lead.id}/mark-processed`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                      },
-                      body: JSON.stringify({
-                        action: 'message_sent',
-                        channel: chiefInsight?.channel || 'instagram',
-                        message: chiefInsight?.icebreaker
-                      })
-                    });
-                    // Refresh oder nächster Lead
-                    window.location.reload();
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
-                className="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-xl font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all"
-              >
-                ✅ Done
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('access_token');
-                    await fetch(`${API_URL}/api/command-center/${lead.id}/mark-processed`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                      },
-                      body: JSON.stringify({
-                        action: 'snoozed',
-                        snooze_days: 1
-                      })
-                    });
-                    window.location.reload();
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
-                className="flex-1 py-3 px-4 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-all"
-              >
-                ⏰ Morgen
-              </button>
-            </div>
-          </div>
-        )}
       </div>
       )}
     </div>
