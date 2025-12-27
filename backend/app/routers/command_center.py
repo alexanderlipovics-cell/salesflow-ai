@@ -1330,6 +1330,10 @@ async def mark_lead_processed(
     notes = body.get("notes")
     next_followup = body.get("next_followup")  # ISO date string or None
     
+    logger.info(f"=== MARK PROCESSED DEBUG ===")
+    logger.info(f"Body received: {body}")
+    logger.info(f"action={action}, outcome={outcome}, next_followup={next_followup}, notes={notes}")
+    
     try:
         updates = {
             "waiting_for_response": False,  # User hat geantwortet
@@ -1470,6 +1474,10 @@ async def mark_lead_processed(
                 # Default: 3 Tage
                 updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
             logger.info(f"Setting next_contact_at as final fallback: {updates['next_contact_at']}")
+        
+        logger.info(f"=== FINAL UPDATES ===")
+        logger.info(f"updates dict: {updates}")
+        logger.info(f"next_contact_at in updates: {'next_contact_at' in updates}")
         
         supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
         
