@@ -1373,6 +1373,13 @@ export default function CommandCenterV2() {
   // New aggregated data states
   const [followups, setFollowups] = useState<any[]>([]);
   const [inboxItems, setInboxItems] = useState<any[]>([]);
+
+  // Lead Cascade States
+  const [showCascadeModal, setShowCascadeModal] = useState(false);
+  const [cascadeLead, setCascadeLead] = useState<any>(null);
+  const [cascadeReason, setCascadeReason] = useState('');
+  const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
+  const [loadingDownline, setLoadingDownline] = useState(false);
   const [chiefInsight, setChiefInsight] = useState<{
     strategy: string;
     next_action: string;
@@ -1602,6 +1609,24 @@ export default function CommandCenterV2() {
       loadLeads();
     } catch (error) {
       console.error('Error updating temperature:', error);
+    }
+  };
+
+  const loadDownlinePartners = async () => {
+    setLoadingDownline(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/api/command-center/team/downline`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDownlinePartners(data.downline || []);
+      }
+    } catch (error) {
+      console.error('Error loading downline:', error);
+    } finally {
+      setLoadingDownline(false);
     }
   };
 
@@ -1844,14 +1869,22 @@ export default function CommandCenterV2() {
       if (res.ok) {
         // Queue Refresh triggern
         setQueueRefreshTrigger(prev => prev + 1);
-        
+
+        // Bei "Lost" → Lead Cascade Dialog zeigen
+        if (action === 'lost') {
+          setCascadeLead(selectedLead);
+          setCascadeReason(outcome || '');
+          loadDownlinePartners();
+          setShowCascadeModal(true);
+        }
+
         // Lead Update
         setSelectedLead(prev => prev ? {
           ...prev,
           waiting_for_response: false,
           suggested_action: undefined
         } : null);
-        
+
         // Modal schließen
         setShowOutcomeModal(false);
         setCurrentAction(null);
@@ -1862,6 +1895,45 @@ export default function CommandCenterV2() {
     } catch (error) {
       console.error('Error saving action:', error);
     }
+  };
+
+  const handleCascadeLead = async (targetUserId: string) => {
+    if (!cascadeLead) return;
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/api/command-center/${cascadeLead.id}/cascade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          target_user_id: targetUserId,
+          reason: cascadeReason,
+          notes: `Weitergeleitet wegen: ${cascadeReason}`
+        })
+      });
+
+      if (res.ok) {
+        // Erfolg - Modal schließen und Queue refreshen
+        setShowCascadeModal(false);
+        setCascadeLead(null);
+        setQueueRefreshTrigger(prev => prev + 1);
+
+        // Optional: Success Toast/Notification
+        console.log('Lead erfolgreich weitergeleitet!');
+      }
+    } catch (error) {
+      console.error('Error cascading lead:', error);
+    }
+  };
+
+  const handleArchiveLead = () => {
+    // Lead nicht weiterleiten, nur archivieren
+    setShowCascadeModal(false);
+    setCascadeLead(null);
+    // Lead ist bereits als "lost" markiert
   };
 
   const handleSendMessage = (message: string, channel: string) => {
@@ -2000,6 +2072,106 @@ export default function CommandCenterV2() {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  // Cascade Modal für Lead-Weiterleitung
+  const CascadeModal = () => {
+    if (!showCascadeModal || !cascadeLead) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-[#0d1520] border border-gray-700 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+          {/* Header */}
+          <div className="text-center">
+            <span className="text-4xl mb-2 block">🔄</span>
+            <h3 className="text-xl font-semibold text-white">Lead an Team weiterleiten?</h3>
+            <p className="text-gray-400 text-sm mt-2">
+              Vielleicht passt <span className="text-cyan-400 font-medium">{cascadeLead.name}</span> besser zu einem deiner Partner?
+            </p>
+          </div>
+
+          {/* Lead Info */}
+          <div className="bg-[#1a2a3a] rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                {cascadeLead.name?.charAt(0) || '?'}
+              </div>
+              <div>
+                <p className="text-white font-medium">{cascadeLead.name}</p>
+                <p className="text-gray-400 text-sm">{cascadeLead.company || cascadeLead.email || 'Kein Unternehmen'}</p>
+              </div>
+            </div>
+            {cascadeReason && (
+              <div className="mt-3 pt-3 border-t border-gray-700">
+                <p className="text-sm text-gray-400">
+                  Grund: <span className="text-yellow-400">{cascadeReason}</span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Downline Liste */}
+          <div className="space-y-2">
+            <p className="text-sm text-gray-400 font-medium">Deine Partner:</p>
+
+            {loadingDownline ? (
+              <div className="text-center py-8">
+                <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto"></div>
+                <p className="text-gray-400 text-sm mt-2">Lade Team...</p>
+              </div>
+            ) : downlinePartners.length === 0 ? (
+              <div className="text-center py-6 bg-[#1a2a3a] rounded-xl">
+                <p className="text-gray-400">Keine Team-Partner gefunden</p>
+                <p className="text-gray-500 text-sm mt-1">Füge zuerst Partner zu deinem Team hinzu</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {downlinePartners.map((partner) => (
+                  <button
+                    key={partner.id}
+                    onClick={() => handleCascadeLead(partner.id)}
+                    className="w-full flex items-center justify-between p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-xl border border-gray-700 hover:border-cyan-500 transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white font-bold">
+                        {(partner.name || partner.first_name || partner.email)?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div className="text-left">
+                        <p className="text-white font-medium">
+                          {partner.name || partner.full_name || partner.first_name || partner.email?.split('@')[0]}
+                        </p>
+                        <p className="text-gray-400 text-sm">{partner.email}</p>
+                      </div>
+                    </div>
+                    <span className="text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Weiterleiten →
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={handleArchiveLead}
+              className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+            >
+              Nein, archivieren
+            </button>
+          </div>
+
+          {/* Close Button */}
+          <button
+            onClick={() => setShowCascadeModal(false)}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // Outcome Modal für Action-Details
@@ -2442,6 +2614,9 @@ export default function CommandCenterV2() {
           </div>
         </div>
       )}
+
+      {/* Cascade Modal */}
+      <CascadeModal />
 
       {/* Outcome Modal */}
       <OutcomeModal />
