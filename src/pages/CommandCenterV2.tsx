@@ -399,10 +399,10 @@ const Dossier: React.FC<{
             </div>
           )}
           
-          {/* Quick Actions */}
+          {/* Quick Actions - Done & Later Buttons */}
           <div className="flex gap-2 mt-3">
             <button
-              onClick={() => onMarkProcessed?.('message_sent')}
+              onClick={() => onMarkProcessed?.('done')}
               className="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all"
             >
               ✅ Done

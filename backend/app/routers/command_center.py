@@ -1406,7 +1406,8 @@ async def mark_lead_processed(
                         "channel": "WHATSAPP",
                         "flow": "follow_up",
                         "source": "system",
-                        "stage": 1
+                        "stage": 1,
+                        "suggested_message": "Hey! Wollte kurz nachhaken - hast du dir das anschauen können?"
                     }).execute()
                     logger.info(f"Auto-Follow-up created for lead {lead_id}")
             except Exception as e:
