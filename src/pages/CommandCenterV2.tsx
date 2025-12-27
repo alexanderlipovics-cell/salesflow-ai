@@ -1993,11 +1993,21 @@ export default function CommandCenterV2() {
   const handleSaveLead = async (data: Partial<Lead>) => {
     if (!selectedLead) return;
     try {
+      console.log("🔍 DEBUG handleSaveLead - Original data:", data);
+
+      // Transform instagram_url to instagram for backend compatibility
+      const transformedData = {
+        ...data,
+        ...(data.instagram_url && { instagram: data.instagram_url })
+      };
+
+      console.log("🔍 DEBUG handleSaveLead - Transformed data:", transformedData);
+
       const token = localStorage.getItem('access_token');
       await fetch(`${API_URL}/api/leads/${selectedLead.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(data)
+        body: JSON.stringify(transformedData)
       });
       setSelectedLead({ ...selectedLead, ...data });
       loadLeads();
@@ -2008,11 +2018,23 @@ export default function CommandCenterV2() {
 
   const handleCreateLead = async (data: any) => {
     try {
+      console.log("🔍 DEBUG handleCreateLead - Original data:", data);
+
+      // Transform instagram_url to instagram for backend compatibility
+      const transformedData = {
+        ...data,
+        instagram: data.instagram_url, // Backend expects 'instagram'
+        status: 'new',
+        temperature: 'cold'
+      };
+
+      console.log("🔍 DEBUG handleCreateLead - Transformed data:", transformedData);
+
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${API_URL}/api/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ ...data, status: 'new', temperature: 'cold' })
+        body: JSON.stringify(transformedData)
       });
       if (res.ok) {
         const newLead = await res.json();
