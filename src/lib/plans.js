@@ -407,26 +407,9 @@ export const FINANZ_ADDONS = {
   finanz_pro: ADDONS.finanz_pro,
 };
 
-// Leadgen Addons (Alias)
-export const LEADGEN_ADDONS = ADDONS;
-
 // =============================================================================
-// CURRENCY & BILLING HELPERS
+// BILLING HELPERS
 // =============================================================================
-
-export const formatCurrency = (amount, currency = 'EUR') => {
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
-};
-
-export const formatCurrencyEn = (amount, currency = 'EUR') => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
-};
 
 export const getBillingPrice = (tier, interval = 'month') => {
   const plan = PLANS[tier];
