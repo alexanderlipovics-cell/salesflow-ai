@@ -7,7 +7,8 @@ export default function ChooseVerticalPage() {
 
   function selectVertical(v: Vertical) {
     setVertical(v);
-    navigate("/onboarding");
+    // REMOVED: Old onboarding redirect - go directly to dashboard
+    navigate("/");
   }
 
   return (

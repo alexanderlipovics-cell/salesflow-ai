@@ -76,11 +76,12 @@ const DashboardPage: React.FC = () => {
 
         setUserName(resolvedName || "User");
 
-        if (!profile || profile.onboarding_complete === false) {
-          console.warn("Dashboard: onboarding incomplete -> redirect /onboarding", { profile });
-          navigate("/onboarding", { replace: true });
-          return;
-        }
+        // REMOVED: Old onboarding check - CHIEF handles onboarding now
+        // if (!profile || profile.onboarding_complete === false) {
+        //   console.warn("Dashboard: onboarding incomplete -> redirect /onboarding", { profile });
+        //   navigate("/onboarding", { replace: true });
+        //   return;
+        // }
       } catch {
         const fallback =
           user?.first_name ||

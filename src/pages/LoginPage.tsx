@@ -47,8 +47,8 @@ const LoginPage: React.FC = () => {
         }
       }
 
-      const destination =
-        onboardingComplete === false ? '/onboarding' : (from ?? '/dashboard');
+      // REMOVED: Old onboarding redirect - always go to dashboard or from
+      const destination = from ?? '/dashboard';
 
       console.log('LoginPage: Login successful, navigating to:', destination);
       // Kurze Pause, damit Tokens sicher im Storage sind

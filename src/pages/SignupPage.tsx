@@ -29,8 +29,9 @@ const SignupPage: React.FC = () => {
       // Prüfe, ob Supabase bereits eine Session gesetzt hat
       const { data: sessionData } = await supabaseClient.auth.getSession();
       if (sessionData?.session) {
-        // Onboarding-Check später in Dashboard/Login; hier direkt ins Onboarding
-        navigate('/onboarding', { replace: true });
+        // REMOVED: Old onboarding redirect - now go directly to dashboard
+        // navigate('/onboarding', { replace: true });
+        navigate('/', { replace: true });
       } else {
         // Falls keine Session (z.B. E-Mail-Confirmation aktiviert)
         navigate('/login', { replace: true });
