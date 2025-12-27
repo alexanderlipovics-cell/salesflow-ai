@@ -794,15 +794,17 @@ Was ist dein **größtes Ziel** gerade?
         onboarding_completed: true
       });
       setOnboardingMode(false);
-      addChiefMessage(`Perfekt! Ich hab alles gespeichert. 🚀
+      addChiefMessage(`Perfekt, du bist startklar! 🚀
 
-Du bist ready! Hier ein paar Tipps:
+Lass mich dir kurz zeigen, wie Al Sales Solutions funktioniert:
 
-- **Command Center** → Arbeite deine Leads ab
-- **Screenshot hochladen** → Ich lese WhatsApp/Insta Chats
-- **Frag mich alles** → Ich helfe bei Einwänden, Follow-ups, Strategien
+📱 **Command Center** - Hier arbeitest du deine Leads ab. Ich zeige dir den nächsten Kontakt und du wählst eine Aktion.
 
-Was möchtest du als erstes tun?`);
+🤖 **AI Copilot (hier)** - Frag mich alles! Einwände, Follow-ups, Strategien, oder lade einen Screenshot hoch.
+
+👥 **Netzwerk** - Dein Team und Downline im Überblick.
+
+**Möchtest du deinen ersten Lead erstellen?** Ich führe dich durch!`);
     }
   };
 

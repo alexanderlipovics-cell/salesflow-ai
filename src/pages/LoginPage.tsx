@@ -47,8 +47,15 @@ const LoginPage: React.FC = () => {
         }
       }
 
-      // REMOVED: Old onboarding redirect - always go to dashboard or from
-      const destination = from ?? '/dashboard';
+      // Route based on onboarding status
+      let destination;
+      if (onboardingComplete === false) {
+        // New users without completed onboarding → AI Copilot for onboarding
+        destination = '/chat';
+      } else {
+        // Existing users → dashboard or requested page
+        destination = from ?? '/dashboard';
+      }
 
       console.log('LoginPage: Login successful, navigating to:', destination);
       // Kurze Pause, damit Tokens sicher im Storage sind
