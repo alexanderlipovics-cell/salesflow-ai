@@ -1662,6 +1662,68 @@ export default function CommandCenterV2() {
     setShowOutcomeModal(true);
   };
 
+  /**
+   * Maps lead source to valid interaction channel.
+   * Ensures data integrity by only allowing valid channel values.
+   */
+  const getValidChannel = (source: string | undefined | null): string => {
+    const VALID_CHANNELS = ['whatsapp', 'instagram', 'phone', 'email', 'in_person', 'linkedin', 'sms'] as const;
+    
+    if (!source) return 'whatsapp';
+    
+    const normalized = source.toLowerCase().trim();
+    
+    // Direct match with valid channels
+    if (VALID_CHANNELS.includes(normalized as any)) {
+      return normalized;
+    }
+    
+    // Map common variations to valid channels
+    const CHANNEL_MAPPINGS: Record<string, string> = {
+      // AI/System sources
+      'ai_chat': 'whatsapp',
+      'chat': 'whatsapp',
+      'system': 'whatsapp',
+      'import': 'whatsapp',
+      'manual': 'whatsapp',
+      'bulk_import': 'whatsapp',
+      
+      // Social Media variations
+      'facebook': 'instagram',
+      'fb': 'instagram',
+      'ig': 'instagram',
+      'meta': 'instagram',
+      
+      // WhatsApp variations
+      'wa': 'whatsapp',
+      'whats_app': 'whatsapp',
+      
+      // Phone variations
+      'tel': 'phone',
+      'telephone': 'phone',
+      'call': 'phone',
+      'mobile': 'phone',
+      
+      // Email variations
+      'mail': 'email',
+      'e-mail': 'email',
+      'e_mail': 'email',
+      
+      // In-person variations
+      'meeting': 'in_person',
+      'event': 'in_person',
+      'conference': 'in_person',
+      'referral': 'in_person',
+      'network': 'in_person',
+      
+      // LinkedIn variations
+      'li': 'linkedin',
+      'linked_in': 'linkedin',
+    };
+    
+    return CHANNEL_MAPPINGS[normalized] || 'whatsapp';
+  };
+
   const handleSaveAction = async (
     action: string,
     outcome: string | null,
@@ -1686,7 +1748,7 @@ export default function CommandCenterV2() {
               interaction_type: action,
               outcome: outcome,
               notes: notes,
-              channel: selectedLead.source || 'whatsapp',
+              channel: getValidChannel(selectedLead?.source),
             })
           });
         } catch (e) {
