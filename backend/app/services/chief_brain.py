@@ -4,7 +4,7 @@ Konsolidiert: Workflow Detection, Message Generation, Learning
 """
 
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -568,7 +568,29 @@ class ChiefBrain:
                 .eq('temperature', 'hot')\
                 .execute()
             
+            # Filter: Nur aktive Hot Leads (next_contact_at NULL oder <= jetzt)
+            now = datetime.now(timezone.utc)
+            hot_leads = []
             for lead in (hot_result.data or []):
+                next_contact = lead.get("next_contact_at")
+                is_active = False
+                if next_contact is None:
+                    is_active = True
+                else:
+                    try:
+                        if isinstance(next_contact, str):
+                            next_dt = datetime.fromisoformat(next_contact.replace("Z", "+00:00"))
+                            if next_dt.tzinfo is None:
+                                next_dt = next_dt.replace(tzinfo=timezone.utc)
+                            if next_dt <= now:
+                                is_active = True
+                    except Exception:
+                        is_active = True  # Im Zweifel anzeigen
+                
+                if is_active:
+                    hot_leads.append(lead)
+            
+            for lead in hot_leads:
                 status = (lead.get('status') or '').lower()
                 if status not in ['won', 'lost']:
                     if lead.get('id') not in seen_ids:
@@ -576,7 +598,7 @@ class ChiefBrain:
                         queue.append({'lead': lead, 'workflow': workflow, 'score': 100})
                         seen_ids.add(lead.get('id'))
             
-            logger.info(f"Hot leads found: {len([l for l in (hot_result.data or []) if (l.get('status') or '').lower() not in ['won', 'lost']])}")
+            logger.info(f"Hot leads found: {len([l for l in hot_leads if (l.get('status') or '').lower() not in ['won', 'lost']])}")
         except Exception as e:
             logger.error(f"Error fetching hot leads: {e}")
         
@@ -611,8 +633,38 @@ class ChiefBrain:
                 .limit(200)\
                 .execute()
             
+            # Filter: Nur Leads anzeigen die JETZT aktiv sind
+            # (next_contact_at ist NULL oder in der Vergangenheit/jetzt)
+            now = datetime.now(timezone.utc)
+            all_leads = all_leads_result.data or []
+            
+            active_leads = []
+            for lead in all_leads:
+                next_contact = lead.get("next_contact_at")
+                
+                # Lead ist aktiv wenn:
+                # 1. next_contact_at ist NULL (noch nie bearbeitet) ODER
+                # 2. next_contact_at ist <= jetzt (Follow-up fällig)
+                if next_contact is None:
+                    active_leads.append(lead)
+                else:
+                    try:
+                        # Parse ISO timestamp
+                        if isinstance(next_contact, str):
+                            # Handle both formats: with and without timezone
+                            next_dt = datetime.fromisoformat(next_contact.replace("Z", "+00:00"))
+                            if next_dt.tzinfo is None:
+                                next_dt = next_dt.replace(tzinfo=timezone.utc)
+                            if next_dt <= now:
+                                active_leads.append(lead)
+                    except Exception as e:
+                        logger.warning(f"Could not parse next_contact_at for lead {lead.get('id')}: {e}")
+                        active_leads.append(lead)  # Im Zweifel anzeigen
+            
+            logger.info(f"Filtered leads: {len(active_leads)} active out of {len(all_leads)} total")
+            
             new_leads = [
-                l for l in (all_leads_result.data or [])
+                l for l in active_leads
                 if (l.get('status') or '').lower() == 'new'
             ]
             
@@ -634,9 +686,27 @@ class ChiefBrain:
                     .eq('user_id', self.user_id)\
                     .limit(200)\
                     .execute()
+                # Filter active leads
+                now = datetime.now(timezone.utc)
+                all_leads = all_leads_result.data or []
+                active_leads = []
+                for lead in all_leads:
+                    next_contact = lead.get("next_contact_at")
+                    if next_contact is None:
+                        active_leads.append(lead)
+                    else:
+                        try:
+                            if isinstance(next_contact, str):
+                                next_dt = datetime.fromisoformat(next_contact.replace("Z", "+00:00"))
+                                if next_dt.tzinfo is None:
+                                    next_dt = next_dt.replace(tzinfo=timezone.utc)
+                                if next_dt <= now:
+                                    active_leads.append(lead)
+                        except Exception:
+                            active_leads.append(lead)
             
             engaged_leads = [
-                l for l in (all_leads_result.data or [])
+                l for l in active_leads
                 if (l.get('status') or '').lower() in ['engaged', 'opportunity', 'qualified']
                 and l.get('id') not in seen_ids
             ]
@@ -658,9 +728,27 @@ class ChiefBrain:
                     .eq('user_id', self.user_id)\
                     .limit(200)\
                     .execute()
+                # Filter active leads
+                now = datetime.now(timezone.utc)
+                all_leads = all_leads_result.data or []
+                active_leads = []
+                for lead in all_leads:
+                    next_contact = lead.get("next_contact_at")
+                    if next_contact is None:
+                        active_leads.append(lead)
+                    else:
+                        try:
+                            if isinstance(next_contact, str):
+                                next_dt = datetime.fromisoformat(next_contact.replace("Z", "+00:00"))
+                                if next_dt.tzinfo is None:
+                                    next_dt = next_dt.replace(tzinfo=timezone.utc)
+                                if next_dt <= now:
+                                    active_leads.append(lead)
+                        except Exception:
+                            active_leads.append(lead)
             
             contacted_leads = [
-                l for l in (all_leads_result.data or [])
+                l for l in active_leads
                 if (l.get('status') or '').lower() in ['contacted', 'reviewed']
                 and l.get('id') not in seen_ids
             ]
@@ -684,8 +772,26 @@ class ChiefBrain:
                         .eq('user_id', self.user_id)\
                         .limit(limit)\
                         .execute()
+                    # Filter active leads
+                    now = datetime.now(timezone.utc)
+                    all_leads = all_leads_result.data or []
+                    active_leads = []
+                    for lead in all_leads:
+                        next_contact = lead.get("next_contact_at")
+                        if next_contact is None:
+                            active_leads.append(lead)
+                        else:
+                            try:
+                                if isinstance(next_contact, str):
+                                    next_dt = datetime.fromisoformat(next_contact.replace("Z", "+00:00"))
+                                    if next_dt.tzinfo is None:
+                                        next_dt = next_dt.replace(tzinfo=timezone.utc)
+                                    if next_dt <= now:
+                                        active_leads.append(lead)
+                            except Exception:
+                                active_leads.append(lead)
                 
-                for lead in (all_leads_result.data or [])[:limit]:
+                for lead in active_leads[:limit]:
                     status = (lead.get('status') or '').lower()
                     if status not in ['won', 'lost'] and lead.get('id') not in seen_ids:
                         workflow = await self.detect_workflow(lead)

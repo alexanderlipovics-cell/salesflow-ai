@@ -1385,6 +1385,7 @@ async def mark_lead_processed(
             updates["waiting_for_response"] = True  # Wir warten jetzt auf Antwort
             
             # Erstelle Auto-Follow-up in 3 Tagen (wenn noch keins existiert)
+            followup_date = None
             try:
                 existing_followup = supabase.table("followup_suggestions")\
                     .select("id")\
@@ -1410,6 +1411,8 @@ async def mark_lead_processed(
                         "suggested_message": "Hey! Wollte kurz nachhaken - hast du dir das anschauen können?"
                     }).execute()
                     logger.info(f"Auto-Follow-up created for lead {lead_id}")
+                    # Setze next_contact_at damit Lead aus Queue verschwindet bis Follow-up fällig
+                    updates["next_contact_at"] = followup_date
             except Exception as e:
                 logger.warning(f"Could not create auto-followup: {e}")
         
