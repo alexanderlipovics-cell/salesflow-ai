@@ -211,9 +211,9 @@ export default function BulkImportModal({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-[#14202c] to-[#0a0a0f] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+      <div className="bg-gradient-to-br from-[#14202c] to-[#0a0a0f] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.2)] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-cyan-500/10">
+        <div className="flex items-center justify-between p-6 border-b border-cyan-500/10 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <Users className="w-5 h-5 text-white" />
@@ -228,7 +228,7 @@ export default function BulkImportModal({
               </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           >
@@ -237,7 +237,7 @@ export default function BulkImportModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="flex-1 overflow-y-auto p-6">
           
           {/* STEP 1: Upload */}
           {step === 'upload' && (
