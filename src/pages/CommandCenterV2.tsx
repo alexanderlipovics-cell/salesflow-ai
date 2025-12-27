@@ -1357,6 +1357,7 @@ export default function CommandCenterV2() {
   
   // Queue View Toggle
   const [queueView, setQueueView] = useState<'queue' | 'all'>('queue');
+  const [queueRefreshTrigger, setQueueRefreshTrigger] = useState(0);
 
   useEffect(() => {
     loadLeads();
@@ -1585,8 +1586,11 @@ export default function CommandCenterV2() {
           suggested_action: undefined
         } : null);
         
-        // Queue neu laden (wird von SmartQueue gemacht, aber wir können es triggern)
-        // TODO: Event oder State update um Queue zu refreshen
+        // Trigger Queue Refresh
+        setQueueRefreshTrigger(prev => prev + 1);
+        
+        // Optional: Zum nächsten Lead in der Queue wechseln
+        // (wird durch Queue Refresh automatisch aktualisiert)
       }
     } catch (error) {
       console.error('Error marking lead as processed:', error);
@@ -1776,6 +1780,7 @@ export default function CommandCenterV2() {
             <SmartQueue
               onSelectLead={(lead) => setSelectedLead(lead as any)}
               selectedLeadId={selectedLead?.id || null}
+              refreshTrigger={queueRefreshTrigger}
             />
           ) : (
             <AllLeadsTable

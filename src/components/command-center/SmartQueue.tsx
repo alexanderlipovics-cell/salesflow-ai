@@ -45,9 +45,10 @@ interface QueueData {
 interface SmartQueueProps {
   onSelectLead: (lead: Lead) => void;
   selectedLeadId?: string | null;
+  refreshTrigger?: number; // Trigger refresh when this changes
 }
 
-export default function SmartQueue({ onSelectLead, selectedLeadId }: SmartQueueProps) {
+export default function SmartQueue({ onSelectLead, selectedLeadId, refreshTrigger }: SmartQueueProps) {
   const [queue, setQueue] = useState<QueueData>({
     action_required: [],
     followups_today: [],
@@ -59,13 +60,6 @@ export default function SmartQueue({ onSelectLead, selectedLeadId }: SmartQueueP
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState(false);
-
-  useEffect(() => {
-    loadQueue();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(loadQueue, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const loadQueue = async () => {
     try {
@@ -84,6 +78,20 @@ export default function SmartQueue({ onSelectLead, selectedLeadId }: SmartQueueP
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadQueue();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(loadQueue, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      loadQueue();
+    }
+  }, [refreshTrigger]);
 
   const toggleSection = (section: string) => {
     setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
