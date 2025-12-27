@@ -1588,3 +1588,135 @@ async def get_interactions(
         logger.error(f"Error fetching interactions: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/team/downline")
+async def get_downline_partners(
+    current_user: dict = Depends(get_current_user_dict),
+    supabase = Depends(get_supabase)
+):
+    """
+    Holt alle Downline-Partner des Users für Lead Cascade.
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+
+    try:
+        # Hole direkte Downline aus team_relationships
+        downline_result = supabase.table("team_relationships")\
+            .select("downline_id")\
+            .eq("upline_id", user_id)\
+            .execute()
+
+        if not downline_result.data:
+            # Fallback: Hole andere User für Demo/Testing
+            all_users = supabase.table("users")\
+                .select("id, email, name, full_name, first_name")\
+                .neq("id", user_id)\
+                .limit(10)\
+                .execute()
+
+            return {
+                "downline": all_users.data or [],
+                "count": len(all_users.data or []),
+                "source": "fallback"
+            }
+
+        # Hole User-Details für Downline
+        downline_ids = [d["downline_id"] for d in downline_result.data]
+
+        users_result = supabase.table("users")\
+            .select("id, email, name, full_name, first_name")\
+            .in_("id", downline_ids)\
+            .execute()
+
+        return {
+            "downline": users_result.data or [],
+            "count": len(users_result.data or []),
+            "source": "team_relationships"
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching downline: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/cascade")
+async def cascade_lead_to_team(
+    lead_id: str,
+    body: dict = Body(...),
+    current_user: dict = Depends(get_current_user_dict),
+    supabase = Depends(get_supabase)
+):
+    """
+    Leitet einen Lead an ein Downline Team-Mitglied weiter.
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    target_user_id = body.get("target_user_id")
+    reason = body.get("reason", "")
+    notes = body.get("notes", "")
+
+    if not target_user_id:
+        raise HTTPException(status_code=400, detail="target_user_id is required")
+
+    try:
+        # 1. Hole den Lead und prüfe Ownership
+        lead_result = supabase.table("leads")\
+            .select("*")\
+            .eq("id", lead_id)\
+            .eq("user_id", user_id)\
+            .execute()
+
+        if not lead_result.data:
+            raise HTTPException(status_code=404, detail="Lead not found")
+
+        lead = lead_result.data[0]
+
+        # 2. Speichere original_owner falls noch nicht gesetzt
+        original_owner = lead.get("original_owner_id") or user_id
+        cascade_count = (lead.get("cascade_count") or 0) + 1
+
+        # 3. Update Lead mit neuem Owner
+        update_data = {
+            "user_id": target_user_id,
+            "original_owner_id": original_owner,
+            "cascaded_from_user_id": user_id,
+            "cascade_reason": reason,
+            "cascade_notes": notes,
+            "cascade_count": cascade_count,
+            "is_cascaded": True,
+            "cascaded_at": datetime.now().isoformat(),
+            "status": "new",
+            "next_contact_at": None,
+            "temperature": lead.get("temperature", "warm"),
+        }
+
+        supabase.table("leads")\
+            .update(update_data)\
+            .eq("id", lead_id)\
+            .execute()
+
+        # 4. Erstelle Interaction für History
+        supabase.table("lead_interactions").insert({
+            "lead_id": lead_id,
+            "user_id": user_id,
+            "interaction_type": "status_change",
+            "outcome": "not_interested",
+            "notes": f"Lead weitergeleitet an Team. Grund: {reason}. {notes}",
+            "channel": "in_person",
+        }).execute()
+
+        logger.info(f"Lead {lead_id} cascaded from {user_id} to {target_user_id}")
+
+        return {
+            "success": True,
+            "message": "Lead erfolgreich weitergeleitet",
+            "lead_id": lead_id,
+            "new_owner_id": target_user_id,
+            "cascade_count": cascade_count
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cascading lead: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
