@@ -1341,6 +1341,11 @@ async def mark_lead_processed(
         if notes:
             updates["notes"] = notes
         
+        # WICHTIG: next_contact_at IMMER setzen wenn vom Frontend mitgeschickt
+        if next_followup:
+            updates["next_contact_at"] = next_followup
+            logger.info(f"Setting next_contact_at to user-provided date: {next_followup}")
+        
         # Wenn Nachricht gesendet wurde, aktualisiere last_contact_at
         if action in ["message_sent", "call_made", "meeting_scheduled"]:
             updates["last_contact_at"] = datetime.now().isoformat()
@@ -1401,11 +1406,8 @@ async def mark_lead_processed(
                     .execute()
                 
                 if not existing_followup.data:
-                    # Berechne Follow-up Datum
-                    if next_followup:
-                        # User hat custom Datum gewählt
-                        followup_date = next_followup
-                    else:
+                    # Berechne Follow-up Datum (nur wenn noch nicht vom User gesetzt)
+                    if not next_followup:
                         # Smart Default basierend auf Action/Outcome
                         days = 3  # Default
                         if action == "call":
@@ -1421,6 +1423,9 @@ async def mark_lead_processed(
                             days = 1
                         
                         followup_date = (datetime.now() + timedelta(days=days)).isoformat()
+                    else:
+                        # User hat bereits custom Datum gewählt (wurde oben schon gesetzt)
+                        followup_date = next_followup
                     
                     insert_result = supabase.table("followup_suggestions").insert({
                         "lead_id": lead_id,
@@ -1438,27 +1443,33 @@ async def mark_lead_processed(
                     }).execute()
                     
                     logger.info(f"Auto-Follow-up created for lead {lead_id}: {insert_result.data if insert_result.data else 'no data returned'}")
-                    # Setze next_contact_at damit Lead aus Queue verschwindet bis Follow-up fällig
-                    updates["next_contact_at"] = followup_date
+                    # Setze next_contact_at nur wenn noch nicht gesetzt
+                    if "next_contact_at" not in updates:
+                        updates["next_contact_at"] = followup_date
                 else:
                     logger.info(f"Follow-up already exists for lead {lead_id}, skipping creation")
-                    # WICHTIG: Auch hier next_contact_at setzen wenn Follow-up existiert!
-                    existing_due = existing_followup.data[0].get("due_at") if existing_followup.data else None
-                    if existing_due:
-                        updates["next_contact_at"] = existing_due
-                    else:
-                        # Fallback: Nutze next_followup oder 3 Tage default
-                        if next_followup:
-                            updates["next_contact_at"] = next_followup
+                    # WICHTIG: Auch hier next_contact_at setzen wenn Follow-up existiert (nur wenn noch nicht gesetzt)
+                    if "next_contact_at" not in updates:
+                        existing_due = existing_followup.data[0].get("due_at") if existing_followup.data else None
+                        if existing_due:
+                            updates["next_contact_at"] = existing_due
                         else:
+                            # Fallback: 3 Tage default
                             updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
             except Exception as e:
                 logger.error(f"Could not create auto-followup for lead {lead_id}: {e}", exc_info=True)
-                # Trotzdem next_contact_at setzen (next_followup oder 3 Tage default) damit Lead aus Queue verschwindet
-                if next_followup:
-                    updates["next_contact_at"] = next_followup
-                else:
+                # Fallback: Wenn immer noch kein next_contact_at, default setzen
+                if "next_contact_at" not in updates:
                     updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
+        
+        # FINALE ABSICHERUNG: Stelle sicher dass next_contact_at IMMER gesetzt ist
+        if "next_contact_at" not in updates:
+            if next_followup:
+                updates["next_contact_at"] = next_followup
+            else:
+                # Default: 3 Tage
+                updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
+            logger.info(f"Setting next_contact_at as final fallback: {updates['next_contact_at']}")
         
         supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
         
