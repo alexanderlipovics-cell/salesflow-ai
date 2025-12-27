@@ -1663,65 +1663,135 @@ export default function CommandCenterV2() {
   };
 
   /**
-   * Maps lead source to valid interaction channel.
-   * Ensures data integrity by only allowing valid channel values.
+   * Valid values for lead_interactions table (from DB constraints)
+   */
+  const VALID_INTERACTION_TYPES = ['call', 'email', 'meeting', 'note', 'status_change', 'message_sent', 'message_received', 'follow_up_created', 'chief_chat', 'ai_suggestion'] as const;
+  const VALID_CHANNELS = ['whatsapp', 'instagram', 'linkedin', 'email', 'phone', 'zoom', 'in_person', 'call', 'meeting', 'video_call', 'sms'] as const;
+  const VALID_OUTCOMES = ['positive', 'neutral', 'negative', 'no_answer', 'callback', 'not_interested'] as const;
+
+  /**
+   * Maps UI action to valid interaction_type for database.
+   */
+  const getValidInteractionType = (action: string): string => {
+    const ACTION_TO_TYPE: Record<string, string> = {
+      // UI Actions → DB interaction_type
+      'message': 'message_sent',
+      'call': 'call',
+      'meeting': 'meeting',
+      'live': 'meeting',           // Live-Treffen = Meeting
+      'lost': 'status_change',     // Lost = Status-Änderung
+      'later': 'note',             // Später = Notiz
+      'note': 'note',
+      'email': 'email',
+    };
+    
+    return ACTION_TO_TYPE[action.toLowerCase()] || 'note';
+  };
+
+  /**
+   * Maps lead source to valid channel for database.
    */
   const getValidChannel = (source: string | undefined | null): string => {
-    const VALID_CHANNELS = ['whatsapp', 'instagram', 'phone', 'email', 'in_person', 'linkedin', 'sms'] as const;
-    
     if (!source) return 'whatsapp';
     
     const normalized = source.toLowerCase().trim();
     
-    // Direct match with valid channels
+    // Direct match
     if (VALID_CHANNELS.includes(normalized as any)) {
       return normalized;
     }
     
-    // Map common variations to valid channels
+    // Map variations
     const CHANNEL_MAPPINGS: Record<string, string> = {
-      // AI/System sources
       'ai_chat': 'whatsapp',
       'chat': 'whatsapp',
       'system': 'whatsapp',
       'import': 'whatsapp',
       'manual': 'whatsapp',
       'bulk_import': 'whatsapp',
-      
-      // Social Media variations
       'facebook': 'instagram',
       'fb': 'instagram',
       'ig': 'instagram',
       'meta': 'instagram',
-      
-      // WhatsApp variations
       'wa': 'whatsapp',
       'whats_app': 'whatsapp',
-      
-      // Phone variations
       'tel': 'phone',
       'telephone': 'phone',
-      'call': 'phone',
       'mobile': 'phone',
-      
-      // Email variations
       'mail': 'email',
       'e-mail': 'email',
       'e_mail': 'email',
-      
-      // In-person variations
-      'meeting': 'in_person',
       'event': 'in_person',
       'conference': 'in_person',
       'referral': 'in_person',
       'network': 'in_person',
-      
-      // LinkedIn variations
       'li': 'linkedin',
       'linked_in': 'linkedin',
+      'video': 'video_call',
+      'teams': 'video_call',
+      'google_meet': 'video_call',
     };
     
     return CHANNEL_MAPPINGS[normalized] || 'whatsapp';
+  };
+
+  /**
+   * Maps UI outcome to valid outcome for database.
+   */
+  const getValidOutcome = (outcome: string | null): string | null => {
+    if (!outcome) return null;
+    
+    const normalized = outcome.toLowerCase().trim();
+    
+    // Direct match
+    if (VALID_OUTCOMES.includes(normalized as any)) {
+      return normalized;
+    }
+    
+    // Map variations
+    const OUTCOME_MAPPINGS: Record<string, string> = {
+      // Positive variations
+      'positive': 'positive',
+      'interested': 'positive',
+      'hot': 'positive',
+      'scheduled': 'positive',
+      'done_positive': 'positive',
+      
+      // Neutral variations
+      'neutral': 'neutral',
+      'maybe': 'neutral',
+      'thinking': 'neutral',
+      'done_neutral': 'neutral',
+      
+      // Negative variations
+      'negative': 'negative',
+      'done_negative': 'negative',
+      'rejected': 'negative',
+      
+      // No answer variations
+      'no_answer': 'no_answer',
+      'not_reached': 'no_answer',
+      'voicemail': 'no_answer',
+      
+      // Not interested variations
+      'not_interested': 'not_interested',
+      'no_interest': 'not_interested',
+      'lost': 'not_interested',
+      
+      // Callback variations
+      'callback': 'callback',
+      'call_back': 'callback',
+      'reschedule': 'callback',
+      
+      // Lost reasons → not_interested
+      'too_expensive': 'not_interested',
+      'bad_timing': 'not_interested',
+      'wrong_target': 'not_interested',
+      'competitor': 'not_interested',
+      'other': 'not_interested',
+    };
+    
+    return OUTCOME_MAPPINGS[normalized] || null;
   };
 
   const handleSaveAction = async (
@@ -1745,8 +1815,8 @@ export default function CommandCenterV2() {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              interaction_type: action,
-              outcome: outcome,
+              interaction_type: getValidInteractionType(action),
+              outcome: getValidOutcome(outcome),
               notes: notes,
               channel: getValidChannel(selectedLead?.source),
             })
