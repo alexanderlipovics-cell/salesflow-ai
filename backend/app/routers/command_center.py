@@ -3,7 +3,7 @@ Command Center Router - Aggregierte Daten & CHIEF Integration
 Non Plus Ultra: Alles für einen Lead in einem Request
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import json
@@ -1312,7 +1312,7 @@ async def bulk_import_leads(
 @router.post("/{lead_id}/mark-processed")
 async def mark_lead_processed(
     lead_id: str,
-    request: dict,
+    body: dict = Body(default={}),
     current_user: dict = Depends(get_current_user_dict),
     supabase = Depends(get_supabase)
 ):
@@ -1325,8 +1325,10 @@ async def mark_lead_processed(
     if not user_id:
         raise HTTPException(status_code=401, detail="User not authenticated")
     
-    action = request.get("action")  # "message_sent", "call_made", "later", "done", etc.
-    next_followup = request.get("next_followup")  # Optional: Wann wieder erscheinen
+    action = body.get("action", "done")
+    outcome = body.get("outcome")
+    notes = body.get("notes")
+    next_followup = body.get("next_followup")  # ISO date string or None
     
     try:
         updates = {
@@ -1334,6 +1336,10 @@ async def mark_lead_processed(
             "last_action": action,
             "updated_at": datetime.now().isoformat()
         }
+        
+        # Füge notes hinzu falls vorhanden
+        if notes:
+            updates["notes"] = notes
         
         # Wenn Nachricht gesendet wurde, aktualisiere last_contact_at
         if action in ["message_sent", "call_made", "meeting_scheduled"]:
@@ -1384,7 +1390,7 @@ async def mark_lead_processed(
             updates["last_contact_at"] = datetime.now().isoformat()
             updates["waiting_for_response"] = True  # Wir warten jetzt auf Antwort
             
-            # Erstelle Auto-Follow-up in 3 Tagen (wenn noch keins existiert)
+            # Erstelle Auto-Follow-up (wenn noch keins existiert)
             followup_date = None
             try:
                 existing_followup = supabase.table("followup_suggestions")\
@@ -1395,7 +1401,26 @@ async def mark_lead_processed(
                     .execute()
                 
                 if not existing_followup.data:
-                    followup_date = (datetime.now() + timedelta(days=3)).isoformat()
+                    # Berechne Follow-up Datum
+                    if next_followup:
+                        # User hat custom Datum gewählt
+                        followup_date = next_followup
+                    else:
+                        # Smart Default basierend auf Action/Outcome
+                        days = 3  # Default
+                        if action == "call":
+                            if outcome == "positive":
+                                days = 1
+                            elif outcome == "neutral":
+                                days = 5
+                            elif outcome == "no_answer":
+                                days = 1
+                        elif action == "live":
+                            days = 1
+                        elif action == "meeting":
+                            days = 1
+                        
+                        followup_date = (datetime.now() + timedelta(days=days)).isoformat()
                     
                     insert_result = supabase.table("followup_suggestions").insert({
                         "lead_id": lead_id,
@@ -1422,12 +1447,18 @@ async def mark_lead_processed(
                     if existing_due:
                         updates["next_contact_at"] = existing_due
                     else:
-                        # Fallback: 3 Tage default
-                        updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
+                        # Fallback: Nutze next_followup oder 3 Tage default
+                        if next_followup:
+                            updates["next_contact_at"] = next_followup
+                        else:
+                            updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
             except Exception as e:
                 logger.error(f"Could not create auto-followup for lead {lead_id}: {e}", exc_info=True)
-                # Trotzdem next_contact_at setzen (3 Tage default) damit Lead aus Queue verschwindet
-                updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
+                # Trotzdem next_contact_at setzen (next_followup oder 3 Tage default) damit Lead aus Queue verschwindet
+                if next_followup:
+                    updates["next_contact_at"] = next_followup
+                else:
+                    updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
         
         supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
         
@@ -1440,4 +1471,101 @@ async def mark_lead_processed(
     except Exception as e:
         logger.error(f"Error marking lead as processed: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@router.post("/{lead_id}/interactions")
+async def create_interaction(
+    lead_id: str,
+    interaction: dict = Body(...),
+    current_user: dict = Depends(get_current_user_dict),
+    supabase = Depends(get_supabase)
+):
+    """
+    Erstellt eine neue Interaction für einen Lead.
+    
+    Body:
+    {
+        "interaction_type": "message" | "call" | "meeting" | "live" | "lost",
+        "outcome": "positive" | "neutral" | "negative" | "no_answer" | "scheduled" | null,
+        "outcome_reason": "no_interest" | "too_expensive" | ... | null,
+        "notes": "string",
+        "channel": "whatsapp" | "instagram" | "phone" | "email" | "in_person",
+        "scheduled_at": "ISO datetime" | null,
+        "location": "string" | null,
+        "meeting_type": "online" | "phone" | "in_person" | null,
+        "duration_seconds": int | null
+    }
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    try:
+        # Validate lead belongs to user
+        lead_check = supabase.table("leads")\
+            .select("id")\
+            .eq("id", lead_id)\
+            .eq("user_id", user_id)\
+            .execute()
+        
+        if not lead_check.data:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        # Create interaction
+        interaction_data = {
+            "lead_id": lead_id,
+            "user_id": user_id,
+            "interaction_type": interaction.get("interaction_type"),
+            "outcome": interaction.get("outcome"),
+            "outcome_reason": interaction.get("outcome_reason"),
+            "notes": interaction.get("notes"),
+            "channel": interaction.get("channel"),
+            "scheduled_at": interaction.get("scheduled_at"),
+            "location": interaction.get("location"),
+            "meeting_type": interaction.get("meeting_type"),
+            "duration_seconds": interaction.get("duration_seconds"),
+        }
+        
+        # Remove None values
+        interaction_data = {k: v for k, v in interaction_data.items() if v is not None}
+        
+        result = supabase.table("lead_interactions").insert(interaction_data).execute()
+        
+        logger.info(f"Interaction created for lead {lead_id}: {interaction.get('interaction_type')}")
+        
+        return {
+            "success": True,
+            "interaction": result.data[0] if result.data else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating interaction: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{lead_id}/interactions")
+async def get_interactions(
+    lead_id: str,
+    current_user: dict = Depends(get_current_user_dict),
+    supabase = Depends(get_supabase)
+):
+    """Holt alle Interactions für einen Lead."""
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+    
+    try:
+        result = supabase.table("lead_interactions")\
+            .select("*")\
+            .eq("lead_id", lead_id)\
+            .eq("user_id", user_id)\
+            .order("created_at", desc=True)\
+            .execute()
+        
+        return {
+            "interactions": result.data or [],
+            "count": len(result.data or [])
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching interactions: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
