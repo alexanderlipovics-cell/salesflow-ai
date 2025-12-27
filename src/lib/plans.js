@@ -315,3 +315,56 @@ export const calculateExpectedRevenue = (baseCommission, probability = 0.2) => {
   const multiplier = getCommissionMultiplier();
   return baseCommission * probability * multiplier;
 };
+
+// =============================================================================
+// FEATURE MATRIX - Für useSubscription Hook Kompatibilität
+// =============================================================================
+
+export const FEATURE_MATRIX = {
+  // Lead Management
+  leads: { minPlan: "free" },
+  unlimited_leads: { minPlan: "starter" },
+
+  // AI Features
+  ai_chat: { minPlan: "free" },
+  ai_tokens: { minPlan: "free" },
+  unlimited_ai_tokens: { minPlan: "leader" },
+
+  // Vision Features
+  vision_credits: { minPlan: "free" },
+  unlimited_vision: { minPlan: "leader" },
+
+  // WhatsApp Integration
+  whatsapp: { minPlan: "leader" },
+
+  // AI Ghostwriter
+  ghostwriter: { minPlan: "leader" },
+
+  // Lead Cascade
+  cascade: { minPlan: "builder" },
+
+  // Analytics Dashboard
+  analytics: { minPlan: "builder" },
+
+  // Finance Module
+  finanz: { minPlan: "leader" },
+
+  // CEO Edition (Add-On)
+  ceo_edition: { minPlan: "leader" },
+
+  // Add-Ons (können zu jedem Plan hinzugefügt werden)
+  finanz_basic: { minPlan: "starter" },
+  finanz_pro: { minPlan: "starter" },
+  vision_50: { minPlan: "free" },
+  vision_150: { minPlan: "free" },
+  vision_500: { minPlan: "free" }
+};
+
+// Legacy exports für Kompatibilität
+export const PLAN_ORDER = ["free", "starter", "builder", "leader"];
+export const PLAN_LABELS = {
+  free: "Free Trial",
+  starter: "Starter",
+  builder: "Builder",
+  leader: "Leader"
+};
