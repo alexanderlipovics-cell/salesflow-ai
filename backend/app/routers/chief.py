@@ -13,7 +13,7 @@ import re
 
 from ..core.deps import get_supabase
 from ..core.security import get_current_active_user, get_current_user_dict
-from ..core.supabase import supabase
+# Note: supabase client is obtained via get_supabase() dependency in endpoints
 from app.ai_client import AIClient
 from app.config import get_settings
 
@@ -1051,7 +1051,8 @@ def _extract_user_id(current_user: Any) -> str:
 
 @router.get("/onboarding-status")
 async def get_onboarding_status(
-    current_user: dict = Depends(get_current_user_dict)
+    current_user: dict = Depends(get_current_user_dict),
+    db=Depends(get_supabase)
 ):
     """
     Prüft ob User Onboarding abgeschlossen hat.
@@ -1059,7 +1060,7 @@ async def get_onboarding_status(
     user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
 
     try:
-        result = supabase.table("users")\
+        result = db.table("users")\
             .select("name, full_name, vertical_id, onboarding_completed, onboarding_data")\
             .eq("id", user_id)\
             .execute()
@@ -1096,7 +1097,8 @@ async def get_onboarding_status(
 @router.post("/onboarding-update")
 async def update_onboarding_data(
     body: dict = Body(...),
-    current_user: dict = Depends(get_current_user_dict)
+    current_user: dict = Depends(get_current_user_dict),
+    db=Depends(get_supabase)
 ):
     """
     Speichert Onboarding-Daten vom CHIEF Chat.
@@ -1114,7 +1116,7 @@ async def update_onboarding_data(
 
     try:
         # Hole aktuelle onboarding_data
-        current = supabase.table("users")\
+        current = db.table("users")\
             .select("onboarding_data")\
             .eq("id", user_id)\
             .execute()
@@ -1154,7 +1156,7 @@ async def update_onboarding_data(
         update_fields["onboarding_data"] = existing_data
 
         # Update User
-        supabase.table("users")\
+        db.table("users")\
             .update(update_fields)\
             .eq("id", user_id)\
             .execute()
