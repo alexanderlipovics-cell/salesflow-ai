@@ -24,12 +24,19 @@ import {
 
 
 
-// 8 Core Navigation Items - REPLACE the entire navigationItems array
+// AKTIVE NAVIGATION - Beta Launch
 
 export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Command Center', href: '/command', icon: Target },
+  { name: 'Netzwerk', href: '/network', icon: Users },
   { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
+  { name: 'Settings', href: '/settings', icon: Settings },
+];
+
+// HIDDEN FOR BETA - Routes still work via direct URL
+/*
+export const hiddenNavigationItems = [
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
   { name: 'Kalender', href: '/calendar', icon: Calendar },
@@ -37,11 +44,10 @@ export const navigationItems = [
   { name: 'Approval Inbox', href: '/inbox', icon: MessageSquare },
   { name: 'Kunden', href: '/leads/customers', icon: Handshake },
   { name: 'Freebies', href: '/freebies', icon: Gift },
-  { name: 'Netzwerk', href: '/network', icon: Network },
   { name: 'Finanzen', href: '/finance', icon: DollarSign },
-  { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Mein Business', href: '/settings/business', icon: Building2 },
 ];
+*/
 
 
 
