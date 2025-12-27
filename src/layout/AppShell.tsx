@@ -10,7 +10,8 @@ import {
   CheckSquare,
   Calendar,
   Mail,
-  Inbox
+  Inbox,
+  BarChart3
 } from 'lucide-react';
 import { useFeatures } from '../hooks/useFeatures';
 import { setupForegroundHandler } from '../services/pushNotifications';
@@ -58,13 +59,14 @@ export const AppShell: React.FC = () => {
 
   // Bereinigte Navigations-Struktur - nur Kern-Items für MLM/Sales Workflow
   const navigation = [
-    { 
-      category: 'CORE', 
+    {
+      category: 'CORE',
       items: [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'AI Copilot', href: '/chat', icon: MessageSquare },
         { name: 'Leads', href: '/leads', icon: Users },
         { name: 'Follow-ups', href: '/follow-ups', icon: CheckSquare },
+        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
         { name: 'Inbox', href: '/inbox', icon: Inbox },
         { name: 'Kalender', href: '/calendar', icon: Calendar },
         { name: 'Emails', href: '/emails', icon: Mail },

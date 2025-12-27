@@ -1243,32 +1243,96 @@ async def bulk_import_leads(
     
     for lead_data in leads_to_import:
         try:
-            # Extrahiere Social Handles
-            instagram_handle = lead_data.get("instagram_handle") or lead_data.get("username")
-            
-            # Erstelle Lead mit Social Handles
+            # === UNIVERSAL FIELD NORMALIZATION ===
+            platform = lead_data.get("platform", "").lower()
+
+            # Instagram
+            instagram_handle = None
+            instagram_url = None
+            if platform == "instagram" or lead_data.get("username", "").startswith("@"):
+                instagram_handle = (
+                    lead_data.get("username") or
+                    lead_data.get("instagram") or
+                    lead_data.get("instagram_handle") or
+                    lead_data.get("handle")
+                )
+                if instagram_handle:
+                    instagram_handle = instagram_handle.lstrip("@").strip()
+                    instagram_url = f"https://instagram.com/{instagram_handle}"
+
+            # WhatsApp
+            whatsapp = lead_data.get("whatsapp") or lead_data.get("phone") or lead_data.get("whatsapp_number")
+            whatsapp_number = whatsapp
+            if whatsapp and not whatsapp.startswith("+"):
+                whatsapp = f"+{whatsapp.replace(' ', '')}"
+
+            # Facebook
+            facebook = None
+            facebook_url = None
+            if platform == "facebook" or lead_data.get("facebook"):
+                facebook = lead_data.get("facebook") or lead_data.get("username")
+                if facebook:
+                    facebook_url = f"https://facebook.com/{facebook.lstrip('@')}"
+
+            # LinkedIn
+            linkedin = None
+            linkedin_url = None
+            if platform == "linkedin" or lead_data.get("linkedin"):
+                linkedin = lead_data.get("linkedin") or lead_data.get("username")
+                if linkedin:
+                    linkedin_url = f"https://linkedin.com/in/{linkedin.lstrip('@')}"
+
+            # Name Fallback
+            name = (
+                lead_data.get("name") or
+                lead_data.get("full_name") or
+                instagram_handle or
+                lead_data.get("username") or
+                "Unbekannt"
+            )
+
+            # Erstelle Lead mit vollständigen Social Handles
             new_lead = {
                 "user_id": user_id,
-                "name": lead_data.get("name") or instagram_handle or "Unknown",
+                "name": name,
+                "first_name": lead_data.get("first_name"),
+                "last_name": lead_data.get("last_name"),
                 "email": lead_data.get("email"),
                 "phone": lead_data.get("phone"),
-                "company": lead_data.get("company"),
+                "company": lead_data.get("company") or lead_data.get("bio_company"),
+                "position": lead_data.get("position") or lead_data.get("bio_title"),
+
+                # Social Media - VOLLSTÄNDIG
+                "instagram": instagram_handle,
+                "instagram_handle": instagram_handle,
+                "instagram_url": instagram_url,
+                "whatsapp": whatsapp,
+                "whatsapp_number": whatsapp_number,
+                "facebook": facebook,
+                "facebook_url": facebook_url,
+                "linkedin": linkedin,
+                "linkedin_url": linkedin_url,
+
+                # Kontext
+                "notes": lead_data.get("notes") or lead_data.get("bio") or lead_data.get("context"),
+                "source": lead_data.get("platform") or "screenshot",
+                "platform": lead_data.get("platform"),
+
+                # Status
                 "status": default_status,
                 "temperature": default_temperature,
-                "source": lead_data.get("platform") or lead_data.get("source", "bulk_import"),
-                "notes": f"Imported from {lead_data.get('platform', 'screenshot')}",
+
+                # Metadata
+                "metadata": {
+                    "extracted_from": "screenshot_import",
+                    "platform": platform,
+                    "raw_data": lead_data
+                },
+
                 "created_at": datetime.now().isoformat(),
                 "updated_at": datetime.now().isoformat()
             }
-            
-            # Social Handles in separate Felder
-            if instagram_handle:
-                new_lead["instagram_handle"] = instagram_handle.lstrip("@") if instagram_handle.startswith("@") else instagram_handle
-                new_lead["instagram_url"] = f"https://instagram.com/{new_lead['instagram_handle']}"
-            
-            if lead_data.get("whatsapp_number"):
-                new_lead["whatsapp_number"] = lead_data.get("whatsapp_number")
-            
+
             # Entferne None values
             new_lead = {k: v for k, v in new_lead.items() if v is not None}
             

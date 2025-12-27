@@ -134,6 +134,7 @@ const AGBPage = lazy(() => import("./pages/AGBPage"));
 const CeoChat = lazy(() => import("./pages/CeoChat"));
 const CommandCenter = lazy(() => import("./pages/CommandCenter"));
 const CommandCenterV2 = lazy(() => import("./pages/CommandCenterV2"));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 
 const App = () => {
   const bootstrapUser = useMemo(() => getBootstrapUser(), []);
@@ -331,7 +332,7 @@ const App = () => {
                       <Route path="coach" element={<AICoachPage />} />
                       <Route path="team-coach" element={<TeamCoachPage />} />
                       <Route path="coach/squad" element={<Navigate to="/team-coach" replace />} />
-                      <Route path="analytics" element={<AnalyticsDashboard />} />
+                      <Route path="analytics" element={<AnalyticsPage />} />
                       <Route path="autopilot" element={<AutopilotPage />} />
                       <Route path="power-hour" element={<PowerHourPage />} />
                       <Route path="churn-radar" element={<ChurnRadarPage />} />
