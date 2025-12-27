@@ -3,7 +3,7 @@ CHIEF API Router
 Endpunkte für CHIEF (AI Assistant) Funktionalitäten
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -12,7 +12,7 @@ import json
 import re
 
 from ..core.deps import get_supabase
-from ..core.security import get_current_active_user
+from ..core.security import get_current_active_user, get_current_user_dict
 from app.ai_client import AIClient
 from app.config import get_settings
 
@@ -1041,4 +1041,132 @@ def _extract_user_id(current_user: Any) -> str:
     if hasattr(current_user, "id"):
         return str(current_user.id)
     raise HTTPException(status_code=401, detail="User ID konnte nicht extrahiert werden")
+
+
+# ============================================================================
+# ONBOARDING ENDPOINTS
+# ============================================================================
+
+
+@router.get("/onboarding-status")
+async def get_onboarding_status(
+    current_user: dict = Depends(get_current_user_dict)
+):
+    """
+    Prüft ob User Onboarding abgeschlossen hat.
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+
+    try:
+        result = supabase.table("users")\
+            .select("name, full_name, vertical_id, onboarding_completed, onboarding_data")\
+            .eq("id", user_id)\
+            .execute()
+
+        if not result.data:
+            return {"onboarding_completed": False, "missing_fields": ["all"]}
+
+        user = result.data[0]
+
+        # Prüfe welche Felder fehlen
+        missing = []
+        if not user.get("name") and not user.get("full_name"):
+            missing.append("name")
+        if not user.get("vertical_id"):
+            missing.append("vertical")
+        if not user.get("onboarding_completed"):
+            missing.append("onboarding")
+
+        return {
+            "onboarding_completed": user.get("onboarding_completed", False),
+            "missing_fields": missing,
+            "user_data": {
+                "name": user.get("name") or user.get("full_name"),
+                "vertical_id": user.get("vertical_id"),
+                "onboarding_data": user.get("onboarding_data")
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error checking onboarding status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/onboarding-update")
+async def update_onboarding_data(
+    body: dict = Body(...),
+    current_user: dict = Depends(get_current_user_dict)
+):
+    """
+    Speichert Onboarding-Daten vom CHIEF Chat.
+
+    Body kann enthalten:
+    - name: str
+    - company: str (MLM Company Name)
+    - vertical_id: str
+    - goal: str
+    - experience: str
+    - team_size: int
+    - onboarding_completed: bool
+    """
+    user_id = current_user.get("user_id") or current_user.get("sub") or current_user.get("id")
+
+    try:
+        # Hole aktuelle onboarding_data
+        current = supabase.table("users")\
+            .select("onboarding_data")\
+            .eq("id", user_id)\
+            .execute()
+
+        existing_data = {}
+        if current.data and current.data[0].get("onboarding_data"):
+            existing_data = current.data[0]["onboarding_data"]
+
+        # Merge neue Daten
+        update_fields = {}
+
+        if "name" in body:
+            update_fields["name"] = body["name"]
+            update_fields["full_name"] = body["name"]
+
+        if "company" in body:
+            update_fields["company"] = body["company"]
+            existing_data["mlm_company"] = body["company"]
+
+        if "vertical_id" in body:
+            update_fields["vertical_id"] = body["vertical_id"]
+
+        if "goal" in body:
+            existing_data["goal"] = body["goal"]
+
+        if "experience" in body:
+            existing_data["experience"] = body["experience"]
+
+        if "team_size" in body:
+            existing_data["team_size"] = body["team_size"]
+
+        if "onboarding_completed" in body:
+            update_fields["onboarding_completed"] = body["onboarding_completed"]
+            existing_data["completed_at"] = datetime.now().isoformat()
+
+        # Speichere onboarding_data als JSON
+        update_fields["onboarding_data"] = existing_data
+
+        # Update User
+        supabase.table("users")\
+            .update(update_fields)\
+            .eq("id", user_id)\
+            .execute()
+
+        logger.info(f"Onboarding data updated for user {user_id}: {list(update_fields.keys())}")
+
+        return {
+            "success": True,
+            "updated_fields": list(update_fields.keys()),
+            "onboarding_data": existing_data
+        }
+
+    except Exception as e:
+        logger.error(f"Error updating onboarding data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
