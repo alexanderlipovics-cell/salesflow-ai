@@ -19,7 +19,7 @@ const initialMessages = [
     id: "sys",
     role: "assistant",
     content:
-      "Hey! 👋 Ich bin dein Al Sales Systems Copilot. Was können wir heute in deiner Pipeline bewegen?",
+      "Hey! 👋 Ich bin dein Al Sales Solutions Copilot. Was können wir heute in deiner Pipeline bewegen?",
   },
 ];
 
@@ -1496,7 +1496,7 @@ Was möchtest du als erstes tun?`);
           <header className="flex flex-col gap-3 border-b border-slate-800/80 pb-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Al Sales Systems Brain
+                Al Sales Solutions Brain
               </p>
               <h1 className="text-2xl font-bold text-slate-50">
                 Chat Assistent
@@ -2249,7 +2249,7 @@ Was möchtest du als erstes tun?`);
           <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4 space-y-2">
             <div className="flex items-center gap-2 text-blue-400">
               <Sparkles className="h-5 w-5" />
-              <span className="text-sm font-semibold">Al Sales Systems Brain</span>
+              <span className="text-sm font-semibold">Al Sales Solutions Brain</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
               Ich helfe dir bei Lead-Analyse, Follow-up-Sequenzen, Einwandbehandlung

@@ -727,9 +727,9 @@ async def _get_channel_credentials(
         "email": {
             "host": "smtp.gmail.com",
             "port": 587,
-            "user": "noreply@salesflow-ai.com",
+            "user": "noreply@alsales.ai",
             "password": "mock_password",
-            "from_email": "noreply@salesflow-ai.com"
+            "from_email": "noreply@alsales.ai"
         },
         "linkedin": {
             "access_token": "mock_linkedin_token"

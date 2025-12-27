@@ -15,7 +15,7 @@ const getGreeting = () => {
   return "Guten Abend";
 };
 
-export const GreetingHeader: React.FC<Props> = ({ firstName = "SalesFlow Pro", followUpsToday = 0 }) => {
+export const GreetingHeader: React.FC<Props> = ({ firstName = "Al Sales Solutions Pro", followUpsToday = 0 }) => {
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
   const greeting = getGreeting();
   const Icon = new Date().getHours() < 18 ? Sun : Sunset;

@@ -346,7 +346,7 @@ class EmailNotificationProvider(NotificationProvider):
         self,
         smtp_host: str = "localhost",
         smtp_port: int = 587,
-        from_address: str = "alerts@salesflow.ai"
+        from_address: str = "alerts@alsales.ai"
     ):
         self._smtp_host = smtp_host
         self._smtp_port = smtp_port
@@ -552,10 +552,10 @@ class AlertManager:
         # Default routing
         self._default_recipients: dict[AlertCategory, list[str]] = {
             AlertCategory.INFRASTRUCTURE: ["#ops-alerts"],
-            AlertCategory.SECURITY: ["#security-alerts", "security-team@salesflow.ai"],
+            AlertCategory.SECURITY: ["#security-alerts", "security-team@alsales.ai"],
             AlertCategory.BUSINESS_METRIC: ["#business-alerts"],
             AlertCategory.AI_QUALITY: ["#ai-alerts"],
-            AlertCategory.COMPLIANCE: ["#compliance-alerts", "compliance@salesflow.ai"],
+            AlertCategory.COMPLIANCE: ["#compliance-alerts", "compliance@alsales.ai"],
         }
     
     def register_provider(self, provider: NotificationProvider) -> None:

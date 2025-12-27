@@ -1,5 +1,5 @@
 """
-Background Jobs for SalesFlow AI
+Background Jobs for Al Sales Solutions
 
 Automated tasks that run on schedule to make the AI proactive.
 """

@@ -50,8 +50,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = "@salesflow/auth";
-const BIOMETRIC_KEY = "@salesflow/biometric_enabled";
+const AUTH_STORAGE_KEY = "@alsales/auth";
+const BIOMETRIC_KEY = "@alsales/biometric_enabled";
 
 interface AuthResponse {
   access_token: string;

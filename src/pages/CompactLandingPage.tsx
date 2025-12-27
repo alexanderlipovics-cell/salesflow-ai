@@ -182,7 +182,7 @@ const CompactLandingPage = () => {
       <section className="py-10 border-y border-slate-800 bg-slate-900/50">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-6">
-            Bereits 500+ Networker von Top-Companies nutzen Al Sales Systems
+            Bereits 500+ Networker von Top-Companies nutzen Al Sales Solutions
           </p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
             <span className="text-xl font-bold">ZINZINO</span>
@@ -250,7 +250,7 @@ const CompactLandingPage = () => {
               <div className="relative rounded-xl border border-slate-700 shadow-2xl bg-slate-800 overflow-hidden">
                 <img 
                   src="/dashboard-screenshot.png" 
-                  alt="Al Sales Systems Dashboard" 
+                  alt="Al Sales Solutions Dashboard" 
                   className="w-full h-auto"
                 />
               </div>
@@ -259,7 +259,7 @@ const CompactLandingPage = () => {
               <SectionBadge>Smart Pipeline</SectionBadge>
               <h3 className="text-3xl font-bold text-white mb-4">Dein Business auf einen Blick.</h3>
               <p className="text-slate-400 text-lg mb-6">
-                Schiebe Leads einfach von "Neu" zu "Kontaktiert" zu "Partner". Al Sales Systems erinnert dich automatisch, wenn es Zeit für den nächsten Schritt ist.
+                Schiebe Leads einfach von "Neu" zu "Kontaktiert" zu "Partner". Al Sales Solutions erinnert dich automatisch, wenn es Zeit für den nächsten Schritt ist.
               </p>
               <ul className="space-y-3">
                 {['Visuelles Kanban Board', 'Automatische Erinnerungen', 'Drag & Drop Bedienung'].map((item, i) => (

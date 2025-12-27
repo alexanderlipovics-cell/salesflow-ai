@@ -348,7 +348,7 @@ Dieses Projekt ist lizenziert unter der MIT License - siehe [LICENSE](LICENSE) f
 
 ## 📞 Support
 
-- 📧 Email: support@salesflow-ai.com
+- 📧 Email: support@alsales.ai
 - 💬 Discord: [Join our community](https://discord.gg/your-server)
 - 🐛 Issues: [GitHub Issues](https://github.com/your-username/salesflow-ai/issues)
 - 📖 Docs: [Full Documentation](https://docs.salesflow-ai.com)

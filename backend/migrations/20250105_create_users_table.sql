@@ -115,7 +115,7 @@ CREATE POLICY users_insert_public
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@salesflow-ai.com') THEN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@alsales.ai') THEN
         INSERT INTO users (
             id,
             email,
@@ -127,7 +127,7 @@ BEGIN
             created_at
         ) VALUES (
             gen_random_uuid(),
-            'admin@salesflow-ai.com',
+            'admin@alsales.ai',
             '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYk8fHm.Gzi',  -- Admin123!
             'Admin User',
             'SalesFlow AI',

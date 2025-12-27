@@ -1,5 +1,5 @@
 """
-Custom Exceptions for Al Sales Systems.
+Custom Exceptions for Al Sales Solutions.
 
 Hierarchical exception system with HTTP status code mapping.
 """
@@ -36,7 +36,7 @@ class ErrorCode(str, Enum):
 
 
 class SalesFlowException(Exception):
-    """Base exception for all Al Sales Systems errors."""
+    """Base exception for all Al Sales Solutions errors."""
     
     def __init__(
         self,

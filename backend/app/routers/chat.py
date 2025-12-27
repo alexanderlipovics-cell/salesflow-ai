@@ -1,5 +1,5 @@
 """
-Chat-Router für den Sales Flow AI Coach.
+Chat-Router für den Al Sales Solutions Coach.
 
 WICHTIG: 
 - System-Prompt kommt aus dem zentralen Prompt-Hub (app.core.ai_prompts)
@@ -733,7 +733,7 @@ def generate_mock_response(message: str, action: Optional[str] = None) -> str:
     
     # Begrüßungen
     if any(word in message_lower for word in ["hallo", "hey", "hi", "moin"]):
-        return "Hey! 👋 Ich bin dein Sales Flow Copilot. Was können wir heute in deiner Pipeline bewegen?"
+        return "Hey! 👋 Ich bin dein Al Sales Solutions Copilot. Was können wir heute in deiner Pipeline bewegen?"
     
     # Lead-Analyse
     if any(word in message_lower for word in ["lead", "kontakt", "prospect"]):

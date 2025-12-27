@@ -51,7 +51,7 @@ interface UseAIChatReturn {
 export function buildSystemPrompt(context: LeadContext | null): string {
   // Leichtgewichtiges Frontend-Overlay
   // Der vollständige SALES_COACH_PROMPT ist im Backend definiert
-  const basePrompt = `Du bist der Sales-Coach von Sales Flow AI.
+  const basePrompt = `Du bist der Sales-Coach von Al Sales Solutions.
 Antworte IMMER auf Deutsch. Sei kurz, prägnant und actionable.
 Berücksichtige den Lead-Kontext bei deinen Antworten.`;
 

@@ -531,7 +531,7 @@ Contributors werden auf folgende Weise anerkannt:
 ## ❓ Questions?
 
 - **Discord:** [Join our server](https://discord.gg/your-server)
-- **Email:** developers@salesflow-ai.com
+- **Email:** developers@alsales.ai
 - **Discussions:** [GitHub Discussions](https://github.com/your-username/salesflow-ai/discussions)
 
 ---

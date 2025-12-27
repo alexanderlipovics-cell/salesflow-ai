@@ -73,7 +73,7 @@ const SignupPage: React.FC = () => {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-gray-500">
-          © 2025 Al Sales Systems. Alle Rechte vorbehalten.
+          © 2025 Al Sales Solutions. Alle Rechte vorbehalten.
         </p>
       </div>
     </div>

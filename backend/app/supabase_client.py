@@ -1,5 +1,5 @@
 """
-Supabase-Client-Factory für das Sales Flow AI Backend.
+Supabase-Client-Factory für das Al Sales Solutions Backend.
 """
 
 from __future__ import annotations

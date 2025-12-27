@@ -173,7 +173,7 @@ const App = () => {
       path: "/import/csv",
       title: "CSV Import",
       description:
-        "Lade Listen mit Leads hoch und mappe die Felder auf Al Sales Systems Standards.",
+        "Lade Listen mit Leads hoch und mappe die Felder auf Al Sales Solutions Standards.",
       highlights: ["CSV/XLSX Mapping", "Dublettenerkennung"],
     },
     {
@@ -207,7 +207,7 @@ const App = () => {
     {
       path: "/all-tools",
       title: "Alle Tools",
-      description: "Schneller Überblick über alles, was Al Sales Systems bietet.",
+      description: "Schneller Überblick über alles, was Al Sales Solutions bietet.",
       highlights: ["Filter nach Job-to-be-done", "Favoriten anpinnbar"],
     },
   ];

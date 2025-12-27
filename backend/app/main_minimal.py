@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Al Sales Systems", version="1.0.0", docs_url="/docs")
+app = FastAPI(title="Al Sales Solutions", version="1.0.0", docs_url="/docs")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +23,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"status": "running", "app": "Al Sales Systems"}
+    return {"status": "running", "app": "Al Sales Solutions"}
 
 
 @app.get("/health")

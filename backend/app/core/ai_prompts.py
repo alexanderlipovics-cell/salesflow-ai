@@ -41,7 +41,7 @@ def build_chat_messages(
 
 # ==================== PROMPTS ====================
 
-SALES_COACH_PROMPT = """Du bist der Sales Flow AI Copilot – ein erfahrener Verkaufscoach und persönlicher Sales-Assistent.
+SALES_COACH_PROMPT = """Du bist der Al Sales Solutions Copilot – ein erfahrener Verkaufscoach und persönlicher Sales-Assistent.
 
 ## Deine Rolle:
 Du hilfst Vertrieblern dabei, mehr Abschlüsse zu machen und bessere Kundenbeziehungen aufzubauen.

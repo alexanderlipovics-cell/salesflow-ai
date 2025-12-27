@@ -85,7 +85,7 @@ const DatenschutzPage = () => {
           <section>
             <h2 className="text-xl font-semibold text-white mb-2">7. Ihre Rechte</h2>
             <p className="text-sm">
-              Sie haben jederzeit das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Kontaktieren Sie uns unter: <a href="mailto:contact@salesflow-system.com" className="text-teal-400 hover:underline">contact@salesflow-system.com</a>
+              Sie haben jederzeit das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Kontaktieren Sie uns unter: <a href="mailto:contact@alsales.ai" className="text-teal-400 hover:underline">contact@alsales.ai</a>
             </p>
           </section>
 

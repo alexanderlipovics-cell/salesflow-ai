@@ -1,5 +1,5 @@
 """
-Sales Flow AI - Non Plus Ultra Lead Generation API Router
+Al Sales Solutions - Non Plus Ultra Lead Generation API Router
 
 REST Endpoints für das vollständige Lead-Generierungssystem:
 - Verification (V-Score)

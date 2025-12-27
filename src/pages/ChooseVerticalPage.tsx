@@ -15,7 +15,7 @@ export default function ChooseVerticalPage() {
     <div className="space-y-4 p-6">
       <h1 className="text-xl font-semibold">Deine Branche wählen</h1>
       <p className="text-sm text-slate-400">
-        Wähle, in welchem Bereich du Sales Flow AI hauptsächlich nutzt. Du
+        Wähle, in welchem Bereich du Al Sales Solutions hauptsächlich nutzt. Du
         kannst das später in den Einstellungen ändern.
       </p>
 

@@ -1,5 +1,5 @@
 """
-Sales Flow AI - Non Plus Ultra Lead Acquisition Service
+Al Sales Solutions - Non Plus Ultra Lead Acquisition Service
 
 Omnichannel Lead-Erfassung:
 - Social Media Webhooks (Facebook, LinkedIn, Instagram)

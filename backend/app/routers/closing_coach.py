@@ -1,5 +1,5 @@
 """
-Sales Flow AI - Closing Coach Router
+Al Sales Solutions - Closing Coach Router
 
 KI-Analyse für Deal-Closing, Blocker-Erkennung, Closing-Strategien
 """

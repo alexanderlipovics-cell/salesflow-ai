@@ -112,7 +112,7 @@ graph LR
 
 ## 📞 Support
 
-- **Email:** support@salesflow.ai
+- **Email:** support@alsales.ai
 - **Discord:** [Join Community](https://discord.gg/salesflow)
 - **GitHub Issues:** [Report Bug](https://github.com/your-org/salesflow-ai/issues)
 

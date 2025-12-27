@@ -214,7 +214,7 @@ Migration guides will be added here for major version updates.
 ## Support
 
 For questions about changes:
-- 📧 Email: support@salesflow-ai.com
+- 📧 Email: support@alsales.ai
 - 💬 Discord: [Join us](https://discord.gg/your-server)
 - 🐛 Issues: [GitHub Issues](https://github.com/your-username/salesflow-ai/issues)
 

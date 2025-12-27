@@ -12,7 +12,7 @@ import { useAuth } from "../context/AuthContext";
 
 const featureHighlights = [
   "Supabase Auth mit E-Mail & Passwort",
-  "Schnelle Provisionierung für Al Sales Systems",
+  "Schnelle Provisionierung für Al Sales Solutions",
   "Direkte Weiterleitung nach Login",
 ];
 
@@ -100,13 +100,13 @@ const AuthPage = () => {
         <section className="space-y-6">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-              Al Sales Systems Auth
+              Al Sales Solutions Auth
             </p>
             <h1 className="text-3xl font-semibold leading-tight">
               Logge dich ein oder erstelle einen neuen Account
             </h1>
             <p className="text-sm text-slate-300">
-              Supabase Auth verbindet dich sicher mit allen Al Sales Systems Features.
+              Supabase Auth verbindet dich sicher mit allen Al Sales Solutions Features.
             </p>
           </div>
 

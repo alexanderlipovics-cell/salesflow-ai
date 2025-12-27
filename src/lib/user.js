@@ -1,7 +1,7 @@
 const DEFAULT_USER = {
   id: "demo-user-001",
   name: "Demo User",
-  email: "demo@salesflow.ai",
+  email: "demo@alsales.ai",
   plan: "free",
 };
 

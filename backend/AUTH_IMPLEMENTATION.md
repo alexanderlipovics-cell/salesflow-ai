@@ -514,7 +514,7 @@ All auth endpoints are automatically documented with request/response schemas, e
 
 ### Admin User (Development Only)
 ```
-Email: admin@salesflow-ai.com
+Email: admin@alsales.ai
 Password: Admin123!
 Role: admin
 ```

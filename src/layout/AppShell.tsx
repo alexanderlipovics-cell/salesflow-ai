@@ -94,7 +94,7 @@ export const AppShell: React.FC = () => {
           {/* LOGO AREA */}
           <div className="flex h-16 items-center px-6 border-b border-slate-800">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 mr-3"></div>
-            <span className="text-lg font-bold tracking-tight">Sales Flow AI</span>
+            <span className="text-lg font-bold tracking-tight">Al Sales Solutions</span>
             <button className="ml-auto lg:hidden" onClick={() => setMobileMenuOpen(false)}>
               <X className="h-6 w-6 text-slate-400" />
             </button>
@@ -160,7 +160,7 @@ export const AppShell: React.FC = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* MOBILE HEADER */}
         <header className="flex h-16 items-center justify-between border-b border-slate-800 bg-slate-900 px-4 lg:hidden">
-          <div className="font-bold text-emerald-400">Sales Flow AI</div>
+          <div className="font-bold text-emerald-400">Al Sales Solutions</div>
           <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-slate-400 hover:text-white">
             <Menu className="h-6 w-6" />
           </button>

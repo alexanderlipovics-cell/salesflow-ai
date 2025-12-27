@@ -1,5 +1,5 @@
 /**
- * Al Sales Systems - Main Dashboard
+ * Al Sales Solutions - Main Dashboard
  * Clean, actionable, performance-focused
  */
 

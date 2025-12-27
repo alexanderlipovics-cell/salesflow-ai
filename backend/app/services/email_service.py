@@ -59,7 +59,7 @@ class EmailService:
         provider_config = {
             "api_key": settings.email_api_key or os.getenv("EMAIL_API_KEY"),
             "base_url": settings.email_base_url or "https://api.sendgrid.com/v3",
-            "from_email": settings.email_from_email or "noreply@salesflow.ai",
+            "from_email": settings.email_from_email or "noreply@alsales.ai",
             "from_name": settings.email_from_name or "SalesFlow AI",
         }
         return provider_config

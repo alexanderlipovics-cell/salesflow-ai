@@ -411,9 +411,9 @@ WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 # Email (SMTP)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=noreply@salesflow-ai.com
+SMTP_USER=noreply@alsales.ai
 SMTP_PASSWORD=your_app_password
-SMTP_FROM_EMAIL=noreply@salesflow-ai.com
+SMTP_FROM_EMAIL=noreply@alsales.ai
 SMTP_FROM_NAME=SalesFlow AI
 
 # LinkedIn API

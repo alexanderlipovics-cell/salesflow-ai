@@ -592,7 +592,7 @@ export default function SettingsPage() {
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-white">Social Media</h3>
                   <p className="text-sm text-gray-500">
-                    Verbinde deine sozialen Netzwerke, um DMs direkt in Al Sales Systems zu empfangen.
+                    Verbinde deine sozialen Netzwerke, um DMs direkt in Al Sales Solutions zu empfangen.
                   </p>
                 </div>
                 

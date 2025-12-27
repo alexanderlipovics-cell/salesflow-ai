@@ -146,7 +146,7 @@ async def scheduled_followup_generation():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager für Startup/Shutdown Events."""
-    logging.info("🚀 Al Sales Systems starting up...")
+    logging.info("🚀 Al Sales Solutions starting up...")
 
     # Bestehenden Scheduler aus Services starten (andere Background-Jobs)
     from .services.scheduler import setup_scheduler, shutdown_scheduler
@@ -166,7 +166,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logging.info("🛑 Al Sales Systems shutting down...")
+    logging.info("🛑 Al Sales Solutions shutting down...")
     shutdown_scheduler()
     logging.info("📅 Background scheduler stopped")
 
@@ -176,8 +176,8 @@ async def lifespan(app: FastAPI):
 
 # App erstellen
 app = FastAPI(
-    title="Al Sales Systems API",
-    description="Backend für Al Sales Systems - Network Marketing CRM",
+    title="Al Sales Solutions API",
+    description="Backend für Al Sales Solutions - Network Marketing CRM",
     version="2.0.0",
     lifespan=lifespan
 )
@@ -189,7 +189,7 @@ async def health():
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "app": "Al Sales Systems", "version": "2.0.0"}
+    return {"status": "ok", "app": "Al Sales Solutions", "version": "2.0.0"}
 
 # ============= DIRECT EMAIL ROUTES =============
 # Direkte Routes mit echter Funktionalität (umgehen Router-Probleme)

@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     
     # ==================== APPLICATION ====================
 
-    app_name: str = "SalesFlow AI"
+    app_name: str = "Al Sales Solutions"
     app_version: str = "1.0.0"
     debug: bool = False
     environment: str = Field(default="production", pattern="^(development|staging|production)$")
@@ -159,8 +159,8 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    smtp_from_email: str = "noreply@salesflow.ai"
-    smtp_from_name: str = "SalesFlow AI"
+    smtp_from_email: str = "noreply@alsales.ai"
+    smtp_from_name: str = "Al Sales Solutions"
     
     # ==================== BACKGROUND TASKS ====================
     
