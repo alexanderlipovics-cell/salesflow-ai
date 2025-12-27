@@ -2067,6 +2067,7 @@ export default function CommandCenterV2() {
       console.log("💾 DEBUG handleCreateLead - JSON payload:", JSON.stringify(transformedData, null, 2));
 
       const token = localStorage.getItem('access_token');
+      console.log("💾 DEBUG handleCreateLead - Token from localStorage:", token ? `${token.substring(0, 50)}...` : 'NULL');
       console.log("💾 DEBUG handleCreateLead - Making API call to:", `${API_URL}/api/leads`);
 
       const res = await fetch(`${API_URL}/api/leads`, {

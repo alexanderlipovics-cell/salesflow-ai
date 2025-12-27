@@ -172,14 +172,18 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
     """
     Create a new lead - flexible schema.
     POST /api/leads oder POST /api/leads/
-    
+
     Akzeptiert sowohl snake_case (last_message) als auch camelCase (lastMessage).
     """
     import json
     try:
+        # DEBUG: Authorization Header prüfen
+        auth_header = request.headers.get("Authorization")
+        logger.info(f"🔍 DEBUG create_lead - Authorization header: {auth_header}")
+
         body = await request.body()
         logger.info(f"Create lead - Raw body: {body[:500] if body else 'empty'}")
-        
+
         if not body:
             return {"success": False, "error": "Empty request body"}
         
@@ -196,6 +200,8 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
         
         # User-ID extrahieren (Pflicht für Ownership)
         user_id = _extract_user_id(current_user)
+        logger.info(f"🔍 DEBUG create_lead - current_user: {current_user}")
+        logger.info(f"🔍 DEBUG create_lead - extracted user_id: {user_id}")
         if not user_id:
             raise HTTPException(status_code=401, detail="User not authenticated")
 
@@ -217,6 +223,8 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
             "phone": lead_data.get("phone"),
             "whatsapp": lead_data.get("whatsapp"),
             "instagram": lead_data.get("instagram"),  # ← WICHTIG: Muss aus Frontend kommen
+            "instagram_handle": lead_data.get("instagram_handle"),  # ← ALLE Felder speichern
+            "instagram_url": lead_data.get("instagram_url"),        # ← ALLE Felder speichern
             "facebook": lead_data.get("facebook"),
             "linkedin": lead_data.get("linkedin"),
 
@@ -225,7 +233,7 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
             "updated_at": now,
         }
 
-        logger.info(f"🔍 DEBUG create_lead - Social fields: instagram={data.get('instagram')}, whatsapp={data.get('whatsapp')}")
+        logger.info(f"🔍 DEBUG create_lead - Social fields: instagram={data.get('instagram')}, instagram_handle={data.get('instagram_handle')}, instagram_url={data.get('instagram_url')}, whatsapp={data.get('whatsapp')}")
         
         # Entferne None-Werte für sauberen Insert
         data = {k: v for k, v in data.items() if v is not None}
