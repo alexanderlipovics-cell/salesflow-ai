@@ -13,7 +13,7 @@ import re
 
 from ..core.deps import get_supabase
 from ..core.security import get_current_active_user, get_current_user_dict
-from app.core.supabase import supabase
+from ..core.supabase import supabase
 from app.ai_client import AIClient
 from app.config import get_settings
 
