@@ -213,7 +213,8 @@ const Dossier: React.FC<{
   onEdit: () => void;
   onScreenshot: () => void;
   onMarkProcessed?: (action: string, nextFollowup?: string) => Promise<void>;
-}> = ({ lead, timeline, chiefInsight, onStatusChange, onTemperatureChange, onEdit, onScreenshot, onMarkProcessed }) => {
+  onActionClick?: (action: string) => void;
+}> = ({ lead, timeline, chiefInsight, onStatusChange, onTemperatureChange, onEdit, onScreenshot, onMarkProcessed, onActionClick }) => {
   
   if (!lead) {
     return (
@@ -399,24 +400,63 @@ const Dossier: React.FC<{
             </div>
           )}
           
-          {/* Quick Actions - Done & Later Buttons */}
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={() => onMarkProcessed?.('done')}
-              className="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all"
-            >
-              ✅ Done
-            </button>
-            <button
-              onClick={() => {
-                const nextDate = new Date();
-                nextDate.setDate(nextDate.getDate() + 1);
-                onMarkProcessed?.('later', nextDate.toISOString().split('T')[0]);
-              }}
-              className="flex-1 py-2 px-3 bg-gray-800 text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-700 transition-all"
-            >
-              ⏰ Later
-            </button>
+          {/* ACTION BUTTONS - Was hast du gemacht? */}
+          <div className="space-y-3 mt-3">
+            <p className="text-sm text-gray-400">Was hast du gemacht?</p>
+            
+            {/* Primary Actions */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => onActionClick?.('message')}
+                className="flex flex-col items-center p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-lg transition-all border border-gray-700 hover:border-cyan-500 hover:scale-105"
+              >
+                <span className="text-2xl mb-1">📱</span>
+                <span className="text-xs text-gray-300">Nachricht</span>
+              </button>
+              
+              <button
+                onClick={() => onActionClick?.('call')}
+                className="flex flex-col items-center p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-lg transition-all border border-gray-700 hover:border-cyan-500 hover:scale-105"
+              >
+                <span className="text-2xl mb-1">📞</span>
+                <span className="text-xs text-gray-300">Anruf</span>
+              </button>
+              
+              <button
+                onClick={() => onActionClick?.('meeting')}
+                className="flex flex-col items-center p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-lg transition-all border border-gray-700 hover:border-cyan-500 hover:scale-105"
+              >
+                <span className="text-2xl mb-1">📅</span>
+                <span className="text-xs text-gray-300">Termin</span>
+              </button>
+            </div>
+            
+            {/* Secondary Actions */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => onActionClick?.('live')}
+                className="flex flex-col items-center p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-lg transition-all border border-gray-700 hover:border-green-500 hover:scale-105"
+              >
+                <span className="text-2xl mb-1">🤝</span>
+                <span className="text-xs text-gray-300">Live</span>
+              </button>
+              
+              <button
+                onClick={() => onActionClick?.('lost')}
+                className="flex flex-col items-center p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-lg transition-all border border-gray-700 hover:border-red-500 hover:scale-105"
+              >
+                <span className="text-2xl mb-1">❌</span>
+                <span className="text-xs text-gray-300">Lost</span>
+              </button>
+              
+              <button
+                onClick={() => onActionClick?.('later')}
+                className="flex flex-col items-center p-3 bg-[#1a2a3a] hover:bg-[#243447] rounded-lg transition-all border border-gray-700 hover:border-yellow-500 hover:scale-105"
+              >
+                <span className="text-2xl mb-1">🕐</span>
+                <span className="text-xs text-gray-300">Später</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1358,6 +1398,13 @@ export default function CommandCenterV2() {
   // Queue View Toggle
   const [queueView, setQueueView] = useState<'queue' | 'all'>('queue');
   const [queueRefreshTrigger, setQueueRefreshTrigger] = useState(0);
+  
+  // Action Flow States
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
+  const [followupDate, setFollowupDate] = useState<string>('');
+  const [actionNotes, setActionNotes] = useState('');
 
   useEffect(() => {
     loadLeads();
@@ -1597,6 +1644,94 @@ export default function CommandCenterV2() {
     }
   };
 
+  const handleActionClick = (action: string) => {
+    setCurrentAction(action);
+    setSelectedOutcome(null);
+    setFollowupDate('');
+    setActionNotes('');
+    
+    // "Später" braucht kein Modal
+    if (action === 'later') {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      handleSaveAction('later', null, tomorrow.toISOString().split('T')[0], '');
+      return;
+    }
+    
+    // Alle anderen Actions öffnen das Modal
+    setShowOutcomeModal(true);
+  };
+
+  const handleSaveAction = async (
+    action: string,
+    outcome: string | null,
+    nextFollowup: string | null,
+    notes: string = ''
+  ) => {
+    if (!selectedLead) return;
+    
+    try {
+      const token = localStorage.getItem('access_token');
+      
+      // 1. Interaction speichern (außer bei "later")
+      if (action !== 'later') {
+        try {
+          await fetch(`${API_URL}/api/command-center/${selectedLead.id}/interactions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              interaction_type: action,
+              outcome: outcome,
+              notes: notes,
+              channel: selectedLead.source || 'whatsapp',
+            })
+          });
+        } catch (e) {
+          console.error('Error saving interaction:', e);
+        }
+      }
+      
+      // 2. Lead Status updaten + Follow-up erstellen
+      const res = await fetch(`${API_URL}/api/command-center/${selectedLead.id}/mark-processed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: action,
+          outcome: outcome,
+          next_followup: nextFollowup,
+          notes: notes
+        })
+      });
+      
+      if (res.ok) {
+        // Queue Refresh triggern
+        setQueueRefreshTrigger(prev => prev + 1);
+        
+        // Lead Update
+        setSelectedLead(prev => prev ? {
+          ...prev,
+          waiting_for_response: false,
+          suggested_action: undefined
+        } : null);
+        
+        // Modal schließen
+        setShowOutcomeModal(false);
+        setCurrentAction(null);
+        setSelectedOutcome(null);
+        setFollowupDate('');
+        setActionNotes('');
+      }
+    } catch (error) {
+      console.error('Error saving action:', error);
+    }
+  };
+
   const handleSendMessage = (message: string, channel: string) => {
     if (!selectedLead) return;
     
@@ -1735,6 +1870,218 @@ export default function CommandCenterV2() {
     }
   };
 
+  // Outcome Modal für Action-Details
+  const OutcomeModal = () => {
+    if (!showOutcomeModal || !currentAction) return null;
+    
+    const actionConfig: Record<string, {
+      title: string;
+      emoji: string;
+      outcomes?: { value: string; label: string; emoji: string }[];
+      showNotes: boolean;
+      showFollowup: boolean;
+      defaultFollowupDays: number;
+    }> = {
+      message: {
+        title: 'Nachricht gesendet',
+        emoji: '📱',
+        showNotes: true,
+        showFollowup: true,
+        defaultFollowupDays: 3,
+      },
+      call: {
+        title: 'Anruf gemacht',
+        emoji: '📞',
+        outcomes: [
+          { value: 'positive', label: 'Positiv - Interesse!', emoji: '✅' },
+          { value: 'neutral', label: 'Neutral - braucht Zeit', emoji: '😐' },
+          { value: 'negative', label: 'Negativ - kein Interesse', emoji: '❌' },
+          { value: 'no_answer', label: 'Nicht erreicht', emoji: '📵' },
+        ],
+        showNotes: true,
+        showFollowup: true,
+        defaultFollowupDays: 3,
+      },
+      meeting: {
+        title: 'Termin',
+        emoji: '📅',
+        outcomes: [
+          { value: 'scheduled', label: 'Termin vereinbart', emoji: '📅' },
+          { value: 'done_positive', label: 'Termin war positiv', emoji: '✅' },
+          { value: 'done_neutral', label: 'Termin war neutral', emoji: '😐' },
+          { value: 'done_negative', label: 'Termin war negativ', emoji: '❌' },
+        ],
+        showNotes: true,
+        showFollowup: true,
+        defaultFollowupDays: 1,
+      },
+      live: {
+        title: 'Live getroffen',
+        emoji: '🤝',
+        outcomes: [
+          { value: 'positive', label: 'Positiv - Interesse!', emoji: '✅' },
+          { value: 'neutral', label: 'Neutral', emoji: '😐' },
+          { value: 'negative', label: 'Kein Interesse', emoji: '❌' },
+        ],
+        showNotes: true,
+        showFollowup: true,
+        defaultFollowupDays: 1,
+      },
+      lost: {
+        title: 'Lead verloren',
+        emoji: '❌',
+        outcomes: [
+          { value: 'no_interest', label: 'Kein Interesse', emoji: '🚫' },
+          { value: 'too_expensive', label: 'Zu teuer', emoji: '💰' },
+          { value: 'bad_timing', label: 'Schlechtes Timing', emoji: '⏰' },
+          { value: 'wrong_target', label: 'Falsche Zielgruppe', emoji: '🎯' },
+          { value: 'competitor', label: 'Geht zur Konkurrenz', emoji: '🏃' },
+          { value: 'other', label: 'Sonstiges', emoji: '❓' },
+        ],
+        showNotes: true,
+        showFollowup: false,
+        defaultFollowupDays: 0,
+      },
+    };
+    
+    const config = actionConfig[currentAction];
+    if (!config) return null;
+    
+    const getDefaultDate = (days: number) => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return date.toISOString().split('T')[0];
+    };
+    
+    const getSmartDefaultDays = () => {
+      let days = config.defaultFollowupDays;
+      if (selectedOutcome === 'positive') days = 1;
+      if (selectedOutcome === 'neutral') days = 5;
+      if (selectedOutcome === 'no_answer') days = 1;
+      return days;
+    };
+    
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-[#0d1520] border border-gray-700 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{config.emoji}</span>
+            <h3 className="text-xl font-semibold text-white">{config.title}</h3>
+          </div>
+          
+          {/* Lead Info */}
+          <div className="bg-[#1a2a3a] rounded-lg p-3">
+            <p className="text-cyan-400 font-medium">{selectedLead?.name}</p>
+            <p className="text-sm text-gray-400">{selectedLead?.company || 'Kein Unternehmen'}</p>
+          </div>
+          
+          {/* Outcomes */}
+          {config.outcomes && (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-400 font-medium">Wie lief's?</p>
+              <div className="grid grid-cols-1 gap-2">
+                {config.outcomes.map((outcome) => (
+                  <button
+                    key={outcome.value}
+                    onClick={() => setSelectedOutcome(outcome.value)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                      selectedOutcome === outcome.value
+                        ? 'bg-cyan-500/20 border-cyan-500 text-white scale-[1.02]'
+                        : 'bg-[#1a2a3a] border-gray-700 text-gray-300 hover:border-gray-500'
+                    }`}
+                  >
+                    <span className="text-xl">{outcome.emoji}</span>
+                    <span className="font-medium">{outcome.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Notizen */}
+          {config.showNotes && (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-400 font-medium">Notizen (optional)</p>
+              <textarea
+                value={actionNotes}
+                onChange={(e) => setActionNotes(e.target.value)}
+                placeholder="Was wurde besprochen? Wichtige Infos..."
+                className="w-full p-3 bg-[#1a2a3a] border border-gray-700 rounded-xl text-white placeholder-gray-500 resize-none focus:border-cyan-500 focus:outline-none transition-colors"
+                rows={2}
+              />
+            </div>
+          )}
+          
+          {/* Follow-up Datum */}
+          {config.showFollowup && currentAction !== 'lost' && (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-400 font-medium">Wann nachfassen?</p>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { label: 'Morgen', days: 1 },
+                  { label: '3 Tage', days: 3 },
+                  { label: '1 Woche', days: 7 },
+                ].map((option) => {
+                  const dateStr = getDefaultDate(option.days);
+                  return (
+                    <button
+                      key={option.days}
+                      onClick={() => setFollowupDate(dateStr)}
+                      className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                        followupDate === dateStr
+                          ? 'bg-cyan-500/20 border-cyan-500 text-white'
+                          : 'bg-[#1a2a3a] border-gray-700 text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="date"
+                value={followupDate || getDefaultDate(getSmartDefaultDays())}
+                onChange={(e) => setFollowupDate(e.target.value)}
+                className="w-full mt-2 px-4 py-2 bg-[#1a2a3a] border border-gray-700 rounded-xl text-white focus:border-cyan-500 focus:outline-none"
+              />
+              <p className="text-xs text-cyan-400 flex items-center gap-1">
+                <span>💡</span>
+                <span>CHIEF empfiehlt: {getSmartDefaultDays()} Tag(e)</span>
+              </p>
+            </div>
+          )}
+          
+          {/* Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => {
+                setShowOutcomeModal(false);
+                setCurrentAction(null);
+                setSelectedOutcome(null);
+                setFollowupDate('');
+                setActionNotes('');
+              }}
+              className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+            >
+              Abbrechen
+            </button>
+            <button
+              onClick={() => {
+                const finalDate = followupDate || getDefaultDate(getSmartDefaultDays());
+                handleSaveAction(currentAction!, selectedOutcome, finalDate, actionNotes);
+              }}
+              disabled={config.outcomes && config.outcomes.length > 0 && !selectedOutcome}
+              className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
+            >
+              ✓ Speichern
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="h-screen bg-[#0a0a0f] flex items-center justify-center">
@@ -1820,6 +2167,7 @@ export default function CommandCenterV2() {
           onEdit={() => setShowEditModal(true)}
           onScreenshot={() => setShowNewLeadModal(true)}
           onMarkProcessed={handleMarkProcessed}
+          onActionClick={handleActionClick}
         />
       </div>
 
@@ -1962,6 +2310,9 @@ export default function CommandCenterV2() {
           </div>
         </div>
       )}
+
+      {/* Outcome Modal */}
+      <OutcomeModal />
     </div>
   );
 }
