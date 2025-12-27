@@ -1388,7 +1388,7 @@ async def mark_lead_processed(
             followup_date = None
             try:
                 existing_followup = supabase.table("followup_suggestions")\
-                    .select("id")\
+                    .select("id, due_at")\
                     .eq("lead_id", lead_id)\
                     .eq("user_id", user_id)\
                     .eq("status", "pending")\
@@ -1396,7 +1396,8 @@ async def mark_lead_processed(
                 
                 if not existing_followup.data:
                     followup_date = (datetime.now() + timedelta(days=3)).isoformat()
-                    supabase.table("followup_suggestions").insert({
+                    
+                    insert_result = supabase.table("followup_suggestions").insert({
                         "lead_id": lead_id,
                         "user_id": user_id,
                         "due_at": followup_date,
@@ -1410,11 +1411,23 @@ async def mark_lead_processed(
                         "stage": 1,
                         "suggested_message": "Hey! Wollte kurz nachhaken - hast du dir das anschauen können?"
                     }).execute()
-                    logger.info(f"Auto-Follow-up created for lead {lead_id}")
+                    
+                    logger.info(f"Auto-Follow-up created for lead {lead_id}: {insert_result.data if insert_result.data else 'no data returned'}")
                     # Setze next_contact_at damit Lead aus Queue verschwindet bis Follow-up fällig
                     updates["next_contact_at"] = followup_date
+                else:
+                    logger.info(f"Follow-up already exists for lead {lead_id}, skipping creation")
+                    # WICHTIG: Auch hier next_contact_at setzen wenn Follow-up existiert!
+                    existing_due = existing_followup.data[0].get("due_at") if existing_followup.data else None
+                    if existing_due:
+                        updates["next_contact_at"] = existing_due
+                    else:
+                        # Fallback: 3 Tage default
+                        updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
             except Exception as e:
-                logger.warning(f"Could not create auto-followup: {e}")
+                logger.error(f"Could not create auto-followup for lead {lead_id}: {e}", exc_info=True)
+                # Trotzdem next_contact_at setzen (3 Tage default) damit Lead aus Queue verschwindet
+                updates["next_contact_at"] = (datetime.now() + timedelta(days=3)).isoformat()
         
         supabase.table("leads").update(updates).eq("id", lead_id).eq("user_id", user_id).execute()
         
