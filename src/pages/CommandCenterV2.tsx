@@ -1109,15 +1109,15 @@ const EditLeadModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[#14202c] border border-cyan-500/20 rounded-2xl w-full max-w-lg mx-4 shadow-[0_0_50px_rgba(6,182,212,0.2)]">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
+      <div className="bg-[#14202c] border border-cyan-500/20 rounded-2xl w-full max-w-lg mx-4 shadow-[0_0_50px_rgba(6,182,212,0.2)] max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-800 flex-shrink-0">
           <h2 className="text-white text-lg font-bold">Lead bearbeiten</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
-        
-        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {[
             { key: 'name', label: 'Name', type: 'text' },
             { key: 'email', label: 'Email', type: 'email' },
@@ -1243,11 +1243,11 @@ const NewLeadModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div 
-        className="bg-[#14202c] border border-cyan-500/20 rounded-2xl w-full max-w-lg mx-4 shadow-[0_0_50px_rgba(6,182,212,0.2)]"
+      <div
+        className="bg-[#14202c] border border-cyan-500/20 rounded-2xl w-full max-w-lg mx-4 shadow-[0_0_50px_rgba(6,182,212,0.2)] max-h-[90vh] flex flex-col"
         onPaste={handlePaste}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
+        <div className="flex items-center justify-between p-6 border-b border-gray-800 flex-shrink-0">
           <h2 className="text-white text-lg font-bold">Neuer Lead</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white">
             <X className="w-5 h-5" />
@@ -1255,7 +1255,7 @@ const NewLeadModal: React.FC<{
         </div>
 
         {/* Mode Selector */}
-        <div className="flex p-4 gap-2 border-b border-gray-800">
+        <div className="flex p-4 gap-2 border-b border-gray-800 flex-shrink-0">
           {[
             { key: 'manual', icon: Edit3, label: 'Manuell' },
             { key: 'screenshot', icon: Camera, label: 'Screenshot' },
@@ -1266,8 +1266,8 @@ const NewLeadModal: React.FC<{
               onClick={() => setMode(m.key as any)}
               className={`
                 flex-1 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all
-                ${mode === m.key 
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
+                ${mode === m.key
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                   : 'bg-gray-800/50 text-gray-500 hover:bg-gray-800'
                 }
               `}
@@ -1278,7 +1278,7 @@ const NewLeadModal: React.FC<{
           ))}
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {mode === 'screenshot' && (
             <div className="mb-6">
               {screenshot ? (
