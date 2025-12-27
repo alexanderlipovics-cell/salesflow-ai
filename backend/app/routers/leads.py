@@ -211,10 +211,21 @@ async def create_lead(request: Request, current_user: User = Depends(get_current
             "last_message": lead_data.get("last_message") or lead_data.get("lastMessage"),
             "notes": lead_data.get("notes"),
             "tags": lead_data.get("tags", []),
+
+            # Social Media Felder - direkt aus lead_data übernehmen
+            "email": lead_data.get("email"),
+            "phone": lead_data.get("phone"),
+            "whatsapp": lead_data.get("whatsapp"),
+            "instagram": lead_data.get("instagram"),  # ← WICHTIG: Muss aus Frontend kommen
+            "facebook": lead_data.get("facebook"),
+            "linkedin": lead_data.get("linkedin"),
+
             "user_id": user_id,
             "created_at": now,
             "updated_at": now,
         }
+
+        logger.info(f"🔍 DEBUG create_lead - Social fields: instagram={data.get('instagram')}, whatsapp={data.get('whatsapp')}")
         
         # Entferne None-Werte für sauberen Insert
         data = {k: v for k, v in data.items() if v is not None}

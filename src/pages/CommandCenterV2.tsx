@@ -1188,14 +1188,19 @@ const NewLeadModal: React.FC<{
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log("📸 DEBUG handleScreenshotUpload - File selected:", file.name, file.size);
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64 = event.target?.result as string;
+      console.log("📸 DEBUG handleScreenshotUpload - Base64 length:", base64.length);
       setScreenshot(base64);
       setIsAnalyzing(true);
 
       try {
         const token = localStorage.getItem('access_token');
+        console.log("📸 DEBUG handleScreenshotUpload - Sending to API...");
+
         const res = await fetch(`${API_URL}/api/command-center/extract-lead`, {
           method: 'POST',
           headers: {
@@ -1204,21 +1209,34 @@ const NewLeadModal: React.FC<{
           },
           body: JSON.stringify({ image: base64 })
         });
-        
+
+        console.log("📸 DEBUG handleScreenshotUpload - API Response status:", res.status);
+
         if (res.ok) {
           const data = await res.json();
+          console.log("📸 DEBUG handleScreenshotUpload - API Response data:", data);
+
           if (data.extracted) {
-            setFormData({
+            console.log("📸 DEBUG handleScreenshotUpload - Extracted data:", data.extracted);
+
+            const newFormData = {
               name: data.extracted.name || '',
               email: data.extracted.email || '',
               phone: data.extracted.phone || '',
               company: data.extracted.company || '',
               instagram_url: data.extracted.instagram || '',
-            });
+            };
+
+            console.log("📸 DEBUG handleScreenshotUpload - Setting form data:", newFormData);
+            setFormData(newFormData);
+          } else {
+            console.warn("📸 DEBUG handleScreenshotUpload - No extracted data in response");
           }
+        } else {
+          console.error("📸 DEBUG handleScreenshotUpload - API Error:", res.status, await res.text());
         }
       } catch (error) {
-        console.error('Extraction error:', error);
+        console.error('📸 DEBUG handleScreenshotUpload - Exception:', error);
       } finally {
         setIsAnalyzing(false);
       }
@@ -1995,10 +2013,19 @@ export default function CommandCenterV2() {
     try {
       console.log("🔍 DEBUG handleSaveLead - Original data:", data);
 
-      // Transform instagram_url to instagram for backend compatibility
+      // Extrahiere instagram handle aus URL
+      const instagramHandle = data.instagram_url
+        ? data.instagram_url.replace('https://instagram.com/', '').replace('instagram.com/', '').replace('@', '').trim()
+        : null;
+
       const transformedData = {
         ...data,
-        ...(data.instagram_url && { instagram: data.instagram_url })
+        // Instagram Felder - ALLE setzen für Backend Kompatibilität
+        ...(instagramHandle && {
+          instagram: instagramHandle,
+          instagram_handle: instagramHandle,
+          instagram_url: `https://instagram.com/${instagramHandle}`
+        })
       };
 
       console.log("🔍 DEBUG handleSaveLead - Transformed data:", transformedData);
@@ -2018,33 +2045,56 @@ export default function CommandCenterV2() {
 
   const handleCreateLead = async (data: any) => {
     try {
-      console.log("🔍 DEBUG handleCreateLead - Original data:", data);
+      console.log("💾 DEBUG handleCreateLead - Original data from form:", data);
 
-      // Transform instagram_url to instagram for backend compatibility
+      // Extrahiere instagram handle aus URL
+      const instagramHandle = data.instagram_url
+        ? data.instagram_url.replace('https://instagram.com/', '').replace('instagram.com/', '').replace('@', '').trim()
+        : null;
+
       const transformedData = {
         ...data,
-        instagram: data.instagram_url, // Backend expects 'instagram'
+        // Instagram Felder - ALLE setzen für Backend Kompatibilität
+        instagram: instagramHandle,
+        instagram_handle: instagramHandle,
+        instagram_url: instagramHandle ? `https://instagram.com/${instagramHandle}` : null,
         status: 'new',
         temperature: 'cold'
       };
 
-      console.log("🔍 DEBUG handleCreateLead - Transformed data:", transformedData);
+      console.log("🚨 Instagram extracted:", instagramHandle);
+      console.log("🚨 Final transformedData:", transformedData);
+      console.log("💾 DEBUG handleCreateLead - JSON payload:", JSON.stringify(transformedData, null, 2));
 
       const token = localStorage.getItem('access_token');
+      console.log("💾 DEBUG handleCreateLead - Making API call to:", `${API_URL}/api/leads`);
+
       const res = await fetch(`${API_URL}/api/leads`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(transformedData)
       });
+
+      console.log("💾 DEBUG handleCreateLead - API Response status:", res.status);
+
       if (res.ok) {
-        const newLead = await res.json();
+        const responseData = await res.json();
+        console.log("💾 DEBUG handleCreateLead - API Response data:", responseData);
+
         await loadLeads();
-        if (newLead.lead) {
-          setSelectedLead(newLead.lead);
+        if (responseData.lead) {
+          console.log("💾 DEBUG handleCreateLead - Setting selected lead:", responseData.lead);
+          setSelectedLead(responseData.lead);
         }
+      } else {
+        const errorText = await res.text();
+        console.error("💾 DEBUG handleCreateLead - API Error response:", errorText);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('💾 DEBUG handleCreateLead - Exception:', error);
     }
   };
 
