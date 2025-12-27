@@ -138,6 +138,10 @@ const ChatPage = () => {
   const [meetingPrep, setMeetingPrep] = useState(null);
   const [isPreparingMeeting, setIsPreparingMeeting] = useState(false);
   const [extractedContact, setExtractedContact] = useState(null);
+
+  // Onboarding States
+  const [onboardingMode, setOnboardingMode] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const [, setUploadedImage] = useState(null);
   const [isAnalyzingScreenshot, setIsAnalyzingScreenshot] = useState(false);
   const [stakeholderCandidate, setStakeholderCandidate] = useState(null);
@@ -452,6 +456,14 @@ const ChatPage = () => {
     const messageText = customMessage || localInput.trim();
     if (!messageText) return;
 
+    // Check if onboarding mode is active
+    if (onboardingMode) {
+      handleOnboardingResponse(messageText);
+      setInput("");
+      setLocalInput("");
+      return;
+    }
+
     // Detect meeting prep intent
     const meetingTarget = detectMeetingPrep(messageText);
     if (meetingTarget) {
@@ -709,6 +721,101 @@ const ChatPage = () => {
 
   const handleQuickAction = (action) => {
     handleSendMessage(null, action);
+  };
+
+  // ============================================================================
+  // ONBOARDING FUNCTIONS
+  // ============================================================================
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_BASE_URL}/api/chief/onboarding-status`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.onboarding_completed || data.missing_fields.length > 0) {
+          setOnboardingMode(true);
+          // CHIEF startet automatisch Onboarding
+          addChiefMessage(getOnboardingGreeting());
+        }
+      }
+    } catch (error) {
+      console.error('Error checking onboarding:', error);
+    }
+  };
+
+  const getOnboardingGreeting = () => {
+    return `Hey! 👋 Ich bin CHIEF, dein persönlicher AI Sales Coach.
+
+Bevor wir loslegen, lass mich dich kurz kennenlernen - das dauert nur 30 Sekunden!
+
+**Wie heißt du?**`;
+  };
+
+  const addChiefMessage = (content) => {
+    const messageId = `chief-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: messageId,
+        role: "assistant",
+        content: content,
+      },
+    ]);
+  };
+
+  const handleOnboardingResponse = async (userMessage) => {
+    const step = onboardingStep;
+
+    if (step === 0) {
+      // Name speichern
+      await updateOnboarding({ name: userMessage });
+      setOnboardingStep(1);
+      addChiefMessage(`Freut mich, ${userMessage}! 🎉
+
+Bei welcher **Company** bist du? (z.B. Zinzino, PM-International, Herbalife...)`);
+
+    } else if (step === 1) {
+      // Company speichern
+      await updateOnboarding({ company: userMessage, vertical_id: 'mlm' });
+      setOnboardingStep(2);
+      addChiefMessage(`${userMessage} - nice! 💪
+
+Was ist dein **größtes Ziel** gerade?
+(z.B. "Mehr Leads", "Team aufbauen", "Rank aufsteigen"...)`);
+
+    } else if (step === 2) {
+      // Goal speichern & Onboarding abschließen
+      await updateOnboarding({
+        goal: userMessage,
+        onboarding_completed: true
+      });
+      setOnboardingMode(false);
+      addChiefMessage(`Perfekt! Ich hab alles gespeichert. 🚀
+
+Du bist ready! Hier ein paar Tipps:
+
+- **Command Center** → Arbeite deine Leads ab
+- **Screenshot hochladen** → Ich lese WhatsApp/Insta Chats
+- **Frag mich alles** → Ich helfe bei Einwänden, Follow-ups, Strategien
+
+Was möchtest du als erstes tun?`);
+    }
+  };
+
+  const updateOnboarding = async (data) => {
+    const token = localStorage.getItem('access_token');
+    await fetch(`${API_BASE_URL}/api/chief/onboarding-update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
   };
 
   // Entfernt lange Deep-Link-Fragmente aus der Nachricht, wenn ein Deep Link separat vorliegt
@@ -1053,6 +1160,11 @@ const ChatPage = () => {
       document.removeEventListener('paste', handlePaste);
     };
   }, [handleImageUpload]); // handleImageUpload als Dependency
+
+  // Onboarding check on mount
+  useEffect(() => {
+    checkOnboardingStatus();
+  }, []);
 
   // Save lead handler for extracted contacts (screenshots)
   const handleSaveExtractedLead = async (contact) => {
