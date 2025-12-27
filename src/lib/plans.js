@@ -368,3 +368,45 @@ export const PLAN_LABELS = {
   builder: "Builder",
   leader: "Leader"
 };
+
+// =============================================================================
+// LEGACY EXPORTS - Für PricingPage Kompatibilität
+// =============================================================================
+
+// Leadgen Addons (Alias für ADDONS)
+export const LEADGEN_ADDONS = ADDONS;
+
+// Currency Formatters
+export const formatCurrency = (amount, currency = 'EUR') => {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+};
+
+export const formatCurrencyEn = (amount, currency = 'EUR') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+};
+
+// Billing Price Helpers
+export const getBillingPrice = (tier, interval = 'month') => {
+  const plan = PLANS[tier];
+  if (!plan) return 0;
+  if (interval === 'year') {
+    return plan.price * 12 * 0.8; // 20% Rabatt für Jahresabo
+  }
+  return plan.price;
+};
+
+export const getAddonBillingPrice = (addonId, interval = 'month') => {
+  const addon = ADDONS[addonId];
+  if (!addon) return 0;
+  if (addon.interval === 'once') return addon.price;
+  if (interval === 'year') {
+    return addon.price * 12 * 0.8; // 20% Rabatt
+  }
+  return addon.price;
+};
