@@ -391,12 +391,48 @@ export const formatCurrencyEn = (amount, currency = 'EUR') => {
   }).format(amount);
 };
 
-// Billing Price Helpers
+// =============================================================================
+// CATALOG EXPORTS - Für verschiedene Komponenten
+// =============================================================================
+
+// Plan Catalog (Alias für PLANS)
+export const PLAN_CATALOG = PLANS;
+
+// Addon Catalog (Alias für ADDONS)
+export const ADDON_CATALOG = ADDONS;
+
+// Finanz Addons (gefiltert)
+export const FINANZ_ADDONS = {
+  finanz_basic: ADDONS.finanz_basic,
+  finanz_pro: ADDONS.finanz_pro,
+};
+
+// Leadgen Addons (Alias)
+export const LEADGEN_ADDONS = ADDONS;
+
+// =============================================================================
+// CURRENCY & BILLING HELPERS
+// =============================================================================
+
+export const formatCurrency = (amount, currency = 'EUR') => {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+};
+
+export const formatCurrencyEn = (amount, currency = 'EUR') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+};
+
 export const getBillingPrice = (tier, interval = 'month') => {
   const plan = PLANS[tier];
   if (!plan) return 0;
   if (interval === 'year') {
-    return plan.price * 12 * 0.8; // 20% Rabatt für Jahresabo
+    return plan.price * 12 * 0.8;
   }
   return plan.price;
 };
@@ -406,7 +442,7 @@ export const getAddonBillingPrice = (addonId, interval = 'month') => {
   if (!addon) return 0;
   if (addon.interval === 'once') return addon.price;
   if (interval === 'year') {
-    return addon.price * 12 * 0.8; // 20% Rabatt
+    return addon.price * 12 * 0.8;
   }
   return addon.price;
 };
