@@ -748,6 +748,12 @@ async def get_lead_interactions(
             logger.warning(f"Error loading interactions: {e}")
             return []
 
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Error getting lead interactions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ============================================================================
 # EXCEL/CSV BULK IMPORT
