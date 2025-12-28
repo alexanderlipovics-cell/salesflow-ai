@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Phone, Calendar, FileText, XCircle, Send, 
+import {
+  Phone, Calendar, FileText, XCircle, Send,
   ChevronDown, ChevronUp, Mail, MessageSquare,
   Instagram, Flame, Clock, Sparkles, Target,
   TrendingUp, User, Building, Copy, Check,
   Camera, Mic, Edit3, X, Plus, Image,
   Linkedin, Facebook, MoreHorizontal, Paperclip,
-  Home, Users, CalendarDays, Lightbulb, List
+  Home, Users, CalendarDays, Lightbulb, List,
+  FileSpreadsheet
 } from 'lucide-react';
 import SmartQueue from '@/components/command-center/SmartQueue';
 import AllLeadsTable from '@/components/command-center/AllLeadsTable';
 import AutopilotPreview from '@/components/command-center/AutopilotPreview';
 import BulkImportModal from '@/components/command-center/BulkImportModal';
+import ExcelImportModal from '@/components/command-center/ExcelImportModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://salesflow-ai.onrender.com';
 
@@ -1415,6 +1417,7 @@ export default function CommandCenterV2() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showExcelImport, setShowExcelImport] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [pastedResponse, setPastedResponse] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -2535,6 +2538,13 @@ export default function CommandCenterV2() {
             Bulk Import
           </button>
           <button
+            onClick={() => setShowExcelImport(true)}
+            className="w-full py-2 px-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Excel/CSV Import
+          </button>
+          <button
             onClick={() => setShowNewLeadModal(true)}
             className="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all flex items-center justify-center gap-2"
           >
@@ -2595,6 +2605,21 @@ export default function CommandCenterV2() {
         onClose={() => setShowBulkImport(false)}
         onImportComplete={() => {
           setShowBulkImport(false);
+          loadLeads(); // Refresh die Lead-Liste
+          // Refresh Queue if using SmartQueue
+          if (queueView === 'queue') {
+            // Trigger queue refresh
+            window.dispatchEvent(new Event('refresh-queue'));
+          }
+        }}
+      />
+
+      {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={showExcelImport}
+        onClose={() => setShowExcelImport(false)}
+        onImportComplete={() => {
+          setShowExcelImport(false);
           loadLeads(); // Refresh die Lead-Liste
           // Refresh Queue if using SmartQueue
           if (queueView === 'queue') {

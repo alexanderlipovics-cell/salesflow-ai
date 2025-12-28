@@ -747,6 +747,256 @@ async def get_lead_interactions(
             # Falls Tabelle nicht existiert, return leere Liste
             logger.warning(f"Error loading interactions: {e}")
             return []
+
+
+# ============================================================================
+# EXCEL/CSV BULK IMPORT
+# ============================================================================
+
+STATUS_MAP = {
+    "interessiert": ("qualified", "warm", 60),
+    "termin vereinbart": ("meeting", "hot", 90),
+    "kein interesse": ("lost", "cold", 0),
+    "neu": ("new", "cold", 20),
+    "kontaktiert": ("contacted", "warm", 40),
+    # Englische Varianten
+    "interested": ("qualified", "warm", 60),
+    "appointment scheduled": ("meeting", "hot", 90),
+    "not interested": ("lost", "cold", 0),
+    "new": ("new", "cold", 20),
+    "contacted": ("contacted", "warm", 40),
+}
+
+
+def map_status_to_internal(status_string: str) -> tuple[str, str, int]:
+    """Map Excel/CSV Status to internal status, temperature and score."""
+    if not status_string:
+        return "new", "cold", 20
+
+    status_lower = str(status_string).lower().strip()
+
+    # Exact match
+    if status_lower in STATUS_MAP:
+        return STATUS_MAP[status_lower]
+
+    # Partial match
+    for key, (status, temp, score) in STATUS_MAP.items():
+        if key in status_lower:
+            return status, temp, score
+
+    # Default fallback
+    return "new", "cold", 20
+
+
+def parse_date(date_string: str) -> Optional[str]:
+    """Parse various date formats to ISO string."""
+    if not date_string:
+        return None
+
+    try:
+        # Try common German/English formats
+        from datetime import datetime
+        formats = [
+            "%d.%m.%Y",  # 25.12.2023
+            "%d/%m/%Y",  # 25/12/2023
+            "%Y-%m-%d",  # 2023-12-25
+            "%d.%m.%y",  # 25.12.23
+            "%m/%d/%Y",  # 12/25/2023
+        ]
+
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(str(date_string).strip(), fmt)
+                return dt.isoformat()
+            except ValueError:
+                continue
+
+        return None
+    except Exception:
+        return None
+
+
+@router.post("/bulk-import")
+async def bulk_import_leads(
+    request: Request,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Bulk import leads from Excel/CSV data.
+    POST /api/leads/bulk-import
+
+    Expected format:
+    {
+        "leads": [
+            {
+                "name": "Max Müller",
+                "email": "max@example.com",
+                "phone": "+49123456",
+                "company": "Firma GmbH",
+                "status": "Interessiert",  // German status
+                "notes": "Bestehender Kunde",
+                "last_contact_at": "25.12.2023",
+                "instagram": "@maxmueller",
+                "whatsapp": "+49123456"
+            }
+        ],
+        "merge_duplicates": true,  // Merge statt überschreiben bei Duplikaten
+        "update_existing": false   // Nur neue Leads erstellen
+    }
+    """
+    try:
+        body = await request.body()
+        logger.info(f"Bulk import - Raw body length: {len(body) if body else 0}")
+
+        if not body:
+            return {"success": False, "error": "Empty request body"}
+
+        data = json.loads(body)
+        leads_data = data.get("leads", [])
+        merge_duplicates = data.get("merge_duplicates", True)
+        update_existing = data.get("update_existing", False)
+
+        if not leads_data:
+            return {"success": False, "error": "No leads data provided"}
+
+        logger.info(f"Bulk import - Processing {len(leads_data)} leads, merge: {merge_duplicates}")
+
+        user_id = _extract_user_id(current_user)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+
+        db = get_supabase()
+
+        results = {
+            "total_processed": len(leads_data),
+            "created": 0,
+            "updated": 0,
+            "duplicates_skipped": 0,
+            "errors": 0,
+            "leads": []
+        }
+
+        for idx, lead_data in enumerate(leads_data):
+            try:
+                logger.debug(f"Processing lead {idx + 1}: {lead_data.get('name', 'Unknown')}")
+
+                # Basic validation - Name is required
+                name = lead_data.get("name") or lead_data.get("fullName") or lead_data.get("Name")
+                if not name or str(name).strip() == "":
+                    results["errors"] += 1
+                    continue
+
+                # Map status to internal format
+                status_string = lead_data.get("status") or lead_data.get("Status") or ""
+                internal_status, temperature, score = map_status_to_internal(status_string)
+
+                # Parse dates
+                last_contact_at = parse_date(lead_data.get("last_contact_at") or lead_data.get("last_contact"))
+                created_at = parse_date(lead_data.get("created_at") or lead_data.get("created")) or datetime.now().isoformat()
+
+                # Prepare lead data
+                lead = {
+                    "user_id": user_id,
+                    "name": str(name).strip(),
+                    "email": lead_data.get("email") or lead_data.get("Email"),
+                    "phone": lead_data.get("phone") or lead_data.get("Phone") or lead_data.get("Telefon"),
+                    "whatsapp": lead_data.get("whatsapp") or lead_data.get("WhatsApp"),
+                    "instagram": lead_data.get("instagram") or lead_data.get("Instagram"),
+                    "company": lead_data.get("company") or lead_data.get("Company") or lead_data.get("Firma"),
+                    "status": internal_status,
+                    "temperature": temperature,
+                    "score": score,
+                    "notes": lead_data.get("notes") or lead_data.get("Notes") or lead_data.get("Bemerkungen"),
+                    "last_message": lead_data.get("last_message") or lead_data.get("letzte_nachricht"),
+                    "last_contact_at": last_contact_at,
+                    "created_at": created_at,
+                    "updated_at": datetime.now().isoformat(),
+                }
+
+                # Remove None values and empty strings
+                lead = {k: v for k, v in lead.items() if v is not None and str(v).strip() != ""}
+
+                # Duplicate check
+                duplicate_found = False
+                duplicate_id = None
+
+                if merge_duplicates:
+                    # Check by email first
+                    if lead.get("email"):
+                        existing = db.table("leads").select("id").eq("email", lead["email"]).eq("user_id", user_id).maybe_single().execute()
+                        if existing.data:
+                            duplicate_found = True
+                            duplicate_id = existing.data["id"]
+
+                    # Check by phone if no email match
+                    if not duplicate_found and lead.get("phone"):
+                        existing = db.table("leads").select("id").eq("phone", lead["phone"]).eq("user_id", user_id).maybe_single().execute()
+                        if existing.data:
+                            duplicate_found = True
+                            duplicate_id = existing.data["id"]
+
+                    # Check by name + company if available
+                    if not duplicate_found and lead.get("company"):
+                        existing = (
+                            db.table("leads")
+                            .select("id")
+                            .eq("name", lead["name"])
+                            .eq("company", lead["company"])
+                            .eq("user_id", user_id)
+                            .maybe_single()
+                            .execute()
+                        )
+                        if existing.data:
+                            duplicate_found = True
+                            duplicate_id = existing.data["id"]
+
+                if duplicate_found and duplicate_id:
+                    if update_existing:
+                        # Update existing lead (merge notes)
+                        existing_notes = ""
+                        try:
+                            existing_lead = db.table("leads").select("notes").eq("id", duplicate_id).maybe_single().execute()
+                            if existing_lead.data and existing_lead.data.get("notes"):
+                                existing_notes = existing_lead.data["notes"] + "\n\n"
+                        except:
+                            pass
+
+                        # Merge notes
+                        if lead.get("notes"):
+                            lead["notes"] = existing_notes + "IMPORT UPDATE: " + lead["notes"]
+
+                        # Update without changing created_at
+                        lead.pop("created_at", None)
+
+                        db.table("leads").update(lead).eq("id", duplicate_id).execute()
+                        results["updated"] += 1
+                        results["leads"].append({"id": duplicate_id, "action": "updated", "name": lead["name"]})
+                        logger.info(f"Updated duplicate lead: {lead['name']}")
+                    else:
+                        results["duplicates_skipped"] += 1
+                        logger.info(f"Skipped duplicate lead: {lead['name']}")
+                else:
+                    # Create new lead
+                    result = db.table("leads").insert(lead).execute()
+                    if result.data:
+                        results["created"] += 1
+                        results["leads"].append({"id": result.data[0]["id"], "action": "created", "name": lead["name"]})
+                        logger.info(f"Created new lead: {lead['name']}")
+                    else:
+                        results["errors"] += 1
+                        logger.error(f"Failed to create lead: {lead['name']}")
+
+            except Exception as e:
+                results["errors"] += 1
+                logger.error(f"Error processing lead {idx + 1}: {e}")
+                continue
+
+        logger.info(f"Bulk import completed: {results}")
+        return results
+
+    except Exception as e:
+        logger.exception(f"Bulk import error: {e}")
+        raise HTTPException(status_code=500, detail=f"Bulk import failed: {str(e)}")
             
     except HTTPException:
         raise

@@ -108,88 +108,130 @@ Du verstehst folgende Kurzbefehle und führst sie sofort aus:
 - Shortcuts können kombiniert werden: "le Max + fu" = Lead erstellen + Follow-up planen
 """
 
-MESSAGE_FORMATTING_RULES = """
+# ============================================
+# MESSAGE GENERATION - WHATSAPP/INSTAGRAM STYLE
+# ============================================
 
-## WICHTIG: NACHRICHTENFORMATIERUNG
+MESSAGE_GENERATION_RULES = """
+## 🎯 DIE 3-SATZ-FORMEL (STRENG VERPFLICHTEND!)
 
+Jede generierte Nachricht MUSS exakt 3 Teile haben:
 
-Wenn du eine Nachricht, Pitch, Follow-up oder kopierbaren Text erstellst, befolge STRIKT diese Regeln:
+### SATZ 1 - BEZUG (Profil-Intel):
+Zeig dass du das Profil WIRKLICH angeschaut hast.
+- Bei "🐕 Dog Dad" → "Hey! Dein Golden Retriever ist mega süß"
+- Bei "Fitness" → "Sehe du trainierst auch gern"
+- Bei "Mama von 2" → "Respekt - 2 Kids und trotzdem Zeit für [X]"
+- Bei Company → "Coole Sache mit [Firma]"
 
+### SATZ 2 - VALUE/NEUGIER:
+Kein Pitch! Nur Neugier wecken.
+- "Hab was entdeckt, das perfekt zu [INTERESSE] passt"
+- "Kennst du das, wenn [PAIN POINT]?"
+- "Eine Freundin hat damit [RESULT] erreicht"
+
+### SATZ 3 - LOW-FRICTION CTA:
+NIEMALS: "Hast du Zeit für ein Gespräch?"
+STATTDESSEN:
+- "Wäre das grundsätzlich was für dich?"
+- "Soll ich dir kurz zeigen wie das funktioniert?"
+- "Kann ich dir mehr erzählen?"
+
+---
+
+## ❌ VERBOTENE PHRASEN (NIEMALS VERWENDEN!):
+
+- "Ich hoffe, es geht dir gut"
+- "Ich wollte mich mal melden"
+- "Ich habe dein Profil gesehen und..."
+- "Ich würde mich freuen, wenn..."
+- "Hättest du Zeit für ein kurzes Gespräch?"
+- "Lass uns connecten"
+- "Ich bin im Bereich XY tätig"
+- Mehrere Fragen in einer Nachricht
+- Ausrufezeichen-Spam (!!!)
+- Formelle Anrede (Sie, Sehr geehrte/r)
+
+---
+
+## ✅ PLATTFORM-SPEZIFISCH:
+
+### WhatsApp:
+- Max 3 Sätze
+- 1-2 Emojis (am Ende oder Anfang, nie mittendrin)
+- Direkte Du-Ansprache
+- Kann Voice-Note erwähnen als Alternative
+
+### Instagram DM:
+- Max 2-3 Sätze
+- Emoji am Ende erlaubt
+- Kann auf Story/Post Bezug nehmen
+- KEINE Links in erster Nachricht!
+
+### Facebook Messenger:
+- Etwas formeller als Instagram
+- Max 3-4 Sätze
+- Kann gemeinsame Gruppen/Freunde erwähnen
+
+---
+
+## 📊 ERFOLGS-FORMEL:
+
+Erfolg = (Kontext_aus_Profil + Empathie) × Kürze
+
+Je KÜRZER und PERSÖNLICHER, desto BESSER!
+
+---
+
+## 🎯 BEISPIELE:
+
+### ❌ SCHLECHT (LinkedIn-Style):
+"Hallo Maria! Ich hoffe, es geht dir gut! Ich habe dein Profil gesehen
+und finde es super interessant. Ich arbeite im Bereich Gesundheit und
+Wellness und würde mich freuen, wenn wir uns mal austauschen könnten.
+Hättest du Zeit für ein kurzes Gespräch? LG"
+
+### ✅ GUT (WhatsApp-Style):
+"Hey Maria! Sehe du bist auch im Yoga-Game unterwegs 🧘‍♀️
+Hab letztens was entdeckt, das perfekt zu dem Lifestyle passt.
+Kann ich dir kurz erzählen worum's geht?"
+
+### ❌ SCHLECHT:
+"Guten Tag Herr Müller, ich bin auf Ihr LinkedIn-Profil aufmerksam
+geworden und finde Ihre Expertise im Bereich Marketing sehr interessant.
+Ich würde mich über einen Austausch freuen."
+
+### ✅ GUT:
+"Hey Thomas! Coole Sache mit der Marketing-Agentur 🚀
+Kenne ein Tool das euren Kunden richtig Zeit spart.
+Interesse?"
+
+---
+
+## 📝 FORMATIERUNG:
 
 ### VERBOTEN:
-
-- NIEMALS ** oder __ für Bold verwenden
+- NIEMALS ** oder __ für Bold
 - NIEMALS ## oder # für Überschriften
-- NIEMALS - oder * für Aufzählungen im kopierbaren Text
-- NIEMALS alles in einen Textblock quetschen
-- NIEMALS Markdown-Syntax im Output
-
+- NIEMALS - oder * für Aufzählungen
+- NIEMALS alles in einen Textblock
+- NIEMALS Markdown-Syntax
 
 ### PFLICHT:
-
-- Jeder Gedanke = eigener Absatz (Leerzeile dazwischen!)
+- Jeder Gedanke = eigener Absatz (Leerzeile!)
 - Kurze Sätze (max 2 pro Absatz)
-- Emojis nur am Anfang ODER Ende (max 2-3 total)
-- Muss SOFORT in WhatsApp kopierbar sein
-
-
-### BEISPIEL GUTES FORMAT:
-
-
-Hallo Xenia! 🎨
-
-
-Deine Arbeiten sind wirklich beeindruckend und verdienen mehr Aufmerksamkeit!
-
-
-Ich bin Alexander von WinStage, Europas größtem Kunstausstellungszentrum.
-
-
-Für nur 65€ pro Jahr bekommst du:
-Eine eigene Künstlerseite
-Teilnahme an Online-Ausstellungen
-Sichtbarkeit bei Sammlern
-
-
-Interesse geweckt? Lass uns kurz sprechen!
-
-
-Beste Grüße
-Alexander | WinStage
-
-
-### BEISPIEL SCHLECHTES FORMAT (SO NIEMALS):
-
-
-Hier ist die Nachricht mit verbesserter Formatierung: --- Hallo Xenia! 🎨 Deine beeindruckenden Arbeiten treffen den Nerv der zeitgenössischen Kunst. Ich bin überzeugt, dass sie noch mehr Aufmerksamkeit verdienen. Als Art Scout bei **WinStage**, Europas größtem Kunstausstellungszentrum, habe ich eine großartige Möglichkeit für dich: ✨ **Werde Teil unserer Plattform!** ✨ Für nur **65 € pro Jahr** erhältst du: 🖼️ **Eigene Künstlerseite & Galerie** 🎯 **Teilnahme an kuratierten Online-Ausstellungen**...
-
-^^^ DAS IST FALSCH! Alles in einem Block, ** sichtbar, nicht kopierbar!
-
-
-### USER PRÄFERENZEN:
-
-Wenn der User sagt:
-
-- "besser formatieren" / "schöner" → Mehr Absätze, cleaner
-- "kürzer" → Weniger Text, knapper
-- "länger" → Mehr Details
-- "weniger Emojis" → Max 1 oder gar keine
-- "formeller" → Kein Du, professioneller Ton
-
-MERKE DIR diese Präferenzen für die gesamte Session!
-
+- Emojis sparsam (1-2 total, am Ende/Anfang)
+- SOFORT kopierbar für Messenger
 
 ### ANTWORT-STRUKTUR:
-
-Bei Nachrichten-Requests antworte NUR mit der formatierten Nachricht.
+Bei Nachrichten-Requests: NUR die Nachricht ausgeben.
 KEIN "Hier ist die Nachricht:" davor.
 KEIN "Diese Formatierung..." danach.
-NUR die reine, kopierbare Nachricht.
 
-## ABSENDER-NAME
-- NIEMALS "[Dein Name]" oder "[Name]" als Platzhalter verwenden
-- Wenn Name bekannt: Nutze exakt diesen Namen als Absender
-- Wenn unbekannt: Nutze neutrale Grüße wie "Beste Grüße" ohne Namen
+### ABSENDER-NAME:
+- NIEMALS "[Dein Name]" verwenden
+- Wenn Name bekannt: Nutze exakt diesen
+- Wenn unbekannt: Neutrale Grüße ohne Namen
 """
 
 CAS_SYSTEM = """
@@ -1564,6 +1606,63 @@ MLM_KNOWLEDGE_MAP = {
     "lr_health": LR_HEALTH_KNOWLEDGE,
     "lr-health": LR_HEALTH_KNOWLEDGE,
 }
+
+
+def build_message_context(lead_data: dict) -> str:
+    """Baut Kontext aus Lead-Daten für personalisierte Nachrichten"""
+    context_parts = []
+
+    if lead_data.get("instagram_handle"):
+        context_parts.append(f"Instagram: @{lead_data['instagram_handle']}")
+
+    if lead_data.get("bio"):
+        context_parts.append(f"Bio: {lead_data['bio']}")
+
+    if lead_data.get("interests"):
+        context_parts.append(f"Interessen: {lead_data['interests']}")
+
+    if lead_data.get("company"):
+        context_parts.append(f"Company: {lead_data['company']}")
+
+    if lead_data.get("follower_count"):
+        context_parts.append(f"Follower: {lead_data['follower_count']}")
+
+    if lead_data.get("recent_posts"):
+        context_parts.append(f"Letzte Posts: {lead_data['recent_posts']}")
+
+    return "\n".join(context_parts) if context_parts else "Keine Profil-Infos verfügbar"
+
+
+async def generate_opener_message(
+    lead_data: dict,
+    platform: str = "whatsapp",
+    user_company: str = "Zinzino",
+    product_focus: str = None
+) -> str:
+    """
+    Generiert personalisierte Opener-Nachricht im WhatsApp-Style
+    """
+    context = build_message_context(lead_data)
+
+    prompt = f"""
+{MESSAGE_GENERATION_RULES}
+
+## AKTUELLER LEAD:
+Name: {lead_data.get('name', 'Unbekannt')}
+Plattform: {platform}
+{context}
+
+## USER INFO:
+Company: {user_company}
+Produkt-Focus: {product_focus or 'Allgemein'}
+
+## AUFGABE:
+Generiere EINE Nachricht nach der 3-Satz-Formel.
+NUR die Nachricht, keine Erklärung!
+"""
+
+    # API Call hier...
+    return generated_message
 
 
 def build_system_prompt(user_context: dict, include_mlm_knowledge: bool = True) -> str:
