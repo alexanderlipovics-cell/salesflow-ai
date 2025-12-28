@@ -2500,18 +2500,29 @@ export default function CommandCenterV2() {
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          {queueView === 'queue' ? (
-            <SmartQueue
-              onSelectLead={(lead) => setSelectedLead(lead as any)}
-              selectedLeadId={selectedLead?.id || null}
-              refreshTrigger={queueRefreshTrigger}
-            />
-          ) : (
-            <AllLeadsTable
-              onSelectLead={(lead) => setSelectedLead(lead as any)}
-              selectedLeadId={selectedLead?.id || null}
-            />
-          )}
+          {(() => {
+            const currentSelectedId = selectedLead?.id || null;
+            console.log("🔍 DEBUG CommandCenterV2 - selectedLead:", selectedLead, "selectedId:", currentSelectedId);
+
+            return queueView === 'queue' ? (
+              <SmartQueue
+                onSelectLead={(lead) => {
+                  console.log("🔍 DEBUG SmartQueue onSelectLead:", lead.id, lead.name);
+                  setSelectedLead(lead as any);
+                }}
+                selectedLeadId={currentSelectedId}
+                refreshTrigger={queueRefreshTrigger}
+              />
+            ) : (
+              <AllLeadsTable
+                onSelectLead={(lead) => {
+                  console.log("🔍 DEBUG AllLeadsTable onSelectLead:", lead.id, lead.name);
+                  setSelectedLead(lead as any);
+                }}
+                selectedLeadId={currentSelectedId}
+              />
+            );
+          })()}
         </div>
 
         {/* New Lead Buttons */}
